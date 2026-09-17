@@ -157,10 +157,10 @@ export const workerApi = {
    * GET /workers/:id/slots?date=YYYY-MM-DD
    * Fetch real-time open time slots for worker on a date
    */
-  getWorkerSlots: async (workerId: string, dateStr: string) => {
+  getWorkerSlots: async (workerId: string, dateStr: string, durationHours: number = 2) => {
     try {
       const response = await apiClient.get<ApiResponse<any>>(`/workers/${workerId}/slots`, {
-        params: { date: dateStr },
+        params: { date: dateStr, duration_hours: durationHours },
       });
       const rawSlots: string[] = response.data?.data?.slots || [];
       return rawSlots.map((time24) => {

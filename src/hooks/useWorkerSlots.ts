@@ -12,7 +12,11 @@ export interface SlotInfo {
 const isValidWorkerId = (id?: string | null): id is string =>
   typeof id === 'string' && id.trim().length > 0 && id !== 'default';
 
-export function useWorkerSlots(dateStr: string | null, workerId?: string | null) {
+export function useWorkerSlots(
+  dateStr: string | null,
+  workerId?: string | null,
+  durationHours: number = 2
+) {
   const [slots, setSlots] = useState<SlotInfo[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
@@ -30,7 +34,7 @@ export function useWorkerSlots(dateStr: string | null, workerId?: string | null)
     setIsError(false);
 
     try {
-      const fetchedSlots = await workerApi.getWorkerSlots(workerId, dateStr);
+      const fetchedSlots = await workerApi.getWorkerSlots(workerId, dateStr, durationHours);
       setSlots(fetchedSlots);
     } catch (err) {
       setIsError(true);
@@ -38,7 +42,7 @@ export function useWorkerSlots(dateStr: string | null, workerId?: string | null)
     } finally {
       setIsLoading(false);
     }
-  }, [dateStr, workerId]);
+  }, [dateStr, workerId, durationHours]);
 
   useEffect(() => {
     fetchSlots();

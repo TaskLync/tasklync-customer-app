@@ -78,7 +78,11 @@ export default function ScheduleScreen() {
   } = useCalendarMonth(selectedDate || undefined, resolvedWorkerId);
 
   // Time slots hook (re-queries automatically whenever selectedDate or workerId changes)
-  const { slots, isLoading, isError: isSlotsError, refetch: refetchSlots } = useWorkerSlots(selectedDate, resolvedWorkerId);
+  const { slots, isLoading, isError: isSlotsError, refetch: refetchSlots } = useWorkerSlots(
+    selectedDate,
+    resolvedWorkerId,
+    2
+  );
 
   // Navigation action
   const handleContinue = () => {
