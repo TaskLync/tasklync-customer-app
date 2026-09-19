@@ -58,7 +58,14 @@ export const chatApi = {
 
     try {
       const response = await apiClient.get<any>(`/chat/rooms/${bookingId}`);
-      return response.data?.data || response.data || null;
+      const data = response.data?.data || response.data;
+      if (!data) return null;
+      return {
+        ...data,
+        id: data.id || data.room_id,
+        booking_id: data.booking_id || data.bookingId || bookingId,
+        status: data.status,
+      };
     } catch (_error) {
       return null;
     }

@@ -51,7 +51,7 @@ export function useReverseGeocode(options?: UseReverseGeocodeOptions) {
       setResult({
         formatted_address: `Coordinates (${lat.toFixed(5)}, ${lng.toFixed(5)})`,
         address_line: `Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`,
-        city: 'Lahore',
+        city: 'Faisalabad',
         country: 'Pakistan',
         lat,
         lng,

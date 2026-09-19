@@ -39,6 +39,7 @@ export interface ChatRoom {
   last_message_preview?: string | null | undefined;
   last_message_sender_type?: SenderType | undefined;
   unread?: boolean | undefined;
+  unread_count?: number | undefined;
   created_at?: string | undefined;
   updated_at?: string | undefined;
 }

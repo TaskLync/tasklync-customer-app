@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import * as Location from 'expo-location';
 import {
   autocompletePlaces,
   getPlaceDetails,
@@ -84,7 +85,32 @@ export function usePlacesAutocomplete(debounceMs: number = 350) {
       setIsLoading(true);
       try {
         const token = sessionTokenRef.current || undefined;
-        const details = await getPlaceDetails(prediction.place_id, token);
+        let details = await getPlaceDetails(prediction.place_id, token);
+
+        // Fallback forward geocode if details API returned null
+        if (!details && prediction.description) {
+          try {
+            const localizedQuery = prediction.description.toLowerCase().includes('faisalabad')
+              ? prediction.description
+              : `${prediction.description}, Faisalabad, Pakistan`;
+            let geoResults = await Location.geocodeAsync(localizedQuery);
+            if (!geoResults || geoResults.length === 0) {
+              geoResults = await Location.geocodeAsync(prediction.description);
+            }
+            if (geoResults && geoResults.length > 0) {
+              const first = geoResults[0];
+              details = {
+                place_id: prediction.place_id,
+                description: prediction.description,
+                formatted_address: prediction.description,
+                lat: first.latitude,
+                lng: first.longitude,
+                city: 'Faisalabad',
+                country: 'Pakistan',
+              };
+            }
+          } catch (_e) {}
+        }
 
         // Add to recent searches cache
         addRecentSearch(prediction);

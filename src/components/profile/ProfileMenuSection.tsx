@@ -1,7 +1,8 @@
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ProfileMenuSectionConfig, ProfileMenuItemConfig } from '../../types/user.types';
 import { ProfileMenuItem } from './ProfileMenuItem';
-import { colors, fontFamily, fontSize, radius, shadows, spacing } from '../../design';
+import { fontFamily } from '../../design';
 
 export interface ProfileMenuSectionProps {
   section: ProfileMenuSectionConfig;
@@ -9,11 +10,11 @@ export interface ProfileMenuSectionProps {
 }
 
 /**
- * ProfileMenuSection Component (Day 35)
+ * ProfileMenuSection Component
  *
- * Implements Hick's Law:
- * - Visually chunks menu items into distinct sections
- * - Consistent card containers with clear headings
+ * Clean section grouping:
+ * - Subtle uppercase section title
+ * - Separate rounded rectangular cards for each item
  */
 export const ProfileMenuSection: React.FC<ProfileMenuSectionProps> = ({
   section,
@@ -23,13 +24,12 @@ export const ProfileMenuSection: React.FC<ProfileMenuSectionProps> = ({
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>{section.sectionTitle}</Text>
 
-      <View style={styles.card}>
-        {section.items.map((item, index) => (
+      <View style={styles.itemsList}>
+        {section.items.map((item) => (
           <ProfileMenuItem
             key={item.id}
             item={item}
             onPress={onPressItem}
-            isLast={index === section.items.length - 1}
           />
         ))}
       </View>
@@ -39,21 +39,18 @@ export const ProfileMenuSection: React.FC<ProfileMenuSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.lg,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: fontSize.label,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs + 2,
-    marginLeft: spacing.xs,
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 12.5,
+    color: '#64748B',
+    marginBottom: 10,
+    marginLeft: 4,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
-  card: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadows.xs,
+  itemsList: {
+    gap: 8,
   },
 });

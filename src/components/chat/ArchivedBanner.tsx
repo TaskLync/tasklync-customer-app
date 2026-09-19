@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Archive, Lock } from 'lucide-react-native';
+import { Lock } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ArchivedBannerProps {
-  status?: string;
-  message?: string;
+  status?: string | undefined;
+  message?: string | undefined;
 }
 
 /**

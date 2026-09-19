@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { stripeService, DEFAULT_PAYMENT_METHODS } from '../services/payments/stripe.service';
+import { paymentService, DEFAULT_PAYMENT_METHODS } from '../services/payments/payment.service';
 import { PaymentMethod, AddWalletDTO, AddCardDTO } from '../types/payment.types';
 
 export const PAYMENT_METHODS_QUERY_KEY = ['payment-methods'];
@@ -19,7 +19,7 @@ export function usePaymentMethods() {
   const query = useQuery<PaymentMethod[]>({
     queryKey: PAYMENT_METHODS_QUERY_KEY,
     queryFn: async (): Promise<PaymentMethod[]> => {
-      const data = await stripeService.getPaymentMethods();
+      const data = await paymentService.getPaymentMethods();
       return sortWithDefaultFirst(data || DEFAULT_PAYMENT_METHODS);
     },
     staleTime: 60_000,
@@ -28,7 +28,7 @@ export function usePaymentMethods() {
   // 2. Add Mobile Wallet Mutation (JazzCash / EasyPaisa)
   const addWalletMutation = useMutation({
     mutationFn: async (dto: AddWalletDTO) => {
-      return await stripeService.addWalletMethod(dto);
+      return await paymentService.addWalletMethod(dto);
     },
     onMutate: async (newWallet) => {
       await queryClient.cancelQueries({ queryKey: PAYMENT_METHODS_QUERY_KEY });
@@ -68,7 +68,7 @@ export function usePaymentMethods() {
   // 3. Add Card Mutation
   const addCardMutation = useMutation({
     mutationFn: async (dto: AddCardDTO) => {
-      return await stripeService.addCardMethod(dto);
+      return await paymentService.addCardMethod(dto);
     },
     onMutate: async (newCard) => {
       await queryClient.cancelQueries({ queryKey: PAYMENT_METHODS_QUERY_KEY });
@@ -115,7 +115,7 @@ export function usePaymentMethods() {
   // 4. Delete Payment Method Mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await stripeService.deletePaymentMethod(id);
+      await paymentService.deletePaymentMethod(id);
     },
     onMutate: async (idToDelete) => {
       await queryClient.cancelQueries({ queryKey: PAYMENT_METHODS_QUERY_KEY });
@@ -142,7 +142,7 @@ export function usePaymentMethods() {
   // 5. Set Default Payment Method Mutation
   const setDefaultMutation = useMutation({
     mutationFn: async (id: string) => {
-      await stripeService.setDefaultPaymentMethod(id);
+      await paymentService.setDefaultPaymentMethod(id);
     },
     onMutate: async (defaultId) => {
       await queryClient.cancelQueries({ queryKey: PAYMENT_METHODS_QUERY_KEY });

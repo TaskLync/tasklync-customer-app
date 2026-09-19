@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import * as Location from 'expo-location';
 import { useQueryClient } from '@tanstack/react-query';
 import { MapPin, Navigation, Check } from 'lucide-react-native';
+import { locationService } from '../../services/location/location.service';
 
 import { BottomSheet, BottomSheetRef } from '../layout/BottomSheet/BottomSheet';
 import { userApi } from '../../services/api/user.api';
@@ -19,6 +19,11 @@ import { useAuthStore } from '../../store/auth.store';
 import { useLocationStore } from '../../store/location.store';
 import { colors, palette, fontFamily } from '../../design';
 import { generateUUID, isValidUUID } from '../../utils/uuid';
+import {
+  validateServiceArea,
+  SERVICE_UNAVAILABLE_MESSAGE,
+  FAISALABAD_CENTER,
+} from '../../config/serviceArea.config';
 
 const LABEL_PRESETS = ['Home', 'Office', 'Apartment', 'Other'];
 
@@ -39,14 +44,17 @@ export const AddAddressBottomSheet = forwardRef<
   const queryClient = useQueryClient();
   const token = useAuthStore((s) => s.accessToken);
   const setAddressStore = useBookingDraftStore((s) => s.setAddress);
-  const currentLocation = useLocationStore((s) => s.currentLocation);
-  const currentCity = useLocationStore((s) => s.currentCity);
+  const isCurrentServiceable = Boolean(
+    currentLocation && validateServiceArea(currentLocation).isServiceable
+  );
+  const defaultCity = isCurrentServiceable && currentCity ? currentCity : 'Faisalabad';
+  const defaultCoords = isCurrentServiceable && currentLocation ? currentLocation : FAISALABAD_CENTER;
 
   const [label, setLabel] = useState('Home');
   const [street, setStreet] = useState('');
-  const [city, setCity] = useState(currentCity || 'Lahore');
-  const [lat, setLat] = useState<number>(currentLocation?.lat || 31.5204);
-  const [lng, setLng] = useState<number>(currentLocation?.lng || 74.3587);
+  const [city, setCity] = useState(defaultCity);
+  const [lat, setLat] = useState<number>(defaultCoords.lat);
+  const [lng, setLng] = useState<number>(defaultCoords.lng);
   const [isLocating, setIsLocating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -62,33 +70,67 @@ export const AddAddressBottomSheet = forwardRef<
   const handleUseGPS = async () => {
     setIsLocating(true);
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Please enable location permissions in settings.');
+      const state = await locationService.checkLocationState();
+      if (!state.granted) {
+        const perm = await locationService.requestPermission();
+        if (!perm.granted) {
+          if (!perm.canAskAgain) {
+            Alert.alert(
+              'Permission Required',
+              'Location permission is permanently disabled. Please enable it in Settings.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Open Settings', onPress: locationService.openSettings },
+              ]
+            );
+          } else {
+            Alert.alert('Permission Denied', 'Please enable location permissions to use GPS.');
+          }
+          setIsLocating(false);
+          return;
+        }
+      }
+
+      if (!state.servicesEnabled) {
+        Alert.alert(
+          'Location Services Off',
+          'Please enable GPS in your device settings to detect your current location.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: locationService.openSettings },
+          ]
+        );
         setIsLocating(false);
         return;
       }
 
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+      const coords = await locationService.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeoutMs: 8000,
+        useCacheFirst: false,
       });
 
-      const newLat = loc.coords.latitude;
-      const newLng = loc.coords.longitude;
-      setLat(newLat);
-      setLng(newLng);
+      if (coords) {
+        const validation = validateServiceArea(coords);
+        if (!validation.isServiceable) {
+          Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+          setIsLocating(false);
+          return;
+        }
 
-      const [geo] = await Location.reverseGeocodeAsync({
-        latitude: newLat,
-        longitude: newLng,
-      });
+        setLat(coords.lat);
+        setLng(coords.lng);
+        useLocationStore.getState().setCurrentLocation(coords);
 
-      if (geo) {
-        const fullStreet = [geo.name, geo.street, geo.district || geo.subregion]
-          .filter(Boolean)
-          .join(', ');
-        if (fullStreet) setStreet(fullStreet);
-        if (geo.city) setCity(geo.city);
+        const geo = await locationService.reverseGeocode(coords);
+        if (geo?.addressLine && geo.addressLine !== 'Current GPS Location') {
+          setStreet(geo.addressLine);
+        }
+        if (geo?.cityName) {
+          setCity(geo.cityName);
+        }
+      } else {
+        Alert.alert('Location Error', 'Unable to retrieve current GPS location. Please try again.');
       }
     } catch (_err) {
       Alert.alert('Location Error', 'Unable to retrieve current GPS location.');
@@ -103,10 +145,16 @@ export const AddAddressBottomSheet = forwardRef<
       return;
     }
 
+    const validation = validateServiceArea({ lat, lng });
+    if (!validation.isServiceable) {
+      Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      return;
+    }
+
     setIsSaving(true);
 
     const addressText = street.trim();
-    const addressCity = city.trim() || 'Lahore';
+    const addressCity = city.trim() || 'Faisalabad';
 
     try {
       let createdId = generateUUID();
@@ -152,6 +200,21 @@ export const AddAddressBottomSheet = forwardRef<
       }
 
       setAddressStore(createdAddress);
+
+      // Synchronize with location store so the newly created address is active immediately across the app
+      const { setSelectedAddress, setCurrentCity: setStoreCity } = useLocationStore.getState();
+      setSelectedAddress({
+        id: createdAddress.id,
+        label: createdAddress.label || label,
+        address_line: createdAddress.street,
+        city: createdAddress.city,
+        country: 'Pakistan',
+        lat: createdAddress.latitude ?? lat,
+        lng: createdAddress.longitude ?? lng,
+        is_default: true,
+      });
+      setStoreCity(createdAddress.city);
+
       if (onAddressCreated) {
         onAddressCreated(createdAddress);
       }
@@ -225,7 +288,7 @@ export const AddAddressBottomSheet = forwardRef<
         <Text style={styles.inputLabel}>City</Text>
         <TextInput
           style={styles.textInput}
-          placeholder="e.g. Lahore, Islamabad, Karachi"
+          placeholder="e.g. Faisalabad"
           placeholderTextColor={palette.gray400}
           value={city}
           onChangeText={setCity}

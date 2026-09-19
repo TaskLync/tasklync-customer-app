@@ -6,22 +6,21 @@ export const SkeletonConversationRow: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Avatar skeleton */}
-      <Skeleton width={52} height={52} borderRadius={26} style={styles.avatar} />
+      <Skeleton width={50} height={50} borderRadius={25} style={styles.avatar} />
 
       {/* Content lines skeleton */}
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <Skeleton width="45%" height={16} borderRadius={4} />
-          <Skeleton width={45} height={12} borderRadius={4} />
+          <Skeleton width={130} height={15} borderRadius={4} />
+          <Skeleton width={48} height={11} borderRadius={4} />
         </View>
 
         <View style={styles.metaRow}>
-          <Skeleton width="28%" height={12} borderRadius={4} />
-          <Skeleton width={60} height={16} borderRadius={6} />
+          <Skeleton width={90} height={12} borderRadius={4} />
         </View>
 
         <View style={styles.bottomRow}>
-          <Skeleton width="80%" height={14} borderRadius={4} />
+          <Skeleton width="82%" height={13} borderRadius={4} />
         </View>
       </View>
     </View>
@@ -33,13 +32,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    marginHorizontal: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
   },
   avatar: {
     marginRight: 14,
@@ -52,13 +46,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   bottomRow: {
     flexDirection: 'row',

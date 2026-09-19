@@ -5,7 +5,7 @@ import { ReadReceiptStatus } from '../../types/chat.types';
 interface ReadReceiptProps {
   status: ReadReceiptStatus;
   color?: string | undefined;
-  size?: number;
+  size?: number | undefined;
 }
 
 /**

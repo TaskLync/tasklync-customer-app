@@ -40,18 +40,18 @@ export const userApi = {
     const token = useAuthStore.getState().accessToken;
 
     const fallbackProfile: UserProfile = {
-      id: authUser?.id || 'u-demo-user',
-      name: authUser?.name || 'Tasklync Customer',
-      phone: authUser?.phone || '+92 300 1234567',
-      email: authUser?.email || 'customer@tasklync.com',
+      id: authUser?.id || '',
+      name: authUser?.name || 'Customer',
+      phone: authUser?.phone || '',
+      ...(authUser?.email ? { email: authUser.email } : {}),
       avatar_url: authUser?.avatar_url || null,
       preferred_language: 'en',
       preferred_currency: 'PKR',
       stats: {
-        bookings_count: 5,
-        rating: 4.9,
-        completed_jobs: 5,
-        loyalty_points: 250,
+        bookings_count: 0,
+        rating: 5.0,
+        completed_jobs: 0,
+        loyalty_points: 0,
       },
       is_verified: true,
       created_at: new Date().toISOString(),

@@ -8,6 +8,11 @@ import { userApi } from '../services/api/user.api';
 import { BookingDetails, CreateBookingPayload } from '../types/booking.types';
 import { slotToUTCISO } from '../utils/timezone';
 import { isValidUUID, CANONICAL_FALLBACK_UUIDS } from '../utils/uuid';
+import {
+  validateServiceArea,
+  SERVICE_UNAVAILABLE_MESSAGE,
+  FAISALABAD_CENTER,
+} from '../config/serviceArea.config';
 
 export function useCreateBooking() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -76,8 +81,16 @@ export function useCreateBooking() {
       ? `${address.street}${address.city ? ', ' + address.city : ''}`
       : 'Delivery Address';
 
-    const lat = address?.latitude || currentLocation?.lat || 31.5204;
-    const lng = address?.longitude || currentLocation?.lng || 74.3587;
+    const lat = address?.latitude || currentLocation?.lat || FAISALABAD_CENTER.lat;
+    const lng = address?.longitude || currentLocation?.lng || FAISALABAD_CENTER.lng;
+
+    // Validate that the delivery destination is inside the active service area (Faisalabad)
+    const serviceValidation = validateServiceArea({ lat, lng });
+    if (!serviceValidation.isServiceable) {
+      const err = SERVICE_UNAVAILABLE_MESSAGE;
+      setError(err);
+      return { booking: null, error: err };
+    }
 
     // Resolve address_id: Ensure it is always a valid server-side UUID
     let resolvedAddressId: string = CANONICAL_FALLBACK_UUIDS.ADDRESS_HOME;
@@ -92,7 +105,7 @@ export function useCreateBooking() {
         const createdAddr = await userApi.createAddress({
           label: address?.label || 'Home',
           address_line: addrText,
-          city: address?.city || 'Lahore',
+          city: address?.city || 'Faisalabad',
           country: 'Pakistan',
           lat,
           lng,
@@ -105,7 +118,7 @@ export function useCreateBooking() {
             id: createdAddr.id,
             label: createdAddr.label || 'Home',
             street: createdAddr.address_line,
-            city: createdAddr.city || 'Lahore',
+            city: createdAddr.city || 'Faisalabad',
             latitude: createdAddr.lat,
             longitude: createdAddr.lng,
             isDefault: Boolean(createdAddr.is_default),

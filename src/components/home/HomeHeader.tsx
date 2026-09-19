@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { MapPin, ChevronDown } from 'lucide-react-native';
 import { Image } from 'expo-image';
@@ -22,22 +22,62 @@ export const HomeHeader = () => {
   const user = profileUser || authUser;
   const avatarUrl = user?.avatar_url || (user as any)?.avatarUrl;
 
-  const { cityName, isLocating } = useLocation();
+  const { cityName, isLocating, locationMode, selectedAddress, location } = useLocation();
+  const currentLocation = useLocationStore((state) => state.currentLocation);
   const currentStoreCity = useLocationStore((state) => state.currentCity);
   const { addresses } = useAddresses();
 
   const sheetRef = useRef<LocationSelectSheetRef>(null);
   const [imageError, setImageError] = useState(false);
 
-  // Dynamic real address resolution — purely data-driven, zero hardcoded strings
+  // Dynamic address / GPS resolution respecting user selection
   const defaultAddress = addresses?.find((a) => a.is_default) || addresses?.[0];
   const savedAddressLine = defaultAddress?.address_line || defaultAddress?.city;
 
-  const displayLocation =
-    (cityName && cityName !== 'Your area' && cityName !== 'Current Area' ? cityName : null) ||
-    (currentStoreCity && currentStoreCity !== 'Your area' && currentStoreCity !== 'Current Area' ? currentStoreCity : null) ||
-    savedAddressLine ||
-    (isLocating ? 'Locating...' : 'Select location');
+  const displayLocation = (() => {
+    // 1. Explicit address mode with a selected address
+    if (locationMode === 'address' && selectedAddress) {
+      return (
+        selectedAddress.custom_label ||
+        selectedAddress.label ||
+        selectedAddress.address_line ||
+        selectedAddress.city ||
+        'Saved Address'
+      );
+    }
+
+    // 2. GPS Location successfully resolved: persist and keep showing city name or "Current Location" without flickering
+    if (currentLocation || location) {
+      const validCity =
+        cityName &&
+        cityName !== 'Your area' &&
+        cityName !== 'Current Area' &&
+        cityName !== 'Locating...' &&
+        cityName !== 'Select location'
+          ? cityName
+          : currentStoreCity &&
+            currentStoreCity !== 'Your area' &&
+            currentStoreCity !== 'Current Area' &&
+            currentStoreCity !== 'Locating...'
+          ? currentStoreCity
+          : null;
+
+      return validCity || 'Current Location';
+    }
+
+    // 3. Initial locating state (only when location has never been resolved yet)
+    if (isLocating) {
+      return 'Locating...';
+    }
+
+    // 4. Default saved address fallback (e.g. permission denied)
+    if (savedAddressLine) {
+      return savedAddressLine;
+    }
+
+    // 5. Default unresolved fallback
+    return 'Select location';
+  })();
 
   const handleLocationPress = () => {
     sheetRef.current?.open();
@@ -56,7 +96,7 @@ export const HomeHeader = () => {
     return name.slice(0, 2).toUpperCase();
   };
 
-  if (isLocating && !cityName && !currentStoreCity && !savedAddressLine) {
+  if (isLocating && !currentLocation && !location && !cityName && !currentStoreCity && !savedAddressLine) {
     return <SkeletonHomeHeader />;
   }
 

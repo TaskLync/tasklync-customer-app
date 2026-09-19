@@ -52,9 +52,3 @@ export interface AddCardDTO {
   saveForFuture?: boolean;
   isDefault?: boolean;
 }
-
-export interface CreateSetupIntentResponse {
-  client_secret: string;
-  customer_id?: string;
-  setup_intent_id?: string;
-}

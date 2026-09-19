@@ -299,8 +299,8 @@ export const bookingApi = {
         address_id: b.address_id || b.addressId || '',
         address_text: b.address_text || b.addressText || b.address || '',
         job_site_location: b.job_site_location || {
-          lat: Number(b.latitude || b.lat || 31.5204),
-          lng: Number(b.longitude || b.lng || 74.3587),
+          lat: Number(b.latitude || b.lat || 31.4187),
+          lng: Number(b.longitude || b.lng || 73.0791),
         },
         base_price: Number(b.base_price || b.basePrice || b.estimated_total || 500),
         urgency_multiplier: Number(b.urgency_multiplier || 1),
@@ -380,8 +380,8 @@ export const bookingApi = {
           address_id: raw.address_id || raw.addressId || '',
           address_text: raw.address_text || raw.addressText || raw.address || '',
           job_site_location: raw.job_site_location || {
-            lat: Number(raw.latitude || raw.lat || 31.5204),
-            lng: Number(raw.longitude || raw.lng || 74.3587),
+            lat: Number(raw.latitude || raw.lat || 31.4187),
+            lng: Number(raw.longitude || raw.lng || 73.0791),
           },
           base_price: Number(raw.base_price || raw.basePrice || raw.estimated_total || 500),
           urgency_multiplier: Number(raw.urgency_multiplier || 1),

@@ -2,6 +2,7 @@ import { socketService } from './socket.service';
 
 export interface SendMessageSocketPayload {
   bookingId: string;
+  roomId?: string | undefined;
   type: 'text' | 'image' | 'location';
   content: string;
   mediaUrl?: string | undefined;
@@ -20,14 +21,14 @@ export interface SendMessageSocketPayload {
  *    errors (400) from unexpected event names.
  */
 export const chatSocket = {
-  /** 3.2.1 — Join the room channel for a booking. */
-  joinRoom: (bookingId: string) => {
-    socketService.emit('join_room', { bookingId });
+  /** 3.2.1 — Join the room channel for a booking or persistent room. */
+  joinRoom: (bookingId: string, roomId?: string) => {
+    socketService.emit('join_room', { bookingId, ...(roomId ? { roomId } : {}) });
   },
 
   /** 3.2.2 — Leave the room channel when the user navigates away. */
-  leaveRoom: (bookingId: string) => {
-    socketService.emit('leave_room', { bookingId });
+  leaveRoom: (bookingId: string, roomId?: string) => {
+    socketService.emit('leave_room', { bookingId, ...(roomId ? { roomId } : {}) });
   },
 
   /** 3.2.3 — Send a message (text / image / location). */

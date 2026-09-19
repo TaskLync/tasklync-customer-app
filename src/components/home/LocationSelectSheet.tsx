@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -21,10 +22,13 @@ import { BottomSheet, BottomSheetRef } from '../layout/BottomSheet/BottomSheet';
 import { DefaultAddressBadge } from '../address/DefaultAddressBadge';
 import { useAddresses } from '../../hooks/useAddresses';
 import { useLocation } from '../../hooks/useLocation';
-import { useLocationStore } from '../../store/location.store';
 import { Address } from '../../types/address.types';
 import { labelToIcon } from '../../utils/address';
 import { colors, palette, fontFamily, radius } from '../../design';
+import {
+  validateServiceArea,
+  SERVICE_UNAVAILABLE_MESSAGE,
+} from '../../config/serviceArea.config';
 
 export interface LocationSelectSheetRef {
   open: () => void;
@@ -40,14 +44,21 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
     const bottomSheetRef = useRef<BottomSheetRef>(null);
     const router = useRouter();
 
-    const { cityName, isLocating, refreshLocation } = useLocation();
-    const { addresses, isLoading: isAddressesLoading, setDefaultAddress } = useAddresses();
     const {
-      currentLocation,
-      currentCity,
-      setCurrentLocation,
-      setCurrentCity,
-    } = useLocationStore();
+      cityName,
+      locationMode,
+      selectedAddress,
+      isLocating,
+      refreshLocation,
+      selectAddress,
+      requestLocation,
+      openSettings,
+      isPermissionGranted,
+      isServicesEnabled,
+    } = useLocation({ autoFetch: false });
+
+    const { addresses, isLoading: isAddressesLoading, setDefaultAddress } = useAddresses();
+    const [isSwitchingGPS, setIsSwitchingGPS] = useState(false);
 
     useImperativeHandle(ref, () => ({
       open: () => {
@@ -64,27 +75,74 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
 
     // 1. Use Current GPS Location
     const handleSelectCurrentGPS = async () => {
+      setIsSwitchingGPS(true);
+
       try {
-        await refreshLocation();
+        if (!isPermissionGranted) {
+          const permResult = await requestLocation();
+          if (!permResult.granted) {
+            setIsSwitchingGPS(false);
+            if (!permResult.canAskAgain) {
+              Alert.alert(
+                'Location Permission Denied',
+                'Tasklync needs location permission to show workers near you. Please enable it in Settings.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Open Settings', onPress: openSettings },
+                ]
+              );
+            }
+            return;
+          }
+        }
+
+        if (!isServicesEnabled) {
+          Alert.alert(
+            'GPS Disabled',
+            'Your device location services are turned off. Please turn on GPS in your device settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: openSettings },
+            ]
+          );
+          setIsSwitchingGPS(false);
+          return;
+        }
+
+        const freshCoords = await refreshLocation();
+        if (freshCoords) {
+          const validation = validateServiceArea(freshCoords);
+          if (!validation.isServiceable) {
+            Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+            setIsSwitchingGPS(false);
+            return;
+          }
+        }
+
+        if (onLocationSelected && cityName) {
+          onLocationSelected(cityName);
+        }
+        handleClose();
       } catch (_e) {
-        // Fallback handled safely inside useLocation
+        // Fallback handled safely inside refreshLocation
+      } finally {
+        setIsSwitchingGPS(false);
       }
-      handleClose();
     };
 
     // 2. Select a Saved Address
     const handleSelectAddress = async (addr: Address) => {
       if (!addr) return;
 
-      const targetCity = addr.city || addr.address_line || 'Lahore';
-      const lat = Number(addr.lat);
-      const lng = Number(addr.lng);
-
-      if (!isNaN(lat) && !isNaN(lng)) {
-        setCurrentLocation({ lat, lng });
+      const validation = validateServiceArea({ lat: addr.lat, lng: addr.lng });
+      if (!validation.isServiceable) {
+        Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+        return;
       }
-      setCurrentCity(targetCity);
 
+      selectAddress(addr);
+
+      const targetCity = addr.city || addr.address_line || 'Faisalabad';
       if (onLocationSelected) {
         onLocationSelected(targetCity);
       }
@@ -94,14 +152,14 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
         try {
           await setDefaultAddress(addr.id);
         } catch (_e) {
-          // Optimistic update handled inside hook
+          // Handled inside hook
         }
       }
 
       handleClose();
     };
 
-    // 3. Add New Address Navigation (Delayed 120ms to allow native Android Modal animation to complete)
+    // 3. Add New Address Navigation (Delayed for smooth sheet close)
     const handleAddNewAddress = () => {
       handleClose();
       setTimeout(() => {
@@ -112,7 +170,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
       }, 120);
     };
 
-    // 4. Manage Addresses Navigation (Delayed 120ms for Android Modal stability)
+    // 4. Manage Addresses Navigation
     const handleManageAddresses = () => {
       handleClose();
       setTimeout(() => {
@@ -120,36 +178,18 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
       }, 120);
     };
 
-    // Helper to determine if an address is currently active (null-safe)
     const isAddressActive = (addr: Address): boolean => {
       if (!addr) return false;
-      if (addr.is_default) return true;
-      if (
-        typeof currentCity === 'string' &&
-        typeof addr.city === 'string' &&
-        currentCity.trim().toLowerCase() === addr.city.trim().toLowerCase()
-      ) {
-        return true;
+      if (locationMode === 'address' && selectedAddress?.id && addr.id) {
+        return selectedAddress.id === addr.id;
       }
-      if (
-        currentLocation &&
-        typeof currentLocation.lat === 'number' &&
-        typeof currentLocation.lng === 'number' &&
-        addr.lat != null &&
-        addr.lng != null
-      ) {
-        const addrLat = Number(addr.lat);
-        const addrLng = Number(addr.lng);
-        if (!isNaN(addrLat) && !isNaN(addrLng)) {
-          const isCoordsMatch =
-            Math.abs(addrLat - currentLocation.lat) < 0.0001 &&
-            Math.abs(addrLng - currentLocation.lng) < 0.0001;
-          if (isCoordsMatch) return true;
-        }
+      if (locationMode === 'gps') {
+        return false;
       }
-      return false;
+      return Boolean(addr.is_default);
     };
 
+    const isGPSActive = locationMode === 'gps';
     const safeAddressList = Array.isArray(addresses) ? addresses : [];
 
     return (
@@ -186,26 +226,48 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
             <Pressable
               style={({ pressed }) => [
                 styles.actionRow,
+                isGPSActive && styles.actionRowActive,
                 pressed && styles.actionRowPressed,
               ]}
               onPress={handleSelectCurrentGPS}
+              disabled={isSwitchingGPS}
               accessibilityRole="button"
               accessibilityLabel="Use current GPS location"
             >
-              <View style={[styles.iconCircle, { backgroundColor: colors.primaryTint }]}>
-                {isLocating ? (
+              <View
+                style={[
+                  styles.iconCircle,
+                  { backgroundColor: isGPSActive ? colors.primaryTint : palette.green50 },
+                ]}
+              >
+                {isLocating || isSwitchingGPS ? (
                   <ActivityIndicator size="small" color={colors.primary} />
                 ) : (
                   <Navigation size={18} color={colors.primary} strokeWidth={2.4} />
                 )}
               </View>
               <View style={styles.actionTextWrap}>
-                <Text style={styles.actionTitle}>Use Current Location</Text>
+                <View style={styles.actionTitleRow}>
+                  <Text style={[styles.actionTitle, isGPSActive && styles.actionTitleActive]}>
+                    Use Current Location
+                  </Text>
+                  {isGPSActive && (
+                    <View style={styles.activeTag}>
+                      <Text style={styles.activeTagText}>Active</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={styles.actionSubtitle} numberOfLines={1}>
                   {cityName ? `${cityName} • GPS` : 'Detect using GPS location'}
                 </Text>
               </View>
-              <ChevronRight size={18} color={colors.textMuted} />
+              {isGPSActive ? (
+                <View style={styles.checkBadge}>
+                  <Check size={14} color={colors.primaryDark} strokeWidth={2.8} />
+                </View>
+              ) : (
+                <ChevronRight size={18} color={colors.textMuted} />
+              )}
             </Pressable>
 
             {/* Saved Addresses Section */}
@@ -400,9 +462,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: palette.white,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: palette.gray200,
     marginBottom: 12,
+  },
+  actionRowActive: {
+    borderColor: colors.primary,
+    backgroundColor: palette.green50 || '#F0FDF4',
   },
   actionRowPressed: {
     backgroundColor: colors.bgInput,
@@ -421,10 +487,29 @@ const styles = StyleSheet.create({
   actionTextWrap: {
     flex: 1,
   },
+  actionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   actionTitle: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 14,
     color: colors.textPrimary,
+  },
+  actionTitleActive: {
+    color: colors.primaryDark,
+  },
+  activeTag: {
+    backgroundColor: colors.primaryTint,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  activeTagText: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 10,
+    color: colors.primaryDark,
   },
   actionSubtitle: {
     fontFamily: fontFamily.jakarta.regular,

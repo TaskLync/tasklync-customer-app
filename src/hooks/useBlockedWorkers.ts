@@ -7,25 +7,6 @@ import { BlockedWorker } from '../types/moderation.types';
 const storage = createMMKV({ id: 'tasklync_moderation_storage' });
 const BLOCKED_WORKERS_KEY = 'blocked_workers_cache';
 
-const INITIAL_MOCK_BLOCKED_WORKERS: BlockedWorker[] = [
-  {
-    id: 'block-1',
-    worker_id: 'w-901',
-    name: 'Nadeem Abbas',
-    category: 'Electrician',
-    blocked_at: '2026-01-12T14:30:00Z',
-    reason: 'Unprofessional',
-  },
-  {
-    id: 'block-2',
-    worker_id: 'w-902',
-    name: 'Irfan Haider',
-    category: 'Plumber',
-    blocked_at: '2025-11-28T10:15:00Z',
-    reason: 'Poor quality work',
-  },
-];
-
 export function useBlockedWorkers() {
   const queryClient = useQueryClient();
   const [toastUndoVisible, setToastUndoVisible] = useState<boolean>(false);
@@ -36,7 +17,7 @@ export function useBlockedWorkers() {
       const cached = storage.getString(BLOCKED_WORKERS_KEY);
       if (cached) return JSON.parse(cached);
     } catch (_e) {}
-    return INITIAL_MOCK_BLOCKED_WORKERS;
+    return [];
   };
 
   const { data: blockedWorkers = getCachedBlocked(), isLoading } = useQuery<BlockedWorker[]>({

@@ -26,13 +26,13 @@ import { useBookingDraftStore } from '../../../src/store/bookingDraft.store';
 
 import { Address, PlacePrediction, MapRegion } from '../../../src/types/address.types';
 import { colors, palette, radius, shadows } from '../../../src/design';
+import {
+  validateServiceArea,
+  SERVICE_UNAVAILABLE_MESSAGE,
+  FAISALABAD_DEFAULT_REGION,
+} from '../../../src/config/serviceArea.config';
 
-const DEFAULT_REGION: MapRegion = {
-  latitude: 31.5204, // Lahore default center
-  longitude: 74.3587,
-  latitudeDelta: 0.008,
-  longitudeDelta: 0.008,
-};
+const DEFAULT_REGION: MapRegion = FAISALABAD_DEFAULT_REGION;
 
 /**
  * Screen 2 — Add / Edit Address Map Picker (`addresses/add.tsx`)
@@ -61,7 +61,10 @@ export default function AddEditAddressScreen() {
   const { addresses, addAddress, updateAddress, deleteAddress, isAdding, isUpdating } =
     useAddresses();
   const { fetchLocation, isFetching: isFetchingGPS } = useCurrentLocation();
-  const lastPickedCoords = useLocationStore((s) => s.lastPickedCoords);
+  const currentLocation = useLocationStore((s) => s.currentLocation);
+  const selectedAddress = useLocationStore((s) => s.selectedAddress);
+  const setSelectedAddress = useLocationStore((s) => s.setSelectedAddress);
+  const setCurrentCity = useLocationStore((s) => s.setCurrentCity);
   const setLastPickedCoords = useLocationStore((s) => s.setLastPickedCoords);
   const setBookingAddress = useBookingDraftStore((s) => s.setAddress);
 
@@ -75,6 +78,7 @@ export default function AddEditAddressScreen() {
     isLoading: isGeocoding,
     errorMessage: geocodeError,
     triggerGeocode,
+    fetchImmediately,
     setResult: setGeocodeResult,
   } = useReverseGeocode({ debounceMs: 500 });
 
@@ -84,6 +88,7 @@ export default function AddEditAddressScreen() {
     setQuery,
     predictions,
     isLoading: isSearching,
+    isError: isSearchError,
     recentSearches,
     selectPlace,
     clearRecentSearches,
@@ -94,6 +99,9 @@ export default function AddEditAddressScreen() {
   const existingAddress: Address | undefined = isEditMode
     ? addresses.find((a) => a.id === editingAddressId)
     : undefined;
+
+  // Track if user has manually interacted with the map or search before auto-GPS arrives
+  const userInteractedRef = useRef<boolean>(false);
 
   // Initial region setup (run once on mount)
   const hasInitializedRef = useRef(false);
@@ -111,30 +119,101 @@ export default function AddEditAddressScreen() {
       };
       setCurrentRegion(editRegion);
       mapRef.current?.animateToRegion(editRegion, 300);
+      setLastPickedCoords({ lat: existingAddress.lat, lng: existingAddress.lng });
       setGeocodeResult({
         formatted_address: existingAddress.address_line,
         address_line: existingAddress.address_line,
-        city: existingAddress.city || 'Lahore',
+        city: existingAddress.city || 'Faisalabad',
         country: existingAddress.country || 'Pakistan',
         lat: existingAddress.lat,
         lng: existingAddress.lng,
       });
-    } else if (lastPickedCoords) {
-      const pickedRegion: MapRegion = {
-        latitude: lastPickedCoords.lat,
-        longitude: lastPickedCoords.lng,
-        latitudeDelta: 0.008,
-        longitudeDelta: 0.008,
-      };
-      setCurrentRegion(pickedRegion);
-      triggerGeocode(lastPickedCoords.lat, lastPickedCoords.lng);
     } else {
-      triggerGeocode(DEFAULT_REGION.latitude, DEFAULT_REGION.longitude);
+      // For adding a new address:
+      // 1. Center immediately on existing serviceable store GPS or Faisalabad center
+      const hasValidStoreGPS =
+        currentLocation && validateServiceArea(currentLocation).isServiceable;
+      const initialLat = hasValidStoreGPS ? currentLocation.lat : DEFAULT_REGION.latitude;
+      const initialLng = hasValidStoreGPS ? currentLocation.lng : DEFAULT_REGION.longitude;
+      const initialRegion: MapRegion = {
+        latitude: initialLat,
+        longitude: initialLng,
+        latitudeDelta: 0.006,
+        longitudeDelta: 0.006,
+      };
+      setCurrentRegion(initialRegion);
+      mapRef.current?.animateToRegion(initialRegion, 300);
+      setLastPickedCoords({ lat: initialLat, lng: initialLng });
+      triggerGeocode(initialLat, initialLng);
+
+      // 2. Automatically request fresh, high-accuracy GPS coordinates on open
+      (async () => {
+        try {
+          const freshCoords = await fetchLocation();
+          // If the user already dragged the map or picked an address, respect user action
+          if (userInteractedRef.current) return;
+
+          if (freshCoords) {
+            const validation = validateServiceArea(freshCoords);
+            if (validation.isServiceable) {
+              const freshRegion: MapRegion = {
+                latitude: freshCoords.lat,
+                longitude: freshCoords.lng,
+                latitudeDelta: 0.006,
+                longitudeDelta: 0.006,
+              };
+              setCurrentRegion(freshRegion);
+              mapRef.current?.animateToRegion(freshRegion, 500);
+              setLastPickedCoords(freshCoords);
+              fetchImmediately(freshCoords.lat, freshCoords.lng);
+            } else {
+              Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+              const defaultRegion: MapRegion = {
+                latitude: DEFAULT_REGION.latitude,
+                longitude: DEFAULT_REGION.longitude,
+                latitudeDelta: 0.008,
+                longitudeDelta: 0.008,
+              };
+              setCurrentRegion(defaultRegion);
+              mapRef.current?.animateToRegion(defaultRegion, 400);
+              setLastPickedCoords({
+                lat: DEFAULT_REGION.latitude,
+                lng: DEFAULT_REGION.longitude,
+              });
+              fetchImmediately(DEFAULT_REGION.latitude, DEFAULT_REGION.longitude);
+            }
+          }
+        } catch (_e) {
+          // Gracefully fallback to initial region
+        }
+      })();
     }
-  }, [existingAddress, isEditMode, lastPickedCoords, setGeocodeResult, triggerGeocode]);
+  }, [
+    existingAddress,
+    isEditMode,
+    currentLocation,
+    fetchLocation,
+    fetchImmediately,
+    setGeocodeResult,
+    setLastPickedCoords,
+    triggerGeocode,
+  ]);
+
+  // Clean up transient picked coordinates on unmount
+  useEffect(() => {
+    return () => {
+      setLastPickedCoords(null);
+    };
+  }, [setLastPickedCoords]);
+
+  const handleRegionChange = useCallback(() => {
+    userInteractedRef.current = true;
+    Keyboard.dismiss();
+  }, []);
 
   const handleRegionChangeComplete = useCallback(
     (region: MapRegion) => {
+      userInteractedRef.current = true;
       setCurrentRegion(region);
       setLastPickedCoords({ lat: region.latitude, lng: region.longitude });
       triggerGeocode(region.latitude, region.longitude);
@@ -149,31 +228,54 @@ export default function AddEditAddressScreen() {
 
   // Autocomplete prediction selected
   const handleSelectPrediction = async (prediction: PlacePrediction) => {
+    userInteractedRef.current = true;
+    Keyboard.dismiss();
     const details = await selectPlace(prediction);
-    if (details) {
-      const targetRegion: MapRegion = {
-        latitude: details.lat,
-        longitude: details.lng,
-        latitudeDelta: 0.005,
-        longitudeDelta: 0.005,
-      };
-      setCurrentRegion(targetRegion);
-      mapRef.current?.animateToRegion(targetRegion, 400);
-      setLastPickedCoords({ lat: details.lat, lng: details.lng });
-      setGeocodeResult({
-        formatted_address: details.formatted_address,
-        address_line: details.formatted_address,
-        city: details.city || 'Lahore',
-        country: details.country || 'Pakistan',
-        lat: details.lat,
-        lng: details.lng,
-      });
+    if (!details) {
+      Alert.alert(
+        'Location Error',
+        'Could not determine location for this address. Please select directly on the map.'
+      );
       resetSearch();
+      return;
     }
+
+    const validation = validateServiceArea({ lat: details.lat, lng: details.lng });
+    if (!validation.isServiceable) {
+      Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      resetSearch();
+      return;
+    }
+
+    const targetRegion: MapRegion = {
+      latitude: details.lat,
+      longitude: details.lng,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
+    };
+    setCurrentRegion(targetRegion);
+    mapRef.current?.animateToRegion(targetRegion, 400);
+    setLastPickedCoords({ lat: details.lat, lng: details.lng });
+    setGeocodeResult({
+      formatted_address: details.formatted_address,
+      address_line: details.formatted_address,
+      city: details.city || 'Faisalabad',
+      country: details.country || 'Pakistan',
+      lat: details.lat,
+      lng: details.lng,
+    });
+    resetSearch();
   };
 
   // GPS Recenter Button
   const handleGPSLocationFound = (coords: { lat: number; lng: number }) => {
+    userInteractedRef.current = false;
+    const validation = validateServiceArea(coords);
+    if (!validation.isServiceable) {
+      Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      return;
+    }
+
     const gpsRegion: MapRegion = {
       latitude: coords.lat,
       longitude: coords.lng,
@@ -183,7 +285,7 @@ export default function AddEditAddressScreen() {
     setCurrentRegion(gpsRegion);
     mapRef.current?.animateToRegion(gpsRegion, 400);
     setLastPickedCoords(coords);
-    triggerGeocode(coords.lat, coords.lng);
+    fetchImmediately(coords.lat, coords.lng);
   };
 
   // Save / Update Address Handler
@@ -197,7 +299,15 @@ export default function AddEditAddressScreen() {
     lat: number;
     lng: number;
   }) => {
+    const validation = validateServiceArea({ lat: payload.lat, lng: payload.lng });
+    if (!validation.isServiceable) {
+      Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      return;
+    }
+
     try {
+      let savedAddressObj: Address;
+
       if (isEditMode && editingAddressId) {
         await updateAddress({
           id: editingAddressId,
@@ -212,6 +322,18 @@ export default function AddEditAddressScreen() {
             notes: payload.notes,
           },
         });
+
+        savedAddressObj = {
+          id: editingAddressId,
+          ...payload,
+          is_default: existingAddress?.is_default ?? false,
+        };
+
+        // If the edited address is the currently selected address, update it immediately in store
+        if (selectedAddress?.id === editingAddressId) {
+          setSelectedAddress(savedAddressObj);
+          setCurrentCity(payload.city);
+        }
       } else {
         const created = await addAddress({
           label: payload.label,
@@ -225,10 +347,16 @@ export default function AddEditAddressScreen() {
           is_default: addresses.length === 0,
         });
 
+        savedAddressObj = {
+          id: (created as any)?.id || `addr-${Date.now()}`,
+          ...payload,
+          is_default: addresses.length === 0,
+        };
+
         // Sync with booking draft store if returning to booking funnel
-        if (params.returnToBooking === 'true' && created) {
+        if (params.returnToBooking === 'true') {
           setBookingAddress({
-            id: (created as any).id,
+            id: savedAddressObj.id,
             label: payload.label,
             street: payload.address_line,
             city: payload.city,
@@ -237,8 +365,13 @@ export default function AddEditAddressScreen() {
             isDefault: addresses.length === 0,
           });
         }
+
+        // Set the newly created address as the active address immediately across the app
+        setSelectedAddress(savedAddressObj);
+        setCurrentCity(payload.city);
       }
 
+      setLastPickedCoords(null);
 
       // Smooth exit back to address list or booking
       setTimeout(() => {
@@ -256,6 +389,10 @@ export default function AddEditAddressScreen() {
     if (!editingAddressId) return;
     try {
       await deleteAddress(editingAddressId);
+      if (selectedAddress?.id === editingAddressId) {
+        setSelectedAddress(null);
+      }
+      setLastPickedCoords(null);
       router.back();
     } catch (_err) {
       Alert.alert('Error', "Couldn't delete address.");
@@ -272,6 +409,7 @@ export default function AddEditAddressScreen() {
       <AddressPickerMap
         ref={mapRef}
         initialRegion={currentRegion}
+        onRegionChange={handleRegionChange}
         onRegionChangeComplete={handleRegionChangeComplete}
       />
 
@@ -298,17 +436,20 @@ export default function AddEditAddressScreen() {
               onChangeText={setQuery}
               onClear={resetSearch}
               isLoading={isSearching}
+              placeholder="Search area, street, or landmark in Faisalabad..."
             />
           </View>
         </View>
 
         {/* Autocomplete & Recent Searches Dropdown */}
-        {(predictions.length > 0 || (query.length === 0 && recentSearches.length > 0)) && (
+        {(predictions.length > 0 || (query.trim().length === 0 && recentSearches.length > 0) || query.trim().length >= 2) && (
           <View style={styles.searchResultsContainer}>
             <AddressSearchResultsList
               predictions={predictions}
               recentSearches={recentSearches}
               query={query}
+              isLoading={isSearching}
+              isError={isSearchError}
               onSelectPrediction={handleSelectPrediction}
               onClearRecentSearches={clearRecentSearches}
             />
@@ -333,7 +474,7 @@ export default function AddEditAddressScreen() {
       {/* Bottom Confirmation Sheet */}
       <AddressConfirmSheet
         reverseGeocodeResult={geocodeResult}
-        isGeocoding={isGeocoding}
+        isGeocoding={isGeocoding || isFetchingGPS}
         geocodingError={geocodeError}
         savedAddresses={addresses}
         currentAddressId={editingAddressId}

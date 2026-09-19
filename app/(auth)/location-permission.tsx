@@ -1,16 +1,16 @@
-import React from 'react';
-import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { View, StyleSheet, Pressable, ScrollView, Alert, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MapPin, CheckCircle2 } from 'lucide-react-native';
-import * as Location from 'expo-location';
+import { MapPin, CheckCircle2, MapPinOff, X } from 'lucide-react-native';
 
 import { Screen } from '@components/layout/Screen';
 import { StickyFooter } from '@components/layout/StickyFooter';
 import { Text } from '@components/ui/Text';
 import { Button } from '@components/ui/Button';
-import { colors, fontFamily, radius } from '@design/index';
+import { colors, fontFamily, radius, palette, shadows, fontSize } from '@design/index';
 import { useLocationStore, useUIStore, useAuthStore } from '@store/index';
-import { extractCityOrAreaName, extractFullAddressLine } from '@utils/locationUtils';
+import { locationService } from '../../src/services/location/location.service';
+import { validateServiceArea, SERVICE_UNAVAILABLE_MESSAGE } from '../../src/config/serviceArea.config';
 
 const FEATURES = [
   'Find verified workers closest to you',
@@ -20,70 +20,108 @@ const FEATURES = [
 
 export default function LocationPermissionScreen() {
   const router = useRouter();
-  const setPermissionStatus = useLocationStore(state => state.setPermissionStatus);
-  const showToast = useUIStore(state => state.showToast);
-  const user = useAuthStore(state => state.user);
+  const setPermissionStatus = useLocationStore((state) => state.setPermissionStatus);
+  const setCurrentLocation = useLocationStore((state) => state.setCurrentLocation);
+  const setCurrentCity = useLocationStore((state) => state.setCurrentCity);
+  const setIsServicesEnabled = useLocationStore((state) => state.setIsServicesEnabled);
+  const showToast = useUIStore((state) => state.showToast);
+  const user = useAuthStore((state) => state.user);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
+
+  const navigateToHome = (withWelcome = true) => {
+    router.replace('/(tabs)/' as any);
+    if (withWelcome) {
+      showToast({ type: 'success', title: `Welcome, ${user?.name || 'there'}! 👋` });
+    }
+  };
 
   const handleAllow = async () => {
-    
+    if (isLoading) return;
+    setIsLoading(true);
+
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setPermissionStatus(status === 'granted' ? 'granted' : 'denied');
-      
-      if (status === 'granted') {
-        
-        // Fetch current position & trigger backend DB location persistence
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
+      // 1. Request permission
+      const permState = await locationService.requestPermission();
+      setPermissionStatus(
+        permState.status === 'granted' ? 'granted' : permState.status === 'denied' ? 'denied' : 'undetermined'
+      );
+      setIsServicesEnabled(permState.servicesEnabled);
 
-        const coords = {
-          lat: location.coords.latitude,
-          lng: location.coords.longitude,
-        };
+      // If user permanently blocked permission, guide them to settings
+      if (!permState.granted) {
+        if (!permState.canAskAgain) {
+          setIsLoading(false);
+          setShowBlockedModal(true);
+          return;
+        }
 
-        useLocationStore.getState().setCurrentLocation(coords);
-
-        Location.reverseGeocodeAsync({ latitude: coords.lat, longitude: coords.lng })
-          .then((geocode) => {
-            const place = geocode && geocode.length > 0 ? geocode[0] : undefined;
-            const cityName = extractCityOrAreaName(place);
-            const addressLine = extractFullAddressLine(place);
-            const countryName = place?.country || 'Pakistan';
-
-            useLocationStore.getState().setCurrentCity(cityName);
-            useLocationStore.getState().syncLocationToBackend(coords, addressLine, cityName, countryName);
-          })
-          .catch(() => {
-            useLocationStore.getState().syncLocationToBackend(
-              coords,
-              'Current GPS Location',
-              'Current Area',
-              'Pakistan'
-            );
-          });
+        // Just denied this time, proceed gracefully to home
+        setIsLoading(false);
+        navigateToHome(true);
+        return;
       }
 
-      router.replace('/(tabs)/' as any);
-      
-      if (status === 'granted') {
-        showToast({ type: 'success', title: `Welcome, ${user?.name || 'there'}! 👋` });
+      // 2. Hardware GPS disabled check
+      if (!permState.servicesEnabled) {
+        Alert.alert(
+          'Location Services Off',
+          'Your device location is turned off. Please turn on GPS in your device settings to detect nearby workers.',
+          [
+            { text: 'Later', style: 'cancel', onPress: () => navigateToHome(true) },
+            {
+              text: 'Open Settings',
+              onPress: () => {
+                locationService.openSettings();
+                navigateToHome(true);
+              },
+            },
+          ]
+        );
+        setIsLoading(false);
+        return;
       }
-    } catch (e) {
-      // If error occurs, still proceed, don't block
-      setPermissionStatus('undetermined');
-      router.replace('/(tabs)/' as any);
+
+      // 3. Acquire initial coordinates & geocode
+      const coords = await locationService.getCurrentPosition({
+        enableHighAccuracy: false,
+        timeoutMs: 6000,
+        useCacheFirst: false,
+      });
+
+      if (coords) {
+        const validation = validateServiceArea(coords);
+        if (!validation.isServiceable) {
+          setIsLoading(false);
+          Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+          return;
+        }
+
+        setCurrentLocation(coords);
+        const geo = await locationService.reverseGeocode(coords);
+        if (geo?.cityName) {
+          setCurrentCity(geo.cityName);
+        }
+      }
+
+      setIsLoading(false);
+      navigateToHome(true);
+    } catch (_err) {
+      setIsLoading(false);
+      navigateToHome(true);
     }
   };
 
   const handleNotNow = () => {
+    if (isLoading) return;
     setPermissionStatus('denied');
-    router.replace('/(tabs)/' as any);
+    navigateToHome(true);
   };
 
   return (
     <Screen bg="#FAFAFA" statusBarStyle="dark-content" edges={['top', 'bottom', 'left', 'right']}>
-      <ScrollView 
+      <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[styles.content, { paddingBottom: 140 }]}
         showsVerticalScrollIndicator={false}
@@ -117,10 +155,12 @@ export default function LocationPermissionScreen() {
           fullWidth
           onPress={handleAllow}
           style={styles.allowButton}
-          label="Allow Location"
+          disabled={isLoading}
+          label={isLoading ? 'Detecting Location...' : 'Allow Location'}
         />
-        <Pressable 
+        <Pressable
           onPress={handleNotNow}
+          disabled={isLoading}
           hitSlop={12}
           style={styles.notNowButton}
           accessibilityLabel="Skip location access for now"
@@ -128,6 +168,61 @@ export default function LocationPermissionScreen() {
           <Text style={styles.notNowText}>Not now</Text>
         </Pressable>
       </StickyFooter>
+
+      {/* Modal if permission was permanently denied */}
+      <Modal
+        visible={showBlockedModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowBlockedModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIconWrap}>
+                <MapPinOff size={24} color={palette.danger} strokeWidth={2.2} />
+              </View>
+              <Pressable
+                onPress={() => {
+                  setShowBlockedModal(false);
+                  navigateToHome(true);
+                }}
+                style={styles.closeBtn}
+                accessibilityLabel="Close"
+              >
+                <X size={20} color={palette.gray500} />
+              </Pressable>
+            </View>
+
+            <Text style={styles.modalTitle}>Location Permission Required</Text>
+            <Text style={styles.modalDescription}>
+              Location access is disabled in your device settings. To find workers near your doorstep, please enable location in Settings.
+            </Text>
+
+            <View style={styles.modalActions}>
+              <Pressable
+                onPress={() => {
+                  setShowBlockedModal(false);
+                  navigateToHome(true);
+                }}
+                style={styles.modalCancelBtn}
+              >
+                <Text style={styles.modalCancelText}>Continue without</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setShowBlockedModal(false);
+                  locationService.openSettings();
+                  navigateToHome(true);
+                }}
+                style={styles.modalSettingsBtn}
+              >
+                <Text style={styles.modalSettingsText}>Open Settings</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -192,5 +287,81 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.medium,
     fontSize: 14,
     color: colors.textMuted,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: palette.white,
+    borderRadius: 20,
+    padding: 20,
+    ...shadows.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  modalIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: palette.dangerLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtn: {
+    padding: 6,
+  },
+  modalTitle: {
+    fontFamily: fontFamily.poppins.semiBold,
+    fontSize: fontSize.h3,
+    lineHeight: 24,
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  modalDescription: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: fontSize.body2,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: radius.pill,
+    backgroundColor: palette.iceGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelText: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 13,
+    color: palette.gray700,
+  },
+  modalSettingsBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primaryDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalSettingsText: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 13,
+    color: palette.white,
   },
 });

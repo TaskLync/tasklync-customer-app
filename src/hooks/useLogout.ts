@@ -53,7 +53,7 @@ export function useLogout() {
       } catch (_e) {}
 
       try {
-        useLocationStore.getState().setLastSyncedLocation(null);
+        useLocationStore.getState().setSelectedAddress(null);
         useLocationStore.getState().setLastPickedCoords(null);
       } catch (_e) {}
 

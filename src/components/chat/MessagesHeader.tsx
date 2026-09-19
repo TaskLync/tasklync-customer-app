@@ -1,7 +1,7 @@
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NotificationBell } from '../home/NotificationBell';
-import { colors } from '../../design/colors';
 import { fontFamily } from '../../design/typography';
 
 interface MessagesHeaderProps {
@@ -12,18 +12,22 @@ export const MessagesHeader: React.FC<MessagesHeaderProps> = ({ totalUnreadCount
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 14) + 6 }]}>
       <View style={styles.titleRow}>
-        <Text style={styles.title}>Messages</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={1.2}>
+          Messages
+        </Text>
         {totalUnreadCount > 0 && (
-          <View style={styles.unreadPill}>
-            <Text style={styles.unreadPillText}>
-              {totalUnreadCount} new
+          <View style={styles.unreadBadge}>
+            <Text style={styles.unreadBadgeText}>
+              {totalUnreadCount}
             </Text>
           </View>
         )}
       </View>
-      <NotificationBell />
+      <View style={styles.actionWrap}>
+        <NotificationBell size={38} iconSize={20} />
+      </View>
     </View>
   );
 };
@@ -34,31 +38,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 14,
+    paddingBottom: 12,
     backgroundColor: '#FFFFFF',
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   title: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: 24,
+    fontFamily: fontFamily.jakarta.bold,
+    fontSize: 28,
+    lineHeight: 34,
     color: '#0F172A',
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
-  unreadPill: {
-    backgroundColor: colors.primaryTint,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 12,
+  unreadBadge: {
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    borderColor: '#DCFCE7',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  unreadPillText: {
-    fontFamily: fontFamily.jakarta.semiBold,
+  unreadBadgeText: {
+    fontFamily: fontFamily.jakarta.bold,
     fontSize: 12,
-    color: colors.primaryDark,
+    color: '#16A34A',
+  },
+  actionWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

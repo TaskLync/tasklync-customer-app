@@ -168,7 +168,13 @@ export function useConversations() {
 
           const isOverriddenRead = !!readOverrides[room.booking_id];
           const storedUnread = useChatUnreadStore.getState().unreadByBooking[room.booking_id] || 0;
-          const unreadCount = isOverriddenRead ? 0 : Math.max(storedUnread, room.unread ? 1 : 0);
+          const unreadCount = isOverriddenRead
+            ? 0
+            : Math.max(
+                storedUnread,
+                typeof (room as any).unread_count === 'number' ? Number((room as any).unread_count) : 0,
+                room.unread ? 1 : 0
+              );
 
           items.push({
             id: room.id || `room_${room.booking_id}`,
@@ -200,9 +206,9 @@ export function useConversations() {
         // 5. Process user's confirmed bookings
         allBookingsMap.forEach((booking, bId) => {
           if (processedBookingIds.has(bId)) return;
-          processedBookingIds.add(bId);
-
           const workerId = booking.worker_id;
+          if (workerId && processedWorkerIds.has(workerId)) return;
+          processedBookingIds.add(bId);
           if (workerId) processedWorkerIds.add(workerId);
 
           const cachedWorker = workerId ? workerProfileMemoryCache.get(workerId) : null;

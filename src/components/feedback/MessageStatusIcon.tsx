@@ -13,8 +13,8 @@ export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed'
 
 interface MessageStatusIconProps {
   status: MessageStatus;
-  size?: number;
-  colorOverride?: string;
+  size?: number | undefined;
+  colorOverride?: string | undefined;
 }
 
 const ICON_SIZE = NETWORK_CONFIG.MESSAGE_STATUS_ICON_SIZE; // 12px

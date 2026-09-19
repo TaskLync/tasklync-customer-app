@@ -1,7 +1,7 @@
 import { forwardRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { BottomSheet, BottomSheetRef } from '../layout/BottomSheet/BottomSheet';
-import { StripeCardForm } from './StripeCardForm';
+import { CardInputForm } from './CardInputForm';
 import { SaveCardCheckbox } from './SaveCardCheckbox';
 import { colors, palette, fontFamily } from '../../design';
 
@@ -51,7 +51,7 @@ export const AddCardBottomSheet = forwardRef<BottomSheetRef, AddCardBottomSheetP
         </View>
 
         {/* Card Form */}
-        <StripeCardForm onCardChange={handleFormChange} />
+        <CardInputForm onCardChange={handleFormChange} />
 
         {/* Save Card Checkbox */}
         <SaveCardCheckbox checked={saveCard} onToggle={setSaveCard} />

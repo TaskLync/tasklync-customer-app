@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, Text, Pressable, FlatList, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
@@ -17,90 +17,6 @@ import { colors } from '../../design/colors';
 
 const CARD_GAP = 14;
 
-// High-fidelity fallback workers for seedless / local development environments
-const FALLBACK_NEARBY_WORKERS: WorkerNearby[] = [
-  {
-    id: 'w1',
-    name: 'Ahmed Khan',
-    avatarUrl: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&auto=format&fit=crop&q=80',
-    avgRating: 4.9,
-    totalReviews: 124,
-    currency: 'PKR',
-    distanceMeters: 1200,
-    distanceLabel: '1.2 km away',
-    categories: ['Electrician', 'AC Repair'],
-    availabilityStatus: 'AVAILABLE',
-    availableUntil: '18:00',
-    isOnJob: false,
-    responseTimeMins: 5,
-    startingPrice: 400,
-  },
-  {
-    id: 'w2',
-    name: 'Sarah Ali',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80',
-    avgRating: 4.8,
-    totalReviews: 89,
-    currency: 'PKR',
-    distanceMeters: 2300,
-    distanceLabel: '2.3 km away',
-    categories: ['Plumbing Specialist', 'Deep Cleaning'],
-    availabilityStatus: 'AVAILABLE',
-    availableUntil: '19:00',
-    isOnJob: false,
-    responseTimeMins: 12,
-    startingPrice: 1200,
-  },
-  {
-    id: 'w3',
-    name: 'Bilal Malik',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-    avgRating: 4.9,
-    totalReviews: 205,
-    currency: 'PKR',
-    distanceMeters: 3100,
-    distanceLabel: '3.1 km away',
-    categories: ['HVAC & Cooling', 'Electrician'],
-    availabilityStatus: 'AVAILABLE',
-    availableUntil: '19:00',
-    isOnJob: false,
-    responseTimeMins: 8,
-    startingPrice: 800,
-  },
-  {
-    id: 'w4',
-    name: 'Zainab Bibi',
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80',
-    avgRating: 4.7,
-    totalReviews: 54,
-    currency: 'PKR',
-    distanceMeters: 800,
-    distanceLabel: '800 m away',
-    categories: ['House Cleaning', 'Sanitization'],
-    availabilityStatus: 'AVAILABLE',
-    availableUntil: '20:00',
-    isOnJob: false,
-    responseTimeMins: 2,
-    startingPrice: 600,
-  },
-  {
-    id: 'w5',
-    name: 'Tariq Mahmood',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-    avgRating: 4.6,
-    totalReviews: 78,
-    currency: 'PKR',
-    distanceMeters: 1700,
-    distanceLabel: '1.7 km away',
-    categories: ['Master Painter', 'Waterproofing'],
-    availabilityStatus: 'AVAILABLE',
-    availableUntil: '17:00',
-    isOnJob: false,
-    responseTimeMins: 15,
-    startingPrice: 700,
-  },
-];
-
 export const NearbyWorkersList = () => {
   const router = useRouter();
   const { workers, isLoading, error, refetch } = useNearbyWorkers();
@@ -115,12 +31,12 @@ export const NearbyWorkersList = () => {
 
   const snapInterval = useMemo(() => cardWidth + CARD_GAP, [cardWidth]);
 
-  // Determine list items: use backend workers if returned; fallback to demo workers
+  // Real data only: zero demo/fallback mock workers
   const displayWorkers = useMemo(() => {
     if (workers && workers.length > 0) {
       return workers.slice(0, 10);
     }
-    return FALLBACK_NEARBY_WORKERS;
+    return [];
   }, [workers]);
 
   const opacityList = useSharedValue(0);

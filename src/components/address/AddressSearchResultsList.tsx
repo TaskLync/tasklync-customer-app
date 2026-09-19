@@ -5,8 +5,9 @@ import {
   Pressable,
   ScrollView,
   Keyboard,
+  ActivityIndicator,
 } from 'react-native';
-import { MapPin, History, Trash2 } from 'lucide-react-native';
+import { MapPin, History, Trash2, MapPinOff, AlertCircle } from 'lucide-react-native';
 import { PlacePrediction } from '../../types/address.types';
 import { colors, palette, fontFamily, radius, fontSize, shadows } from '../../design';
 
@@ -16,6 +17,8 @@ export interface AddressSearchResultsListProps {
   query: string;
   onSelectPrediction: (prediction: PlacePrediction) => void;
   onClearRecentSearches?: (() => void) | undefined;
+  isLoading?: boolean | undefined;
+  isError?: boolean | undefined;
 }
 
 export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> = ({
@@ -24,13 +27,18 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
   query,
   onSelectPrediction,
   onClearRecentSearches,
+  isLoading = false,
+  isError = false,
 }) => {
-  const isShowingRecents = query.trim().length === 0 && recentSearches.length > 0;
-  const itemsToRender = isShowingRecents ? recentSearches : predictions;
+  const cleanQuery = query.trim();
+  const isShowingRecents = cleanQuery.length === 0 && recentSearches.length > 0;
+  const isQueryActive = cleanQuery.length >= 2;
 
-  if (itemsToRender.length === 0) {
+  if (!isShowingRecents && !isQueryActive) {
     return null;
   }
+
+  const itemsToRender = isShowingRecents ? recentSearches : predictions;
 
   const handleSelect = (item: PlacePrediction) => {
     Keyboard.dismiss();
@@ -39,6 +47,37 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
 
   return (
     <View style={styles.card}>
+      {isLoading && isQueryActive && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.primaryDark} />
+          <Text style={styles.stateText} maxFontSizeMultiplier={1.3}>
+            Searching in Faisalabad...
+          </Text>
+        </View>
+      )}
+
+      {!isLoading && isError && isQueryActive && (
+        <View style={styles.errorContainer}>
+          <AlertCircle size={18} color={palette.danger} />
+          <Text style={styles.stateText} maxFontSizeMultiplier={1.3}>
+            Unable to search places. Please check your connection.
+          </Text>
+        </View>
+      )}
+
+      {!isLoading && !isError && isQueryActive && predictions.length === 0 && (
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconWrap}>
+            <MapPinOff size={20} color={palette.gray400} strokeWidth={2} />
+          </View>
+          <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.3}>
+            No addresses found in Faisalabad
+          </Text>
+          <Text style={styles.emptySubtext} maxFontSizeMultiplier={1.3}>
+            Try searching for a nearby area, street, or major landmark.
+          </Text>
+        </View>
+      )}
       {isShowingRecents && (
         <View style={styles.recentsHeader}>
           <View style={styles.recentsTitleRow}>
@@ -209,5 +248,55 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  stateText: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: fontSize.body2,
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+  },
+  emptyIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: palette.gray100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  emptyTitle: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: fontSize.caption,
+    lineHeight: 16,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });

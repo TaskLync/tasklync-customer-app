@@ -1,11 +1,10 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, Pressable, Platform } from 'react-native';
+import { StyleSheet, Text, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
-  runOnJS,
 } from 'react-native-reanimated';
 import { ArrowDown } from 'lucide-react-native';
 

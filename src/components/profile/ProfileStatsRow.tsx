@@ -1,19 +1,20 @@
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CheckCircle2, Star } from 'lucide-react-native';
 import { UserProfileStats } from '../../types/user.types';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { colors, fontFamily } from '../../design';
 
 export interface ProfileStatsRowProps {
   stats?: UserProfileStats | undefined;
 }
 
 /**
- * ProfileStatsRow Component (Day 35)
+ * ProfileStatsRow Component
  *
- * Implements Aesthetic-Usability Effect:
- * - 2 truthful stat cards (Bookings completed & Customer rating)
- * - Inter Bold for numbers (standardizing data typography)
- * - Jakarta Sans for labels
+ * Compact twin stat cards:
+ * - Real user data
+ * - Consistent 16px corner radius
+ * - Subtle border and micro-shadow
  */
 export const ProfileStatsRow: React.FC<ProfileStatsRowProps> = ({ stats }) => {
   const bookingsCount = stats?.bookings_count ?? stats?.completed_jobs ?? 0;
@@ -24,7 +25,7 @@ export const ProfileStatsRow: React.FC<ProfileStatsRowProps> = ({ stats }) => {
       {/* Stat 1: Completed Bookings */}
       <View style={styles.statCard}>
         <View style={styles.iconCircle}>
-          <CheckCircle2 size={18} color={colors.primaryDark} />
+          <CheckCircle2 size={18} color={colors.primaryDark} strokeWidth={2.2} />
         </View>
         <View style={styles.textCol}>
           <Text style={styles.statValue}>{bookingsCount}</Text>
@@ -35,7 +36,7 @@ export const ProfileStatsRow: React.FC<ProfileStatsRowProps> = ({ stats }) => {
       {/* Stat 2: Customer Rating */}
       <View style={styles.statCard}>
         <View style={[styles.iconCircle, styles.iconCircleRating]}>
-          <Star size={18} color="#D97706" fill="#F59E0B" />
+          <Star size={17} color="#D97706" fill="#F59E0B" strokeWidth={1.5} />
         </View>
         <View style={styles.textCol}>
           <View style={styles.ratingRow}>
@@ -52,30 +53,35 @@ export const ProfileStatsRow: React.FC<ProfileStatsRowProps> = ({ stats }) => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: spacing.sm + 2,
-    marginBottom: spacing.lg,
+    gap: 12,
+    marginBottom: 20,
   },
   statCard: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.md,
-    padding: spacing.md - 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.xs,
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   iconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: palette.green50,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#F0FDF4',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.sm + 2,
+    marginRight: 10,
     borderWidth: 1,
-    borderColor: palette.green200,
+    borderColor: '#DCFCE7',
   },
   iconCircleRating: {
     backgroundColor: '#FEF3C7',
@@ -90,19 +96,19 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   statValue: {
-    fontFamily: fontFamily.inter.bold,
-    fontSize: fontSize.h4,
-    color: colors.textPrimary,
+    fontFamily: fontFamily.jakarta.bold,
+    fontSize: 17,
+    color: '#0F172A',
   },
   ratingMax: {
-    fontFamily: fontFamily.inter.regular,
-    fontSize: fontSize.dataXS,
-    color: colors.textMuted,
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 12,
+    color: '#94A3B8',
   },
   statLabel: {
     fontFamily: fontFamily.jakarta.regular,
-    fontSize: fontSize.caption - 1,
-    color: colors.textMuted,
+    fontSize: 12,
+    color: '#64748B',
     marginTop: -1,
   },
 });

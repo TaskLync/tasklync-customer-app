@@ -1,133 +1,267 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import * as Location from 'expo-location';
 import { useLocationStore } from '../store/location.store';
-import { Coordinates } from '../types';
-import { extractCityOrAreaName, extractFullAddressLine } from '../utils/locationUtils';
+import { locationService, LocationPermissionState } from '../services/location/location.service';
+import { Coordinates } from '../types/location.types';
+import { Address } from '../types/address.types';
+import { validateServiceArea } from '../config/serviceArea.config';
 
-export const useLocation = () => {
-  const { 
-    permissionStatus, 
-    setPermissionStatus, 
-    currentLocation, 
-    setCurrentLocation, 
-    currentCity, 
-    setCurrentCity 
-  } = useLocationStore();
-  
-  const [isLocating, setIsLocating] = useState(false);
+export interface UseLocationOptions {
+  autoFetch?: boolean;
+  enableHighAccuracy?: boolean;
+}
 
-  const getCurrentPosition = async () => {
-    setIsLocating(true);
-    try {
-      // 1. Try to get last known location first (near-instant)
-      const lastKnown = await Location.getLastKnownPositionAsync();
-      if (lastKnown) {
-        const coords: Coordinates = {
-          lat: lastKnown.coords.latitude,
-          lng: lastKnown.coords.longitude,
-        };
-        setCurrentLocation(coords);
-        // Run reverse geocoding in background without awaiting, to keep it fast
-        reverseGeocode(coords);
+export const useLocation = (options?: UseLocationOptions) => {
+  const { autoFetch = true, enableHighAccuracy = false } = options || {};
+
+  // Fine-grained selectors prevent unnecessary re-renders across the tree
+  const permissionStatus = useLocationStore((s) => s.permissionStatus);
+  const isServicesEnabled = useLocationStore((s) => s.isServicesEnabled);
+  const currentLocation = useLocationStore((s) => s.currentLocation);
+  const currentCity = useLocationStore((s) => s.currentCity);
+  const locationMode = useLocationStore((s) => s.locationMode);
+  const selectedAddress = useLocationStore((s) => s.selectedAddress);
+  const isLocating = useLocationStore((s) => s.isLocating);
+
+  const [error, setError] = useState<string | null>(null);
+  const isFetchingRef = useRef(false);
+  const hasAutoFetchedRef = useRef(false);
+
+  /**
+   * Acquire fresh GPS position, perform reverse geocode, and update store
+   */
+  const getCurrentPosition = useCallback(
+    async (force = false): Promise<Coordinates | null> => {
+      const store = useLocationStore.getState();
+
+      if (isFetchingRef.current && !force) {
+        return store.currentLocation;
       }
 
-      // 2. Fetch fresh position
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      const coords: Coordinates = {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-      };
-
-      setCurrentLocation(coords);
-      await reverseGeocode(coords);
-    } catch (error) {
-      console.log('Error getting location', error);
-      if (!currentCity) {
-        setCurrentCity('Your area');
+      // Only show loading indicator if we don't already have a resolved position,
+      // or if the user explicitly triggered a forced refresh
+      const hasExistingLocation = Boolean(store.currentLocation);
+      if (!hasExistingLocation || force) {
+        store.setIsLocating(true);
       }
-    } finally {
-      setIsLocating(false);
-    }
-  };
 
-  const reverseGeocode = async (coords: Coordinates) => {
-    try {
-      const geocode = await Location.reverseGeocodeAsync({ latitude: coords.lat, longitude: coords.lng });
-      const place = geocode && geocode.length > 0 ? geocode[0] : undefined;
+      isFetchingRef.current = true;
+      setError(null);
 
-      const cityName = extractCityOrAreaName(place);
-      const addressLine = extractFullAddressLine(place);
-      const countryName = place?.country || 'Pakistan';
-
-      setCurrentCity(cityName);
-
-      // Enterprise Scalable Persistence: Sync coordinates & reverse geocoded address to user-service DB
-      useLocationStore.getState().syncLocationToBackend(coords, addressLine, cityName, countryName);
-    } catch (error) {
-      console.log('Error reverse geocoding', error);
-      const fallbackCity = currentCity || 'Current Area';
-      if (!currentCity) {
-        setCurrentCity(fallbackCity);
-      }
-      useLocationStore.getState().syncLocationToBackend(coords, 'Current GPS Location', fallbackCity, 'Pakistan');
-    }
-  };
-
-  const requestLocation = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    setPermissionStatus(status);
-    
-    if (status === 'granted') {
-      await getCurrentPosition();
-    }
-  };
-
-  useEffect(() => {
-    const checkPermissionAndLocation = async () => {
       try {
-        const { status } = await Location.getForegroundPermissionsAsync();
-        setPermissionStatus(status);
-        
-        if (status === 'granted') {
-          await getCurrentPosition();
-        } else {
-          if (!currentCity) {
-            setCurrentCity('Your area');
+        const state = await locationService.checkLocationState();
+        store.setPermissionStatus(
+          state.status === 'granted' ? 'granted' : state.status === 'denied' ? 'denied' : 'undetermined'
+        );
+        store.setIsServicesEnabled(state.servicesEnabled);
+
+        if (!state.servicesEnabled) {
+          setError('Location services are turned off on your device.');
+          store.setIsLocating(false);
+          isFetchingRef.current = false;
+          return store.currentLocation;
+        }
+
+        if (!state.granted) {
+          setError('Location permission has not been granted.');
+          store.setIsLocating(false);
+          isFetchingRef.current = false;
+          return store.currentLocation;
+        }
+
+        const coords = await locationService.getCurrentPosition({
+          enableHighAccuracy,
+          timeoutMs: 8000,
+          useCacheFirst: !force,
+        });
+
+        if (coords) {
+          store.setCurrentLocation(coords);
+
+          // Reverse geocode in background without blocking position acquisition
+          locationService
+            .reverseGeocode(coords)
+            .then((res) => {
+              const cityName = res?.cityName?.trim();
+              if (cityName && cityName !== 'Current Area' && cityName !== 'Your area') {
+                useLocationStore.getState().setCurrentCity(cityName);
+              } else if (!useLocationStore.getState().currentCity) {
+                useLocationStore.getState().setCurrentCity('Current Location');
+              }
+            })
+            .catch(() => {
+              if (!useLocationStore.getState().currentCity) {
+                useLocationStore.getState().setCurrentCity('Current Location');
+              }
+            });
+
+          return coords;
+        }
+
+        if (force) {
+          return null;
+        }
+        return store.currentLocation;
+      } catch (err: any) {
+        console.warn('[useLocation] Failed to fetch position:', err);
+        setError(err?.message || 'Failed to detect location');
+        if (force) {
+          return null;
+        }
+        return store.currentLocation;
+      } finally {
+        store.setIsLocating(false);
+        isFetchingRef.current = false;
+      }
+    },
+    [enableHighAccuracy]
+  );
+
+  /**
+   * Request permission and initiate location lock if granted
+   */
+  const requestLocation = useCallback(async (): Promise<LocationPermissionState> => {
+    const result = await locationService.requestPermission();
+    const store = useLocationStore.getState();
+    store.setPermissionStatus(
+      result.status === 'granted' ? 'granted' : result.status === 'denied' ? 'denied' : 'undetermined'
+    );
+    store.setIsServicesEnabled(result.servicesEnabled);
+
+    if (result.granted && result.servicesEnabled) {
+      await getCurrentPosition(true);
+    }
+
+    return result;
+  }, [getCurrentPosition]);
+
+  /**
+   * Switch to GPS mode and fetch fresh coordinates
+   */
+  const refreshLocation = useCallback(async (): Promise<Coordinates | null> => {
+    const store = useLocationStore.getState();
+    store.setLocationMode('gps');
+    store.setSelectedAddress(null);
+    return getCurrentPosition(true);
+  }, [getCurrentPosition]);
+
+  /**
+   * Select a saved delivery address (switches locationMode to 'address')
+   */
+  const selectAddress = useCallback(
+    (addr: Address) => {
+      const store = useLocationStore.getState();
+      store.setSelectedAddress(addr);
+      store.setLocationMode('address');
+      if (addr.city) {
+        store.setCurrentCity(addr.city);
+      }
+    },
+    []
+  );
+
+  // Derive active coordinates & label based on locationMode
+  const activeCoordinates: Coordinates | null =
+    locationMode === 'address' &&
+    selectedAddress &&
+    !isNaN(Number(selectedAddress.lat)) &&
+    !isNaN(Number(selectedAddress.lng))
+      ? { lat: Number(selectedAddress.lat), lng: Number(selectedAddress.lng) }
+      : currentLocation;
+
+  // Derive city and address labels with stable fallbacks to prevent flickering
+  const displayCity: string =
+    locationMode === 'address' && selectedAddress
+      ? selectedAddress.city || selectedAddress.address_line || 'Saved Address'
+      : currentCity && currentCity !== 'Current Area' && currentCity !== 'Your area'
+      ? currentCity
+      : currentLocation
+      ? 'Current Location'
+      : isLocating
+      ? 'Locating...'
+      : 'Select location';
+
+  const displayAddressLine: string =
+    locationMode === 'address' && selectedAddress
+      ? selectedAddress.address_line || selectedAddress.city || 'Saved Address'
+      : currentCity && currentCity !== 'Current Area' && currentCity !== 'Your area'
+      ? currentCity
+      : currentLocation
+      ? 'Current Location'
+      : isLocating
+      ? 'Locating...'
+      : 'Select location';
+
+  // Mount effect & AppState change listener
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkAndSync = async (isInitial = false) => {
+      if (!isMounted) return;
+      try {
+        const state = await locationService.checkLocationState();
+        if (!isMounted) return;
+
+        const store = useLocationStore.getState();
+        store.setPermissionStatus(
+          state.status === 'granted' ? 'granted' : state.status === 'denied' ? 'denied' : 'undetermined'
+        );
+        store.setIsServicesEnabled(state.servicesEnabled);
+
+        // Only auto-fetch GPS if mode is 'gps', autoFetch is enabled, and permission is granted
+        if (autoFetch && store.locationMode === 'gps' && state.granted && state.servicesEnabled) {
+          if (isInitial && !hasAutoFetchedRef.current) {
+            hasAutoFetchedRef.current = true;
+            await getCurrentPosition(false);
           }
         }
-      } catch (error) {
-        console.log('Error checking location permission', error);
-        if (!currentCity) {
-          setCurrentCity('Your area');
-        }
+      } catch (err) {
+        console.warn('[useLocation] Check error:', err);
       }
     };
 
-    // Check permission and fetch location immediately on mount
-    checkPermissionAndLocation();
+    checkAndSync(true);
 
-    // Subscribe to AppState changes (refetch when returning from settings/background)
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
-        checkPermissionAndLocation();
+        const store = useLocationStore.getState();
+        // Only re-check on foreground if permission was not granted or location is missing
+        if (store.locationMode === 'gps' && (store.permissionStatus !== 'granted' || !store.currentLocation)) {
+          checkAndSync(false);
+        }
       }
     });
 
     return () => {
+      isMounted = false;
       subscription.remove();
     };
-  }, []);
+  }, [autoFetch, getCurrentPosition]);
+
+  const serviceAreaValidation = activeCoordinates
+    ? validateServiceArea(activeCoordinates)
+    : null;
 
   return {
-    location: currentLocation,
-    cityName: currentCity || (isLocating ? 'Locating...' : 'Your area'),
+    location: activeCoordinates,
+    gpsLocation: currentLocation,
+    cityName: displayCity,
+    displayAddressLine,
+    locationMode,
+    selectedAddress,
     permissionStatus,
+    isPermissionGranted: permissionStatus === 'granted',
+    isPermissionDenied: permissionStatus === 'denied',
+    isServicesEnabled,
     isLocating,
+    isServiceable: serviceAreaValidation ? serviceAreaValidation.isServiceable : true,
+    serviceAreaValidation,
+    error,
+    getCurrentPosition,
     requestLocation,
-    refreshLocation: getCurrentPosition,
+    refreshLocation,
+    selectAddress,
+    openSettings: locationService.openSettings,
+    checkLocationState: locationService.checkLocationState,
   };
 };

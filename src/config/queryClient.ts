@@ -48,11 +48,10 @@ export const queryClient = new QueryClient({
 
 // ----------------------------------------------------
 // 3. Sensitive Key Allowlist / Exclusion Security Filter
-// Excludes payment secrets, stripe card tokens, or sensitive PII
+// Excludes payment secrets, card tokens, or sensitive PII
 // ----------------------------------------------------
 const SENSITIVE_QUERY_KEYS = [
   'payment',
-  'stripe',
   'card',
   'token',
   'secret',

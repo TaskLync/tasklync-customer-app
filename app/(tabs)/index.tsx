@@ -13,12 +13,14 @@ import { CustomRefreshControl } from '../../src/components/feedback/CustomRefres
 
 import { useCategories } from '../../src/hooks/useCategories';
 import { useNearbyWorkers } from '../../src/hooks/useNearbyWorkers';
+import { useLocation } from '../../src/hooks/useLocation';
 
 import { colors } from '../../src/design/colors';
 
 export default function HomeScreen() {
   const { refetch: refetchCategories } = useCategories();
   const { refetch: refetchWorkers } = useNearbyWorkers();
+  const { getCurrentPosition, locationMode } = useLocation({ autoFetch: false });
 
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
@@ -26,10 +28,14 @@ export default function HomeScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.allSettled([
+      const promises: Promise<any>[] = [
         refetchCategories(),
         refetchWorkers(),
-      ]);
+      ];
+      if (locationMode === 'gps') {
+        promises.push(getCurrentPosition(true));
+      }
+      await Promise.allSettled(promises);
     } catch (err) {
       // Absorb any unexpected errors so refreshing always terminates
     } finally {

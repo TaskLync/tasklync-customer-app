@@ -3,7 +3,6 @@ import {
   PaymentMethod,
   AddWalletDTO,
   AddCardDTO,
-  CreateSetupIntentResponse,
 } from '../../types/payment.types';
 import { generateUUID } from '../../utils/uuid';
 
@@ -24,7 +23,7 @@ export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
     title: 'JazzCash Wallet',
     subtitle: '0300 •••• 5678',
     account_number: '0300 •••• 5678',
-    holder_name: 'Uzair Ahmed',
+    holder_name: 'Customer Account',
     is_default: false,
   },
   {
@@ -34,12 +33,12 @@ export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
     title: 'EasyPaisa Wallet',
     subtitle: '0345 •••• 1234',
     account_number: '0345 •••• 1234',
-    holder_name: 'Uzair Ahmed',
+    holder_name: 'Customer Account',
     is_default: false,
   },
 ];
 
-export const stripeService = {
+export const paymentService = {
   /**
    * Fetch all saved payment methods (COD, JazzCash, EasyPaisa, Saved Cards)
    */
@@ -69,18 +68,6 @@ export const stripeService = {
       // Fallback to local default methods
     }
     return DEFAULT_PAYMENT_METHODS;
-  },
-
-  /**
-   * Create Setup Intent for Stripe card validation
-   */
-  createSetupIntent: async (): Promise<CreateSetupIntentResponse> => {
-    try {
-      const response = await apiClient.post<any>('/payments/setup-intent');
-      return response.data?.data || response.data || { client_secret: `seti_mock_${Date.now()}` };
-    } catch {
-      return { client_secret: `seti_mock_${Date.now()}` };
-    }
   },
 
   /**

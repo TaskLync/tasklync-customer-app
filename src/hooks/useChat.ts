@@ -8,6 +8,7 @@ import { useSocketEvent } from './useSocketEvent';
 import { useAuthStore } from '../store/auth.store';
 import { groupMessagesForInvertedList } from '../utils/messageGrouping';
 import { chatSoundService } from '../services/audio/chatSound.service';
+import { useChatUnreadStore } from '../store/chatUnread.store';
 
 export function useChat(bookingId: string) {
   // Synchronous initial hydration from local MMKV cache (0ms instant render)
@@ -27,6 +28,7 @@ export function useChat(bookingId: string) {
   const [uploadProgressMap, setUploadProgressMap] = useState<Record<string, number>>({});
 
   const currentUserId = useAuthStore((s) => s.user?.id || 'current-user');
+  const roomIdRef = useRef<string | undefined>(undefined);
   const pendingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const localImageUrisRef = useRef<Map<string, string>>(new Map());
@@ -41,6 +43,11 @@ export function useChat(bookingId: string) {
     try {
       const res = await chatApi.getMessages(bookingId, null, 50);
       const serverMessages = res.messages || [];
+
+      const foundRoomId = serverMessages.find((m) => m.room_id)?.room_id;
+      if (foundRoomId) {
+        roomIdRef.current = foundRoomId;
+      }
 
       setMessages((prev) => {
         const serverIds = new Set(serverMessages.map((m) => m.id));
@@ -68,18 +75,28 @@ export function useChat(bookingId: string) {
         }
       }
 
-      // Check room details for presence flag if available
+      // Check room details for presence flag and persistent room ID
       chatApi
         .getRoomDetails(bookingId)
         .then((room) => {
-          if (
-            room &&
-            ((room as any).is_online ||
+          if (room) {
+            if (room.id) {
+              roomIdRef.current = room.id;
+              if (room.id !== bookingId) {
+                chatSocket.joinRoom(room.id);
+              }
+            }
+            if (room.status === 'CLOSED') {
+              setIsRoomClosed(true);
+            }
+            if (
+              (room as any).is_online ||
               (room as any).worker_online ||
               (room as any).online ||
-              (room as any).counterparty_online)
-          ) {
-            setIsWorkerOnline(true);
+              (room as any).counterparty_online
+            ) {
+              setIsWorkerOnline(true);
+            }
           }
         })
         .catch(() => {});
@@ -101,16 +118,26 @@ export function useChat(bookingId: string) {
     if (!bookingId) return;
     if (AppState.currentState !== 'active') return;
     chatApi.markAsRead(bookingId);
+    useChatUnreadStore.getState().clearBookingUnread(bookingId);
+    if (roomIdRef.current) {
+      useChatUnreadStore.getState().clearBookingUnread(roomIdRef.current);
+    }
   }, [bookingId]);
 
   // 3. Socket Channel Lifecycle & Auto Re-join on Reconnection
   useEffect(() => {
     if (!bookingId) return;
     chatSocket.joinRoom(bookingId);
+    if (roomIdRef.current && roomIdRef.current !== bookingId) {
+      chatSocket.joinRoom(roomIdRef.current);
+    }
     markRead();
 
     const unsubscribeConnect = socketService.on('connect', () => {
       chatSocket.joinRoom(bookingId);
+      if (roomIdRef.current && roomIdRef.current !== bookingId) {
+        chatSocket.joinRoom(roomIdRef.current);
+      }
       loadHistory();
     });
 
@@ -122,6 +149,9 @@ export function useChat(bookingId: string) {
       clearInterval(heartbeatTimer);
       unsubscribeConnect();
       chatSocket.leaveRoom(bookingId);
+      if (roomIdRef.current && roomIdRef.current !== bookingId) {
+        chatSocket.leaveRoom(roomIdRef.current);
+      }
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       pendingTimeoutsRef.current.forEach((t) => clearTimeout(t));
       pendingTimeoutsRef.current.clear();
@@ -133,12 +163,25 @@ export function useChat(bookingId: string) {
     (data: any) => {
       if (!data) return;
 
+      const incomingBookingId = data.booking_id || data.bookingId;
+      const incomingRoomId = data.room_id || data.roomId;
+      const isMatch =
+        !incomingBookingId && !incomingRoomId
+          ? true
+          : incomingBookingId === bookingId ||
+            (roomIdRef.current && (incomingRoomId === roomIdRef.current || incomingBookingId === roomIdRef.current));
+      if (!isMatch) return;
+
+      if (incomingRoomId && !roomIdRef.current) {
+        roomIdRef.current = incomingRoomId;
+      }
+
       const echoedTempId: string | undefined = data.tempId || data.temp_id;
 
       const incoming: Message = {
         id: data.id || data._id || `msg_${Date.now()}`,
-        room_id: data.room_id || data.roomId,
-        booking_id: data.booking_id || data.bookingId || bookingId,
+        room_id: incomingRoomId || roomIdRef.current,
+        booking_id: incomingBookingId || bookingId,
         sender_id: data.sender_id || data.senderId || 'worker',
         sender_type: data.sender_type || data.senderType || 'worker',
         content: data.content || '',
@@ -235,10 +278,13 @@ export function useChat(bookingId: string) {
   // Real-time Typing Listener with Watchdog Auto-Reset & Presence Refresh
   const handleTypingEvent = useCallback(
     (data: any) => {
+      const incomingBookingId = data?.bookingId || data?.booking_id;
+      const incomingRoomId = data?.roomId || data?.room_id;
       const isCurrentBooking =
-        !data?.bookingId && !data?.booking_id
+        !incomingBookingId && !incomingRoomId
           ? true
-          : data?.bookingId === bookingId || data?.booking_id === bookingId;
+          : incomingBookingId === bookingId ||
+            (roomIdRef.current && (incomingRoomId === roomIdRef.current || incomingBookingId === roomIdRef.current));
 
       if (isCurrentBooking) {
         const isWorkerSender =
@@ -273,7 +319,7 @@ export function useChat(bookingId: string) {
     (data: any) => {
       if (!data) return true;
       const bId = data.bookingId || data.booking_id || data.roomId || data.room_id;
-      return !bId || bId === bookingId;
+      return !bId || bId === bookingId || (roomIdRef.current && bId === roomIdRef.current);
     },
     [bookingId]
   );
@@ -334,7 +380,15 @@ export function useChat(bookingId: string) {
   // Message Read Listener (Receipt from Counterparty indicates online)
   const handleMessageRead = useCallback(
     (data: any) => {
-      if (data?.bookingId && data.bookingId !== bookingId && data?.booking_id && data.booking_id !== bookingId) return;
+      const incomingBookingId = data?.bookingId || data?.booking_id;
+      const incomingRoomId = data?.roomId || data?.room_id;
+      const isMatch =
+        !incomingBookingId && !incomingRoomId
+          ? true
+          : incomingBookingId === bookingId ||
+            (roomIdRef.current && (incomingRoomId === roomIdRef.current || incomingBookingId === roomIdRef.current));
+      if (!isMatch) return;
+
       const readerId = data.readBy || data.read_by || data.readerId || data.reader_id;
 
       if (readerId && readerId !== currentUserId) {
@@ -371,7 +425,14 @@ export function useChat(bookingId: string) {
     'room_closed',
     useCallback(
       (data) => {
-        if (data?.bookingId === bookingId || data?.booking_id === bookingId) {
+        const incomingBookingId = data?.bookingId || data?.booking_id;
+        const incomingRoomId = data?.roomId || data?.room_id;
+        const isMatch =
+          !incomingBookingId && !incomingRoomId
+            ? true
+            : incomingBookingId === bookingId ||
+              (roomIdRef.current && (incomingRoomId === roomIdRef.current || incomingBookingId === roomIdRef.current));
+        if (isMatch) {
           setIsRoomClosed(true);
         }
       },
@@ -462,6 +523,7 @@ export function useChat(bookingId: string) {
 
         chatSocket.sendMessage({
           bookingId,
+          roomId: roomIdRef.current,
           type: type === 'system' ? 'text' : type,
           content: content.trim() || (type === 'image' ? 'Photo' : ''),
           mediaUrl: cdnMediaUrl,
@@ -539,6 +601,7 @@ export function useChat(bookingId: string) {
 
         chatSocket.sendMessage({
           bookingId,
+          roomId: roomIdRef.current,
           type: msg.type === 'system' ? 'text' : msg.type,
           content: msg.content,
           mediaUrl: cdnMediaUrl,

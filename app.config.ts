@@ -102,7 +102,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     apiBaseUrl: process.env.API_BASE_URL,
     googleMapsKey: GOOGLE_MAPS_API_KEY,
-    stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
     eas: {
       projectId: process.env.EAS_PROJECT_ID || '90b1f7d5-14e1-4cf6-9035-b1beb8832a36',
     },

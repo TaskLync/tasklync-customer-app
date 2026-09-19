@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, RefObject } from 'react';
 import MapView, { Region } from 'react-native-maps';
 import { Coordinates } from '../types/location.types';
+import { FAISALABAD_CENTER } from '../config/serviceArea.config';
 
 const DEFAULT_DELTA = {
   latitudeDelta: 0.03,
@@ -46,12 +47,13 @@ export const useMapCamera = (initialRegion?: Region): UseMapCameraReturn => {
     );
   }, [currentRegion]);
 
-  const recenter = useCallback((userCoords: Coordinates | null) => {
-    if (!mapRef.current || !userCoords) return;
+  const recenter = useCallback((userCoords: Coordinates | null, fallbackCoords?: Coordinates) => {
+    const target = userCoords || fallbackCoords || FAISALABAD_CENTER;
+    if (!mapRef.current) return;
     mapRef.current.animateToRegion(
       {
-        latitude: userCoords.lat,
-        longitude: userCoords.lng,
+        latitude: target.lat,
+        longitude: target.lng,
         ...DEFAULT_DELTA,
       },
       300

@@ -19,6 +19,7 @@ import { SearchInput } from '../../src/components/ui/Input/SearchInput';
 import { useConversations } from '../../src/hooks/useConversations';
 import { ConversationItem } from '../../src/types/chat.types';
 import { colors } from '../../src/design/colors';
+import { radius } from '../../src/design/radius';
 
 export default function MessagesScreen() {
   const router = useRouter();
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
   searchInput: {
     height: 56,
     minHeight: 56,
-    borderRadius: 18,
+    borderRadius: radius.pill,
     backgroundColor: '#F8FAFC',
     borderColor: '#E2E8F0',
     borderWidth: 1.2,

@@ -1,46 +1,70 @@
 import { create } from 'zustand';
 import { createMMKV } from 'react-native-mmkv';
 import { Coordinates } from '../types/location.types';
-import { PlacePrediction } from '../types/address.types';
-import { getDistanceMeters } from '../utils/locationUtils';
-import { userApi } from '../services/api/user.api';
-import { useAuthStore } from './auth.store';
+import { PlacePrediction, Address } from '../types/address.types';
 
-const storage = createMMKV();
-const SYNC_DISTANCE_THRESHOLD_METERS = 100;
+const storage = createMMKV({ id: 'tasklync_location_storage' });
 const MAX_RECENT_SEARCHES = 5;
 
-interface LocationStoreState {
+export type LocationMode = 'gps' | 'address';
+
+export interface LocationStoreState {
   permissionStatus: 'granted' | 'denied' | 'undetermined';
   setPermissionStatus: (status: 'granted' | 'denied' | 'undetermined') => void;
+
+  isServicesEnabled: boolean;
+  setIsServicesEnabled: (enabled: boolean) => void;
+
   currentLocation: Coordinates | null;
   setCurrentLocation: (loc: Coordinates | null) => void;
+
   currentCity: string | null;
   setCurrentCity: (city: string | null) => void;
-  lastSyncedLocation: Coordinates | null;
-  setLastSyncedLocation: (loc: Coordinates | null) => void;
+
+  locationMode: LocationMode;
+  setLocationMode: (mode: LocationMode) => void;
+
+  selectedAddress: Address | null;
+  setSelectedAddress: (address: Address | null) => void;
+
   lastPickedCoords: Coordinates | null;
   setLastPickedCoords: (coords: Coordinates | null) => void;
+
   recentSearches: PlacePrediction[];
   addRecentSearch: (search: PlacePrediction) => void;
   clearRecentSearches: () => void;
-  syncLocationToBackend: (
-    coords: Coordinates,
-    addressLine?: string,
-    city?: string,
-    country?: string
-  ) => Promise<void>;
+
+  isLocating: boolean;
+  setIsLocating: (isLocating: boolean) => void;
+
   hydrate: () => void;
 }
 
 export const useLocationStore = create<LocationStoreState>((set, get) => ({
   permissionStatus: 'undetermined',
   setPermissionStatus: (status) => {
+    if (get().permissionStatus === status) return;
     storage.set('location_permission_status', status);
     set({ permissionStatus: status });
   },
+
+  isServicesEnabled: true,
+  setIsServicesEnabled: (enabled) => {
+    if (get().isServicesEnabled === enabled) return;
+    set({ isServicesEnabled: enabled });
+  },
+
   currentLocation: null,
   setCurrentLocation: (loc) => {
+    const current = get().currentLocation;
+    if (
+      current &&
+      loc &&
+      current.lat === loc.lat &&
+      current.lng === loc.lng
+    ) {
+      return;
+    }
     if (loc) {
       storage.set('current_location', JSON.stringify(loc));
     } else {
@@ -48,8 +72,10 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
     }
     set({ currentLocation: loc });
   },
+
   currentCity: null,
   setCurrentCity: (city) => {
+    if (get().currentCity === city) return;
     if (city) {
       storage.set('current_city', city);
     } else {
@@ -57,15 +83,25 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
     }
     set({ currentCity: city });
   },
-  lastSyncedLocation: null,
-  setLastSyncedLocation: (loc) => {
-    if (loc) {
-      storage.set('last_synced_location', JSON.stringify(loc));
-    } else {
-      storage.remove('last_synced_location');
-    }
-    set({ lastSyncedLocation: loc });
+
+  locationMode: 'gps',
+  setLocationMode: (mode) => {
+    if (get().locationMode === mode) return;
+    storage.set('location_mode', mode);
+    set({ locationMode: mode });
   },
+
+  selectedAddress: null,
+  setSelectedAddress: (address) => {
+    if (address) {
+      storage.set('selected_address', JSON.stringify(address));
+      set({ selectedAddress: address, locationMode: 'address' });
+    } else {
+      storage.remove('selected_address');
+      set({ selectedAddress: null, locationMode: 'gps' });
+    }
+  },
+
   lastPickedCoords: null,
   setLastPickedCoords: (coords) => {
     if (coords) {
@@ -75,6 +111,7 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
     }
     set({ lastPickedCoords: coords });
   },
+
   recentSearches: [],
   addRecentSearch: (search) => {
     const current = get().recentSearches;
@@ -85,43 +122,20 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
     } catch (_e) {}
     set({ recentSearches: updated });
   },
+
   clearRecentSearches: () => {
     try {
       storage.remove('recent_searches');
     } catch (_e) {}
     set({ recentSearches: [] });
   },
-  syncLocationToBackend: async (coords, addressLine, city, country) => {
-    const token = useAuthStore.getState().accessToken;
-    if (!token) {
-      return;
-    }
 
-    const lastSynced = get().lastSyncedLocation;
-    if (lastSynced) {
-      const distance = getDistanceMeters(lastSynced, coords);
-      if (distance < SYNC_DISTANCE_THRESHOLD_METERS) {
-        return;
-      }
-    }
-
-    try {
-      await userApi.syncCurrentLocation({
-        label: 'Current Location',
-        address_line: addressLine || 'GPS Coordinates',
-        city: city || get().currentCity || 'Lahore',
-        country: country || 'Pakistan',
-        lat: coords.lat,
-        lng: coords.lng,
-        is_default: true,
-      });
-
-      storage.set('last_synced_location', JSON.stringify(coords));
-      set({ lastSyncedLocation: coords });
-    } catch (error) {
-      console.warn('[LocationStore] Failed to persist location to user-service DB:', error);
-    }
+  isLocating: false,
+  setIsLocating: (isLocating) => {
+    if (get().isLocating === isLocating) return;
+    set({ isLocating });
   },
+
   hydrate: () => {
     const permissionStatus = storage.getString('location_permission_status') as
       | 'granted'
@@ -130,9 +144,10 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
       | undefined;
     const currentCity = storage.getString('current_city');
     const locationStr = storage.getString('current_location');
-    const lastSyncedStr = storage.getString('last_synced_location');
     const lastPickedStr = storage.getString('last_picked_coords');
     const recentSearchesStr = storage.getString('recent_searches');
+    const locationMode = (storage.getString('location_mode') as LocationMode) || 'gps';
+    const selectedAddressStr = storage.getString('selected_address');
 
     let currentLocation: Coordinates | null = null;
     if (locationStr) {
@@ -141,17 +156,17 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
       } catch (e) {}
     }
 
-    let lastSyncedLocation: Coordinates | null = null;
-    if (lastSyncedStr) {
-      try {
-        lastSyncedLocation = JSON.parse(lastSyncedStr);
-      } catch (e) {}
-    }
-
     let lastPickedCoords: Coordinates | null = null;
     if (lastPickedStr) {
       try {
         lastPickedCoords = JSON.parse(lastPickedStr);
+      } catch (e) {}
+    }
+
+    let selectedAddress: Address | null = null;
+    if (selectedAddressStr) {
+      try {
+        selectedAddress = JSON.parse(selectedAddressStr);
       } catch (e) {}
     }
 
@@ -166,7 +181,8 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
       permissionStatus: permissionStatus || 'undetermined',
       currentCity: currentCity || null,
       currentLocation,
-      lastSyncedLocation,
+      locationMode,
+      selectedAddress,
       lastPickedCoords,
       recentSearches,
     });

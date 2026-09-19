@@ -40,9 +40,9 @@ export const useNearbyWorkers = (params?: Partial<NearbyWorkersParams>) => {
             lng: lng!,
             radius,
             limit: queryParams.limit,
-            category: queryParams.category,
-            serviceId: queryParams.serviceId,
-            minRating: queryParams.minRating,
+            ...(queryParams.category ? { category: queryParams.category } : {}),
+            ...(queryParams.serviceId ? { serviceId: queryParams.serviceId } : {}),
+            ...(queryParams.minRating !== undefined ? { minRating: queryParams.minRating } : {}),
           });
           if (__DEV__) {
             console.log('[DEBUG nearby-workers] 1. Proximity API returned worker count:', res?.workers?.length || 0);

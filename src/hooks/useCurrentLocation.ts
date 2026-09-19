@@ -1,8 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
-import * as Location from 'expo-location';
+import { useState, useCallback } from 'react';
 import { useLocationStore } from '../store/location.store';
+import { locationService } from '../services/location/location.service';
 import { Coordinates } from '../types/location.types';
-import { localStorage } from '../services/storage/local.storage';
 
 export function useCurrentLocation() {
   const [isFetching, setIsFetching] = useState<boolean>(false);
@@ -10,95 +9,81 @@ export function useCurrentLocation() {
 
   const permissionStatus = useLocationStore((s) => s.permissionStatus);
   const setPermissionStatus = useLocationStore((s) => s.setPermissionStatus);
+  const setIsServicesEnabled = useLocationStore((s) => s.setIsServicesEnabled);
   const currentLocation = useLocationStore((s) => s.currentLocation);
   const setCurrentLocation = useLocationStore((s) => s.setCurrentLocation);
 
-  // Initialize from cached last known location if memory state is empty (Section 3.2)
-  useEffect(() => {
-    if (!currentLocation) {
-      const cached = localStorage.getCachedLastLocation();
-      if (cached) {
-        setCurrentLocation({ lat: cached.latitude, lng: cached.longitude });
-      }
-    }
-  }, [currentLocation, setCurrentLocation]);
-
   const checkPermission = useCallback(async () => {
     try {
-      const { status } = await Location.getForegroundPermissionsAsync();
-      if (status === 'granted') {
-        setPermissionStatus('granted');
-      } else if (status === 'denied') {
-        setPermissionStatus('denied');
-      } else {
-        setPermissionStatus('undetermined');
-      }
-      return status;
-    } catch (_e) {
+      const state = await locationService.checkLocationState();
+      setPermissionStatus(
+        state.status === 'granted' ? 'granted' : state.status === 'denied' ? 'denied' : 'undetermined'
+      );
+      setIsServicesEnabled(state.servicesEnabled);
+      return state.status;
+    } catch {
       return 'undetermined';
     }
-  }, [setPermissionStatus]);
+  }, [setIsServicesEnabled, setPermissionStatus]);
 
   const requestPermission = useCallback(async () => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        setPermissionStatus('granted');
-        return true;
-      } else {
-        setPermissionStatus('denied');
-        return false;
-      }
-    } catch (_e) {
+      const result = await locationService.requestPermission();
+      setPermissionStatus(
+        result.status === 'granted' ? 'granted' : result.status === 'denied' ? 'denied' : 'undetermined'
+      );
+      setIsServicesEnabled(result.servicesEnabled);
+      return result.granted;
+    } catch {
       setPermissionStatus('denied');
       return false;
     }
-  }, [setPermissionStatus]);
+  }, [setIsServicesEnabled, setPermissionStatus]);
 
   const fetchLocation = useCallback(async (): Promise<Coordinates | null> => {
     setIsFetching(true);
     setError(null);
 
     try {
-      let currentPerm = permissionStatus;
-      if (currentPerm !== 'granted') {
+      const state = await locationService.checkLocationState();
+      setPermissionStatus(
+        state.status === 'granted' ? 'granted' : state.status === 'denied' ? 'denied' : 'undetermined'
+      );
+      setIsServicesEnabled(state.servicesEnabled);
+
+      if (!state.granted) {
         const granted = await requestPermission();
         if (!granted) {
           setError('Location permission was denied');
-          setIsFetching(false);
-          // Fall back to cached location if available
-          const cached = localStorage.getCachedLastLocation();
-          return cached ? { lat: cached.latitude, lng: cached.longitude } : null;
+          return null;
         }
       }
 
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+      if (!state.servicesEnabled) {
+        setError('Location services are disabled on this device');
+        return null;
+      }
+
+      const coords = await locationService.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeoutMs: 8000,
+        useCacheFirst: false,
       });
 
-      const coords: Coordinates = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      };
+      if (coords) {
+        setCurrentLocation(coords);
+        return coords;
+      }
 
-      setCurrentLocation(coords);
-      localStorage.cacheLastLocation({
-        latitude: coords.lat,
-        longitude: coords.lng,
-      });
-      return coords;
+      setError('Could not retrieve current GPS location. Please check your signal.');
+      return null;
     } catch (err: any) {
       setError(err?.message || 'Failed to obtain current GPS location');
-      const cached = localStorage.getCachedLastLocation();
-      return cached ? { lat: cached.latitude, lng: cached.longitude } : null;
+      return null;
     } finally {
       setIsFetching(false);
     }
-  }, [permissionStatus, requestPermission, setCurrentLocation]);
-
-  useEffect(() => {
-    checkPermission();
-  }, [checkPermission]);
+  }, [requestPermission, setCurrentLocation, setIsServicesEnabled, setPermissionStatus]);
 
   return {
     currentLocation,
@@ -110,5 +95,6 @@ export function useCurrentLocation() {
     fetchLocation,
     requestPermission,
     checkPermission,
+    openSettings: locationService.openSettings,
   };
 }

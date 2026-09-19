@@ -30,6 +30,10 @@ import { AddressNotesInput } from './AddressNotesInput';
 import { Address, ReverseGeocodeResult } from '../../types/address.types';
 import { findNearbySavedAddress, formatAddressLine } from '../../utils/address';
 import { colors, palette, fontFamily, radius, fontSize, shadows } from '../../design';
+import {
+  validateServiceArea,
+  SERVICE_UNAVAILABLE_MESSAGE,
+} from '../../config/serviceArea.config';
 
 export interface AddressConfirmSheetProps {
   reverseGeocodeResult: ReverseGeocodeResult | null;
@@ -136,6 +140,10 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
     ? 'Locating pinpoint address...'
     : geocodingError || 'Select a point on the map';
 
+  const isServiceable = reverseGeocodeResult
+    ? validateServiceArea({ lat: reverseGeocodeResult.lat, lng: reverseGeocodeResult.lng }).isServiceable
+    : true;
+
   const isFormValid =
     Boolean(reverseGeocodeResult) &&
     (selectedLabel === 'Home' ||
@@ -144,7 +152,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
       Boolean(selectedLabel && selectedLabel.trim().length > 0));
 
   const handleSave = () => {
-    if (!isFormValid || !reverseGeocodeResult || isSaving) return;
+    if (!isFormValid || !reverseGeocodeResult || !isServiceable || isSaving) return;
 
     setIsSuccessFeedback(true);
 
@@ -156,7 +164,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
       custom_label: selectedLabel === 'Other' ? customLabel.trim() : undefined,
       notes: notes.trim() || undefined,
       address_line: reverseGeocodeResult.address_line || currentAddressText,
-      city: reverseGeocodeResult.city || 'Lahore',
+      city: reverseGeocodeResult.city || 'Faisalabad',
       country: reverseGeocodeResult.country || 'Pakistan',
       lat: reverseGeocodeResult.lat,
       lng: reverseGeocodeResult.lng,
@@ -281,20 +289,30 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
           </ScrollView>
         )}
 
+        {/* Out-of-service restriction banner */}
+        {!isServiceable && Boolean(reverseGeocodeResult) && (
+          <View style={styles.restrictionBanner}>
+            <AlertTriangle size={16} color={palette.danger} strokeWidth={2.2} />
+            <Text style={styles.restrictionBannerText} maxFontSizeMultiplier={1.3}>
+              {SERVICE_UNAVAILABLE_MESSAGE}
+            </Text>
+          </View>
+        )}
+
         {/* Sticky Action Button (52px, Radius-Pill) */}
         <View style={styles.ctaContainer}>
           <Pressable
             onPress={handleSave}
-            disabled={!isFormValid || isSaving}
+            disabled={!isFormValid || !isServiceable || isSaving}
             style={({ pressed }) => [
               styles.saveButton,
-              !isFormValid && styles.saveButtonDisabled,
+              (!isFormValid || !isServiceable) && styles.saveButtonDisabled,
               isSuccessFeedback && styles.saveButtonSuccess,
-              pressed && isFormValid && styles.saveButtonPressed,
+              pressed && isFormValid && isServiceable && styles.saveButtonPressed,
             ]}
             accessibilityRole="button"
             accessibilityLabel={isEditMode ? 'Update Address' : 'Save Address'}
-            accessibilityState={{ disabled: !isFormValid || isSaving }}
+            accessibilityState={{ disabled: !isFormValid || !isServiceable || isSaving }}
           >
             {isSaving ? (
               <ActivityIndicator size="small" color={palette.white} />
@@ -309,11 +327,15 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
               <Text
                 style={[
                   styles.saveButtonText,
-                  !isFormValid && styles.saveButtonTextDisabled,
+                  (!isFormValid || !isServiceable) && styles.saveButtonTextDisabled,
                 ]}
                 maxFontSizeMultiplier={1.3}
               >
-                {isEditMode ? 'Update Address' : 'Save Address'}
+                {!isServiceable && Boolean(reverseGeocodeResult)
+                  ? 'Outside Service Area'
+                  : isEditMode
+                  ? 'Update Address'
+                  : 'Save Address'}
               </Text>
             )}
           </Pressable>
@@ -407,6 +429,26 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginVertical: 8,
     gap: 8,
+  },
+  restrictionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: palette.dangerLight,
+    borderWidth: 1,
+    borderColor: palette.danger,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 8,
+    marginBottom: 4,
+    gap: 8,
+  },
+  restrictionBannerText: {
+    flex: 1,
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 12,
+    lineHeight: 16,
+    color: palette.danger,
   },
   duplicateWarningText: {
     flex: 1,

@@ -1,22 +1,23 @@
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { UserCheck, Edit3 } from 'lucide-react-native';
 import { UserProfile } from '../../types/user.types';
 import { AvatarUploadRing } from './AvatarUploadRing';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { colors, fontFamily, radius } from '../../design';
 
 export interface ProfileHeaderProps {
-  user?: UserProfile | null;
+  user?: UserProfile | null | undefined;
   onEditPress: () => void;
 }
 
 /**
- * ProfileHeader Component (Day 35)
+ * ProfileHeader Component
  *
- * Implements Aesthetic-Usability Effect:
- * - 80px visual anchor avatar
- * - Name in Poppins SemiBold
- * - Verified Customer Badge
- * - Quick "Edit Profile" pill action
+ * Compact, balanced profile card with clean hierarchy:
+ * - 68px balanced avatar
+ * - Bold name & verified badge
+ * - Contact info
+ * - Sleek "Edit Profile" pill action
  */
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   user,
@@ -28,11 +29,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Avatar Anchor */}
+      {/* Compact Avatar Anchor */}
       <AvatarUploadRing
         imageUri={user?.avatar_url}
         name={name}
-        size={84}
+        size={68}
+        strokeWidth={3}
         onPress={onEditPress}
       />
 
@@ -44,14 +46,14 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </Text>
           {isVerified && (
             <View style={styles.verifiedBadge}>
-              <UserCheck size={13} color={colors.primaryDark} />
+              <UserCheck size={12} color={colors.primaryDark} strokeWidth={2.4} />
             </View>
           )}
         </View>
 
         <Text style={styles.userPhone}>{phone}</Text>
 
-        {/* Edit Profile CTA Button */}
+        {/* Compact Edit Profile CTA Button */}
         <TouchableOpacity
           activeOpacity={0.8}
           style={styles.editButton}
@@ -59,7 +61,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Edit Profile Details"
         >
-          <Edit3 size={13} color={colors.primaryDark} />
+          <Edit3 size={12} color={colors.primaryDark} strokeWidth={2.2} />
           <Text style={styles.editButtonText}>Edit Profile</Text>
         </TouchableOpacity>
       </View>
@@ -71,62 +73,68 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
-    padding: spacing.md + 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
     borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
-    ...shadows.xs,
+    borderColor: '#F1F5F9',
+    marginBottom: 12,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
   infoCol: {
     flex: 1,
-    marginLeft: spacing.md + 2,
+    marginLeft: 14,
     justifyContent: 'center',
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   userName: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: fontSize.body1 + 1,
-    color: colors.textPrimary,
+    fontFamily: fontFamily.jakarta.bold,
+    fontSize: 18,
+    lineHeight: 24,
+    color: '#0F172A',
+    letterSpacing: -0.3,
     flexShrink: 1,
   },
   verifiedBadge: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: palette.green50,
+    backgroundColor: '#F0FDF4',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: palette.green200,
+    borderColor: '#DCFCE7',
   },
   userPhone: {
     fontFamily: fontFamily.jakarta.regular,
-    fontSize: fontSize.caption,
-    color: colors.textMuted,
-    marginBottom: spacing.xs + 2,
+    fontSize: 13,
+    color: '#64748B',
+    marginBottom: 8,
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: palette.green50,
-    paddingHorizontal: spacing.sm + 2,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: radius.pill,
     gap: 5,
     borderWidth: 1,
-    borderColor: palette.green200,
+    borderColor: '#DCFCE7',
   },
   editButtonText: {
     fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: fontSize.dataXS,
+    fontSize: 12,
     color: colors.primaryDark,
   },
 });

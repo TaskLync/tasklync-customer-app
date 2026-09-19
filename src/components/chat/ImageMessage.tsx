@@ -6,8 +6,6 @@ import {
   Text,
   Modal,
   StatusBar,
-  Dimensions,
-  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import Svg, { Circle } from 'react-native-svg';
@@ -17,7 +15,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { RotateCcw, X, ZoomIn } from 'lucide-react-native';
+import { RotateCcw, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Message } from '../../types/chat.types';
 
@@ -25,10 +23,10 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface ImageMessageProps {
   message: Message;
-  progress?: number;
-  onRetry?: (messageId: string) => void;
-  onPress?: (uri: string) => void;
-  isOutgoing?: boolean;
+  progress?: number | undefined;
+  onRetry?: ((messageId: string) => void) | undefined;
+  onPress?: ((uri: string) => void) | undefined;
+  isOutgoing?: boolean | undefined;
 }
 
 const RING_SIZE = 48;
@@ -225,7 +223,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',

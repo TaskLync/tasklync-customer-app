@@ -90,11 +90,11 @@ export const ConversationEmptyState: React.FC<ConversationEmptyStateProps> = ({
   return (
     <View style={styles.container}>
       <View style={[styles.iconCircle, styles.iconCircleBrand]}>
-        <MessageSquare size={32} color={colors.primaryDark} strokeWidth={1.8} />
+        <MessageSquare size={26} color="#16A34A" strokeWidth={1.8} />
       </View>
-      <Text style={styles.title}>No messages yet</Text>
+      <Text style={styles.title}>No conversations yet</Text>
       <Text style={styles.subtitle}>
-        When you book a professional or receive updates, your conversation history will appear here.
+        Your conversations with service workers will appear here.
       </Text>
       <View style={styles.buttonContainer}>
         <Button
@@ -113,25 +113,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-    paddingVertical: 56,
+    paddingVertical: 64,
   },
   iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#F1F5F9',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
+    marginBottom: 16,
   },
   iconCircleSuccess: {
-    backgroundColor: colors.primaryTint,
+    backgroundColor: '#F0FDF4',
+    borderColor: '#DCFCE7',
   },
   iconCircleBrand: {
-    backgroundColor: colors.primaryTint,
+    backgroundColor: '#F0FDF4',
+    borderColor: '#DCFCE7',
   },
   title: {
-    fontFamily: fontFamily.poppins.semiBold,
+    fontFamily: fontFamily.jakarta.bold,
     fontSize: 18,
     color: '#0F172A',
     marginBottom: 8,
@@ -143,7 +147,8 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 24,
+    marginBottom: 20,
+    maxWidth: 300,
   },
   buttonContainer: {
     alignSelf: 'center',

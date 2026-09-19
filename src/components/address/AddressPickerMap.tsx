@@ -23,6 +23,7 @@ import * as Location from 'expo-location';
 import { MapPin } from 'lucide-react-native';
 import { MapRegion } from '../../types/address.types';
 import { colors, palette } from '../../design';
+import { FAISALABAD_DEFAULT_REGION } from '../../config/serviceArea.config';
 
 export interface AddressPickerMapRef {
   animateToRegion: (region: MapRegion, duration?: number) => void;
@@ -35,16 +36,13 @@ export interface AddressPickerMapProps {
   onRegionChangeComplete: (region: MapRegion) => void;
 }
 
-const DEFAULT_REGION: MapRegion = {
-  latitude: 31.5204, // Lahore, PK
-  longitude: 74.3587,
-  latitudeDelta: 0.008,
-  longitudeDelta: 0.008,
-};
+const DEFAULT_REGION: MapRegion = FAISALABAD_DEFAULT_REGION;
 
 export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMapProps>(
   ({ initialRegion = DEFAULT_REGION, onRegionChange, onRegionChangeComplete }, ref) => {
     const mapRef = useRef<MapView | null>(null);
+    const isMapReadyRef = useRef<boolean>(false);
+    const pendingAnimateRegionRef = useRef<{ region: MapRegion; duration: number } | null>(null);
     const isDraggingRef = useRef<boolean>(false);
     const [reduceMotion, setReduceMotion] = useState(false);
     const [hasLocationPermission, setHasLocationPermission] = useState(false);
@@ -75,17 +73,33 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
       };
     }, []);
 
+    const handleMapReady = useCallback(() => {
+      isMapReadyRef.current = true;
+      if (pendingAnimateRegionRef.current && mapRef.current) {
+        const { region, duration } = pendingAnimateRegionRef.current;
+        pendingAnimateRegionRef.current = null;
+        try {
+          mapRef.current.animateToRegion(region, duration);
+        } catch (_e) {
+          // Guard against race conditions
+        }
+      }
+    }, []);
+
     useImperativeHandle(ref, () => ({
       animateToRegion: (region: MapRegion, duration = 400) => {
         if (
-          mapRef.current &&
           typeof region?.latitude === 'number' &&
           !isNaN(region.latitude) &&
           typeof region?.longitude === 'number' &&
           !isNaN(region.longitude)
         ) {
+          if (!isMapReadyRef.current) {
+            pendingAnimateRegionRef.current = { region, duration };
+            return;
+          }
           try {
-            mapRef.current.animateToRegion(region, duration);
+            mapRef.current?.animateToRegion(region, duration);
           } catch (_e) {
             // Guard against native view detach races
           }
@@ -132,7 +146,15 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
           shadowScale.value = withSpring(1.0, { damping: 16, stiffness: 350 });
           shadowOpacity.value = withTiming(0.25, { duration: 150 });
         }
-        onRegionChangeComplete(region);
+        if (
+          typeof region?.latitude === 'number' &&
+          !isNaN(region.latitude) &&
+          typeof region?.longitude === 'number' &&
+          !isNaN(region.longitude) &&
+          (Math.abs(region.latitude) > 0.0001 || Math.abs(region.longitude) > 0.0001)
+        ) {
+          onRegionChangeComplete(region);
+        }
       },
       [onRegionChangeComplete, pinScale, pinTranslateY, reduceMotion, shadowOpacity, shadowScale]
     );
@@ -157,6 +179,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
           style={styles.map}
           provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
           initialRegion={initialRegion}
+          onMapReady={handleMapReady}
           onRegionChange={handleRegionChange}
           onRegionChangeComplete={handleRegionChangeComplete}
           showsUserLocation={hasLocationPermission}

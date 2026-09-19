@@ -19,10 +19,11 @@ import Animated, {
 import { MapPin, Navigation } from 'lucide-react-native';
 import { MapRegion } from '../../types/address.types';
 import { colors, palette, fontFamily, radius } from '../../design';
+import { FAISALABAD_DEFAULT_REGION } from '../../config/serviceArea.config';
 
 export interface AddressPickerMapRef {
   animateToRegion: (region: MapRegion, duration?: number) => void;
-  getMapRef: () => any;
+  getMapRef: () => null;
 }
 
 export interface AddressPickerMapProps {
@@ -31,12 +32,7 @@ export interface AddressPickerMapProps {
   onRegionChangeComplete: (region: MapRegion) => void;
 }
 
-const DEFAULT_REGION: MapRegion = {
-  latitude: 31.5204,
-  longitude: 74.3587,
-  latitudeDelta: 0.008,
-  longitudeDelta: 0.008,
-};
+const DEFAULT_REGION: MapRegion = FAISALABAD_DEFAULT_REGION;
 
 export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMapProps>(
   ({ initialRegion = DEFAULT_REGION, onRegionChangeComplete }, ref) => {

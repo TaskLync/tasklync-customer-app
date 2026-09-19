@@ -25,7 +25,7 @@ import { ProfileMenuSection } from '../../src/components/profile/ProfileMenuSect
 import { LogoutConfirmSheet, showNativeLogoutActionSheet } from '../../src/components/feedback/LogoutConfirmSheet';
 import { DeleteAccountSheet } from '../../src/components/feedback/DeleteAccountSheet';
 import { DeleteAccountReason } from '../../src/types/moderation.types';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../src/design';
+import { colors, fontFamily } from '../../src/design';
 
 /**
  * ProfileScreen (Day 35, 37 & 38 Profile & Account Control Hub)
@@ -102,7 +102,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgApp} />
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
       {/* Screen Header Bar */}
       <View style={styles.header}>
@@ -113,7 +113,7 @@ export default function ProfileScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 40 },
+          { paddingBottom: Math.max(insets.bottom, 16) + 100 },
         ]}
         refreshControl={
           <RefreshControl
@@ -143,16 +143,18 @@ export default function ProfileScreen() {
           />
         ))}
 
-        {/* 4. Standalone Log Out Button (Routine & Reversible) */}
+        {/* 4. Standalone Log Out Card (Cohesive with menu cards, distinct danger tone) */}
         <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.logoutButton}
+          activeOpacity={0.75}
+          style={styles.logoutCard}
           onPress={handleTriggerLogout}
           accessibilityRole="button"
           accessibilityLabel="Log out of Tasklync"
         >
-          <LogOut size={18} color={colors.textSecondary} />
-          <Text style={styles.logoutButtonText}>Log Out</Text>
+          <View style={styles.logoutIconContainer}>
+            <LogOut size={18} color={colors.textDanger} strokeWidth={2.2} />
+          </View>
+          <Text style={styles.logoutCardText}>Log Out</Text>
         </TouchableOpacity>
 
         {/* 5. Version & Security Footer */}
@@ -186,57 +188,72 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgApp,
+    backgroundColor: '#F8FAFC',
   },
   header: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 4,
-    backgroundColor: colors.bgApp,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 14,
+    backgroundColor: '#F8FAFC',
   },
   headerTitle: {
-    fontFamily: fontFamily.poppins.bold,
-    fontSize: fontSize.h2,
-    color: colors.textPrimary,
+    fontFamily: fontFamily.jakarta.bold,
+    fontSize: 24,
+    color: '#0F172A',
+    letterSpacing: -0.5,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xs,
+    paddingHorizontal: 16,
+    paddingTop: 4,
   },
-  logoutButton: {
+  logoutCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 52,
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.md,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 16,
+    minHeight: 54,
     borderWidth: 1,
-    borderColor: colors.border,
-    gap: 8,
-    marginTop: spacing.xs,
-    marginBottom: spacing.xl,
-    ...shadows.xs,
+    borderColor: '#FEE2E2',
+    gap: 10,
+    marginTop: 4,
+    marginBottom: 20,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  logoutButtonText: {
+  logoutIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutCardText: {
     fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: fontSize.body2 + 0.5,
-    color: colors.textSecondary,
+    fontSize: 14.5,
+    color: colors.textDanger,
+    letterSpacing: -0.2,
   },
   footerNote: {
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    gap: 2,
+    paddingVertical: 12,
+    gap: 4,
   },
   versionText: {
-    fontFamily: fontFamily.inter.medium,
-    fontSize: fontSize.caption,
-    color: colors.textMuted,
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 12,
+    color: '#94A3B8',
   },
   copyText: {
     fontFamily: fontFamily.jakarta.regular,
-    fontSize: fontSize.nano + 1,
-    color: palette.gray400,
+    fontSize: 11,
+    color: '#CBD5E1',
   },
 });

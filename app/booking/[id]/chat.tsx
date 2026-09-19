@@ -25,7 +25,6 @@ import {
   SystemMessage,
   TypingIndicator,
   ChatSkeleton,
-  ImageMessage,
   NewMessagesBanner,
   ArchivedBanner,
   MessageContextMenu,
@@ -129,8 +128,8 @@ export default function BookingChatScreen() {
                 ? {
                     ...prev,
                     worker_name: profile.name,
-                    worker_avatar_url: profile.avatar_url || prev.worker_avatar_url,
-                    worker_phone: profile.phone_number || prev.worker_phone,
+                    worker_avatar_url: profile.avatarUrl || (profile as any).avatar_url || prev.worker_avatar_url,
+                    worker_phone: (profile as any).phone_number || (profile as any).phone || prev.worker_phone,
                   }
                 : null
             );
@@ -308,7 +307,7 @@ export default function BookingChatScreen() {
 
       {/* Positional Consistency: Replace ChatInput with ArchivedBanner when terminal */}
       {isArchived ? (
-        <ArchivedBanner status={booking?.status} />
+        <ArchivedBanner status={booking?.status || 'COMPLETED'} />
       ) : (
         <ChatInput
           onSend={handleSend}

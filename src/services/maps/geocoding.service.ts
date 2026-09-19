@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import Constants from 'expo-constants';
 import { ReverseGeocodeResult } from '../../types/address.types';
 
 /**
@@ -13,6 +14,7 @@ export async function reverseGeocode(
   const fallbackCoords = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 
   const apiKey =
+    Constants.expoConfig?.extra?.googleMapsKey ||
     process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ||
     process.env.GOOGLE_MAPS_KEY ||
     '';
@@ -26,7 +28,7 @@ export async function reverseGeocode(
       if (json.status === 'OK' && Array.isArray(json.results) && json.results.length > 0) {
         const first = json.results[0];
         const formatted = first.formatted_address || fallbackCoords;
-        let city = 'Lahore';
+        let city = 'Faisalabad';
         let country = 'Pakistan';
         for (const comp of first.address_components || []) {
           if (comp.types.includes('locality')) city = comp.long_name;
@@ -74,7 +76,7 @@ export async function reverseGeocode(
         addressParts.push(item.subregion);
       }
 
-      const city = item.city || item.subregion || 'Lahore';
+      const city = item.city || item.subregion || 'Faisalabad';
       const country = item.country || 'Pakistan';
       const addressLine = addressParts.length > 0 ? addressParts.join(', ') : city;
       const formattedAddress = `${addressLine}, ${city}, ${country}`;
@@ -96,7 +98,7 @@ export async function reverseGeocode(
   return {
     formatted_address: `Pin Location (${fallbackCoords})`,
     address_line: `Location (${fallbackCoords})`,
-    city: 'Lahore',
+    city: 'Faisalabad',
     country: 'Pakistan',
     lat,
     lng,

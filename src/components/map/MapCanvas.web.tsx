@@ -5,6 +5,7 @@ import { Coordinates } from '../../types/location.types';
 import { WorkerMarkerBadge } from './WorkerMarkerBadge';
 import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { FAISALABAD_CENTER, validateServiceArea } from '../../config/serviceArea.config';
 
 interface MapCanvasProps {
   mapRef: RefObject<any>;
@@ -23,8 +24,11 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
   selectedId,
   onSelectWorker,
 }) => {
-  const centerLat = userLocation?.lat || 31.5204;
-  const centerLng = userLocation?.lng || 74.3587;
+  const isUserLocationServiceable = Boolean(
+    userLocation && validateServiceArea(userLocation).isServiceable
+  );
+  const centerLat = isUserLocationServiceable && userLocation ? userLocation.lat : FAISALABAD_CENTER.lat;
+  const centerLng = isUserLocationServiceable && userLocation ? userLocation.lng : FAISALABAD_CENTER.lng;
 
   return (
     <View style={styles.container}>
@@ -97,7 +101,7 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
                 </View>
               </View>
               <View style={styles.badgeAnchor}>
-                <WorkerMarkerBadge category={primaryCategory} size={18} />
+                <WorkerMarkerBadge category={primaryCategory || 'electrician'} size={18} />
               </View>
 
               {/* Tooltip on Web Hover / Selected */}
@@ -117,7 +121,11 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: '#F8FAF9',
   },
   mapGridBackground: {

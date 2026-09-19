@@ -61,10 +61,10 @@ export const MessageBubble = React.memo(function MessageBubble({
   const isFailed = readReceiptStatus === 'failed';
   const isImageMessage = message.type === 'image' || !!message.media_url;
 
-  const bubbleCustomStyle: ViewStyle[] = [
+  const bubbleCustomStyle: (ViewStyle | false | undefined)[] = [
     styles.bubble,
     isOutgoing ? styles.bubbleOutgoing : styles.bubbleIncoming,
-    isImageMessage ? styles.imageBubblePadding : undefined,
+    isImageMessage && styles.imageBubblePadding,
   ];
 
   if (!isFirstInGroup) {

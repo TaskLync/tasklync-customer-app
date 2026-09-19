@@ -7,6 +7,7 @@ import { UserMarker } from './UserMarker';
 import { WorkerMarker } from './WorkerMarker';
 import { RadiusCircle } from './RadiusCircle';
 import { colors } from '../../design/colors';
+import { FAISALABAD_CENTER, validateServiceArea } from '../../config/serviceArea.config';
 
 const LIGHT_MAP_STYLE = [
   {
@@ -46,9 +47,12 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
   initialRegion,
   radiusMeters = 5000,
 }) => {
+  const isUserLocationServiceable = Boolean(
+    userLocation && validateServiceArea(userLocation).isServiceable
+  );
   const defaultRegion: Region = initialRegion || {
-    latitude: userLocation?.lat || 31.5204, // Default Lahore
-    longitude: userLocation?.lng || 74.3587,
+    latitude: isUserLocationServiceable && userLocation ? userLocation.lat : FAISALABAD_CENTER.lat,
+    longitude: isUserLocationServiceable && userLocation ? userLocation.lng : FAISALABAD_CENTER.lng,
     latitudeDelta: 0.04,
     longitudeDelta: 0.04,
   };
@@ -57,7 +61,7 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
     <View style={styles.container}>
       <MapView
         ref={mapRef as any}
-        style={StyleSheet.absoluteFillObject}
+        style={styles.mapView}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
         customMapStyle={LIGHT_MAP_STYLE}
         initialRegion={defaultRegion}
@@ -104,7 +108,18 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: colors.bgApp,
+  },
+  mapView: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
 });

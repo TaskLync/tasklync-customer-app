@@ -3,11 +3,11 @@ import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { CreditCard, Calendar, Lock } from 'lucide-react-native';
 import { colors, palette, fontFamily } from '../../design';
 
-export interface StripeCardFormProps {
+export interface CardInputFormProps {
   onCardChange?: (complete: boolean, details: any) => void;
 }
 
-export const StripeCardForm: React.FC<StripeCardFormProps> = ({ onCardChange }) => {
+export const CardInputForm: React.FC<CardInputFormProps> = ({ onCardChange }) => {
   const [cardNumber, setCardNumber] = useState<string>('');
   const [expiry, setExpiry] = useState<string>('');
   const [cvc, setCvc] = useState<string>('');
