@@ -5,19 +5,21 @@ import { WorkerReview } from '../types/review.types';
 import { PaginatedResponse } from '../types/api.types';
 import { localStorage } from '../services/storage/local.storage';
 
-export const useWorkerSkills = (workerId: string) => {
+export const useWorkerSkills = (workerId?: string | null) => {
+  const safeWorkerId = workerId || '';
   const query = useQuery<WorkerSkill[], Error>({
-    queryKey: ['worker', workerId, 'skills'],
+    queryKey: ['worker', safeWorkerId, 'skills'],
     queryFn: async () => {
+      if (!safeWorkerId) return [];
       try {
-        const res = await workerApi.getWorkerSkills(workerId);
+        const res = await workerApi.getWorkerSkills(safeWorkerId);
         if (Array.isArray(res)) return res;
         return [];
       } catch (_err) {
         return [];
       }
     },
-    enabled: !!workerId,
+    enabled: !!safeWorkerId,
     staleTime: 300_000,
   });
 
@@ -30,19 +32,21 @@ export const useWorkerSkills = (workerId: string) => {
   };
 };
 
-export const useWorkerServiceOfferings = (workerId: string) => {
+export const useWorkerServiceOfferings = (workerId?: string | null) => {
+  const safeWorkerId = workerId || '';
   const query = useQuery<WorkerServiceOffering[], Error>({
-    queryKey: ['worker', workerId, 'services'],
+    queryKey: ['worker', safeWorkerId, 'services'],
     queryFn: async () => {
+      if (!safeWorkerId) return [];
       try {
-        const res = await workerApi.getWorkerServices(workerId);
+        const res = await workerApi.getWorkerServices(safeWorkerId);
         if (Array.isArray(res)) return res;
         return [];
       } catch (_err) {
         return [];
       }
     },
-    enabled: !!workerId,
+    enabled: !!safeWorkerId,
     staleTime: 300_000,
   });
 
@@ -55,37 +59,41 @@ export const useWorkerServiceOfferings = (workerId: string) => {
   };
 };
 
-export const useWorkerProfile = (workerId: string) => {
+export const useWorkerProfile = (workerId?: string | null) => {
+  const safeWorkerId = workerId || '';
   const profileQuery = useQuery<WorkerPublicProfile, Error>({
-    queryKey: ['worker', workerId],
+    queryKey: ['worker', safeWorkerId],
     queryFn: async () => {
+      if (!safeWorkerId) throw new Error('Worker profile not found');
       try {
-        const result = await workerApi.getWorkerProfile(workerId);
+        const result = await workerApi.getWorkerProfile(safeWorkerId);
         if (result) {
-          localStorage.cacheWorkerProfile(workerId, result);
+          localStorage.cacheWorkerProfile(safeWorkerId, result);
           return result;
         }
       } catch (err) {
-        const cached = localStorage.getCachedWorkerProfile<WorkerPublicProfile>(workerId);
+        const cached = localStorage.getCachedWorkerProfile<WorkerPublicProfile>(safeWorkerId);
         if (cached?.data) return cached.data;
         throw err;
       }
       throw new Error('Worker profile not found');
     },
     initialData: () => {
-      const cached = localStorage.getCachedWorkerProfile<WorkerPublicProfile>(workerId);
+      if (!safeWorkerId) return undefined;
+      const cached = localStorage.getCachedWorkerProfile<WorkerPublicProfile>(safeWorkerId);
       return cached?.data;
     },
     initialDataUpdatedAt: () => {
-      const cached = localStorage.getCachedWorkerProfile<WorkerPublicProfile>(workerId);
+      if (!safeWorkerId) return undefined;
+      const cached = localStorage.getCachedWorkerProfile<WorkerPublicProfile>(safeWorkerId);
       return cached?.cachedAt;
     },
-    enabled: !!workerId,
+    enabled: !!safeWorkerId,
     staleTime: 5 * 60 * 1000,
   });
 
-  const skillsQuery = useWorkerSkills(workerId);
-  const servicesQuery = useWorkerServiceOfferings(workerId);
+  const skillsQuery = useWorkerSkills(safeWorkerId);
+  const servicesQuery = useWorkerServiceOfferings(safeWorkerId);
 
   // Fall back to profileQuery's serviceOfferings if sub-query services is empty
   const services =
@@ -111,12 +119,26 @@ export const useWorkerProfile = (workerId: string) => {
   };
 };
 
-export const useWorkerReviews = (workerId: string, page: number = 1) => {
+export const useWorkerReviews = (workerId?: string | null, page: number = 1) => {
+  const safeWorkerId = workerId || '';
   const query = useQuery<PaginatedResponse<WorkerReview>, Error>({
-    queryKey: ['worker', workerId, 'reviews', page],
+    queryKey: ['worker', safeWorkerId, 'reviews', page],
     queryFn: async () => {
+      if (!safeWorkerId) {
+        return {
+          items: [],
+          meta: {
+            pagination: {
+              total: 0,
+              page,
+              limit: 20,
+              hasMore: false,
+            },
+          },
+        } as any;
+      }
       try {
-        return await workerApi.getWorkerReviews(workerId, { page });
+        return await workerApi.getWorkerReviews(safeWorkerId, { page });
       } catch (err) {
         return {
           items: [],
@@ -131,7 +153,7 @@ export const useWorkerReviews = (workerId: string, page: number = 1) => {
         } as any;
       }
     },
-    enabled: !!workerId,
+    enabled: !!safeWorkerId,
     staleTime: 300_000,
   });
 

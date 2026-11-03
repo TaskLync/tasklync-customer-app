@@ -8,10 +8,10 @@ import { userApi } from '../services/api/user.api';
 import { BookingDetails, CreateBookingPayload } from '../types/booking.types';
 import { slotToUTCISO } from '../utils/timezone';
 import { isValidUUID, CANONICAL_FALLBACK_UUIDS } from '../utils/uuid';
+import { invalidateAvailability, isSlotConflictError } from '../utils/availabilityEvents';
 import {
   validateServiceArea,
   SERVICE_UNAVAILABLE_MESSAGE,
-  FAISALABAD_CENTER,
 } from '../config/serviceArea.config';
 
 export function useCreateBooking() {
@@ -34,7 +34,7 @@ export function useCreateBooking() {
     setAddress,
   } = useBookingDraftStore();
 
-  const submit = useCallback(async (): Promise<{ booking: BookingDetails | null; error: string | null }> => {
+  const submit = useCallback(async (): Promise<{ booking: BookingDetails | null; error: string | null; conflict?: boolean }> => {
     if (!token) {
       const err = 'Please sign in to confirm and place your booking.';
       setError(err);
@@ -42,7 +42,8 @@ export function useCreateBooking() {
     }
 
     const serviceIds = cartItems.map((i) => i.serviceId);
-    const rawWorkerId = draftWorkerId || cartWorker?.id;
+    // The live cart worker is the source of truth; the persisted draft id can be a previously viewed worker.
+    const rawWorkerId = cartWorker?.id || draftWorkerId;
 
     // Validate that worker is not a mock worker ID
     if (typeof rawWorkerId === 'string' && (rawWorkerId.startsWith('w') || rawWorkerId.startsWith('mock'))) {
@@ -52,9 +53,12 @@ export function useCreateBooking() {
     }
 
     // Validate workerId to standard RFC4122 UUID v4
-    const workerId: string = isValidUUID(rawWorkerId)
-      ? rawWorkerId
-      : CANONICAL_FALLBACK_UUIDS.WORKER_DEFAULT;
+    if (!isValidUUID(rawWorkerId)) {
+      const err = 'Selected professional is not valid. Please choose an active verified professional.';
+      setError(err);
+      return { booking: null, error: err };
+    }
+    const workerId: string = rawWorkerId;
 
     if (cartItems.length === 0 && !cartWorker) {
       const err = 'Your cart is empty. Please select services first.';
@@ -81,8 +85,14 @@ export function useCreateBooking() {
       ? `${address.street}${address.city ? ', ' + address.city : ''}`
       : 'Delivery Address';
 
-    const lat = address?.latitude || currentLocation?.lat || FAISALABAD_CENTER.lat;
-    const lng = address?.longitude || currentLocation?.lng || FAISALABAD_CENTER.lng;
+    const lat = address?.latitude ?? currentLocation?.lat;
+    const lng = address?.longitude ?? currentLocation?.lng;
+
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      const err = 'Please select a valid delivery address within the service area.';
+      setError(err);
+      return { booking: null, error: err };
+    }
 
     // Validate that the delivery destination is inside the active service area (Faisalabad)
     const serviceValidation = validateServiceArea({ lat, lng });
@@ -105,7 +115,7 @@ export function useCreateBooking() {
         const createdAddr = await userApi.createAddress({
           label: address?.label || 'Home',
           address_line: addrText,
-          city: address?.city || 'Faisalabad',
+          city: address?.city || '',
           country: 'Pakistan',
           lat,
           lng,
@@ -118,7 +128,7 @@ export function useCreateBooking() {
             id: createdAddr.id,
             label: createdAddr.label || 'Home',
             street: createdAddr.address_line,
-            city: createdAddr.city || 'Faisalabad',
+            city: createdAddr.city || '',
             latitude: createdAddr.lat,
             longitude: createdAddr.lng,
             isDefault: Boolean(createdAddr.is_default),
@@ -143,7 +153,11 @@ export function useCreateBooking() {
       service_id: primaryServiceId,
       service_type: 'ONE_TIME',
       scheduled_at: scheduledAt,
-      duration_hours: 2,
+      duration_hours:
+        cartItems.reduce((acc, item) => {
+          const itemHours = item.durationHours || (item.durationMins ? item.durationMins / 60 : 0.5);
+          return acc + itemHours * (item.quantity || 1);
+        }, 0) || 0.5,
       address_id: resolvedAddressId,
       address_text: addrText,
       latitude: lat,
@@ -159,13 +173,23 @@ export function useCreateBooking() {
 
     try {
       const booking = await bookingApi.createBooking(payload);
+      // The slot is now taken for THIS worker only: refresh that worker's calendar.
+      invalidateAvailability(workerId);
       setIsLoading(false);
       return { booking, error: null };
     } catch (err: any) {
-      const msg = err?.message || 'Failed to create booking. Please try again.';
+      let conflict = false;
+      let msg = err?.response?.data?.error?.message || err?.message || 'Failed to create booking. Please try again.';
+      if (isSlotConflictError(err)) {
+        conflict = true;
+        // Someone else got the slot (stale availability / double tap): drop it and reload real slots.
+        useBookingDraftStore.getState().setSelectedTimeSlot(null);
+        invalidateAvailability(workerId);
+        msg = 'This time slot was just booked by someone else. Please pick another slot.';
+      }
       setError(msg);
       setIsLoading(false);
-      return { booking: null, error: msg };
+      return { booking: null, error: msg, conflict };
     }
   }, [
     cartItems,

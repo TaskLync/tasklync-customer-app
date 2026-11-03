@@ -2,7 +2,12 @@ import { View, StyleSheet } from 'react-native';
 import { Skeleton } from './Skeleton';
 import { radius } from '@design/radius';
 import { shadows } from '@design/shadows';
+import { colors } from '@design/colors';
 
+/**
+ * Mirrors <ReviewCard /> (16px padding, lg radius, border, sm shadow) so loading
+ * state matches the real list. Spacing between cards is owned by the parent (`gap`).
+ */
 export const SkeletonReviewCard = () => {
   return (
     <View style={styles.container}>
@@ -21,9 +26,9 @@ export const SkeletonReviewCard = () => {
       </View>
 
       <View style={styles.commentBlock}>
-        <Skeleton width={300} height={13} style={{ marginBottom: 6 }} />
-        <Skeleton width={280} height={13} style={{ marginBottom: 6 }} />
-        <Skeleton width={200} height={13} />
+        <Skeleton width="100%" height={13} style={{ marginBottom: 6 }} />
+        <Skeleton width="92%" height={13} style={{ marginBottom: 6 }} />
+        <Skeleton width="62%" height={13} />
       </View>
     </View>
   );
@@ -32,15 +37,15 @@ export const SkeletonReviewCard = () => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
-    borderRadius: radius.md,
-    padding: 14,
-    marginBottom: 10,
-    ...shadows.xs,
+    borderRadius: radius.lg,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
   },
   metaText: {
     marginLeft: 10,
@@ -48,9 +53,9 @@ const styles = StyleSheet.create({
   },
   starsRow: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginTop: 12,
   },
   commentBlock: {
-    marginTop: 4,
+    marginTop: 12,
   },
 });

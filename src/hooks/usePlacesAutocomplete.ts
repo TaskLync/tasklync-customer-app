@@ -5,6 +5,7 @@ import {
   getPlaceDetails,
   generatePlacesSessionToken,
 } from '../services/maps/places.service';
+import { geocodingService } from '../services/maps/geocoding.service';
 import { PlacePrediction, PlaceDetails } from '../types/address.types';
 import { useLocationStore } from '../store/location.store';
 
@@ -99,14 +100,15 @@ export function usePlacesAutocomplete(debounceMs: number = 350) {
             }
             if (geoResults && geoResults.length > 0) {
               const first = geoResults[0];
+              const reverseInfo = await geocodingService.reverseGeocode(first.latitude, first.longitude);
               details = {
                 place_id: prediction.place_id,
                 description: prediction.description,
-                formatted_address: prediction.description,
+                formatted_address: reverseInfo?.formatted_address || prediction.description,
                 lat: first.latitude,
                 lng: first.longitude,
-                city: 'Faisalabad',
-                country: 'Pakistan',
+                city: reverseInfo?.city || '',
+                country: reverseInfo?.country || 'Pakistan',
               };
             }
           } catch (_e) {}

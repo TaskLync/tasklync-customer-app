@@ -8,9 +8,9 @@ const DEFAULT_DELTA = {
   longitudeDelta: 0.03,
 };
 
-const ZOOMED_DELTA = {
-  latitudeDelta: 0.012,
-  longitudeDelta: 0.012,
+const STREET_LEVEL_DELTA = {
+  latitudeDelta: 0.007,
+  longitudeDelta: 0.007,
 };
 
 // Threshold distance in degrees to determine if user panned away from home location
@@ -20,8 +20,12 @@ export interface UseMapCameraReturn {
   mapRef: RefObject<MapView | null>;
   currentRegion: Region | null;
   hasPannedAway: boolean;
-  flyTo: (coords: Coordinates, zoomIn?: boolean) => void;
-  recenter: (userCoords: Coordinates | null) => void;
+  flyTo: (coords: Coordinates, shouldZoom?: boolean, duration?: number) => void;
+  recenter: (
+    userCoords: Coordinates | null,
+    fallbackCoords?: Coordinates,
+    zoomLevel?: 'street' | 'default'
+  ) => void;
   zoomIn: () => void;
   zoomOut: () => void;
   onRegionChangeComplete: (region: Region, userCoords: Coordinates | null) => void;
@@ -32,34 +36,45 @@ export const useMapCamera = (initialRegion?: Region): UseMapCameraReturn => {
   const [currentRegion, setCurrentRegion] = useState<Region | null>(initialRegion || null);
   const [hasPannedAway, setHasPannedAway] = useState<boolean>(false);
 
-  const flyTo = useCallback((coords: Coordinates, shouldZoom = true) => {
+  const flyTo = useCallback((coords: Coordinates, shouldZoom = true, duration = 450) => {
     if (!mapRef.current) return;
     mapRef.current.animateToRegion(
       {
         latitude: coords.lat,
         longitude: coords.lng,
-        ...(shouldZoom ? ZOOMED_DELTA : (currentRegion ? {
-          latitudeDelta: currentRegion.latitudeDelta,
-          longitudeDelta: currentRegion.longitudeDelta,
-        } : DEFAULT_DELTA)),
+        ...(shouldZoom
+          ? STREET_LEVEL_DELTA
+          : currentRegion
+          ? {
+              latitudeDelta: currentRegion.latitudeDelta,
+              longitudeDelta: currentRegion.longitudeDelta,
+            }
+          : DEFAULT_DELTA),
       },
-      350
+      duration
     );
   }, [currentRegion]);
 
-  const recenter = useCallback((userCoords: Coordinates | null, fallbackCoords?: Coordinates) => {
-    const target = userCoords || fallbackCoords || FAISALABAD_CENTER;
-    if (!mapRef.current) return;
-    mapRef.current.animateToRegion(
-      {
-        latitude: target.lat,
-        longitude: target.lng,
-        ...DEFAULT_DELTA,
-      },
-      300
-    );
-    setHasPannedAway(false);
-  }, []);
+  const recenter = useCallback(
+    (
+      userCoords: Coordinates | null,
+      fallbackCoords?: Coordinates,
+      zoomLevel: 'street' | 'default' = 'street'
+    ) => {
+      const target = userCoords || fallbackCoords || FAISALABAD_CENTER;
+      if (!mapRef.current) return;
+      mapRef.current.animateToRegion(
+        {
+          latitude: target.lat,
+          longitude: target.lng,
+          ...(zoomLevel === 'street' ? STREET_LEVEL_DELTA : DEFAULT_DELTA),
+        },
+        450
+      );
+      setHasPannedAway(false);
+    },
+    []
+  );
 
   const zoomIn = useCallback(() => {
     if (!mapRef.current || !currentRegion) return;

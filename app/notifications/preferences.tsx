@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Bell, CalendarCheck, CreditCard, MessageSquare, Star, Sparkles, Shield } from 'lucide-react-native';
 import { notificationApi } from '../../src/services/api/notification.api';
 import { CategoryPreference, NotificationCategory } from '../../src/types/notification.types';
-import { colors } from '../../src/design/colors';
+import { colors, palette } from '../../src/design/colors';
 
 const CATEGORY_METADATA: Record<
   NotificationCategory,
@@ -23,43 +23,43 @@ const CATEGORY_METADATA: Record<
     label: 'Booking Updates',
     description: 'Acceptance, start, arrival, and completion alerts',
     icon: CalendarCheck,
-    color: '#16A34A',
+    color: colors.primaryDark,
   },
   payment: {
     label: 'Payments & Receipts',
     description: 'Payment confirmations, refunds, and escrow notices',
     icon: CreditCard,
-    color: '#D97706',
+    color: colors.warningMedium,
   },
   chat: {
     label: 'Direct Messages',
     description: 'Messages and photos from assigned service professionals',
     icon: MessageSquare,
-    color: '#2563EB',
+    color: colors.textInfo,
   },
   review: {
     label: 'Ratings & Reviews',
     description: 'Feedback requests and review verification',
     icon: Star,
-    color: '#CA8A04',
+    color: colors.starFilled,
   },
   worker: {
     label: 'Worker Updates',
     description: 'Worker profile and status updates',
     icon: Shield,
-    color: '#475569',
+    color: colors.textSecondary,
   },
   platform: {
     label: 'Platform & Security',
     description: 'Account security and service terms notices',
     icon: Bell,
-    color: '#0F172A',
+    color: colors.textPrimary,
   },
   marketing: {
     label: 'Offers & Promotions',
     description: 'Seasonal discounts and featured service recommendations',
     icon: Sparkles,
-    color: '#9333EA',
+    color: palette.purple600,
   },
 };
 
@@ -119,7 +119,7 @@ export default function NotificationPreferencesScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color="#0F172A" />
+          <ArrowLeft size={22} color={colors.textPrimary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Notification Settings</Text>
@@ -128,7 +128,7 @@ export default function NotificationPreferencesScreen() {
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#16A34A" />
+          <ActivityIndicator size="large" color={colors.primaryDark} />
         </View>
       ) : (
         <ScrollView
@@ -145,7 +145,7 @@ export default function NotificationPreferencesScreen() {
               label: pref.category,
               description: 'Notifications for this category',
               icon: Bell,
-              color: '#16A34A',
+              color: colors.primaryDark,
             };
             const Icon = meta.icon;
 
@@ -167,8 +167,8 @@ export default function NotificationPreferencesScreen() {
                   <Switch
                     value={pref.push_enabled}
                     onValueChange={(val) => handleToggle(pref.category, 'push_enabled', val)}
-                    trackColor={{ false: '#E2E8F0', true: '#86EFAC' }}
-                    thumbColor={pref.push_enabled ? '#16A34A' : '#FFFFFF'}
+                    trackColor={{ false: colors.border, true: palette.green300 }}
+                    thumbColor={pref.push_enabled ? colors.primaryDark : colors.white}
                   />
                 </View>
 
@@ -177,8 +177,8 @@ export default function NotificationPreferencesScreen() {
                   <Switch
                     value={pref.sms_enabled}
                     onValueChange={(val) => handleToggle(pref.category, 'sms_enabled', val)}
-                    trackColor={{ false: '#E2E8F0', true: '#86EFAC' }}
-                    thumbColor={pref.sms_enabled ? '#16A34A' : '#FFFFFF'}
+                    trackColor={{ false: colors.border, true: palette.green300 }}
+                    thumbColor={pref.sms_enabled ? colors.primaryDark : colors.white}
                   />
                 </View>
 
@@ -187,8 +187,8 @@ export default function NotificationPreferencesScreen() {
                   <Switch
                     value={pref.email_enabled}
                     onValueChange={(val) => handleToggle(pref.category, 'email_enabled', val)}
-                    trackColor={{ false: '#E2E8F0', true: '#86EFAC' }}
-                    thumbColor={pref.email_enabled ? '#16A34A' : '#FFFFFF'}
+                    trackColor={{ false: colors.border, true: palette.green300 }}
+                    thumbColor={pref.email_enabled ? colors.primaryDark : colors.white}
                   />
                 </View>
               </View>
@@ -211,9 +211,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: colors.borderLight,
   },
   backButton: {
     width: 38,
@@ -221,12 +221,12 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgSubtle,
   },
   headerTitle: {
     fontFamily: 'Poppins-SemiBold',
     fontSize: 18,
-    color: '#0F172A',
+    color: colors.textPrimary,
   },
   headerRightPlaceholder: {
     width: 38,
@@ -238,16 +238,15 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 12,
-    color: '#64748B',
+    color: colors.textSecondary,
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   preferenceCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: colors.bgCard,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -268,13 +267,13 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 15,
-    color: '#0F172A',
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   cardSubtitle: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   toggleRow: {
     flexDirection: 'row',
@@ -282,7 +281,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: colors.borderLight,
   },
   toggleRowLast: {
     paddingBottom: 0,
@@ -290,7 +289,7 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14,
-    color: '#334155',
+    color: colors.textSecondary,
   },
   loadingContainer: {
     flex: 1,

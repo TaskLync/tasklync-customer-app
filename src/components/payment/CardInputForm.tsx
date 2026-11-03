@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   textInput: {
-    backgroundColor: palette.iceGray,
+    backgroundColor: colors.bgInput,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: palette.softGray,
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   iconInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.iceGray,
+    backgroundColor: colors.bgInput,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: palette.softGray,

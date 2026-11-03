@@ -23,17 +23,10 @@ export const CartSummary: FC<CartSummaryProps> = ({ totals }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    marginHorizontal: 16,
+    backgroundColor: colors.bgSection,
+    borderRadius: 14,
+    marginHorizontal: 20,
     marginVertical: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    padding: 18,
   },
 });

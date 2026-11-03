@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { colors } from '../../design/colors';
-import { textStyles } from '../../design/typography';
+import { fontFamily } from '../../design/typography';
 import { layout } from '../../design/spacing';
 
 interface SectionProps {
@@ -18,7 +18,7 @@ export const Section: React.FC<SectionProps> = ({
   actionLabel,
   onAction,
   children,
-  paddingTop = 24,
+  paddingTop = 0,
   showDivider = false,
 }) => {
   return (
@@ -63,19 +63,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: layout.screenPaddingH,
-    paddingBottom: 12,
+    marginBottom: 12,
   },
   title: {
-    ...textStyles.h4,
+    fontFamily: fontFamily.poppins.bold,
+    fontSize: 18,
     color: colors.textPrimary,
+    letterSpacing: -0.3,
   },
   actionButton: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   actionLabel: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 13,
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 13.5,
     color: colors.primary,
   },
   content: {

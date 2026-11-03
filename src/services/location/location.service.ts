@@ -1,7 +1,12 @@
 import { Platform, Linking } from 'react-native';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
-import { Coordinates } from '../../types/location.types';
+import {
+  Coordinates,
+  VerifiedLocation,
+  FreshLocationOptions,
+  FreshLocationResult,
+} from '../../types/location.types';
 import { extractCityOrAreaName, extractFullAddressLine } from '../../utils/locationUtils';
 import { localStorage } from '../storage/local.storage';
 
@@ -24,21 +29,21 @@ export interface GetPositionOptions {
   enableHighAccuracy?: boolean;
   timeoutMs?: number;
   useCacheFirst?: boolean;
+  targetAccuracyMeters?: number;
+  maxAcceptableAccuracyMeters?: number;
+  maxAgeMs?: number;
+  allowMock?: boolean;
 }
 
-// Global in-flight acquisition promise to deduplicate concurrent hardware GPS requests
-let activePositionPromise: Promise<Coordinates | null> | null = null;
+// Global in-flight lock to deduplicate concurrent hardware GPS requests
+let activeFreshPositionPromise: Promise<FreshLocationResult> | null = null;
+let activeLegacyPositionPromise: Promise<Coordinates | null> | null = null;
 
-// Timeout wrapper helper
-const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, fallbackValue: T): Promise<T> => {
-  let timer: ReturnType<typeof setTimeout>;
-  const timeoutPromise = new Promise<T>((resolve) => {
-    timer = setTimeout(() => resolve(fallbackValue), timeoutMs);
-  });
-  return Promise.race([promise, timeoutPromise]).finally(() => {
-    clearTimeout(timer);
-  });
-};
+// Default thresholds for Uber-grade GPS convergence
+const DEFAULT_TARGET_ACCURACY_METERS = 20; // 20m target for high-confidence lock
+const DEFAULT_MAX_ACCEPTABLE_ACCURACY_METERS = 35; // 35m cutoff
+const DEFAULT_TIMEOUT_MS = 9000; // 9s timeout for satellite lock
+const DEFAULT_MAX_AGE_MS = 10000; // 10s freshness guard
 
 export const locationService = {
   /**
@@ -107,130 +112,382 @@ export const locationService = {
   },
 
   /**
-   * Tiered GPS position acquisition with:
-   * 1. Concurrent request deduplication
-   * 2. Cache-first strategy (last known position for 0ms cold start)
-   * 3. Fresh GPS lock with 8-second timeout guard
-   * 4. Automatic low-accuracy degradation if balanced times out
+   * Production-grade, high-confidence GPS position acquisition engine:
+   * 1. Request deduplication (single in-flight hardware lock)
+   * 2. Permission & hardware provider validation
+   * 3. Android High-Accuracy dialog integration
+   * 4. Multi-sample GPS warm-up & convergence via watchPositionAsync
+   * 5. Strict accuracy radius validation (target <= 20m, cutoff <= 35m)
+   * 6. Timestamp freshness validation (rejects stale provider fixes)
+   * 7. Mock location detection & rejection
+   * 8. Zero battery waste with guaranteed subscription cleanup
+   * 9. Never silently falls back to inaccurate or cached positions
    */
-  async getCurrentPosition(options?: GetPositionOptions): Promise<Coordinates | null> {
-    const {
-      timeoutMs = 8000,
-      useCacheFirst = true,
-      enableHighAccuracy = false,
-    } = options || {};
-
-    // Deduplicate only if an existing request is active and compatible with freshness requirement
-    if (activePositionPromise && useCacheFirst) {
-      return activePositionPromise;
+  async acquireFreshGPSPosition(options?: FreshLocationOptions): Promise<FreshLocationResult> {
+    // If a request is already in-flight, return the existing promise to prevent duplicate hardware locks
+    if (activeFreshPositionPromise) {
+      return activeFreshPositionPromise;
     }
 
-    const acquisitionPromise = (async (): Promise<Coordinates | null> => {
+    const {
+      timeoutMs = DEFAULT_TIMEOUT_MS,
+      targetAccuracyMeters = DEFAULT_TARGET_ACCURACY_METERS,
+      maxAcceptableAccuracyMeters = DEFAULT_MAX_ACCEPTABLE_ACCURACY_METERS,
+      maxAgeMs = DEFAULT_MAX_AGE_MS,
+      allowMock = false,
+      mayShowUserSettingsDialog = true,
+    } = options || {};
+
+    const acquisition = (async (): Promise<FreshLocationResult> => {
+      let watcherSubscription: Location.LocationSubscription | null = null;
+      let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
+
       try {
-        // Step 1: Verify hardware services & permission
+        // Step 1: Validate permissions & hardware providers
         const state = await this.checkLocationState();
-        if (!state.servicesEnabled || !state.granted) {
-          // Only fall back to cache if caller explicitly allows cached data
-          if (useCacheFirst) {
-            const cached = localStorage.getCachedLastLocation();
-            if (cached && typeof cached.latitude === 'number' && typeof cached.longitude === 'number') {
-              return { lat: cached.latitude, lng: cached.longitude };
-            }
-          }
-          return null;
-        }
 
-        // Step 2: Cache-first instant return (last known position)
-        if (useCacheFirst) {
-          try {
-            const lastKnown = await Location.getLastKnownPositionAsync({
-              maxAge: 120000, // 2 minutes freshness
-            });
-            if (lastKnown?.coords) {
-              const cachedCoords: Coordinates = {
-                lat: lastKnown.coords.latitude,
-                lng: lastKnown.coords.longitude,
+        if (!state.servicesEnabled) {
+          // On Android, prompt the user with the Google Play Services high accuracy dialog
+          if (Platform.OS === 'android' && mayShowUserSettingsDialog) {
+            try {
+              await Location.enableNetworkProviderAsync();
+              const recheck = await Location.hasServicesEnabledAsync().catch(() => false);
+              if (!recheck) {
+                return {
+                  success: false,
+                  error: {
+                    code: 'SERVICES_DISABLED',
+                    message: 'Location services are disabled on this device.',
+                    userMessage:
+                      'Device location services (GPS) are turned off. Please enable GPS in your device settings.',
+                  },
+                };
+              }
+            } catch {
+              return {
+                success: false,
+                error: {
+                  code: 'SERVICES_DISABLED',
+                  message: 'Location services are disabled on this device.',
+                  userMessage:
+                    'Device location services (GPS) are turned off. Please enable GPS in your device settings.',
+                },
               };
-              localStorage.cacheLastLocation({
-                latitude: cachedCoords.lat,
-                longitude: cachedCoords.lng,
-              });
-              return cachedCoords;
             }
-          } catch {
-            // Ignore failure and continue to fresh lock
-          }
-        }
-
-        // Step 3: Fresh position acquisition with timeout guard
-        const accuracy = enableHighAccuracy
-          ? Location.Accuracy.High
-          : Location.Accuracy.Balanced;
-
-        const freshLocationPromise = Location.getCurrentPositionAsync({
-          accuracy,
-        });
-
-        const location = await withTimeout(freshLocationPromise, timeoutMs, null);
-
-        if (location?.coords) {
-          const coords: Coordinates = {
-            lat: location.coords.latitude,
-            lng: location.coords.longitude,
-          };
-          localStorage.cacheLastLocation({
-            latitude: coords.lat,
-            longitude: coords.lng,
-          });
-          return coords;
-        }
-
-        // Step 4: Degraded fallback if Balanced/High accuracy timed out (e.g. indoors/basement)
-        try {
-          const degradedPromise = Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Lowest,
-          });
-          const degraded = await withTimeout(degradedPromise, 3000, null);
-          if (degraded?.coords) {
-            const coords: Coordinates = {
-              lat: degraded.coords.latitude,
-              lng: degraded.coords.longitude,
+          } else {
+            return {
+              success: false,
+              error: {
+                code: 'SERVICES_DISABLED',
+                message: 'Location services are disabled on this device.',
+                userMessage:
+                  'Device location services (GPS) are turned off. Please enable GPS in your device settings.',
+              },
             };
-            localStorage.cacheLastLocation({
-              latitude: coords.lat,
-              longitude: coords.lng,
+          }
+        }
+
+        if (!state.granted) {
+          return {
+            success: false,
+            error: {
+              code: state.canAskAgain ? 'PERMISSION_DENIED' : 'PERMISSION_BLOCKED',
+              message: 'Location permission was not granted.',
+              userMessage: state.canAskAgain
+                ? 'Location permission is required to detect your current position.'
+                : 'Location permission is permanently disabled. Please enable it in Settings.',
+              canAskAgain: state.canAskAgain,
+            },
+          };
+        }
+
+        // Step 2: Progressive GPS convergence acquisition
+        return await new Promise<FreshLocationResult>((resolve) => {
+          let hasSettled = false;
+          let bestSample: VerifiedLocation | null = null;
+          let mockDetected = false;
+
+          const cleanup = () => {
+            if (timeoutTimer) {
+              clearTimeout(timeoutTimer);
+              timeoutTimer = null;
+            }
+            if (watcherSubscription) {
+              watcherSubscription.remove();
+              watcherSubscription = null;
+            }
+          };
+
+          const evaluateSample = (loc: Location.LocationObject) => {
+            if (hasSettled || !loc || !loc.coords) return;
+
+            const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } =
+              loc.coords;
+
+            // Reject invalid numerical coordinates
+            if (
+              typeof latitude !== 'number' ||
+              isNaN(latitude) ||
+              typeof longitude !== 'number' ||
+              isNaN(longitude)
+            ) {
+              return;
+            }
+
+            // Reject invalid or negative accuracy
+            if (typeof accuracy !== 'number' || isNaN(accuracy) || accuracy < 0) {
+              return;
+            }
+
+            // Mock location rejection
+            if (loc.mocked) {
+              mockDetected = true;
+              if (!allowMock) {
+                return;
+              }
+            }
+
+            // Freshness validation (reject old cached fixes delivered by the OS provider)
+            const sampleTime = loc.timestamp || Date.now();
+            const ageMs = Date.now() - sampleTime;
+            if (ageMs > maxAgeMs) {
+              return;
+            }
+
+            const candidate: VerifiedLocation = {
+              lat: latitude,
+              lng: longitude,
+              accuracy: Math.round(accuracy * 10) / 10,
+              timestamp: sampleTime,
+              altitude: altitude ?? null,
+              altitudeAccuracy: altitudeAccuracy ?? null,
+              heading: heading ?? null,
+              speed: speed ?? null,
+              isMocked: loc.mocked ?? false,
+            };
+
+            // Keep track of the best sample seen so far
+            if (!bestSample || candidate.accuracy < bestSample.accuracy) {
+              bestSample = candidate;
+            }
+
+            // Immediate resolution if target high-confidence threshold reached
+            if (candidate.accuracy <= targetAccuracyMeters) {
+              hasSettled = true;
+              cleanup();
+
+              // Cache verified location for warm app starts
+              localStorage.cacheLastLocation({
+                latitude: candidate.lat,
+                longitude: candidate.lng,
+              });
+
+              resolve({
+                success: true,
+                location: candidate,
+              });
+            }
+          };
+
+          // Step 3: Start hardware satellite watcher
+          const accuracyMode =
+            Platform.OS === 'ios'
+              ? Location.Accuracy.BestForNavigation
+              : Location.Accuracy.Highest;
+
+          Location.watchPositionAsync(
+            {
+              accuracy: accuracyMode,
+              timeInterval: 500,
+              distanceInterval: 0,
+              mayShowUserSettingsDialog: true,
+            },
+            (location) => {
+              evaluateSample(location);
+            }
+          )
+            .then((subscription) => {
+              if (hasSettled) {
+                subscription.remove();
+              } else {
+                watcherSubscription = subscription;
+              }
+            })
+            .catch((err) => {
+              console.warn('[LocationService] watchPositionAsync error:', err);
             });
-            return coords;
-          }
-        } catch {
-          // Ignore degraded failure
-        }
 
-        // Step 5: Fallback to last cached position ONLY when cache-first is allowed
-        if (useCacheFirst) {
-          const cached = localStorage.getCachedLastLocation();
-          if (cached && typeof cached.latitude === 'number' && typeof cached.longitude === 'number') {
-            return { lat: cached.latitude, lng: cached.longitude };
-          }
-        }
+          // Step 4: Parallel one-shot racer in case watchPositionAsync is delayed
+          Location.getCurrentPositionAsync({
+            accuracy: accuracyMode,
+          })
+            .then((oneShot) => {
+              evaluateSample(oneShot);
+            })
+            .catch(() => {
+              // Ignore one-shot failure; watcher continues
+            });
 
-        return null;
-      } catch (err) {
-        console.warn('[LocationService] Error acquiring current position:', err);
-        if (useCacheFirst) {
-          const cached = localStorage.getCachedLastLocation();
-          if (cached && typeof cached.latitude === 'number' && typeof cached.longitude === 'number') {
-            return { lat: cached.latitude, lng: cached.longitude };
-          }
-        }
-        return null;
+          // Step 5: Timeout safety timer
+          timeoutTimer = setTimeout(() => {
+            if (hasSettled) return;
+            hasSettled = true;
+            cleanup();
+
+            // If we found a sample within acceptable cutoff threshold, accept it
+            if (bestSample && bestSample.accuracy <= maxAcceptableAccuracyMeters) {
+              localStorage.cacheLastLocation({
+                latitude: bestSample.lat,
+                longitude: bestSample.lng,
+              });
+              resolve({
+                success: true,
+                location: bestSample,
+              });
+              return;
+            }
+
+            // If a fix was received but accuracy was worse than acceptable cutoff
+            if (bestSample) {
+              resolve({
+                success: false,
+                error: {
+                  code: 'LOW_ACCURACY',
+                  message: `GPS accuracy radius of ${Math.round(bestSample.accuracy)}m exceeds acceptable threshold (${maxAcceptableAccuracyMeters}m).`,
+                  userMessage: `Weak GPS signal (accuracy ±${Math.round(bestSample.accuracy)}m). Please move near a window or outdoors and try again.`,
+                  accuracy: bestSample.accuracy,
+                },
+              });
+              return;
+            }
+
+            // If mock was detected and all samples were rejected
+            if (mockDetected && !allowMock) {
+              resolve({
+                success: false,
+                error: {
+                  code: 'MOCK_DETECTED',
+                  message: 'Mock location detected and rejected.',
+                  userMessage:
+                    'Mock GPS coordinates detected. Please turn off location spoofing in your device settings.',
+                },
+              });
+              return;
+            }
+
+            // Outright timeout with zero fixes
+            resolve({
+              success: false,
+              error: {
+                code: 'TIMEOUT',
+                message: 'GPS satellite lock timed out before acquiring position.',
+                userMessage:
+                  'Unable to detect your GPS position. Please check your signal and try again.',
+              },
+            });
+          }, timeoutMs);
+        });
+      } catch (err: any) {
+        console.warn('[LocationService] Unexpected acquisition error:', err);
+        return {
+          success: false,
+          error: {
+            code: 'UNKNOWN',
+            message: err?.message || 'Failed to acquire location.',
+            userMessage: 'An unexpected error occurred while obtaining your location.',
+          },
+        };
       } finally {
-        activePositionPromise = null;
+        if (watcherSubscription) {
+          (watcherSubscription as Location.LocationSubscription).remove();
+        }
+        if (timeoutTimer) {
+          clearTimeout(timeoutTimer);
+        }
+        activeFreshPositionPromise = null;
       }
     })();
 
-    activePositionPromise = acquisitionPromise;
-    return acquisitionPromise;
+    activeFreshPositionPromise = acquisition;
+    return acquisition;
+  },
+
+  /**
+   * Backward-compatible position getter.
+   * If useCacheFirst is true, attempts last known position first (e.g. for instant background map preview).
+   * Otherwise, delegates to the verified high-accuracy fresh GPS engine.
+   * NEVER silently returns degraded cell-tower/inaccurate coordinates.
+   */
+  async getCurrentPosition(options?: GetPositionOptions): Promise<Coordinates | null> {
+    const {
+      timeoutMs = DEFAULT_TIMEOUT_MS,
+      useCacheFirst = false, // Changed default to FALSE to ensure fresh data on location requests
+      targetAccuracyMeters = DEFAULT_TARGET_ACCURACY_METERS,
+      maxAcceptableAccuracyMeters = DEFAULT_MAX_ACCEPTABLE_ACCURACY_METERS,
+      maxAgeMs = DEFAULT_MAX_AGE_MS,
+      allowMock = false,
+    } = options || {};
+
+    if (activeLegacyPositionPromise && useCacheFirst) {
+      return activeLegacyPositionPromise;
+    }
+
+    const legacyPromise = (async (): Promise<Coordinates | null> => {
+      // If cached location explicitly allowed, try last known position first
+      if (useCacheFirst) {
+        try {
+          const lastKnown = await Location.getLastKnownPositionAsync({
+            maxAge: 60000, // 1 minute max age
+            requiredAccuracy: maxAcceptableAccuracyMeters,
+          });
+          if (
+            lastKnown?.coords &&
+            typeof lastKnown.coords.latitude === 'number' &&
+            typeof lastKnown.coords.longitude === 'number'
+          ) {
+            return {
+              lat: lastKnown.coords.latitude,
+              lng: lastKnown.coords.longitude,
+            };
+          }
+        } catch {
+          // Continue to fresh GPS lock
+        }
+      }
+
+      // Fresh acquisition
+      const freshResult = await this.acquireFreshGPSPosition({
+        timeoutMs,
+        targetAccuracyMeters,
+        maxAcceptableAccuracyMeters,
+        maxAgeMs,
+        allowMock,
+      });
+
+      if (freshResult.success) {
+        return {
+          lat: freshResult.location.lat,
+          lng: freshResult.location.lng,
+        };
+      }
+
+      // If user strictly requested cached fallback ONLY when cache-first is enabled
+      if (useCacheFirst) {
+        const cached = localStorage.getCachedLastLocation();
+        if (cached && typeof cached.latitude === 'number' && typeof cached.longitude === 'number') {
+          return { lat: cached.latitude, lng: cached.longitude };
+        }
+      }
+
+      return null;
+    })();
+
+    activeLegacyPositionPromise = legacyPromise;
+    try {
+      return await legacyPromise;
+    } finally {
+      activeLegacyPositionPromise = null;
+    }
   },
 
   /**

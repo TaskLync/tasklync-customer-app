@@ -121,45 +121,38 @@ export const AddressCard: React.FC<AddressCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    height: 76,
-    paddingHorizontal: 16,
+    minHeight: 68,
     paddingVertical: 14,
-    borderRadius: 18,
     backgroundColor: palette.white,
     justifyContent: 'center',
-    shadowColor: palette.gray900,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
   },
   cardUnselected: {
-    borderWidth: 1,
-    borderColor: palette.gray100,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   cardSelected: {
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    backgroundColor: palette.green50,
+    backgroundColor: colors.primaryTint,
+    marginHorizontal: -12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
   cardPressed: {
-    backgroundColor: palette.gray50,
-    transform: [{ scale: 0.99 }],
+    backgroundColor: colors.bgSection,
   },
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   iconCircleUnselected: {
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgSection,
   },
   iconCircleSelected: {
     backgroundColor: palette.green100,

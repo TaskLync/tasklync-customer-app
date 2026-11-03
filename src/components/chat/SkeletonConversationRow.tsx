@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Skeleton } from '../ui/Skeleton/Skeleton';
@@ -33,7 +34,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
   },
   avatar: {
     marginRight: 14,

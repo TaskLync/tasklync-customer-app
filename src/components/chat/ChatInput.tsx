@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
@@ -22,7 +23,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { compressImage } from '../../utils/imageCompression';
 
 interface ChatInputProps {
-  onSend: (text: string, type?: 'text' | 'image', mediaUrl?: string) => void;
+  onSend?: (text: string, type?: 'text' | 'image', mediaUrl?: string) => void;
+  onSendMessage?: (text: string) => void;
+  bookingId?: string;
+  isClosed?: boolean;
   onTyping?: () => void;
   onStopTyping?: () => void;
   disabled?: boolean;
@@ -42,6 +46,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
  */
 export const ChatInput = React.memo(function ChatInput({
   onSend,
+  onSendMessage,
   onTyping,
   onStopTyping,
   disabled = false,
@@ -53,14 +58,11 @@ export const ChatInput = React.memo(function ChatInput({
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    const showSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => setIsKeyboardVisible(true)
-    );
-    const hideSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setIsKeyboardVisible(false)
-    );
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
     return () => {
       showSub.remove();
       hideSub.remove();
@@ -87,16 +89,20 @@ export const ChatInput = React.memo(function ChatInput({
     setText('');
     sendProgress.value = withTiming(0, { duration: 150 });
     onStopTyping?.();
-    onSend(toSend, 'text');
-  }, [text, disabled, onSend, onStopTyping, sendProgress]);
+    if (typeof onSend === 'function') {
+      onSend(toSend, 'text');
+    } else if (typeof onSendMessage === 'function') {
+      onSendMessage(toSend);
+    }
+  }, [text, disabled, onSend, onSendMessage, onStopTyping, sendProgress]);
 
   // Image Attachment Picker with Compression
   const handlePickedImage = async (uri: string) => {
     try {
       const compressed = await compressImage(uri);
-      onSend('', 'image', compressed.uri);
+      onSend?.('', 'image', compressed.uri);
     } catch {
-      onSend('', 'image', uri);
+      onSend?.('', 'image', uri);
     }
   };
 
@@ -147,6 +153,7 @@ export const ChatInput = React.memo(function ChatInput({
   };
 
   const handleAttachPress = () => {
+    Keyboard.dismiss();
     setIsMediaModalVisible(true);
   };
 
@@ -155,7 +162,7 @@ export const ChatInput = React.memo(function ChatInput({
     const backgroundColor = interpolateColor(
       sendProgress.value,
       [0, 1],
-      ['#F3F4F6', '#16A34A']
+      [palette.gray100, colors.primaryDark]
     );
 
     return {
@@ -163,11 +170,22 @@ export const ChatInput = React.memo(function ChatInput({
     };
   });
 
-  const sendIconColor = text.trim().length > 0 ? '#FFFFFF' : '#9CA3AF';
+  const sendIconColor = text.trim().length > 0 ? colors.white : colors.textMuted;
 
   return (
     <>
-      <View style={[styles.wrapper, { paddingBottom: isKeyboardVisible ? 10 : Math.max(insets.bottom, 12) }]}>
+      <View
+        style={[
+          styles.wrapper,
+          {
+            paddingBottom: isKeyboardVisible
+              ? 8
+              : insets.bottom > 0
+              ? insets.bottom + 10
+              : 14,
+          },
+        ]}
+      >
         <View style={styles.container}>
           {/* Attachment Button (44px touch target) */}
           <Pressable
@@ -177,14 +195,14 @@ export const ChatInput = React.memo(function ChatInput({
             accessibilityLabel="Attach photo"
             accessibilityRole="button"
           >
-            <Paperclip size={22} color="#6B7280" />
+            <Paperclip size={22} color={colors.textSecondary} />
           </Pressable>
 
           {/* Input Text Box (grows 40px to 100px max) */}
           <TextInput
             style={[styles.input, { height: Math.min(Math.max(40, inputHeight), 100) }]}
             placeholder="Message..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textMuted}
             value={text}
             onChangeText={handleChangeText}
             multiline
@@ -221,7 +239,7 @@ export const ChatInput = React.memo(function ChatInput({
           <View
             style={[
               styles.modalSheet,
-              { paddingBottom: Math.max(insets.bottom, 18) },
+              { paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24 },
             ]}
           >
             <View style={styles.modalHeader}>
@@ -231,7 +249,7 @@ export const ChatInput = React.memo(function ChatInput({
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 style={styles.modalCloseButton}
               >
-                <X size={18} color="#64748B" />
+                <X size={18} color={colors.textSecondary} />
               </Pressable>
             </View>
 
@@ -246,8 +264,8 @@ export const ChatInput = React.memo(function ChatInput({
                 accessibilityRole="button"
                 accessibilityLabel="Take photo with camera"
               >
-                <View style={[styles.iconCircle, { backgroundColor: '#EFF6FF' }]}>
-                  <Camera size={22} color="#2563EB" strokeWidth={2.2} />
+                <View style={[styles.iconCircle, { backgroundColor: colors.infoLight }]}>
+                  <Camera size={22} color={colors.textInfo} strokeWidth={2.2} />
                 </View>
                 <View style={styles.optionTextCol}>
                   <Text style={styles.optionTitle}>Take Photo</Text>
@@ -265,8 +283,8 @@ export const ChatInput = React.memo(function ChatInput({
                 accessibilityRole="button"
                 accessibilityLabel="Choose from photo library"
               >
-                <View style={[styles.iconCircle, { backgroundColor: '#F0FDF4' }]}>
-                  <ImageIcon size={22} color="#16A34A" strokeWidth={2.2} />
+                <View style={[styles.iconCircle, { backgroundColor: colors.primaryTint }]}>
+                  <ImageIcon size={22} color={colors.primaryDark} strokeWidth={2.2} />
                 </View>
                 <View style={styles.optionTextCol}>
                   <Text style={styles.optionTitle}>Choose from Gallery</Text>
@@ -296,19 +314,19 @@ export const ChatInput = React.memo(function ChatInput({
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: colors.borderLight,
     paddingTop: 8,
     paddingHorizontal: 12,
   },
   container: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.bgSubtle,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 6,
     paddingVertical: 4,
   },
@@ -324,12 +342,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 15,
-    color: '#111827',
+    color: colors.textPrimary,
     paddingTop: Platform.OS === 'ios' ? 9 : 8,
     paddingBottom: Platform.OS === 'ios' ? 9 : 8,
     paddingHorizontal: 8,
     maxHeight: 100,
     lineHeight: 20,
+    textAlignVertical: 'center',
   },
   sendButton: {
     width: 36,
@@ -345,16 +364,16 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 18,
     paddingHorizontal: 18,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -370,13 +389,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 17,
-    color: '#0F172A',
+    color: colors.textPrimary,
   },
   modalCloseButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -390,12 +409,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 16,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgSubtle,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: colors.borderLight,
   },
   mediaOptionPressed: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.bgHover,
     transform: [{ scale: 0.99 }],
   },
   iconCircle: {
@@ -412,28 +431,28 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 15,
-    color: '#0F172A',
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   optionSubtitle: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   cancelButton: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 13,
     borderRadius: 14,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.bgHover,
     marginTop: 4,
   },
   cancelButtonPressed: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: colors.borderLight,
   },
   cancelButtonText: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 14,
-    color: '#475569',
+    color: colors.textSecondary,
   },
 });

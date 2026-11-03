@@ -10,7 +10,8 @@ import { WorkerNearby } from '../../types/worker.types';
 import { SortOption } from '../../types/search.types';
 import { useInfiniteWorkers } from '../../hooks/useInfiniteWorkers';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
-import { useLocationStore } from '../../store/location.store';
+import { useLocation } from '../../hooks/useLocation';
+import { FAISALABAD_CENTER } from '../../config/serviceArea.config';
 import { WorkerSearchCard } from '../worker/WorkerSearchCard';
 import { SkeletonWorkerSearchCard } from '../ui/Skeleton/SkeletonWorkerSearchCard';
 import { EmptyState } from '../feedback/EmptyState/EmptyState';
@@ -27,6 +28,7 @@ interface CategoryWorkersListProps {
   maxRate?: number;
   minRating?: number;
   available?: 'any' | 'now' | 'today';
+  radius?: number;
 }
 
 const AnyFlashList = FlashList as any;
@@ -37,13 +39,13 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
   onSortChange,
   maxRate = 0,
   minRating = 0,
+  radius = 10000,
 }) => {
   const { isOffline } = useNetworkStatus();
-  const { currentLocation } = useLocationStore();
+  const { location } = useLocation();
 
-  // Location fallback (Karachi)
-  const lat = currentLocation?.lat ?? 24.8607;
-  const lng = currentLocation?.lng ?? 67.0011;
+  const lat = location?.lat ?? FAISALABAD_CENTER.lat;
+  const lng = location?.lng ?? FAISALABAD_CENTER.lng;
 
   const {
     workers,
@@ -59,7 +61,7 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
     lat,
     lng,
     category: categoryId,
-    radius: 10000, // 10km radius default
+    radius,
     minRating,
     maxRate,
     sortBy,
@@ -156,6 +158,7 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
           }
         />
         <EmptyState
+          type="no-workers"
           title="No workers for this category near you"
           subtitle="Try expanding your search filters or changing your location."
           onAction={refetch}

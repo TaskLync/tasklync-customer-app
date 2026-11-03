@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -13,10 +13,10 @@ export interface CurrencyToggleProps {
   onChange: (value: CurrencyCode) => void;
 }
 
-const TOGGLE_WIDTH = 148;
-const TOGGLE_HEIGHT = 38;
-const PADDING = 3;
-const PILL_WIDTH = (TOGGLE_WIDTH - PADDING * 2) / 2; // 71px
+const TOGGLE_WIDTH = 138;
+const TOGGLE_HEIGHT = 34;
+const PADDING = 2;
+const PILL_WIDTH = (TOGGLE_WIDTH - PADDING * 2) / 2; // 67px
 
 export const CurrencyToggle: React.FC<CurrencyToggleProps> = ({ value, onChange }) => {
   const isPkr = value === 'PKR';
@@ -46,12 +46,12 @@ export const CurrencyToggle: React.FC<CurrencyToggleProps> = ({ value, onChange 
       accessibilityRole="radiogroup"
       accessibilityLabel="Select App Currency"
     >
-      {/* Animated Sliding Green Pill */}
+      {/* Animated Sliding Brand-Green Pill */}
       <Animated.View style={[styles.activePill, animatedPillStyle]} />
 
       {/* PKR Option */}
       <TouchableOpacity
-        activeOpacity={0.75}
+        activeOpacity={0.7}
         style={styles.optionBtn}
         onPress={() => handleSelect('PKR')}
         accessibilityRole="radio"
@@ -69,7 +69,7 @@ export const CurrencyToggle: React.FC<CurrencyToggleProps> = ({ value, onChange 
 
       {/* USD Option */}
       <TouchableOpacity
-        activeOpacity={0.75}
+        activeOpacity={0.7}
         style={styles.optionBtn}
         onPress={() => handleSelect('USD')}
         accessibilityRole="radio"
@@ -94,13 +94,12 @@ const styles = StyleSheet.create({
     height: TOGGLE_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.iceGray,
+    backgroundColor: palette.gray100,
     borderRadius: radius.pill,
     padding: PADDING,
     position: 'relative',
     borderWidth: 1,
-    borderColor: palette.softGray,
-    overflow: 'hidden',
+    borderColor: palette.gray200,
   },
   activePill: {
     position: 'absolute',
@@ -110,6 +109,11 @@ const styles = StyleSheet.create({
     width: PILL_WIDTH,
     backgroundColor: colors.primaryDark,
     borderRadius: radius.pill,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   optionBtn: {
     flex: 1,
@@ -120,11 +124,11 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontFamily: fontFamily.jakarta.medium,
-    fontSize: 12,
+    fontSize: 11.5,
     color: colors.textSecondary,
   },
   optionTextActive: {
-    fontFamily: fontFamily.jakarta.bold,
-    color: colors.textOnGreen,
+    fontFamily: fontFamily.jakarta.semiBold,
+    color: palette.white,
   },
 });

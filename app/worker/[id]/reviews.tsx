@@ -1,66 +1,160 @@
-import { useState } from 'react';
-import { StyleSheet, View, Text, RefreshControl, Pressable, Platform, Modal } from 'react-native';
+import { useCallback, useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  RefreshControl,
+  Pressable,
+  ScrollView,
+  StatusBar,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
-import { ArrowLeft, SlidersHorizontal, Check } from 'lucide-react-native';
+import { ArrowLeft, Star } from 'lucide-react-native';
 
+import { useWorkerReviewSummary } from '../../../src/hooks/useReview';
 import { useWorkerReviews } from '../../../src/hooks/useWorkerReviews';
-import { ReviewSummary } from '../../../src/components/review/ReviewSummary';
-import { ReviewCard } from '../../../src/components/review/ReviewCard';
+import { ReviewRatingOverview } from '../../../src/components/review/ReviewRatingOverview';
+import { ReviewCard, REVIEW_CARD_GAP } from '../../../src/components/review/ReviewCard';
 import { SkeletonReviewCard } from '../../../src/components/ui/Skeleton';
-import { ReviewSortOption } from '../../../src/types';
-
-import { colors } from '../../../src/design/colors';
-import { shadows } from '../../../src/design/shadows';
+import { EmptyState } from '../../../src/components/feedback/EmptyState';
+import { colors, palette } from '../../../src/design/colors';
 import { fontFamily as fonts } from '../../../src/design/typography';
+import { radius } from '../../../src/design/radius';
 
-const SORT_OPTIONS: Array<{ key: ReviewSortOption; label: string }> = [
-  { key: 'recent', label: 'Most Recent' },
-  { key: 'highest', label: 'Highest Rated' },
-  { key: 'lowest', label: 'Lowest Rated' },
-  { key: 'verified', label: 'Verified Bookings Only' },
+const RATING_FILTER_OPTIONS: Array<{ key: number | undefined; label: string }> = [
+  { key: undefined, label: 'All' },
+  { key: 5, label: '5 Stars' },
+  { key: 4, label: '4 Stars' },
+  { key: 3, label: '3 Stars' },
+  { key: 2, label: '2 Stars' },
+  { key: 1, label: '1 Star' },
 ];
 
+const ReviewSeparator = () => <View />;
+
+/**
+ * WorkerReviewsScreen
+ *
+ * Implements Section 4.5 & 4.6 of REVIEW_SERVICE_CUSTOMER_API_SPECIFICATION.md:
+ * - Fetches Worker Rating Summary (average, star distribution 1-5, and top compliments)
+ * - Server-side star rating filtering (All, 5, 4, 3, 2, 1)
+ * - Infinite cursor pagination (cursor, limit=20)
+ * - Review cards with photo galleries, tag pills, worker replies, and report modal
+ */
 export default function WorkerReviewsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: workerId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
-  const [sortBy, setSortBy] = useState<ReviewSortOption>('recent');
-  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [selectedRatingFilter, setSelectedRatingFilter] = useState<number | undefined>(undefined);
 
+  // 1. Fetch aggregate summary from review-service
+  const {
+    data: summaryData,
+    refetch: refetchSummary,
+  } = useWorkerReviewSummary(workerId || '');
+
+  // 2. Fetch paginated reviews list
   const {
     reviews,
-    summary,
-    total,
-    isLoading,
+    total: _total,
+    isLoading: isReviewsLoading,
     isLoadingMore,
     hasNextPage,
     loadMore,
-    refetch,
-  } = useWorkerReviews(id || '', sortBy);
+    refetch: refetchReviews,
+  } = useWorkerReviews(workerId || '', 'recent', selectedRatingFilter);
 
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
+    await Promise.all([refetchSummary(), refetchReviews()]);
     setRefreshing(false);
   };
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(workerId ? (`/worker/${workerId}` as any) : ('/(tabs)/' as any));
+    }
+  };
+
+  const handleSelectFilter = useCallback((ratingVal: number | undefined) => {
+    setSelectedRatingFilter(ratingVal);
+  }, []);
 
   const renderItem = ({ item }: { item: any }) => (
     <ReviewCard
       review={item}
       showReply={true}
       showWorkInfo={true}
-      maxCommentLines={3}
+      allowReport={true}
+      maxCommentLines={4}
     />
   );
 
+  const renderHeader = () => (
+    <View style={styles.listHeader}>
+      {/* Rating Summary Card (Distribution + Top Compliments) */}
+      {summaryData ? (
+        <ReviewRatingOverview summary={summaryData} style={styles.summaryMargin} />
+      ) : null}
+
+      {/* Star Filter Pills Row */}
+      <View style={styles.filterSection}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterPillsRow}
+        >
+          {RATING_FILTER_OPTIONS.map((opt) => {
+            const isSelected = selectedRatingFilter === opt.key;
+            return (
+              <Pressable
+                key={opt.label}
+                onPress={() => handleSelectFilter(opt.key)}
+                style={({ pressed }) => [
+                  styles.filterPill,
+                  isSelected ? styles.filterPillActive : styles.filterPillInactive,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Filter by ${opt.label}`}
+                accessibilityState={{ selected: isSelected }}
+              >
+                {opt.key !== undefined && (
+                  <Star
+                    size={13}
+                    color={isSelected ? colors.primaryDark : colors.starFilled}
+                    fill={isSelected ? colors.primaryDark : colors.starFilled}
+                    style={{ marginRight: 4 }}
+                  />
+                )}
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    isSelected ? styles.filterPillTextActive : styles.filterPillTextInactive,
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+    </View>
+  );
+
   const renderEmpty = () => {
-    if (isLoading) {
+    if (isReviewsLoading) {
       return (
-        <View style={styles.loadingContainer}>
+        <View style={styles.skeletonList}>
           <SkeletonReviewCard />
           <SkeletonReviewCard />
           <SkeletonReviewCard />
@@ -69,7 +163,17 @@ export default function WorkerReviewsScreen() {
     }
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No reviews yet</Text>
+        <EmptyState
+          type="no-data"
+          title={selectedRatingFilter ? 'No reviews with this rating' : 'No reviews yet'}
+          description={
+            selectedRatingFilter
+              ? 'Try selecting "All" to view all reviews for this service provider.'
+              : 'Reviews from customers will appear here after completed bookings.'
+          }
+          actionLabel={selectedRatingFilter ? 'View All Reviews' : undefined}
+          onAction={selectedRatingFilter ? () => setSelectedRatingFilter(undefined) : undefined}
+        />
       </View>
     );
   };
@@ -77,65 +181,50 @@ export default function WorkerReviewsScreen() {
   const renderFooter = () => {
     if (isLoadingMore) {
       return (
-        <View style={styles.footerContainer}>
-          <SkeletonReviewCard />
+        <View style={[styles.skeletonList, styles.footerSkeleton]}>
           <SkeletonReviewCard />
         </View>
       );
     }
-    if (!hasNextPage && reviews.length > 0) {
-      return (
-        <View style={styles.footerContainer}>
-          <Text style={styles.endText}>All {total} reviews shown</Text>
-        </View>
-      );
-    }
-    return <View style={{ height: 40 }} />;
+    return null;
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Custom Header */}
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+
+      {/* Screen Header */}
       <View style={styles.header}>
-        <Pressable 
-          onPress={() => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace(id ? `/worker/${id}` as any : '/(tabs)/' as any);
-            }
-          }} 
-          hitSlop={12} 
-          style={styles.iconButton}
+        <Pressable
+          onPress={handleBack}
+          hitSlop={8}
+          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color={colors.textPrimary} />
+          <ArrowLeft size={22} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Reviews</Text>
-        <Pressable onPress={() => setIsSortOpen(true)} hitSlop={12} style={styles.iconButton}>
-          <SlidersHorizontal size={20} color={colors.textPrimary} />
-        </Pressable>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          Reviews
+        </Text>
+        <View style={styles.iconButton} />
       </View>
 
-      {/* Sticky Summary */}
-      <View style={styles.stickySummaryWrapper}>
-        <ReviewSummary
-          summary={summary}
-          compact={true}
-          style={styles.stickySummary}
-        />
-      </View>
-
-      {/* FlashList */}
       <FlashList
         data={reviews}
         renderItem={renderItem}
         keyExtractor={(item: any) => item.id}
         onEndReached={hasNextPage ? loadMore : null}
-        onEndReachedThreshold={0.6}
-        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-        contentContainerStyle={styles.listContent}
+        onEndReachedThreshold={0.5}
+        ItemSeparatorComponent={ReviewSeparator}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: Math.max(insets.bottom, 16) + 24 },
+        ]}
+        ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={renderFooter}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -145,40 +234,6 @@ export default function WorkerReviewsScreen() {
           />
         }
       />
-
-      {/* Sort Modal */}
-      <Modal
-        visible={isSortOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsSortOpen(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setIsSortOpen(false)}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Sort Reviews</Text>
-            {SORT_OPTIONS.map((opt) => (
-              <Pressable
-                key={opt.key}
-                style={styles.sortOptionRow}
-                onPress={() => {
-                  setSortBy(opt.key);
-                  setIsSortOpen(false);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.sortOptionText,
-                    sortBy === opt.key && styles.sortOptionTextActive,
-                  ]}
-                >
-                  {opt.label}
-                </Text>
-                {sortBy === opt.key && <Check size={18} color={colors.primaryDark} />}
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -186,19 +241,18 @@ export default function WorkerReviewsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
-    backgroundColor: '#FAFAFA',
-    overflow: 'hidden',
+    backgroundColor: colors.bgApp,
+  },
+  pressed: {
+    opacity: 0.6,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    height: Platform.OS === 'ios' ? 44 : 56,
+    paddingVertical: 12,
     backgroundColor: colors.bgCard,
-    ...shadows.sm,
-    zIndex: 10,
   },
   iconButton: {
     width: 40,
@@ -207,77 +261,97 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontFamily: fonts.poppins.bold,
-    fontSize: 22,
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: fonts.poppins.semiBold,
+    fontSize: 18,
     color: colors.textPrimary,
   },
-  stickySummaryWrapper: {
-    backgroundColor: colors.bgCard,
-    ...shadows.sm,
-    zIndex: 9,
-  },
-  stickySummary: {
-    // handled inside ReviewSummary
-  },
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 40,
   },
-  loadingContainer: {
-    flex: 1,
+  listHeader: {
+    marginBottom: 16,
+  },
+  summaryMargin: {
+    marginBottom: 16,
+  },
+  filterSection: {
+    marginBottom: 12,
+  },
+  filterPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+  },
+  filterPillInactive: {
+    backgroundColor: 'transparent',
+  },
+  filterPillActive: {
+    backgroundColor: colors.primaryTint,
+  },
+  filterPillText: {
+    fontSize: 13,
+  },
+  filterPillTextInactive: {
+    fontFamily: fonts.jakarta.medium,
+    color: colors.textSecondary,
+  },
+  filterPillTextActive: {
+    fontFamily: fonts.jakarta.semiBold,
+    color: colors.primaryDark,
+  },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  resultCount: {
+    fontFamily: fonts.poppins.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  skeletonList: {
+    gap: REVIEW_CARD_GAP,
+  },
+  footerSkeleton: {
+    marginTop: REVIEW_CARD_GAP,
   },
   emptyContainer: {
-    paddingVertical: 60,
+    paddingVertical: 48,
+    paddingHorizontal: 24,
     alignItems: 'center',
+    marginTop: 8,
   },
-  emptyText: {
-    fontFamily: fonts.jakarta.regular,
+  emptyTitle: {
+    fontFamily: fonts.poppins.semiBold,
     fontSize: 16,
-    color: colors.textMuted,
+    color: colors.textPrimary,
+  },
+  emptySubtitle: {
+    marginTop: 6,
+    fontFamily: fonts.jakarta.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    color: palette.gray500,
   },
   footerContainer: {
-    paddingVertical: 20,
+    paddingVertical: 24,
     alignItems: 'center',
   },
   endText: {
     fontFamily: fonts.jakarta.regular,
     fontSize: 13,
-    color: colors.textMuted,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.bgCard,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 36,
-  },
-  modalTitle: {
-    fontFamily: fonts.poppins.semiBold,
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginBottom: 16,
-  },
-  sortOptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  sortOptionText: {
-    fontFamily: fonts.jakarta.medium,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  sortOptionTextActive: {
-    fontFamily: fonts.jakarta.semiBold,
-    color: colors.primaryDark,
+    color: palette.gray500,
   },
 });

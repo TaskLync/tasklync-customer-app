@@ -1,8 +1,6 @@
-import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BookingStatus } from '../../types/booking.types';
 import { bookingStatusMap } from '../../utils/bookingStatusMap';
-import { BookingStatusDot } from './BookingStatusDot';
 
 interface BookingStatusBadgeProps {
   status: BookingStatus;
@@ -13,12 +11,11 @@ export function BookingStatusBadge({ status }: BookingStatusBadgeProps) {
   if (!config) return null;
 
   return (
-    <View style={[styles.badge, { backgroundColor: config.color }]}>
-      {status === 'IN_PROGRESS' && <BookingStatusDot status={status} />}
-      {!['IN_PROGRESS'].includes(status) && (
-        <config.icon size={12} color="#FFFFFF" style={styles.icon} />
-      )}
-      <Text style={styles.label}>{config.label}</Text>
+    <View style={[styles.badge, { backgroundColor: config.bg }]}>
+      <View style={[styles.dot, { backgroundColor: config.color }]} />
+      <Text style={[styles.label, { color: config.text }]} numberOfLines={1} ellipsizeMode="tail">
+        {config.label}
+      </Text>
     </View>
   );
 }
@@ -27,17 +24,24 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
     alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 100,
+    flexShrink: 1,
+    minWidth: 0,
   },
-  icon: {
-    marginRight: 4,
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+    flexShrink: 0,
   },
   label: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 12,
-    color: '#FFFFFF',
+    letterSpacing: -0.1,
+    flexShrink: 1,
   },
 });

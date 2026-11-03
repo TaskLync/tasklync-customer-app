@@ -10,6 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  Keyboard,
+  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,17 +40,26 @@ import {
 /**
  * DisputeScreen (Day 34 Guided Conflict Resolution)
  *
- * Implements Principal-level React Native & UX Architecture:
- * - Zero-Anxiety Design: Reassuring expectation-setting banner placed structurally first
- * - Hick's Law: 5 fixed complete-statement options (pre-selected by default)
- * - Clean Layout: Solid Flex-based viewport layout with TouchableOpacity CTA
- * - 3-Slot Independent async photo upload state machines
- * - Deferred-Submit Pattern: If uploads are in-flight when submitting, auto-dispatches on finish
+ * Implements Principal-level React Native & UX Architecture (Uber/Ola caliber):
+ * - Rock-Solid Soft Keyboard Handling:
+ *   * behavior={Platform.OS === 'ios' ? 'padding' : undefined} — eliminates Android double-shrink
+ *     layout collapse under softwareKeyboardLayoutMode: 'resize'.
+ *   * Header pinned outside KeyboardAvoidingView with safe insets.
+ *   * Pressable card container ensures tapping any part of the field delegates focus to input.
+ *   * Stable border and zero elevation mutation on focus — eliminates native Android RenderNode focus loss.
+ *   * Programmatic scroll-into-view on focus so input is never obscured by software keyboard.
+ *   * Keyboard listener dynamically collapses bottom chin padding when keyboard is open.
+ *   * keyboardShouldPersistTaps="handled" and keyboardDismissMode="on-drag" for natural tactile feel.
+ * - Zero-Anxiety Design: Reassuring expectation-setting banner placed structurally first.
+ * - Hick's Law: 5 fixed complete-statement options (pre-selected by default).
+ * - 3-Slot Independent async photo upload state machines.
+ * - Deferred-Submit Pattern: If uploads are in-flight when submitting, auto-dispatches on finish.
  */
 export default function DisputeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
+  const inputRef = useRef<TextInput>(null);
   const { id: rawBookingId } = useLocalSearchParams<{ id: string }>();
 
   const { booking, isLoading: isBookingLoading } = useBookingDetails(rawBookingId);
@@ -69,11 +80,34 @@ export default function DisputeScreen() {
   const [selectedReason, setSelectedReason] = useState<DisputeReason>(DISPUTE_REASONS[0].key);
   const [description, setDescription] = useState<string>('');
   const [isFocused, setIsFocused] = useState<boolean>(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
   const [isDeferredWaiting, setIsDeferredWaiting] = useState<boolean>(false);
   const [isSubmittedSuccess, setIsSubmittedSuccess] = useState<boolean>(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const trimmedDesc = description.trim();
+
+  // Cross-platform keyboard event listener for responsive footer positioning
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  // Programmatic scroll to keep active input visible above keyboard and footer
+  const handleInputFocus = useCallback(() => {
+    setIsFocused(true);
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, Platform.OS === 'ios' ? 120 : 180);
+  }, []);
 
   // Execute dispute submission
   const executeSubmission = useCallback(
@@ -178,41 +212,46 @@ export default function DisputeScreen() {
     : '';
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flexOne}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
 
-        {/* Screen Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <ArrowLeft size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
+      {/* Screen Header - Pinned at top, stable against keyboard avoidance adjustments */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeft size={22} color={colors.textPrimary} />
+        </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>Raise a Dispute</Text>
-          <View style={styles.headerPlaceholder} />
+        <Text style={styles.headerTitle}>Raise a Dispute</Text>
+        <View style={styles.headerPlaceholder} />
+      </View>
+
+      {isBookingLoading && !booking ? (
+        <View style={styles.centerLoading}>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
-
-        {isBookingLoading && !booking ? (
-          <View style={styles.centerLoading}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : (
+      ) : (
+        <KeyboardAvoidingView
+          style={styles.flexOne}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={0}
+        >
           <View style={styles.bodyFlex}>
             {/* Scrollable Form Body */}
             <ScrollView
               ref={scrollRef}
               style={styles.scrollView}
-              contentContainerStyle={styles.scrollContent}
+              contentContainerStyle={[
+                styles.scrollContent,
+                { paddingBottom: spacing.xl },
+              ]}
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               showsVerticalScrollIndicator={false}
             >
               {/* 1. Zero-Anxiety Expectation Banner */}
@@ -249,14 +288,17 @@ export default function DisputeScreen() {
                   </Text>
                 </View>
 
-                <View
+                <Pressable
+                  onPress={() => inputRef.current?.focus()}
                   style={[
                     styles.textInputWrapper,
                     isFocused && styles.textInputFocused,
                     isSubmitting && styles.textInputDisabled,
                   ]}
+                  accessible={false}
                 >
                   <TextInput
+                    ref={inputRef}
                     style={styles.textArea}
                     placeholder="Provide any details about what went wrong, damages, or agreed terms that were not met..."
                     placeholderTextColor={colors.textMuted}
@@ -268,12 +310,12 @@ export default function DisputeScreen() {
                     multiline
                     maxLength={1000}
                     editable={!isSubmitting && !isDeferredWaiting}
-                    onFocus={() => setIsFocused(true)}
+                    onFocus={handleInputFocus}
                     onBlur={() => setIsFocused(false)}
                     textAlignVertical="top"
                     accessibilityLabel="Dispute description"
                   />
-                </View>
+                </Pressable>
               </View>
 
               {/* 5. 3-Slot Supporting Evidence Grid */}
@@ -294,11 +336,17 @@ export default function DisputeScreen() {
               ) : null}
             </ScrollView>
 
-            {/* Bottom Action Footer (Normal Flex Flow — Never Overlapped) */}
+            {/* Bottom Action Footer (Dynamically adjusts padding based on keyboard visibility) */}
             <View
               style={[
                 styles.footer,
-                { paddingBottom: Math.max(insets.bottom, 16) + 8 },
+                {
+                  paddingBottom: isKeyboardVisible
+                    ? spacing.sm + 4
+                    : insets.bottom > 0
+                    ? insets.bottom + 14
+                    : 20,
+                },
               ]}
             >
               <TouchableOpacity
@@ -325,9 +373,9 @@ export default function DisputeScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        )}
-      </View>
-    </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      )}
+    </View>
   );
 }
 
@@ -382,12 +430,10 @@ const styles = StyleSheet.create({
   },
   bookingContextCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: radius.md,
     padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
     marginBottom: spacing.sm,
-    ...shadows.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   contextHeader: {
     flexDirection: 'row',
@@ -438,18 +484,18 @@ const styles = StyleSheet.create({
   textInputWrapper: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     padding: spacing.md - 2,
     minHeight: 110,
   },
   textInputFocused: {
     borderColor: colors.primaryDark,
+    backgroundColor: palette.white,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   textInputDisabled: {
     backgroundColor: palette.gray50,
@@ -470,7 +516,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginTop: spacing.md,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: colors.borderErrorLight,
   },
   errorText: {
     fontFamily: fontFamily.jakarta.medium,
@@ -545,14 +591,12 @@ const styles = StyleSheet.create({
   },
   timelineCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: radius.md,
     padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
     width: '100%',
     marginBottom: spacing.xl,
     gap: spacing.sm,
-    ...shadows.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   timelineRow: {
     flexDirection: 'row',

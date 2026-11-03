@@ -1,25 +1,33 @@
 import { useState } from 'react';
-import { View, StyleSheet, Pressable, ScrollView, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, Modal, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MapPin, CheckCircle2, MapPinOff, X } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  MapPin,
+  MapPinOff,
+  X,
+  AlertTriangle,
+  Navigation,
+} from 'lucide-react-native';
 
 import { Screen } from '@components/layout/Screen';
-import { StickyFooter } from '@components/layout/StickyFooter';
-import { Text } from '@components/ui/Text';
 import { Button } from '@components/ui/Button';
-import { colors, fontFamily, radius, palette, shadows, fontSize } from '@design/index';
+import { colors, fontFamily, radius, palette, shadows } from '@design/index';
 import { useLocationStore, useUIStore, useAuthStore } from '@store/index';
 import { locationService } from '../../src/services/location/location.service';
-import { validateServiceArea, SERVICE_UNAVAILABLE_MESSAGE } from '../../src/config/serviceArea.config';
+import { validateServiceArea } from '../../src/config/serviceArea.config';
 
-const FEATURES = [
-  'Find verified workers closest to you',
-  'Track workers in real-time as they travel',
-  'Get accurate arrival time estimates',
-];
+interface UnserviceableLocationState {
+  visible: boolean;
+  cityName: string;
+  lat: number;
+  lng: number;
+}
 
 export default function LocationPermissionScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+
   const setPermissionStatus = useLocationStore((state) => state.setPermissionStatus);
   const setCurrentLocation = useLocationStore((state) => state.setCurrentLocation);
   const setCurrentCity = useLocationStore((state) => state.setCurrentCity);
@@ -29,6 +37,12 @@ export default function LocationPermissionScreen() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [showBlockedModal, setShowBlockedModal] = useState(false);
+  const [unserviceableState, setUnserviceableState] = useState<UnserviceableLocationState>({
+    visible: false,
+    cityName: '',
+    lat: 0,
+    lng: 0,
+  });
 
   const navigateToHome = (withWelcome = true) => {
     router.replace('/(tabs)/' as any);
@@ -42,73 +56,139 @@ export default function LocationPermissionScreen() {
     setIsLoading(true);
 
     try {
-      // 1. Request permission
+      // 1. Request foreground permission
       const permState = await locationService.requestPermission();
       setPermissionStatus(
-        permState.status === 'granted' ? 'granted' : permState.status === 'denied' ? 'denied' : 'undetermined'
+        permState.status === 'granted'
+          ? 'granted'
+          : permState.status === 'denied'
+          ? 'denied'
+          : 'undetermined'
       );
       setIsServicesEnabled(permState.servicesEnabled);
 
-      // If user permanently blocked permission, guide them to settings
+      // Handle user denial / blocked permission
       if (!permState.granted) {
-        if (!permState.canAskAgain) {
-          setIsLoading(false);
-          setShowBlockedModal(true);
-          return;
-        }
-
-        // Just denied this time, proceed gracefully to home
         setIsLoading(false);
-        navigateToHome(true);
+        if (!permState.canAskAgain) {
+          setShowBlockedModal(true);
+        } else {
+          // Denied once: proceed gracefully to home without assigning fake location
+          navigateToHome(true);
+        }
         return;
       }
 
       // 2. Hardware GPS disabled check
       if (!permState.servicesEnabled) {
-        Alert.alert(
-          'Location Services Off',
-          'Your device location is turned off. Please turn on GPS in your device settings to detect nearby workers.',
-          [
-            { text: 'Later', style: 'cancel', onPress: () => navigateToHome(true) },
-            {
-              text: 'Open Settings',
-              onPress: () => {
-                locationService.openSettings();
-                navigateToHome(true);
-              },
-            },
-          ]
-        );
         setIsLoading(false);
+        if (Platform.OS === 'web') {
+          showToast({
+            type: 'info',
+            title: 'Please enable location access in your browser settings.',
+          });
+          navigateToHome(true);
+        } else {
+          Alert.alert(
+            'Location Services Off',
+            'Your device location services (GPS) are turned off. Please enable GPS in device settings to detect your location.',
+            [
+              { text: 'Later', style: 'cancel', onPress: () => navigateToHome(true) },
+              {
+                text: 'Open Settings',
+                onPress: () => {
+                  locationService.openSettings();
+                  navigateToHome(true);
+                },
+              },
+            ]
+          );
+        }
         return;
       }
 
-      // 3. Acquire initial coordinates & geocode
-      const coords = await locationService.getCurrentPosition({
-        enableHighAccuracy: false,
-        timeoutMs: 6000,
-        useCacheFirst: false,
+      // 3. Acquire fresh, verified high-accuracy GPS coordinates (never cached / stale / IP-based)
+      const freshResult = await locationService.acquireFreshGPSPosition({
+        timeoutMs: 9000,
+        targetAccuracyMeters: 20,
+        maxAcceptableAccuracyMeters: 45,
+        maxAgeMs: 10000,
+        allowMock: false,
       });
 
-      if (coords) {
-        const validation = validateServiceArea(coords);
-        if (!validation.isServiceable) {
-          setIsLoading(false);
-          Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      if (!freshResult.success) {
+        setIsLoading(false);
+        const { error } = freshResult;
+
+        if (Platform.OS === 'web') {
+          showToast({
+            type: 'info',
+            title: error.userMessage || 'Could not acquire precise GPS signal.',
+          });
+          navigateToHome(true);
           return;
         }
 
-        setCurrentLocation(coords);
-        const geo = await locationService.reverseGeocode(coords);
-        if (geo?.cityName) {
-          setCurrentCity(geo.cityName);
+        if (error.code === 'SERVICES_DISABLED') {
+          Alert.alert(
+            'Location Services Off',
+            error.userMessage || 'Please turn on GPS to detect your location.',
+            [
+              { text: 'Later', style: 'cancel', onPress: () => navigateToHome(true) },
+              { text: 'Open Settings', onPress: locationService.openSettings },
+            ]
+          );
+          return;
         }
+
+        // Weak GPS or timeout: inform user and allow manual choice without faking Faisalabad
+        Alert.alert(
+          'GPS Signal Weak',
+          error.userMessage ||
+            'Unable to acquire a high-confidence GPS lock. You can continue to explore or retry.',
+          [
+            { text: 'Continue to App', style: 'cancel', onPress: () => navigateToHome(true) },
+            { text: 'Retry', onPress: handleAllow },
+          ]
+        );
+        return;
       }
 
+      // 4. GPS lock acquired: store real coordinates
+      const coords = {
+        lat: freshResult.location.lat,
+        lng: freshResult.location.lng,
+      };
+      setCurrentLocation(coords);
+
+      // 5. Reverse-geocode verified GPS coordinates to determine the real city (e.g. Toba Tek Singh)
+      const geo = await locationService.reverseGeocode(coords);
+      const detectedCity =
+        geo?.cityName && geo.cityName !== 'Current Area' ? geo.cityName : 'Your Location';
+      setCurrentCity(detectedCity);
+
+      // 6. Validate the detected coordinates against the Faisalabad service boundary/geofence
+      const validation = validateServiceArea(coords);
+
       setIsLoading(false);
-      navigateToHome(true);
+
+      if (validation.isServiceable) {
+        // User is physically in Faisalabad
+        showToast({ type: 'success', title: 'Location verified: Faisalabad' });
+        navigateToHome(true);
+      } else {
+        // User is physically outside Faisalabad (e.g. Toba Tek Singh)
+        // Show clear "Outside Service Area" state — NEVER pretend they are in Faisalabad
+        setUnserviceableState({
+          visible: true,
+          cityName: detectedCity,
+          lat: coords.lat,
+          lng: coords.lng,
+        });
+      }
     } catch (_err) {
       setIsLoading(false);
+      // Gracefully proceed without corrupting location store with a fake city
       navigateToHome(true);
     }
   };
@@ -119,68 +199,154 @@ export default function LocationPermissionScreen() {
     navigateToHome(true);
   };
 
+  const handleContinueFromUnserviceable = () => {
+    setUnserviceableState((prev) => ({ ...prev, visible: false }));
+    showToast({
+      type: 'info',
+      title: `Browsing from ${unserviceableState.cityName || 'Outside Area'}`,
+    });
+    router.replace('/(tabs)/' as any);
+  };
+
+  const handleSetFaisalabadAddress = () => {
+    setUnserviceableState((prev) => ({ ...prev, visible: false }));
+    router.replace('/profile/addresses/add' as any);
+  };
+
   return (
-    <Screen bg="#FAFAFA" statusBarStyle="dark-content" edges={['top', 'bottom', 'left', 'right']}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[styles.content, { paddingBottom: 140 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.animationPlaceholder} accessibilityLabel="Animated map showing location feature">
-          <MapPin size={80} color={colors.primary} />
+    <Screen bg={palette.white} statusBarStyle="dark-content" edges={['top', 'left', 'right']}>
+      <View style={styles.container}>
+        {/* Minimalist Central Value Proposition */}
+        <View style={styles.centerContent}>
+          {/* Refined Icon Emblem */}
+          <View style={styles.iconCircle} accessibilityLabel="Location icon">
+            <MapPin size={32} color={colors.primaryDark} strokeWidth={2.2} />
+          </View>
+
+          {/* Clean, Impactful Heading */}
+          <Text style={styles.titleText} accessibilityRole="header">
+            Find services near you
+          </Text>
+
+          {/* Concise, Single-Purpose Subtitle */}
+          <Text style={styles.subtitleText}>
+            Share your location to discover verified workers nearby, track live arrivals, and enjoy fast doorstep service.
+          </Text>
         </View>
 
-        <Text variant="h1" color="primary" align="center" style={styles.title}>
-          Enable location{'\n'}access
-        </Text>
-
-        <Text variant="body1" color="muted" align="center" style={styles.subtitle}>
-          We use your location to find the best workers near you
-        </Text>
-
-        <View style={styles.featureList}>
-          {FEATURES.map((feature, index) => (
-            <View key={index} style={styles.featureRow}>
-              <CheckCircle2 size={20} color={colors.primary} style={styles.featureIcon} />
-              <Text style={styles.featureText}>{feature}</Text>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-
-      <StickyFooter>
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          onPress={handleAllow}
-          style={styles.allowButton}
-          disabled={isLoading}
-          label={isLoading ? 'Detecting Location...' : 'Allow Location'}
-        />
-        <Pressable
-          onPress={handleNotNow}
-          disabled={isLoading}
-          hitSlop={12}
-          style={styles.notNowButton}
-          accessibilityLabel="Skip location access for now"
+        {/* Clear Action Hierarchy */}
+        <View
+          style={[
+            styles.footerArea,
+            { paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24 },
+          ]}
         >
-          <Text style={styles.notNowText}>Not now</Text>
-        </Pressable>
-      </StickyFooter>
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            onPress={handleAllow}
+            disabled={isLoading}
+            loading={isLoading}
+            icon={Navigation}
+            label={isLoading ? 'Finding your location...' : 'Share Current Location'}
+            style={styles.primaryBtn}
+          />
 
-      {/* Modal if permission was permanently denied */}
+          <Pressable
+            onPress={handleNotNow}
+            disabled={isLoading}
+            hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
+            style={styles.secondaryBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Skip location access for now"
+          >
+            <Text style={styles.secondaryBtnText}>Not now</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Modal: Outside Service Area (e.g. User is in Toba Tek Singh) */}
+      <Modal
+        visible={unserviceableState.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleContinueFromUnserviceable}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View style={[styles.modalIconWrap, styles.amberIconWrap]}>
+                <AlertTriangle size={22} color={palette.amberDark} strokeWidth={2.4} />
+              </View>
+              <Pressable
+                onPress={handleContinueFromUnserviceable}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                hitSlop={8}
+              >
+                <X size={18} color={palette.gray500} />
+              </Pressable>
+            </View>
+
+            <View style={styles.cityBadge}>
+              <MapPin size={12} color={palette.amberDark} />
+              <Text style={styles.cityBadgeText} numberOfLines={1}>
+                Detected: {unserviceableState.cityName}
+              </Text>
+            </View>
+
+            <Text style={styles.modalTitle}>We Currently Operate Only in Faisalabad</Text>
+            <Text style={styles.modalDescription}>
+              TaskLync is currently serving customers exclusively within the Faisalabad metropolitan region.
+              {'\n\n'}
+              We detected you are located in{' '}
+              <Text style={styles.boldText}>{unserviceableState.cityName}</Text>. You can still explore all our services and workers, but orders and bookings can only be placed for delivery in Faisalabad.
+            </Text>
+
+            <View style={styles.unserviceableActions}>
+              <Button
+                variant="primary"
+                size="md"
+                fullWidth
+                label="Explore Faisalabad Services"
+                onPress={handleContinueFromUnserviceable}
+              />
+              <Pressable
+                onPress={handleSetFaisalabadAddress}
+                style={styles.secondaryActionBtn}
+                accessibilityRole="button"
+              >
+                <Text style={styles.secondaryActionText}>Set a Faisalabad Address</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleAllow}
+                style={styles.retryBtn}
+                accessibilityRole="button"
+              >
+                <Text style={styles.retryBtnText}>Retry Location Detection</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal: Location permission permanently blocked in OS settings */}
       <Modal
         visible={showBlockedModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowBlockedModal(false)}
+        onRequestClose={() => {
+          setShowBlockedModal(false);
+          navigateToHome(true);
+        }}
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <View style={styles.modalIconWrap}>
-                <MapPinOff size={24} color={palette.danger} strokeWidth={2.2} />
+                <MapPinOff size={22} color={palette.danger} strokeWidth={2.4} />
               </View>
               <Pressable
                 onPress={() => {
@@ -188,9 +354,11 @@ export default function LocationPermissionScreen() {
                   navigateToHome(true);
                 }}
                 style={styles.closeBtn}
+                accessibilityRole="button"
                 accessibilityLabel="Close"
+                hitSlop={8}
               >
-                <X size={20} color={palette.gray500} />
+                <X size={18} color={palette.gray500} />
               </Pressable>
             </View>
 
@@ -206,6 +374,7 @@ export default function LocationPermissionScreen() {
                   navigateToHome(true);
                 }}
                 style={styles.modalCancelBtn}
+                accessibilityRole="button"
               >
                 <Text style={styles.modalCancelText}>Continue without</Text>
               </Pressable>
@@ -216,6 +385,7 @@ export default function LocationPermissionScreen() {
                   navigateToHome(true);
                 }}
                 style={styles.modalSettingsBtn}
+                accessibilityRole="button"
               >
                 <Text style={styles.modalSettingsText}>Open Settings</Text>
               </Pressable>
@@ -228,86 +398,96 @@ export default function LocationPermissionScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    paddingTop: 40,
+  container: {
+    flex: 1,
+    backgroundColor: palette.white,
+    paddingHorizontal: 28,
+    justifyContent: 'space-between',
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
   },
-  animationPlaceholder: {
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: colors.primaryTint,
+  centerContent: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: 24,
+  },
+
+  // Minimalist Icon Emblem
+  iconCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: palette.green50,
+    borderWidth: 1.5,
+    borderColor: palette.green100,
     alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    marginBottom: 8,
-  },
-  subtitle: {
+    justifyContent: 'center',
     marginBottom: 28,
   },
-  featureList: {
-    width: '100%',
-    backgroundColor: colors.bgCard,
-    padding: 16,
-    borderRadius: radius.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    gap: 12,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  featureIcon: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  featureText: {
-    flex: 1,
-    fontFamily: fontFamily.jakarta.regular,
-    fontSize: 14,
+
+  // Typography
+  titleText: {
+    fontFamily: fontFamily.poppins.bold,
+    fontSize: 24,
+    lineHeight: 32,
     color: colors.textPrimary,
-    lineHeight: 20,
-  },
-  allowButton: {
+    textAlign: 'center',
     marginBottom: 10,
+    letterSpacing: -0.3,
   },
-  notNowButton: {
-    paddingVertical: 10,
-    alignItems: 'center',
+  subtitleText: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 14.5,
+    lineHeight: 22,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 8,
   },
-  notNowText: {
-    fontFamily: fontFamily.jakarta.medium,
-    fontSize: 14,
-    color: colors.textMuted,
+
+  // Action Area / Sticky Footer
+  footerArea: {
+    width: '100%',
+    paddingTop: 12,
+    gap: 4,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  primaryBtn: {
+    height: 52,
+    borderRadius: radius.pill,
+  },
+  secondaryBtn: {
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+  },
+  secondaryBtnText: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+
+  // Modals
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: colors.overlay,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   modalCard: {
     width: '100%',
-    maxWidth: 340,
+    maxWidth: 350,
     backgroundColor: palette.white,
-    borderRadius: 20,
-    padding: 20,
-    ...shadows.lg,
+    borderRadius: 24,
+    padding: 22,
+    ...shadows.xl,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   modalIconWrap: {
     width: 44,
@@ -316,23 +496,82 @@ const styles = StyleSheet.create({
     backgroundColor: palette.dangerLight,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderErrorLight,
+  },
+  amberIconWrap: {
+    backgroundColor: colors.warningLight,
+    borderColor: colors.warningBorder,
   },
   closeBtn: {
-    padding: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: palette.gray100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: colors.warningLight,
+    borderWidth: 1,
+    borderColor: colors.warningBorder,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    marginBottom: 12,
+    gap: 5,
+  },
+  cityBadgeText: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 12,
+    color: colors.textWarning,
   },
   modalTitle: {
     fontFamily: fontFamily.poppins.semiBold,
-    fontSize: fontSize.h3,
-    lineHeight: 24,
+    fontSize: 17,
+    lineHeight: 23,
     color: colors.textPrimary,
     marginBottom: 8,
   },
   modalDescription: {
     fontFamily: fontFamily.jakarta.regular,
-    fontSize: fontSize.body2,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 19,
     color: colors.textSecondary,
-    marginBottom: 20,
+    marginBottom: 18,
+  },
+  boldText: {
+    fontFamily: fontFamily.jakarta.bold,
+    color: colors.textPrimary,
+  },
+  unserviceableActions: {
+    gap: 10,
+  },
+  secondaryActionBtn: {
+    height: 46,
+    borderRadius: radius.pill,
+    backgroundColor: palette.iceGray,
+    borderWidth: 1,
+    borderColor: palette.softGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryActionText: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 13.5,
+    color: palette.gray800,
+  },
+  retryBtn: {
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  retryBtnText: {
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 12.5,
+    color: colors.textMuted,
   },
   modalActions: {
     flexDirection: 'row',
@@ -343,6 +582,8 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: radius.pill,
     backgroundColor: palette.iceGray,
+    borderWidth: 1,
+    borderColor: palette.softGray,
     alignItems: 'center',
     justifyContent: 'center',
   },

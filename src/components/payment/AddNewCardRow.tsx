@@ -1,21 +1,32 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Plus, ChevronRight } from 'lucide-react-native';
+import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { Plus, ChevronRight, Lock } from 'lucide-react-native';
 import { colors, palette, fontFamily } from '../../design';
 
 export interface AddNewCardRowProps {
-  onPress: () => void;
+  onPress?: () => void;
   title?: string;
   subtitle?: string;
+  disabled?: boolean;
 }
 
 export const AddNewCardRow: React.FC<AddNewCardRowProps> = ({
   onPress,
   title = 'Add Payment Method',
-  subtitle = 'Debit/Credit Card, JazzCash, or EasyPaisa',
+  subtitle = 'Online methods currently unavailable · Cash on Delivery active',
+  disabled = true,
 }) => {
   const handlePress = () => {
-    onPress();
+    if (disabled) {
+      Alert.alert(
+        'Online Payments Disabled',
+        'Online payment registration (Debit/Credit Card, JazzCash, EasyPaisa) is temporarily paused while online gateways are offline. Cash on Delivery is automatically active for all your bookings.'
+      );
+      return;
+    }
+    if (onPress) {
+      onPress();
+    }
   };
 
   return (
@@ -24,18 +35,27 @@ export const AddNewCardRow: React.FC<AddNewCardRowProps> = ({
         onPress={handlePress}
         style={({ pressed }) => [
           styles.rowContainer,
-          pressed && styles.rowPressed,
+          disabled && styles.rowDisabled,
+          pressed && !disabled && styles.rowPressed,
         ]}
         accessibilityRole="button"
         accessibilityLabel="Add new payment method"
       >
         <View style={styles.leftGroup}>
-          <View style={styles.plusCircle}>
-            <Plus size={18} color={colors.primaryDark} strokeWidth={2.4} />
+          <View style={[styles.plusCircle, disabled && styles.plusCircleDisabled]}>
+            {disabled ? (
+              <Lock size={16} color={colors.textMuted} strokeWidth={2.2} />
+            ) : (
+              <Plus size={18} color={colors.primaryDark} strokeWidth={2.4} />
+            )}
           </View>
           <View style={styles.textColumn}>
-            <Text style={styles.titleText}>{title}</Text>
-            {subtitle && <Text style={styles.subtitleText}>{subtitle}</Text>}
+            <Text style={[styles.titleText, disabled && styles.titleTextDisabled]}>{title}</Text>
+            {subtitle && (
+              <Text style={[styles.subtitleText, disabled && styles.subtitleTextDisabled]}>
+                {subtitle}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -69,6 +89,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
+  rowDisabled: {
+    backgroundColor: palette.gray50,
+    borderColor: palette.gray200,
+    opacity: 0.85,
+  },
   rowPressed: {
     backgroundColor: palette.gray50,
     borderColor: colors.primary,
@@ -89,6 +114,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 14,
   },
+  plusCircleDisabled: {
+    backgroundColor: palette.gray200,
+  },
   textColumn: {
     flex: 1,
   },
@@ -98,11 +126,17 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: colors.textPrimary,
   },
+  titleTextDisabled: {
+    color: colors.textSecondary,
+  },
   subtitleText: {
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 12,
     lineHeight: 16,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  subtitleTextDisabled: {
+    color: colors.textMuted,
   },
 });

@@ -1,192 +1,103 @@
-import { apiClient } from '../api/client';
+import { paymentApi } from '../api/payment.api';
 import {
   PaymentMethod,
   AddWalletDTO,
   AddCardDTO,
+  ONLINE_PAYMENTS_DISABLED_MESSAGE,
 } from '../../types/payment.types';
-import { generateUUID } from '../../utils/uuid';
 
-export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
-  {
-    id: 'pm_cod',
-    type: 'cash',
-    brand: 'cash',
-    title: 'Cash on Delivery',
-    subtitle: 'Pay cash to professional after service completion',
-    is_default: true,
-    is_fixed: true,
-  },
-  {
-    id: 'pm_jazzcash_default',
-    type: 'wallet',
-    brand: 'jazzcash',
-    title: 'JazzCash Wallet',
-    subtitle: '0300 •••• 5678',
-    account_number: '0300 •••• 5678',
-    holder_name: 'Customer Account',
-    is_default: false,
-  },
-  {
-    id: 'pm_easypaisa_default',
-    type: 'wallet',
-    brand: 'easypaisa',
-    title: 'EasyPaisa Wallet',
-    subtitle: '0345 •••• 1234',
-    account_number: '0345 •••• 1234',
-    holder_name: 'Customer Account',
-    is_default: false,
-  },
-];
+/**
+ * Authoritative Standard Payment Method: Cash on Delivery (COD)
+ * All online payment gateways are safely disconnected as per CUSTOMER_APP_PAYMENT_APIS.md
+ */
+export const COD_PAYMENT_METHOD: PaymentMethod = {
+  id: 'CASH_ON_DELIVERY',
+  type: 'cash',
+  brand: 'cash',
+  title: 'Cash on Delivery',
+  subtitle: 'Pay after service completion',
+  is_default: true,
+  isDefault: true,
+  is_fixed: true,
+  is_enabled: true,
+  isEnabled: true,
+};
+
+export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [COD_PAYMENT_METHOD];
 
 export const paymentService = {
   /**
-   * Fetch all saved payment methods (COD, JazzCash, EasyPaisa, Saved Cards)
+   * Fetch all payment methods.
+   * Cash on Delivery is strictly the active default method.
+   * Any remote saved payment instruments are loaded with disabled flags.
    */
   getPaymentMethods: async (): Promise<PaymentMethod[]> => {
     try {
-      const response = await apiClient.get<any>('/payments/methods');
-      const raw = response.data?.data || response.data;
-      if (Array.isArray(raw) && raw.length > 0) {
-        return raw.map((item: any) => ({
-          id: item.id || generateUUID(),
-          type: item.type || 'card',
-          brand: (item.brand || 'visa').toLowerCase(),
-          title: item.title || (item.brand ? `${item.brand.toUpperCase()} Card` : 'Payment Method'),
-          subtitle:
-            item.subtitle ||
-            (item.last4 ? `•••• ${item.last4} · Exp ${item.exp_month || 12}/${item.exp_year || 28}` : 'Saved Method'),
-          account_number: item.account_number,
-          last4: item.last4,
-          exp_month: item.exp_month,
-          exp_year: item.exp_year,
-          holder_name: item.holder_name,
-          is_default: Boolean(item.is_default),
-          is_fixed: item.id === 'pm_cod' || item.type === 'cash',
-        }));
+      const remoteMethods = await paymentApi.getSavedPaymentMethods();
+      if (Array.isArray(remoteMethods) && remoteMethods.length > 0) {
+        const mappedRemote: PaymentMethod[] = remoteMethods.map((item) => {
+          const isWallet = item.type?.toLowerCase().includes('wallet');
+          const isJazz = item.type?.toLowerCase().includes('jazzcash');
+          const isEasy = item.type?.toLowerCase().includes('easypaisa');
+          const brand = isJazz ? 'jazzcash' : isEasy ? 'easypaisa' : 'visa';
+
+          return {
+            id: item.id,
+            type: isWallet ? 'wallet' : 'card',
+            brand,
+            title: item.display_name || (isWallet ? 'Mobile Wallet' : 'Saved Card'),
+            subtitle: item.masked_number || '••••',
+            account_number: isWallet ? item.masked_number : undefined,
+            last4: !isWallet ? item.masked_number?.slice(-4) : undefined,
+            is_default: false, // In COD mode, COD is strictly the active default
+            isDefault: false,
+            is_fixed: false,
+            is_enabled: false, // Safely disconnected
+            isEnabled: false,
+            disabled_reason: ONLINE_PAYMENTS_DISABLED_MESSAGE,
+          };
+        });
+
+        return [COD_PAYMENT_METHOD, ...mappedRemote];
       }
     } catch (_e) {
-      // Fallback to local default methods
+      // Fallback cleanly to COD only — zero fake/demo accounts injected
     }
-    return DEFAULT_PAYMENT_METHODS;
+    return [COD_PAYMENT_METHOD];
   },
 
   /**
-   * Add a Mobile Wallet (JazzCash or EasyPaisa)
+   * Online Wallet addition is explicitly disabled by platform policy
    */
-  addWalletMethod: async (dto: AddWalletDTO): Promise<PaymentMethod> => {
-    const rawNumber = dto.accountNumber.replace(/\D/g, '');
-    const masked = rawNumber.length >= 4 
-      ? `${rawNumber.slice(0, 4)} •••• ${rawNumber.slice(-4)}`
-      : rawNumber;
-
-    const brand = dto.provider;
-    const title = brand === 'jazzcash' ? 'JazzCash Wallet' : 'EasyPaisa Wallet';
-
-    try {
-      const response = await apiClient.post<any>('/payments/methods/wallet', {
-        provider: dto.provider,
-        account_number: dto.accountNumber,
-        account_title: dto.accountTitle,
-        is_default: Boolean(dto.isDefault),
-      });
-      const data = response.data?.data || response.data;
-      return {
-        id: data?.id || `pm_wallet_${Date.now()}`,
-        type: 'wallet',
-        brand,
-        title,
-        subtitle: masked,
-        account_number: masked,
-        holder_name: dto.accountTitle,
-        is_default: Boolean(dto.isDefault),
-      };
-    } catch {
-      return {
-        id: `pm_wallet_${Date.now()}`,
-        type: 'wallet',
-        brand,
-        title,
-        subtitle: masked,
-        account_number: masked,
-        holder_name: dto.accountTitle,
-        is_default: Boolean(dto.isDefault),
-      };
-    }
+  addWalletMethod: async (_dto: AddWalletDTO): Promise<PaymentMethod> => {
+    throw new Error(ONLINE_PAYMENTS_DISABLED_MESSAGE);
   },
 
   /**
-   * Add a Credit or Debit Card
+   * Online Card addition is explicitly disabled by platform policy
    */
-  addCardMethod: async (dto: AddCardDTO): Promise<PaymentMethod> => {
-    const cleanNum = dto.cardNumber.replace(/\s/g, '');
-    const last4 = cleanNum.slice(-4) || '4242';
-    
-    // Determine card brand
-    let brand: any = 'visa';
-    if (cleanNum.startsWith('5') || cleanNum.startsWith('2')) brand = 'mastercard';
-    if (cleanNum.startsWith('3')) brand = 'amex';
-    if (cleanNum.startsWith('62') || cleanNum.startsWith('81')) brand = 'unionpay';
-    if (cleanNum.startsWith('60') || cleanNum.startsWith('9')) brand = 'paypak';
-
-    const brandName = brand.charAt(0).toUpperCase() + brand.slice(1);
-
-    try {
-      const response = await apiClient.post<any>('/payments/methods/card', {
-        card_number: cleanNum,
-        exp_month: dto.expMonth,
-        exp_year: dto.expYear,
-        cvc: dto.cvc,
-        cardholder_name: dto.cardholderName,
-        is_default: Boolean(dto.isDefault),
-      });
-      const data = response.data?.data || response.data;
-      return {
-        id: data?.id || `pm_card_${Date.now()}`,
-        type: 'card',
-        brand,
-        title: `${brandName} ending in ${last4}`,
-        subtitle: `Expires ${String(dto.expMonth).padStart(2, '0')}/${String(dto.expYear).slice(-2)}`,
-        last4,
-        exp_month: dto.expMonth,
-        exp_year: dto.expYear,
-        holder_name: dto.cardholderName,
-        is_default: Boolean(dto.isDefault),
-      };
-    } catch {
-      return {
-        id: `pm_card_${Date.now()}`,
-        type: 'card',
-        brand,
-        title: `${brandName} ending in ${last4}`,
-        subtitle: `Expires ${String(dto.expMonth).padStart(2, '0')}/${String(dto.expYear).slice(-2)}`,
-        last4,
-        exp_month: dto.expMonth,
-        exp_year: dto.expYear,
-        holder_name: dto.cardholderName,
-        is_default: Boolean(dto.isDefault),
-      };
-    }
+  addCardMethod: async (_dto: AddCardDTO): Promise<PaymentMethod> => {
+    throw new Error(ONLINE_PAYMENTS_DISABLED_MESSAGE);
   },
 
   /**
    * Delete / Detach a payment method
    */
   deletePaymentMethod: async (id: string): Promise<void> => {
-    try {
-      await apiClient.delete(`/payments/methods/${id}`);
-    } catch (_e) {
-      // Allow optimistic removal
+    if (id === 'CASH_ON_DELIVERY' || id === 'pm_cod' || id === 'CASH') {
+      throw new Error('Cash on Delivery is the standard platform payment method and cannot be removed.');
     }
+    await paymentApi.deletePaymentMethod(id);
   },
 
   /**
    * Set default payment method
    */
   setDefaultPaymentMethod: async (id: string): Promise<void> => {
-    try {
-      await apiClient.patch(`/payments/methods/${id}/default`);
-    } catch (_e) {
-      // Allow optimistic update
+    if (id === 'CASH_ON_DELIVERY' || id === 'pm_cod' || id === 'CASH') {
+      return; // Already default
     }
+    // Remote online methods cannot be set as active default while disabled
+    throw new Error(ONLINE_PAYMENTS_DISABLED_MESSAGE);
   },
 };

@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { ChevronRight } from 'lucide-react-native';
@@ -13,6 +12,7 @@ import { springConfig } from '../../design/animations';
 
 import { OnlineBadge } from '../ui/Badge/OnlineBadge';
 import { WorkerNearby } from '../../types/worker.types';
+import { WorkerAvatar } from './WorkerAvatar';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -69,18 +69,14 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({ worker }) => {
       onPressOut={handlePressOut}
       style={[styles.container, animatedStyle]}
     >
-      <View style={styles.avatarContainer}>
-        <Image
-          source={{ uri: worker.avatarUrl || 'https://i.pravatar.cc/150?u=' + worker.id }}
-          style={styles.avatar}
-          placeholder={BLURHASH}
-          contentFit="cover"
-          transition={200}
-        />
-        <View style={styles.onlineBadge}>
-          <OnlineBadge status={getAvatarStatus()} size={10} />
-        </View>
-      </View>
+      <WorkerAvatar
+        uri={worker.avatarUrl || (worker as any)?.avatar || (worker as any)?.avatar_url}
+        name={worker.name}
+        size={50}
+        showOnlineBadge={true}
+        isOnline={worker.availabilityStatus === 'AVAILABLE'}
+        badgeSize={12}
+      />
 
       <View style={styles.content}>
         <Text style={styles.name} numberOfLines={1}>{worker.name}</Text>

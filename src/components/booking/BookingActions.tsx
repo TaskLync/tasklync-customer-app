@@ -1,4 +1,4 @@
-import React from 'react';
+import { colors } from '../../design';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { BookingStatus } from '../../types/booking.types';
 import { bookingActionsMap, BookingActionConfig } from '../../utils/bookingActionsMap';
@@ -19,16 +19,17 @@ export function BookingActions({ status, onAction }: BookingActionsProps) {
         const isPrimary = actionConfig.variant === 'primary';
         const isDanger = actionConfig.variant === 'danger';
         
-        let buttonStyle = styles.buttonSecondary;
-        let textStyle = styles.textSecondary;
-        
-        if (isPrimary) {
-          buttonStyle = styles.buttonPrimary;
-          textStyle = styles.textPrimary;
-        } else if (isDanger) {
-          buttonStyle = styles.buttonDanger;
-          textStyle = styles.textDanger;
-        }
+        const buttonStyle = isPrimary
+          ? styles.buttonPrimary
+          : isDanger
+          ? styles.buttonDanger
+          : styles.buttonSecondary;
+
+        const textStyle = isPrimary
+          ? styles.textPrimary
+          : isDanger
+          ? styles.textDanger
+          : styles.textSecondary;
 
         return (
           <Pressable
@@ -58,41 +59,45 @@ export function BookingActions({ status, onAction }: BookingActionsProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    marginTop: 12,
   },
   button: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
+    height: 38,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 8,
   },
   buttonMargin: {
-    marginLeft: 12,
+    marginLeft: 10,
   },
   buttonPrimary: {
-    backgroundColor: '#16A34A',
+    backgroundColor: colors.primaryDark,
+    borderWidth: 1,
+    borderColor: colors.primaryDark,
   },
   buttonSecondary: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   buttonDanger: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   text: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 14,
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 13,
   },
   textPrimary: {
-    color: '#FFFFFF',
+    color: colors.white,
   },
   textSecondary: {
-    color: '#374151',
+    color: colors.textPrimary,
   },
   textDanger: {
-    color: '#DC2626',
+    color: colors.dangerMedium,
   },
 });

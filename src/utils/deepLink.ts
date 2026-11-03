@@ -1,4 +1,4 @@
-import { RawNotificationPayload } from '../types/notification.types';
+import type { RawNotificationPayload } from '../types/notification.types';
 
 /**
  * Resolves a raw notification data payload or deep link URL into an Expo Router path.
@@ -42,6 +42,24 @@ export function resolveNotificationRoute(payload?: RawNotificationPayload | null
       if (section === 'cart') {
         return '/cart';
       }
+      if (section === 'custom-requests' || section === 'custom-request') {
+        if (targetId) {
+          if (segments[2] === 'quote') {
+            return `/custom-request/${targetId}/quote`;
+          }
+          if (segments[2] === 'chat') {
+            return `/chat/request/${targetId}`;
+          }
+          return `/custom-request/${targetId}`;
+        }
+        return '/(tabs)/bookings';
+      }
+      if (section === 'quotes' || section === 'quote') {
+        if (targetId) {
+          return `/custom-request/${targetId}/quote`;
+        }
+        return '/(tabs)/bookings';
+      }
       if (section === 'worker' && targetId && targetId !== 'profile' && targetId !== 'reviews') {
         return `/worker/${targetId}`;
       }
@@ -55,10 +73,26 @@ export function resolveNotificationRoute(payload?: RawNotificationPayload | null
   const bookingId = payload.bookingId || payload.booking_id || payload.booking_uuid;
   const conversationId = payload.conversationId || payload.conversation_id;
   const workerId = payload.workerId || payload.worker_id;
+  const requestId = (payload as any).requestId || (payload as any).request_id || (payload as any).customRequestId || (payload as any).custom_request_id;
+  const quoteId = (payload as any).quoteId || (payload as any).quote_id;
   const type = (payload.type || payload.template_key || payload.templateKey || '').toLowerCase();
 
   // 3. Resolve based on event type / template key
+  if (type.includes('quote')) {
+    if (requestId) return `/custom-request/${requestId}/quote`;
+    if (quoteId) return `/custom-request/${quoteId}/quote`;
+    return '/(tabs)/bookings';
+  }
+
+  if (type.includes('custom_request') || type.includes('custom-request')) {
+    if (requestId) return `/custom-request/${requestId}`;
+    return '/(tabs)/bookings';
+  }
+
   if (type.includes('chat') || type.includes('message')) {
+    if (requestId) {
+      return `/chat/request/${requestId}`;
+    }
     const targetBooking = bookingId || conversationId;
     if (targetBooking) {
       return `/booking/${targetBooking}/chat`;

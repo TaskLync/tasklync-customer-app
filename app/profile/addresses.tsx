@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Modal,
   Alert,
   StatusBar,
 } from 'react-native';
@@ -22,6 +21,7 @@ import {
   RefreshCw,
 } from 'lucide-react-native';
 
+import { BottomSheet } from '../../src/components/layout/BottomSheet';
 import { useAddresses } from '../../src/hooks/useAddresses';
 import { AddressCard } from '../../src/components/address/AddressCard';
 import { AddressSwipeActions } from '../../src/components/address/AddressSwipeActions';
@@ -210,7 +210,7 @@ export default function SavedAddressesScreen() {
         <View
           style={[
             styles.footer,
-            { paddingBottom: Math.max(insets.bottom, 16) },
+            { paddingBottom: insets.bottom > 0 ? insets.bottom + 14 : 20 },
           ]}
         >
           <Pressable
@@ -230,69 +230,64 @@ export default function SavedAddressesScreen() {
         </View>
 
         {/* Accessibility Long-Press Action Sheet Modal */}
-        <Modal
+        <BottomSheet
           visible={Boolean(actionSheetAddress)}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setActionSheetAddress(null)}
+          onClose={() => setActionSheetAddress(null)}
+          snapPoints={['auto']}
+          contentPadding={true}
         >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() => setActionSheetAddress(null)}
-          >
-            <View style={styles.actionSheetCard}>
-              <View style={styles.actionSheetHeader}>
-                <Text style={styles.actionSheetTitle} maxFontSizeMultiplier={1.3}>
-                  {actionSheetAddress?.label || 'Address Options'}
-                </Text>
-                <Pressable
-                  onPress={() => setActionSheetAddress(null)}
-                  style={styles.actionSheetClose}
-                >
-                  <X size={20} color={palette.gray500} />
-                </Pressable>
-              </View>
-
-              {/* Set as Default Option */}
-              {!actionSheetAddress?.is_default && (
-                <Pressable
-                  onPress={() => actionSheetAddress && handleSetDefault(actionSheetAddress)}
-                  style={styles.actionSheetRow}
-                  accessibilityRole="button"
-                >
-                  <CheckCircle2 size={20} color={colors.primaryDark} strokeWidth={2.2} />
-                  <Text style={styles.actionSheetRowText} maxFontSizeMultiplier={1.3}>
-                    Set as Default Address
-                  </Text>
-                </Pressable>
-              )}
-
-              {/* Edit Option */}
+          <View style={styles.actionSheetContent}>
+            <View style={styles.actionSheetHeader}>
+              <Text style={styles.actionSheetTitle} maxFontSizeMultiplier={1.3}>
+                {actionSheetAddress?.label || 'Address Options'}
+              </Text>
               <Pressable
-                onPress={() => actionSheetAddress && handleEditAddress(actionSheetAddress)}
+                onPress={() => setActionSheetAddress(null)}
+                style={styles.actionSheetClose}
+              >
+                <X size={20} color={palette.gray500} />
+              </Pressable>
+            </View>
+
+            {/* Set as Default Option */}
+            {!actionSheetAddress?.is_default && (
+              <Pressable
+                onPress={() => actionSheetAddress && handleSetDefault(actionSheetAddress)}
                 style={styles.actionSheetRow}
                 accessibilityRole="button"
               >
-                <Pencil size={20} color={palette.info} strokeWidth={2.2} />
+                <CheckCircle2 size={20} color={colors.primaryDark} strokeWidth={2.2} />
                 <Text style={styles.actionSheetRowText} maxFontSizeMultiplier={1.3}>
-                  Edit Address Details
+                  Set as Default Address
                 </Text>
               </Pressable>
+            )}
 
-              {/* Delete Option */}
-              <Pressable
-                onPress={() => actionSheetAddress && handleDeleteAddress(actionSheetAddress)}
-                style={[styles.actionSheetRow, styles.actionSheetRowDanger]}
-                accessibilityRole="button"
-              >
-                <Trash2 size={20} color={palette.danger} strokeWidth={2.2} />
-                <Text style={[styles.actionSheetRowText, styles.dangerText]} maxFontSizeMultiplier={1.3}>
-                  Delete Address
-                </Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Modal>
+            {/* Edit Option */}
+            <Pressable
+              onPress={() => actionSheetAddress && handleEditAddress(actionSheetAddress)}
+              style={styles.actionSheetRow}
+              accessibilityRole="button"
+            >
+              <Pencil size={20} color={palette.info} strokeWidth={2.2} />
+              <Text style={styles.actionSheetRowText} maxFontSizeMultiplier={1.3}>
+                Edit Address Details
+              </Text>
+            </Pressable>
+
+            {/* Delete Option */}
+            <Pressable
+              onPress={() => actionSheetAddress && handleDeleteAddress(actionSheetAddress)}
+              style={[styles.actionSheetRow, styles.actionSheetRowDanger]}
+              accessibilityRole="button"
+            >
+              <Trash2 size={20} color={palette.danger} strokeWidth={2.2} />
+              <Text style={[styles.actionSheetRowText, styles.dangerText]} maxFontSizeMultiplier={1.3}>
+                Delete Address
+              </Text>
+            </Pressable>
+          </View>
+        </BottomSheet>
       </View>
     </SafeAreaView>
   );
@@ -418,19 +413,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: colors.primaryDark,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
-  },
-  actionSheetCard: {
-    backgroundColor: palette.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 36,
-    ...shadows.xl,
+  actionSheetContent: {
+    paddingBottom: 16,
   },
   actionSheetHeader: {
     flexDirection: 'row',

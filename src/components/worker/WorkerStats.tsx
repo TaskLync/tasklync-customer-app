@@ -1,21 +1,23 @@
 import React from 'react';
 import { StyleSheet, View, Text, ViewStyle } from 'react-native';
-import { Award, CheckCircle2, Clock, MapPin } from 'lucide-react-native';
 import { fontFamily } from '../../design/typography';
+import { colors } from '../../design/colors';
 
 export interface WorkerStatsProps {
-  yearsExperience?: number;
-  totalJobs?: number;
-  avgResponseMins?: number;
-  distanceLabel?: string;
-  style?: ViewStyle;
+  yearsExperience?: number | undefined;
+  totalJobs?: number | undefined;
+  avgResponseMins?: number | undefined;
+  distanceLabel?: string | undefined;
+  rating?: number | undefined;
+  totalReviews?: number | undefined;
+  onRatingPress?: (() => void) | undefined;
+  style?: ViewStyle | undefined;
 }
 
 export const WorkerStats: React.FC<WorkerStatsProps> = ({
   yearsExperience,
   totalJobs = 0,
   avgResponseMins,
-  distanceLabel,
   style,
 }) => {
   const expDisplay = typeof yearsExperience === 'number' && yearsExperience > 0
@@ -26,13 +28,11 @@ export const WorkerStats: React.FC<WorkerStatsProps> = ({
     ? `~${avgResponseMins} min`
     : 'Quick';
 
-  const rangeDisplay = distanceLabel?.trim() || 'Nearby';
 
   return (
     <View style={[styles.container, style]}>
       {/* Col 1: Experience */}
       <View style={styles.col}>
-        <Award size={18} color="#16A34A" strokeWidth={2.2} style={styles.icon} />
         <Text style={styles.valueText}>
           {expDisplay}
         </Text>
@@ -43,7 +43,6 @@ export const WorkerStats: React.FC<WorkerStatsProps> = ({
 
       {/* Col 2: Jobs Done */}
       <View style={styles.col}>
-        <CheckCircle2 size={18} color="#16A34A" strokeWidth={2.2} style={styles.icon} />
         <Text style={styles.valueText}>
           {totalJobs}
         </Text>
@@ -54,22 +53,10 @@ export const WorkerStats: React.FC<WorkerStatsProps> = ({
 
       {/* Col 3: Response Time */}
       <View style={styles.col}>
-        <Clock size={18} color="#16A34A" strokeWidth={2.2} style={styles.icon} />
         <Text style={styles.valueText}>
           {responseDisplay}
         </Text>
         <Text style={styles.labelText}>Response Time</Text>
-      </View>
-
-      <View style={styles.divider} />
-
-      {/* Col 4: Service Range */}
-      <View style={styles.col}>
-        <MapPin size={18} color="#16A34A" strokeWidth={2.2} style={styles.icon} />
-        <Text style={styles.valueText} numberOfLines={1}>
-          {rangeDisplay}
-        </Text>
-        <Text style={styles.labelText}>Service Range</Text>
       </View>
     </View>
   );
@@ -79,12 +66,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
+    backgroundColor: colors.bgSection,
+    borderRadius: 12,
     paddingVertical: 14,
-    paddingHorizontal: 6,
     width: '100%',
   },
   col: {
@@ -94,23 +78,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   divider: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#E2E8F0',
+    width: StyleSheet.hairlineWidth,
+    height: 32,
+    backgroundColor: colors.border,
   },
   icon: {
     marginBottom: 4,
   },
   valueText: {
-    fontFamily: fontFamily.jakarta.bold,
-    fontSize: 13.5,
-    color: '#0F172A',
+    fontFamily: fontFamily.inter.bold,
+    fontSize: 17,
+    letterSpacing: -0.3,
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   labelText: {
     fontFamily: fontFamily.jakarta.medium,
     fontSize: 11,
-    color: '#64748B',
+    color: colors.textSecondary,
     marginTop: 2,
     textAlign: 'center',
   },

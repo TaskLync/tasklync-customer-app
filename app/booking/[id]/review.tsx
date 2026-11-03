@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,59 +12,172 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Clock, AlertCircle, Edit3, Lock } from 'lucide-react-native';
 
 import { useBookingDetails } from '../../../src/hooks/useBookingDetails';
+import { useReviewEligibility, useSubmitReview, useEditReview, useReviewMediaUpload } from '../../../src/hooks/useReview';
 import { useReviewFormState } from '../../../src/hooks/useReviewFormState';
-import { useSubmitReview } from '../../../src/hooks/useSubmitReview';
 import { useSkipReview } from '../../../src/hooks/useSkipReview';
+import { useAuthStore } from '../../../src/store/auth.store';
+import { reviewApi, extractReviewErrorMessage } from '../../../src/services/api/review.api';
+import { ReviewItem, EditReviewPayload, CreateReviewPayload } from '../../../src/types/review.types';
+
 import { ReviewWorkerContext } from '../../../src/components/review/ReviewWorkerContext';
 import { RatingInput } from '../../../src/components/ui/Rating/RatingInput';
-import { CategoryRatingSection } from '../../../src/components/review/CategoryRatingSection';
+import { ReviewTagSelector } from '../../../src/components/review/ReviewTagSelector';
+import { ReviewPhotoUpload } from '../../../src/components/review/ReviewPhotoUpload';
 import { ReviewCommentInput } from '../../../src/components/review/ReviewCommentInput';
 import { ReviewSuccessState } from '../../../src/components/review/ReviewSuccessState';
+import { ReviewStarRow } from '../../../src/components/review/ReviewStarRow';
+
 import {
   colors,
-  palette,
   fontFamily,
   fontSize,
   radius,
-  shadows,
   spacing,
 } from '../../../src/design';
 
 /**
- * ReviewScreen (Day 33 Post-Booking Review Flow)
+ * ReviewScreen
  *
- * Implements Principal-level React Native & UX Architecture:
- * - Progressive disclosure without layout reflow jank
- * - Strict Hick's Law validation: overall rating is hard-required, categories are soft-optional
- * - Timer-safe one-shot success replacement to prevent re-submission & navigation stack loops
- * - Fitts's Law 40px primary rating touch target
- * - Keyboard-safe layout with safe area insets
+ * Implements Principal UI/UX & Mobile Engineering standards (Uber/Foodpanda/Airbnb caliber):
+ * - Clear top-to-bottom hierarchy: Context -> Hero Star Rating -> Compliment Tags -> Detailed Feedback -> Photos -> CTAs
+ * - Bulletproof keyboard handling: KeyboardAvoidingView with non-absolute scroll-integrated CTAs
+ * - Zero unmounting during typing: guards against re-render re-fetch unmounting loop
+ * - Full 14-day creation window & 48-hour customer edit window support
+ * - Cloudinary CDN photo uploading (up to 5 photos)
+ * - Safe areas and responsive Android layout handling
  */
 export default function ReviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { id: bookingId } = useLocalSearchParams<{ id: string }>();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const { id: bookingId, editReviewId } = useLocalSearchParams<{
+    id: string;
+    editReviewId?: string;
+  }>();
 
+  const user = useAuthStore((s) => s.user);
+
+  // 1. Remote Data Queries
   const { booking, isLoading: isBookingLoading } = useBookingDetails(bookingId);
   const {
+    data: eligibility,
+    isLoading: isEligibilityLoading,
+  } = useReviewEligibility(bookingId || '', Boolean(bookingId));
+
+  // 2. Form State & Media Hooks
+  const {
     overallRating,
-    categoryRatings,
+    tags,
     comment,
     canSubmit,
-    shouldShowCategorySection,
     setOverallRating,
-    setCategoryRating,
+    toggleTag,
     setComment,
+    initializeFromReview,
   } = useReviewFormState();
 
-  const { submitReview, isSubmitting } = useSubmitReview();
-  const { skipReview } = useSkipReview(bookingId);
+  const {
+    photos,
+    isUploading,
+    pickAndUploadImage,
+    removePhoto,
+    resetPhotos,
+  } = useReviewMediaUpload(bookingId);
+
+  // 3. Mutations
+  const { mutateAsync: submitReviewAsync, isPending: isSubmitting } = useSubmitReview();
+  const { mutateAsync: editReviewAsync, isPending: isEditing } = useEditReview();
+  const { skipReview } = useSkipReview(bookingId || '');
+
+  // 4. Local States for Mode & Edit Window
+  const [existingReview, setExistingReview] = useState<ReviewItem | null>(null);
+  const [isLoadingExistingReview, setIsLoadingExistingReview] = useState<boolean>(false);
+  const [initialChecked, setInitialChecked] = useState<boolean>(false);
+  const hasCheckedExistingRef = useRef<boolean>(false);
+
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [editHoursRemaining, setEditHoursRemaining] = useState<number | null>(null);
+  const [isEditWindowExpired, setIsEditWindowExpired] = useState<boolean>(false);
 
   const [hasSubmitted, setHasSubmitted] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // 5. Detect Existing Review & Edit Window (48h) - Run only once on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    async function checkExistingReview() {
+      if (!bookingId || !user?.id || hasCheckedExistingRef.current) return;
+      hasCheckedExistingRef.current = true;
+
+      // If already reviewed or editReviewId is present
+      if (eligibility?.isReviewed || editReviewId) {
+        try {
+          setIsLoadingExistingReview(true);
+          let foundReview: ReviewItem | null = null;
+
+          if (editReviewId) {
+            foundReview = await reviewApi.getReviewById(editReviewId);
+          } else {
+            const userReviewsRes = await reviewApi.getUserReviews(user.id);
+            foundReview =
+              userReviewsRes.reviews.find((r) => r.booking_id === bookingId) || null;
+          }
+
+          if (isMounted && foundReview) {
+            setExistingReview(foundReview);
+            initializeFromReview(foundReview);
+            if (foundReview.photo_urls && foundReview.photo_urls.length > 0) {
+              resetPhotos(foundReview.photo_urls);
+            }
+
+            // Calculate 48-hour edit window from created_at
+            const createdAtTime = new Date(foundReview.created_at).getTime();
+            const now = new Date().getTime();
+            const diffHours = (now - createdAtTime) / (1000 * 60 * 60);
+
+            if (diffHours < 48) {
+              setIsEditMode(true);
+              setEditHoursRemaining(Math.max(1, Math.round(48 - diffHours)));
+              setIsEditWindowExpired(false);
+            } else {
+              setIsEditMode(false);
+              setIsEditWindowExpired(true);
+            }
+          }
+        } catch {
+          // Fallback gracefully
+        } finally {
+          if (isMounted) {
+            setIsLoadingExistingReview(false);
+            setInitialChecked(true);
+          }
+        }
+      } else {
+        if (isMounted) {
+          setInitialChecked(true);
+        }
+      }
+    }
+
+    if (eligibility !== undefined) {
+      checkExistingReview();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [bookingId, eligibility?.isReviewed, editReviewId, initializeFromReview, resetPhotos, user?.id]);
+
+  // Keyboard scroll helper
+  const handleCommentFocus = useCallback(() => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 180);
+  }, []);
 
   // Success Navigation
   const handleNavigateAfterSuccess = useCallback(() => {
@@ -75,39 +188,83 @@ export default function ReviewScreen() {
     }
   }, [router]);
 
-  // Submit Handler
+  // Submit or Edit Handler
   const handleSubmit = useCallback(async () => {
-    if (!canSubmit || isSubmitting || !bookingId) return;
+    if (!canSubmit || isSubmitting || isEditing || !bookingId) return;
 
     try {
       setErrorMessage(null);
+      const trimmedComment = comment.trim();
 
-      const targetId = booking?.worker_id || 'worker_default';
+      if (isEditMode && existingReview) {
+        // Edit Review (PATCH /reviews/:id)
+        const payload: EditReviewPayload = {
+          rating: overallRating,
+          ...(trimmedComment ? { comment: trimmedComment } : {}),
+          ...(tags.length > 0 ? { tags } : {}),
+        };
 
-      await submitReview({
-        bookingId,
-        targetId,
-        targetType: 'worker',
-        rating: overallRating,
-        categories: categoryRatings,
-        comment,
-      });
+        await editReviewAsync({
+          reviewId: existingReview.id,
+          payload,
+        });
+      } else {
+        // Submit New Review (POST /reviews)
+        const payload: CreateReviewPayload = {
+          booking_id: bookingId,
+          rating: overallRating,
+          ...(trimmedComment ? { comment: trimmedComment } : {}),
+          ...(tags.length > 0 ? { tags } : {}),
+          ...(photos.length > 0 ? { photo_urls: photos } : {}),
+        };
 
-      // Swap to one-shot success state
+        await submitReviewAsync(payload);
+      }
+
       setHasSubmitted(true);
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Failed to submit review. Please try again.');
+      const msg = extractReviewErrorMessage(err);
+      setErrorMessage(msg);
     }
   }, [
-    booking?.worker_id,
-    bookingId,
     canSubmit,
-    categoryRatings,
-    comment,
     isSubmitting,
+    isEditing,
+    bookingId,
+    isEditMode,
+    existingReview,
+    editReviewAsync,
     overallRating,
-    submitReview,
+    comment,
+    tags,
+    submitReviewAsync,
+    photos,
   ]);
+
+  // Only show full-screen loader on initial load
+  const isInitialLoading =
+    !initialChecked &&
+    ((isBookingLoading && !booking) ||
+      (isEligibilityLoading && !eligibility) ||
+      isLoadingExistingReview);
+
+  // Dynamic feedback text for rating
+  const getRatingFeedback = (rating: number) => {
+    switch (rating) {
+      case 5:
+        return 'Outstanding experience! ⭐';
+      case 4:
+        return 'Very good service! 👍';
+      case 3:
+        return 'Average experience 👌';
+      case 2:
+        return 'Below expectations';
+      case 1:
+        return 'Poor experience';
+      default:
+        return 'Tap a star to rate your overall service';
+    }
+  };
 
   // Render Success Payoff View
   if (hasSubmitted) {
@@ -119,153 +276,288 @@ export default function ReviewScreen() {
     );
   }
 
-  const workerName = booking?.worker_name || 'Service Professional';
-  const workerAvatar = booking?.worker_avatar_url || null;
-  const serviceName = booking?.category_name || 'Home Service';
-  const completedDate = booking?.completed_at || booking?.created_at;
-
-  return (
-    <KeyboardAvoidingView
-      style={styles.flexOne}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+  // 1. Expired Review Window (14-day creation window passed)
+  if (!isInitialLoading && eligibility?.isExpired && !existingReview) {
+    return (
       <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
         <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
-
-        {/* Screen Header */}
         <View style={styles.header}>
           <Pressable
             style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
             onPress={() => router.back()}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={22} color={colors.textPrimary} />
+            <ArrowLeft size={20} color={colors.textPrimary} />
           </Pressable>
-
-          <Text style={styles.headerTitle}>Rate your experience</Text>
+          <Text style={styles.headerTitle}>Review Expired</Text>
           <View style={styles.headerPlaceholder} />
         </View>
 
-        {isBookingLoading && !booking ? (
-          <View style={styles.centerLoading}>
-            <ActivityIndicator size="large" color={colors.primary} />
+        <View style={styles.centerMessageCard}>
+          <View style={[styles.statusIconWrap, { backgroundColor: colors.bgHover }]}>
+            <Clock size={32} color={colors.textSecondary} />
           </View>
-        ) : (
-          <>
-            <ScrollView
-              style={styles.scrollView}
-              contentContainerStyle={[
-                styles.scrollContent,
-                { paddingBottom: insets.bottom + 120 },
-              ]}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* 1. Worker & Job Context Card */}
-              <ReviewWorkerContext
-                workerName={workerName}
-                workerAvatar={workerAvatar}
-                serviceName={serviceName}
-                completedDate={completedDate}
-              />
+          <Text style={styles.messageTitle}>Review Window Expired</Text>
+          <Text style={styles.messageSubtitle}>
+            Reviews must be submitted within 14 days of booking completion. The review period for this service has now closed.
+          </Text>
+          <Pressable style={styles.secondaryActionBtn} onPress={() => router.back()}>
+            <Text style={styles.secondaryActionBtnText}>Back to Bookings</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
-              {/* 2. Primary Overall Rating Section */}
-              <View style={styles.primaryRatingCard}>
-                <Text style={styles.primaryRatingTitle}>How was your experience?</Text>
-                <Text style={styles.primaryRatingSubtitle}>
-                  {overallRating === 0
-                    ? 'Tap a star to rate the overall job'
-                    : overallRating === 5
-                    ? 'Outstanding! ⭐⭐⭐⭐⭐'
-                    : overallRating === 4
-                    ? 'Very Good! ⭐⭐⭐⭐'
-                    : overallRating === 3
-                    ? 'Average ⭐⭐⭐'
-                    : overallRating === 2
-                    ? 'Below expectations ⭐⭐'
-                    : 'Needs improvement ⭐'}
-                </Text>
+  // 2. Already Reviewed and 48-hour Edit Window Expired (Review Permanently Locked)
+  if (!isInitialLoading && isEditWindowExpired && existingReview) {
+    return (
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
+        <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+        <View style={styles.header}>
+          <Pressable
+            style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
+            onPress={() => router.back()}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <ArrowLeft size={20} color={colors.textPrimary} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Your Review</Text>
+          <View style={styles.headerPlaceholder} />
+        </View>
 
-                <View style={styles.ratingInputWrapper}>
-                  <RatingInput
-                    value={overallRating}
-                    onChange={setOverallRating}
-                    size="lg"
-                    disabled={isSubmitting}
-                  />
-                </View>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.lockedBanner}>
+            <Lock size={15} color={colors.textSecondary} />
+            <Text style={styles.lockedBannerText}>
+              Review locked. Reviews can only be edited within 48 hours of submission.
+            </Text>
+          </View>
+
+          <View style={styles.readOnlyCard}>
+            <View style={styles.readOnlyScoreRow}>
+              <Text style={styles.readOnlyRatingText}>{existingReview.rating}.0</Text>
+              <ReviewStarRow rating={existingReview.rating} size="md" />
+            </View>
+
+            {existingReview.tags && existingReview.tags.length > 0 && (
+              <View style={styles.tagsDisplayRow}>
+                {existingReview.tags.map((t) => (
+                  <View key={t} style={styles.tagDisplayChip}>
+                    <Text style={styles.tagDisplayChipText}>{t}</Text>
+                  </View>
+                ))}
               </View>
+            )}
 
-              {/* 3. Progressive Disclosure Category Details */}
-              <CategoryRatingSection
-                visible={shouldShowCategorySection}
-                categoryRatings={categoryRatings}
-                onCategoryRatingChange={setCategoryRating}
-                disabled={isSubmitting}
+            {existingReview.comment ? (
+              <Text style={styles.readOnlyComment}>"{existingReview.comment}"</Text>
+            ) : null}
+
+            {existingReview.worker_reply ? (
+              <View style={styles.workerReplyBox}>
+                <Text style={styles.workerReplyTitle}>Professional's Response</Text>
+                <Text style={styles.workerReplyBody}>{existingReview.worker_reply}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <Pressable style={styles.primaryPillBtn} onPress={() => router.back()}>
+            <Text style={styles.primaryPillBtnText}>Done</Text>
+          </Pressable>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  const isCompany = Boolean(
+    booking?.is_company ||
+    booking?.provider_type === 'COMPANY'
+  );
+  const workerName = isCompany
+    ? (booking?.provider_name || booking?.worker_name || 'Verified Service Agency')
+    : (booking?.worker_name || 'Service Professional');
+  const workerAvatar = isCompany
+    ? (booking?.provider_avatar_url || booking?.worker_avatar_url || null)
+    : (booking?.worker_avatar_url || null);
+  const serviceName = booking?.category_name || 'Home Service';
+  const completedDate = booking?.completed_at || booking?.created_at;
+
+  const isSaving = isSubmitting || isEditing;
+
+  return (
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+
+      {/* Screen Header */}
+      <View style={styles.header}>
+        <Pressable
+          style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
+          onPress={() => router.back()}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeft size={20} color={colors.textPrimary} />
+        </Pressable>
+
+        <Text style={styles.headerTitle}>
+          {isEditMode ? 'Edit Your Review' : 'Rate your experience'}
+        </Text>
+        <View style={styles.headerPlaceholder} />
+      </View>
+
+      {isInitialLoading ? (
+        <View style={styles.centerLoading}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingLabel}>Loading booking details...</Text>
+        </View>
+      ) : (
+        <KeyboardAvoidingView
+          style={styles.flexOne}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.scrollView}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: Math.max(insets.bottom, 24) + 40 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Edit Mode Notice Banner */}
+            {isEditMode && editHoursRemaining !== null && (
+              <View style={styles.editWindowBanner}>
+                <Edit3 size={15} color={colors.textGreen} />
+                <Text style={styles.editWindowText}>
+                  Editing Review · <Text style={styles.editWindowBold}>{editHoursRemaining} hours</Text> remaining to make changes.
+                </Text>
+              </View>
+            )}
+
+            {/* 1. Worker & Job Context Card */}
+            <ReviewWorkerContext
+              workerName={workerName}
+              workerAvatar={workerAvatar}
+              serviceName={serviceName}
+              completedDate={completedDate}
+            />
+
+            {/* 2. Primary Hero Rating Card */}
+            <View style={styles.primaryRatingCard}>
+              <Text style={styles.primaryRatingTitle}>
+                {isEditMode ? 'Update Overall Rating' : 'How was your experience?'}
+              </Text>
+              <Text style={styles.primaryRatingSubtitle}>
+                {getRatingFeedback(overallRating)}
+              </Text>
+
+              <View style={styles.ratingInputWrapper}>
+                <RatingInput
+                  value={overallRating}
+                  onChange={setOverallRating}
+                  size="lg"
+                  disabled={isSaving}
+                />
+              </View>
+            </View>
+
+            {/* 3. Review Compliment Tags Selector */}
+            <ReviewTagSelector
+              selectedTags={tags}
+              onToggleTag={toggleTag}
+              disabled={isSaving}
+            />
+
+            {/* 4. Written Feedback (up to 2000 chars) */}
+            <ReviewCommentInput
+              value={comment}
+              onChangeText={setComment}
+              maxLength={2000}
+              disabled={isSaving}
+              onFocus={handleCommentFocus}
+            />
+
+            {/* 5. Photo Upload (Only active in initial submission as per backend spec) */}
+            {!isEditMode && (
+              <ReviewPhotoUpload
+                photos={photos}
+                maxPhotos={5}
+                isUploading={isUploading}
+                onPickPhoto={pickAndUploadImage}
+                onRemovePhoto={removePhoto}
+                disabled={isSaving}
               />
+            )}
 
-              {/* 4. Optional Written Feedback */}
-              <ReviewCommentInput
-                value={comment}
-                onChangeText={setComment}
-                disabled={isSubmitting}
-              />
+            {/* Error Banner */}
+            {errorMessage ? (
+              <View style={styles.errorBanner}>
+                <AlertCircle size={16} color={colors.textDanger} style={{ marginRight: 6 }} />
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
+            ) : null}
 
-              {/* Error Banner */}
-              {errorMessage ? (
-                <View style={styles.errorBanner}>
-                  <Text style={styles.errorText}>{errorMessage}</Text>
-                </View>
-              ) : null}
-            </ScrollView>
-
-            {/* Sticky Action Footer */}
-            <View
-              style={[
-                styles.footer,
-                { paddingBottom: Math.max(insets.bottom, 16) + 8 },
-              ]}
-            >
+            {/* 6. Form Actions - Integrated naturally inside scrollable flow */}
+            <View style={styles.actionsContainer}>
               <Pressable
                 style={({ pressed }) => [
                   styles.submitButton,
-                  !canSubmit && styles.submitButtonDisabled,
-                  isSubmitting && styles.submitButtonLoading,
-                  pressed && canSubmit && styles.submitButtonPressed,
+                  (!canSubmit || isSaving) && styles.submitButtonDisabled,
+                  isSaving && styles.submitButtonLoading,
+                  pressed && canSubmit && !isSaving && styles.submitButtonPressed,
                 ]}
                 onPress={handleSubmit}
-                disabled={!canSubmit || isSubmitting}
+                disabled={!canSubmit || isSaving}
                 accessibilityRole="button"
-                accessibilityLabel="Submit Review"
-                accessibilityState={{ disabled: !canSubmit || isSubmitting }}
+                accessibilityLabel={isEditMode ? 'Save Changes' : 'Submit Review'}
+                accessibilityState={{ disabled: !canSubmit || isSaving }}
               >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color={colors.textOnGreen} />
+                {isSaving ? (
+                  <ActivityIndicator size="small" color={colors.white} />
                 ) : (
-                  <Text style={styles.submitButtonText}>Submit Review</Text>
+                  <Text
+                    style={[
+                      styles.submitButtonText,
+                      (!canSubmit || isSaving) && styles.submitButtonTextDisabled,
+                    ]}
+                  >
+                    {isEditMode ? 'Save Changes' : 'Submit Review'}
+                  </Text>
                 )}
               </Pressable>
 
-              <Pressable
-                style={({ pressed }) => [
-                  styles.skipButton,
-                  pressed && styles.buttonPressed,
-                ]}
-                onPress={skipReview}
-                disabled={isSubmitting}
-                hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
-                accessibilityRole="button"
-                accessibilityLabel="Skip review for now"
-              >
-                <Text style={styles.skipButtonText}>Skip for now</Text>
-              </Pressable>
+              {!isEditMode && (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.skipButton,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={skipReview}
+                  disabled={isSaving}
+                  hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Skip review for now"
+                >
+                  <Text style={styles.skipButtonText}>Skip for now</Text>
+                </Pressable>
+              )}
             </View>
-          </>
-        )}
-      </View>
-    </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      )}
+    </View>
   );
 }
 
@@ -284,8 +576,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 4,
     backgroundColor: colors.bgCard,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.gray100,
   },
   backButton: {
     width: 38,
@@ -293,11 +583,10 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bgApp,
   },
   headerTitle: {
     fontFamily: fontFamily.poppins.semiBold,
-    fontSize: fontSize.h3,
+    fontSize: fontSize.body1,
     color: colors.textPrimary,
   },
   headerPlaceholder: {
@@ -310,82 +599,98 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing.md,
+    paddingHorizontal: 20,
+    paddingVertical: spacing.md,
   },
   centerLoading: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  loadingLabel: {
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: fontSize.body2,
+    color: colors.textSecondary,
+    marginTop: 12,
+  },
+  editWindowBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primaryTint,
+    borderRadius: radius.md,
+    padding: 12,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  editWindowText: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: fontSize.dataSM,
+    color: colors.textGreenDark,
+    marginLeft: 8,
+    flex: 1,
+  },
+  editWindowBold: {
+    fontFamily: fontFamily.jakarta.semiBold,
+  },
   primaryRatingCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   primaryRatingTitle: {
     fontFamily: fontFamily.poppins.semiBold,
-    fontSize: fontSize.h4 + 1,
+    fontSize: 17,
     color: colors.textPrimary,
-    marginBottom: spacing.xs / 2,
+    marginBottom: 4,
     textAlign: 'center',
   },
   primaryRatingSubtitle: {
-    fontFamily: fontFamily.jakarta.regular,
+    fontFamily: fontFamily.jakarta.medium,
     fontSize: fontSize.dataSM,
     color: colors.textSecondary,
     marginBottom: spacing.md,
     textAlign: 'center',
   },
   ratingInputWrapper: {
-    paddingVertical: spacing.xs / 2,
+    paddingVertical: spacing.xs,
   },
   errorBanner: {
-    backgroundColor: palette.dangerLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.dangerLight,
     borderRadius: radius.md,
-    padding: spacing.sm + 2,
+    padding: spacing.sm + 4,
     borderWidth: 1,
-    borderColor: palette.dangerLight,
+    borderColor: colors.borderErrorLight,
     marginTop: spacing.md,
   },
   errorText: {
     fontFamily: fontFamily.jakarta.medium,
     fontSize: fontSize.dataSM,
     color: colors.textDanger,
-    textAlign: 'center',
+    flex: 1,
   },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.bgCard,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm + 4,
-    borderTopWidth: 1,
-    borderTopColor: palette.gray100,
-    ...shadows.lg,
+
+  // Actions Container
+  actionsContainer: {
+    marginTop: spacing.xl,
+    gap: 12,
   },
   submitButton: {
-    height: 52,
-    backgroundColor: colors.primary,
-    borderRadius: radius.pill,
+    height: 50,
+    backgroundColor: colors.primaryDark,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
   },
   submitButtonDisabled: {
-    backgroundColor: palette.gray300,
+    backgroundColor: colors.border,
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -398,18 +703,159 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontFamily: fontFamily.poppins.semiBold,
-    fontSize: fontSize.body1,
-    color: colors.textOnGreen,
+    fontSize: fontSize.body1 - 1,
+    color: colors.white,
+  },
+  submitButtonTextDisabled: {
+    color: colors.textMuted,
   },
   skipButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    marginTop: spacing.xs / 2,
+    paddingVertical: 10,
   },
   skipButtonText: {
     fontFamily: fontFamily.jakarta.medium,
-    fontSize: fontSize.dataSM + 0.5,
+    fontSize: fontSize.dataSM,
     color: colors.textSecondary,
+  },
+
+  // Expired / Locked Message States
+  centerMessageCard: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  statusIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  messageTitle: {
+    fontFamily: fontFamily.poppins.semiBold,
+    fontSize: fontSize.h3,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  messageSubtitle: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: fontSize.body2,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: spacing.xl,
+  },
+  secondaryActionBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+  },
+  secondaryActionBtnText: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: fontSize.body2,
+    color: colors.textPrimary,
+  },
+
+  // Locked View
+  lockedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgHover,
+    borderRadius: radius.md,
+    padding: 12,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  lockedBannerText: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: fontSize.dataSM,
+    color: colors.textSecondary,
+    marginLeft: 8,
+    flex: 1,
+  },
+  readOnlyCard: {
+    backgroundColor: colors.bgCard,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  readOnlyScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: spacing.md,
+  },
+  readOnlyRatingText: {
+    fontFamily: fontFamily.poppins.bold,
+    fontSize: 28,
+    color: colors.textPrimary,
+  },
+  tagsDisplayRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: spacing.md,
+  },
+  tagDisplayChip: {
+    backgroundColor: colors.primaryTint,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  tagDisplayChipText: {
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 12,
+    color: colors.textGreen,
+  },
+  readOnlyComment: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: fontSize.body2,
+    color: colors.textPrimary,
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+  workerReplyBox: {
+    backgroundColor: colors.bgApp,
+    borderRadius: radius.md,
+    padding: 12,
+    marginTop: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  workerReplyTitle: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: fontSize.dataSM,
+    color: colors.primaryDark,
+    marginBottom: 4,
+  },
+  workerReplyBody: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: fontSize.dataSM,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  primaryPillBtn: {
+    height: 48,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryPillBtnText: {
+    fontFamily: fontFamily.poppins.semiBold,
+    fontSize: fontSize.body2,
+    color: colors.white,
   },
 });

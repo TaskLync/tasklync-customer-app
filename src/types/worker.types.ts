@@ -1,3 +1,5 @@
+export type ProviderType = 'INDIVIDUAL' | 'COMPANY';
+
 export type WorkerAvailabilityStatus = 'AVAILABLE' | 'BUSY' | 'OFFLINE' | 'PAUSED' | 'INACTIVE' | 'UNAVAILABLE';
 
 export interface WorkerNearby {
@@ -15,8 +17,32 @@ export interface WorkerNearby {
   isOnJob: boolean;
   responseTimeMins: number;
   startingPrice: number | null;
-  lat?: number | null;
-  lng?: number | null;
+  lat?: number | null | undefined;
+  lng?: number | null | undefined;
+
+  // ── Search Service v1.2.0 Enriched Fields ──
+  bio?: string | null | undefined;
+  city?: string | null | undefined;
+  categoryIds?: string[] | undefined;
+  minPrice?: number | null | undefined;
+  maxPrice?: number | null | undefined;
+  totalBookings?: number | undefined;
+  isVerified?: boolean | undefined;
+  isAvailable?: boolean | undefined;
+  isBusy?: boolean | undefined;
+  badges?: string[] | undefined;
+  isFeatured?: boolean | undefined;
+  companyVerified?: boolean | undefined;
+  maxConcurrentJobs?: number | undefined;
+  hasDistance?: boolean | undefined;
+
+  // ── Company / Agency Fields ──
+  providerType?: ProviderType | undefined;
+  businessName?: string | null | undefined;
+  isCompany?: boolean | undefined;
+  coverImageUrl?: string | null | undefined;
+  ntnNumber?: string | null | undefined;
+  fleetSize?: number | undefined;
 }
 
 export interface WorkerSkill {
@@ -29,12 +55,16 @@ export interface WorkerSkill {
 
 export interface WorkerServiceOffering {
   id: string;
+  /** services.id of the predefined service (null for custom offerings); this is what booking-service prices against. */
+  serviceId?: string | null;
   serviceName: string;
   serviceNameUr: string | null;
   customPrice: number;
   priceType: 'fixed' | 'hourly' | 'quote';
   isCustom: boolean;
   notes: string | null;
+  description?: string | null;
+  imageUrl?: string | null;
 }
 
 export interface WorkerPublicProfile extends WorkerNearby {
@@ -46,6 +76,15 @@ export interface WorkerPublicProfile extends WorkerNearby {
   isVerified: boolean;
   skills: WorkerSkill[];
   serviceOfferings: WorkerServiceOffering[];
+
+  // ── Company / Agency Specifications ──
+  provider_type: ProviderType;
+  business_name: string | null;
+  ntn_number?: string | null;
+  max_concurrent_jobs: number;
+  company_verified_at: string | null;
+  is_company: boolean;
 }
+
 
 

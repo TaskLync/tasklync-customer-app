@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Switch, StyleSheet } from 'react-native';
-import { Zap } from 'lucide-react-native';
 import { UrgentPriceBadge } from './UrgentPriceBadge';
 import { colors, palette, fontFamily } from '../../../design';
 
@@ -20,18 +19,12 @@ export const UrgentToggleRow: React.FC<UrgentToggleRowProps> = ({
   return (
     <View style={styles.card}>
       <View style={styles.leftContainer}>
-        <View style={styles.iconContainer}>
-          <Zap size={18} color={palette.warningDark} strokeWidth={2.4} />
-        </View>
 
         <View style={styles.textContainer}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Urgent (within 2 hrs)</Text>
             <UrgentPriceBadge visible={isUrgent} badgeText="+30%" />
           </View>
-          <Text style={styles.sublabel}>
-            Priority dispatch for immediate arrival
-          </Text>
         </View>
       </View>
 
@@ -56,16 +49,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginHorizontal: 20,
     marginVertical: 14,
-    padding: 16,
+    paddingVertical: 16,
     backgroundColor: palette.white,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: palette.gray100,
-    shadowColor: palette.gray900,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   leftContainer: {
     flexDirection: 'row',

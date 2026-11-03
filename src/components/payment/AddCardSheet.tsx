@@ -5,13 +5,9 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Modal,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { X, Smartphone, CreditCard, Check } from 'lucide-react-native';
+import { BottomSheet, BottomSheetScrollView } from '../layout/BottomSheet';
 import { AddPaymentMethodType, AddWalletDTO, AddCardDTO } from '../../types/payment.types';
 import { SecurePaymentNotice } from './SecurePaymentNotice';
 import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
@@ -136,43 +132,38 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
   };
 
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      snapPoints={['80%', '92%']}
+      contentPadding={true}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.modalOverlay}
-      >
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={handleClose}
-        />
-
-        <View style={styles.sheetContainer}>
-          {/* Top Drag Handle */}
-          <View style={styles.handle} />
-
-          {/* Header */}
-          <View style={styles.headerRow}>
-            <Text style={styles.headerTitle}>Add Payment Method</Text>
-            <TouchableOpacity
-              onPress={handleClose}
-              style={styles.closeBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Close sheet"
-            >
-              <X size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
+      <View style={styles.sheetContent}>
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <Text style={styles.headerTitle}>Add Payment Method</Text>
+          <TouchableOpacity
+            onPress={handleClose}
+            style={styles.closeBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Close sheet"
           >
+            <X size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+            {/* Online Methods Disabled Notice */}
+            <View style={styles.disabledNoticeBox}>
+              <Text style={styles.disabledNoticeTitle}>Online Gateways Temporarily Offline</Text>
+              <Text style={styles.disabledNoticeText}>
+                TaskLync is currently operating exclusively on Cash on Delivery (COD). Adding online payment methods is temporarily paused.
+              </Text>
+            </View>
+
             {/* Method Type Selector Segment */}
             <View style={styles.typeSelector}>
               <TouchableOpacity
@@ -372,58 +363,26 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
               <SecurePaymentNotice />
             </View>
 
-            {/* Submit Button */}
+            {/* Submit Button (Permanently disabled while online platforms are inactive) */}
             <TouchableOpacity
               activeOpacity={0.85}
-              style={[styles.submitBtn, (!isValid || isLoading) && styles.submitBtnDisabled]}
+              style={[styles.submitBtn, styles.submitBtnDisabled]}
               onPress={handleSubmit}
-              disabled={!isValid || isLoading}
+              disabled={true}
               accessibilityRole="button"
-              accessibilityLabel="Add Payment Method"
+              accessibilityLabel="Online payment methods disabled"
             >
-              {isLoading ? (
-                <ActivityIndicator size="small" color={palette.white} />
-              ) : (
-                <Text style={styles.submitBtnText}>Add Payment Method</Text>
-              )}
+              <Text style={styles.submitBtnText}>Online Registration Disabled</Text>
             </TouchableOpacity>
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+          </BottomSheetScrollView>
+      </View>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  sheetContent: {
     flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
-  },
-  sheetContainer: {
-    backgroundColor: colors.bgCard,
-    borderTopLeftRadius: radius['2xl'],
-    borderTopRightRadius: radius['2xl'],
-    paddingTop: spacing.sm,
-    paddingHorizontal: spacing.base,
-    paddingBottom: Platform.OS === 'ios' ? 36 : spacing.lg,
-    maxHeight: '85%',
-    ...shadows.lg,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: palette.gray300,
-    alignSelf: 'center',
-    marginBottom: spacing.sm,
   },
   headerRow: {
     flexDirection: 'row',
@@ -511,11 +470,11 @@ const styles = StyleSheet.create({
   },
   textInput: {
     height: 48,
-    backgroundColor: palette.iceGray,
+    backgroundColor: colors.bgInput,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: palette.softGray,
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: 14,
     fontFamily: fontFamily.inter.medium,
     fontSize: fontSize.body2 + 1,
     color: colors.textPrimary,
@@ -569,5 +528,25 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: fontSize.body1,
     color: colors.textOnGreen,
+  },
+  disabledNoticeBox: {
+    backgroundColor: colors.warningLight,
+    borderWidth: 1,
+    borderColor: palette.amber200,
+    borderRadius: radius.md,
+    padding: spacing.sm + 2,
+    marginBottom: spacing.md,
+  },
+  disabledNoticeTitle: {
+    fontFamily: fontFamily.poppins.semiBold,
+    fontSize: 13,
+    color: palette.amber800,
+    marginBottom: 2,
+  },
+  disabledNoticeText: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: palette.amber900,
   },
 });

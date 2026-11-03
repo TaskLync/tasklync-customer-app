@@ -13,7 +13,7 @@ import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useChat } from '../../../src/hooks/useChat';
 import { useTypingIndicator } from '../../../src/hooks/useTypingIndicator';
 import { useScrollPosition } from '../../../src/hooks/useScrollPosition';
-import { bookingApi, getPersistedBookings } from '../../../src/services/api/booking.api';
+import { bookingApi, getPersistedBookings, isGenericWorkerName } from '../../../src/services/api/booking.api';
 import { workerApi } from '../../../src/services/api/worker.api';
 import { BookingDetails } from '../../../src/types/booking.types';
 import { MessageRenderItem } from '../../../src/types/chat.types';
@@ -36,6 +36,8 @@ export default function BookingChatScreen() {
   const params = useLocalSearchParams<{
     id: string;
     workerName?: string;
+    companyName?: string;
+    isCompany?: string;
     workerAvatar?: string;
     workerAvatarUrl?: string;
     workerPhone?: string;
@@ -115,14 +117,17 @@ export default function BookingChatScreen() {
       .catch(() => {});
   }, [bookingId]);
 
-  // Scalable fallback: If worker_id exists but worker_name is missing, fetch worker public profile
+  // Scalable fallback: If worker_id exists but worker_name is missing or generic, fetch worker public profile
   useEffect(() => {
     const workerId = booking?.worker_id || params.workerId;
-    if (workerId && !booking?.worker_name && !params.workerName) {
+    const hasGenericName = !booking?.worker_name || isGenericWorkerName(booking.worker_name);
+    const hasParamGenericName = !params.workerName || isGenericWorkerName(params.workerName);
+
+    if (workerId && (hasGenericName || hasParamGenericName || !booking?.worker_avatar_url)) {
       workerApi
         .getWorkerProfile(workerId)
         .then((profile) => {
-          if (profile?.name) {
+          if (profile?.name && !isGenericWorkerName(profile.name)) {
             setBooking((prev) =>
               prev
                 ? {
@@ -137,7 +142,7 @@ export default function BookingChatScreen() {
         })
         .catch(() => {});
     }
-  }, [booking?.worker_id, booking?.worker_name, params.workerId, params.workerName]);
+  }, [booking?.worker_id, booking?.worker_name, booking?.worker_avatar_url, params.workerId, params.workerName]);
 
   // Mark all messages as read when screen is focused and app is active
   useFocusEffect(
@@ -171,8 +176,23 @@ export default function BookingChatScreen() {
     return ['COMPLETED', 'CANCELLED', 'DISPUTED'].includes(status);
   }, [isRoomClosed, booking?.status]);
 
-  // Robust, scalable worker information resolution
+  const isCompany = useMemo(() => {
+    return (
+      params.isCompany === 'true' ||
+      booking?.is_company === true ||
+      booking?.provider_type === 'COMPANY' ||
+            Boolean(params.companyName)
+    );
+  }, [params.isCompany, params.companyName, booking?.is_company, booking?.provider_type]);
+
+  // Robust, scalable worker / agency information resolution
   const resolvedWorkerName = useMemo(() => {
+    if (params.companyName && params.companyName.trim().length > 0) {
+      return params.companyName.trim();
+    }
+    if (booking?.provider_name && booking.provider_name.trim().length > 0) {
+      return booking.provider_name.trim();
+    }
     if (params.workerName && params.workerName.trim().length > 0) {
       return params.workerName.trim();
     }
@@ -182,10 +202,10 @@ export default function BookingChatScreen() {
     const cat = booking?.category_name || params.categoryName;
     if (cat && cat.trim().length > 0) {
       const cleanCategory = cat.replace(/s$/i, '').trim();
-      return `Assigned ${cleanCategory}`;
+      return isCompany ? `${cleanCategory} Agency Support` : `Assigned ${cleanCategory}`;
     }
-    return 'Assigned Professional';
-  }, [params.workerName, params.categoryName, booking?.worker_name, booking?.category_name]);
+    return isCompany ? 'Agency Support Office' : 'Assigned Professional';
+  }, [params.companyName, params.workerName, params.categoryName, booking?.provider_name, booking?.worker_name, booking?.category_name, isCompany]);
 
   const resolvedWorkerAvatar =
     params.workerAvatarUrl ||
@@ -255,7 +275,7 @@ export default function BookingChatScreen() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      keyboardVerticalOffset={0}
     >
       {/* Fixed Chat Header with Dynamic Online Presence & Worker Details */}
       <ChatHeader
@@ -264,6 +284,7 @@ export default function BookingChatScreen() {
         categoryName={resolvedCategoryName}
         isOnline={isWorkerOnline || isWorkerTyping}
         workerPhone={resolvedWorkerPhone}
+        isCompany={isCompany}
         onCallPress={handleCallPress}
       />
 
@@ -274,6 +295,7 @@ export default function BookingChatScreen() {
         ) : (
           <FlatList
             ref={flatListRef}
+            style={styles.flex}
             data={renderItems}
             keyExtractor={(item) => item.id}
             renderItem={renderMessageItem}
@@ -282,7 +304,7 @@ export default function BookingChatScreen() {
             onEndReached={loadMore}
             onEndReachedThreshold={0.3}
             showsVerticalScrollIndicator={false}
-            keyboardDismissMode="interactive"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             keyboardShouldPersistTaps="handled"
             initialNumToRender={20}
             maxToRenderPerBatch={15}

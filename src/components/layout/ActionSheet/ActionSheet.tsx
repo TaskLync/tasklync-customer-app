@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { BottomSheet, BottomSheetRef } from '../BottomSheet';
-import { colors } from '../../../design/colors';
+import { colors, palette } from '../../../design/colors';
 import { typography } from '../../../design/typography';
 
 export interface ActionItem {
@@ -27,29 +27,39 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
   cancelLabel = 'Cancel',
 }) => {
   const sheetRef = useRef<BottomSheetRef>(null);
+  const prevVisible = useRef(isVisible);
 
   useEffect(() => {
-    if (isVisible) {
+    if (isVisible && !prevVisible.current) {
       sheetRef.current?.open();
-    } else {
+    } else if (!isVisible && prevVisible.current) {
       sheetRef.current?.close();
     }
+    prevVisible.current = isVisible;
   }, [isVisible]);
+
+  const sheetHeight = React.useMemo(() => {
+    const titleH = title ? 48 : 0;
+    const actionsH = actions.length * 52;
+    const cancelH = 60;
+    const paddingAndHandle = 56;
+    return titleH + actionsH + cancelH + paddingAndHandle;
+  }, [title, actions.length]);
 
   const handleActionPress = (action: ActionItem) => {
     if (action.variant === 'disabled') return;
     action.onPress();
-    sheetRef.current?.close(); // Assuming action tap closes sheet. Optional but typical.
+    sheetRef.current?.close();
   };
 
   const handleCancel = () => {
-    onClose();
+    sheetRef.current?.close();
   };
 
   return (
     <BottomSheet
       ref={sheetRef}
-      snapPoints={['auto']} // We rely on content height
+      snapPoints={[sheetHeight]}
       onClose={onClose}
       contentPadding={false}
     >
@@ -81,7 +91,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
                     size={20}
                     color={
                       action.variant === 'danger'
-                        ? colors.danger
+                        ? palette.danger
                         : action.variant === 'disabled'
                         ? colors.textMuted
                         : colors.textPrimary
@@ -120,7 +130,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingBottom: 24, // Safe area bottom roughly
+    paddingBottom: 4,
   },
   titleContainer: {
     paddingVertical: 12,
@@ -163,7 +173,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   labelDanger: {
-    color: colors.danger,
+    color: palette.danger,
   },
   labelDisabled: {
     color: colors.textMuted,

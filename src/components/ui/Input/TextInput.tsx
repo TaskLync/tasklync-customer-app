@@ -67,11 +67,9 @@ export const TextInput = React.forwardRef<RNTextInput, TextInputProps>(({
     borderProgress.value = withTiming(isFocused ? 1 : 0, { duration: timingConfig.fast });
   }, [isFloated, isFocused, labelProgress, borderProgress]);
 
-  // Error effect
   const prevError = useRef(error);
   useEffect(() => {
     if (error && !prevError.current) {
-      // Error appeared
       shakeX.value = withSequence(
         ...shakeSequence.map(x => withTiming(x, { duration: 45 }))
       );
@@ -89,7 +87,6 @@ export const TextInput = React.forwardRef<RNTextInput, TextInputProps>(({
     onBlur?.(e);
   }, [onBlur]);
 
-  // Animated styles
   const animatedContainerStyle = useAnimatedStyle(() => {
     let borderColor = interpolateColor(
       borderProgress.value,
@@ -143,7 +140,7 @@ export const TextInput = React.forwardRef<RNTextInput, TextInputProps>(({
 
   const iconColor = error 
     ? colors.textDanger 
-    : (isFocused ? colors.primary : colors.textMuted);
+    : (isFocused ? colors.primaryDark : colors.textMuted);
   const actualIconColor = !editable ? colors.textDisabled : iconColor;
 
   return (
@@ -187,7 +184,7 @@ export const TextInput = React.forwardRef<RNTextInput, TextInputProps>(({
               { color: colors.textPrimary },
               inputStyle
             ]}
-            selectionColor={colors.primary}
+            selectionColor={colors.primaryDark}
             placeholder={isFloated ? placeholder : undefined}
             {...rest}
           />
@@ -224,7 +221,7 @@ const styles = StyleSheet.create({
   container: {
     height: layout.inputH,
     borderRadius: layout.inputBorderRadius,
-    borderWidth: 1.5,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: layout.inputPaddingH,
@@ -252,7 +249,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.regular,
     fontSize: fontSize.body1,
     height: '100%',
-    paddingTop: 14, // Push down to make room for floating label
+    paddingTop: 14,
   },
   helperTextContainer: {
     marginTop: spacing.xs,

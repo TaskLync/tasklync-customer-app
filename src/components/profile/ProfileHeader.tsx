@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { UserCheck, Edit3 } from 'lucide-react-native';
+import { UserCheck } from 'lucide-react-native';
 import { UserProfile } from '../../types/user.types';
 import { AvatarUploadRing } from './AvatarUploadRing';
-import { colors, fontFamily, radius } from '../../design';
+import { colors, fontFamily } from '../../design';
 
 export interface ProfileHeaderProps {
   user?: UserProfile | null | undefined;
@@ -61,7 +61,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Edit Profile Details"
         >
-          <Edit3 size={12} color={colors.primaryDark} strokeWidth={2.2} />
           <Text style={styles.editButtonText}>Edit Profile</Text>
         </TouchableOpacity>
       </View>
@@ -73,17 +72,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
+    backgroundColor: colors.bgCard,
+    paddingVertical: 16,
     marginBottom: 12,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   infoCol: {
     flex: 1,
@@ -100,7 +93,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 18,
     lineHeight: 24,
-    color: '#0F172A',
+    color: colors.textPrimary,
     letterSpacing: -0.3,
     flexShrink: 1,
   },
@@ -108,29 +101,24 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: colors.primaryBorderSubtle,
   },
   userPhone: {
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 13,
-    color: '#64748B',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
+    paddingVertical: 2,
     gap: 5,
-    borderWidth: 1,
-    borderColor: '#DCFCE7',
   },
   editButtonText: {
     fontFamily: fontFamily.jakarta.semiBold,

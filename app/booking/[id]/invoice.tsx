@@ -26,7 +26,6 @@ import {
   fontFamily,
   fontSize,
   radius,
-  shadows,
   spacing,
 } from '../../../src/design';
 
@@ -329,11 +328,9 @@ const styles = StyleSheet.create({
   },
   receiptCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
     padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   partiesContainer: {
     flexDirection: 'row',

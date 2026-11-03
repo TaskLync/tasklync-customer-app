@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import { View, StyleSheet } from 'react-native';
 import { BookingStatus } from '../../types/booking.types';
 import { bookingStatusMap } from '../../utils/bookingStatusMap';

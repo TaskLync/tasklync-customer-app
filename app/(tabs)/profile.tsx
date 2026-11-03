@@ -102,7 +102,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.bgApp} />
 
       {/* Screen Header Bar */}
       <View style={styles.header}>
@@ -160,7 +160,6 @@ export default function ProfileScreen() {
         {/* 5. Version & Security Footer */}
         <View style={styles.footerNote}>
           <Text style={styles.versionText}>Tasklync v1.0.0 (Build 38)</Text>
-          <Text style={styles.copyText}>Escrow-Protected Home Services Platform</Text>
         </View>
       </ScrollView>
 
@@ -188,52 +187,40 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgApp,
   },
   header: {
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 14,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgApp,
   },
   headerTitle: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 24,
-    color: '#0F172A',
+    color: colors.textPrimary,
     letterSpacing: -0.5,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 4,
   },
   logoutCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FEF2F2',
-    borderRadius: 16,
     minHeight: 54,
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-    gap: 10,
+    paddingVertical: 14,
     marginTop: 4,
-    marginBottom: 20,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 1,
+    marginBottom: 16,
   },
   logoutIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: '#FEE2E2',
-    alignItems: 'center',
+    width: 28,
+    alignItems: 'flex-start',
     justifyContent: 'center',
+    marginRight: 10,
   },
   logoutCardText: {
     fontFamily: fontFamily.jakarta.semiBold,
@@ -249,11 +236,11 @@ const styles = StyleSheet.create({
   versionText: {
     fontFamily: fontFamily.jakarta.medium,
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.textMuted,
   },
   copyText: {
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 11,
-    color: '#CBD5E1',
+    color: colors.textDisabled,
   },
 });

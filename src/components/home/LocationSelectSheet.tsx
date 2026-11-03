@@ -1,10 +1,9 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
-  ScrollView,
   ActivityIndicator,
   Alert,
 } from 'react-native';
@@ -18,7 +17,7 @@ import {
   X,
 } from 'lucide-react-native';
 
-import { BottomSheet, BottomSheetRef } from '../layout/BottomSheet/BottomSheet';
+import { BottomSheet, BottomSheetRef, BottomSheetScrollView } from '../layout/BottomSheet';
 import { DefaultAddressBadge } from '../address/DefaultAddressBadge';
 import { useAddresses } from '../../hooks/useAddresses';
 import { useLocation } from '../../hooks/useLocation';
@@ -59,6 +58,30 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
 
     const { addresses, isLoading: isAddressesLoading, setDefaultAddress } = useAddresses();
     const [isSwitchingGPS, setIsSwitchingGPS] = useState(false);
+    const pendingNavigationRef = useRef<(() => void) | null>(null);
+    const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleSheetClose = useCallback(() => {
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+        navigationTimeoutRef.current = null;
+      }
+      if (pendingNavigationRef.current) {
+        const fn = pendingNavigationRef.current;
+        pendingNavigationRef.current = null;
+        requestAnimationFrame(() => {
+          fn();
+        });
+      }
+    }, []);
+
+    useEffect(() => {
+      return () => {
+        if (navigationTimeoutRef.current) {
+          clearTimeout(navigationTimeoutRef.current);
+        }
+      };
+    }, []);
 
     useImperativeHandle(ref, () => ({
       open: () => {
@@ -117,6 +140,13 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
             setIsSwitchingGPS(false);
             return;
           }
+        } else {
+          Alert.alert(
+            'GPS Signal Weak',
+            'Unable to acquire a verified GPS location. Please check your signal and try again.'
+          );
+          setIsSwitchingGPS(false);
+          return;
         }
 
         if (onLocationSelected && cityName) {
@@ -124,7 +154,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
         }
         handleClose();
       } catch (_e) {
-        // Fallback handled safely inside refreshLocation
+        Alert.alert('Location Error', 'Failed to detect current GPS location.');
       } finally {
         setIsSwitchingGPS(false);
       }
@@ -159,23 +189,50 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
       handleClose();
     };
 
-    // 3. Add New Address Navigation (Delayed for smooth sheet close)
+    // 3. Add New Address Navigation (Safe transition after sheet dismiss)
     const handleAddNewAddress = () => {
-      handleClose();
-      setTimeout(() => {
+      const navigate = () => {
         router.push({
           pathname: '/profile/addresses/add',
           params: { mode: 'add' },
         });
-      }, 120);
+      };
+
+      pendingNavigationRef.current = navigate;
+      handleClose();
+
+      // Android WindowManager safety fallback: in case onClose was already fired or sheet was already closed
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+      navigationTimeoutRef.current = setTimeout(() => {
+        if (pendingNavigationRef.current) {
+          const fn = pendingNavigationRef.current;
+          pendingNavigationRef.current = null;
+          fn();
+        }
+      }, 400);
     };
 
-    // 4. Manage Addresses Navigation
+    // 4. Manage Addresses Navigation (Safe transition after sheet dismiss)
     const handleManageAddresses = () => {
-      handleClose();
-      setTimeout(() => {
+      const navigate = () => {
         router.push('/profile/addresses');
-      }, 120);
+      };
+
+      pendingNavigationRef.current = navigate;
+      handleClose();
+
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+      navigationTimeoutRef.current = setTimeout(() => {
+        if (pendingNavigationRef.current) {
+          const fn = pendingNavigationRef.current;
+          pendingNavigationRef.current = null;
+          fn();
+        }
+      }, 400);
     };
 
     const isAddressActive = (addr: Address): boolean => {
@@ -193,7 +250,11 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
     const safeAddressList = Array.isArray(addresses) ? addresses : [];
 
     return (
-      <BottomSheet ref={bottomSheetRef}>
+      <BottomSheet
+        ref={bottomSheetRef}
+        snapPoints={['92%']}
+        onClose={handleSheetClose}
+      >
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
@@ -217,7 +278,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
             </Pressable>
           </View>
 
-          <ScrollView
+          <BottomSheetScrollView
             style={styles.scrollArea}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
@@ -401,7 +462,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
                 Manage saved addresses →
               </Text>
             </Pressable>
-          </ScrollView>
+          </BottomSheetScrollView>
         </View>
       </BottomSheet>
     );
@@ -411,7 +472,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
 const styles = StyleSheet.create({
   container: {
     paddingTop: 8,
-    maxHeight: 520,
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -450,10 +511,10 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   scrollArea: {
-    maxHeight: 440,
+    flex: 1,
   },
   scrollContent: {
-    paddingBottom: 16,
+    paddingBottom: 32,
   },
   actionRow: {
     flexDirection: 'row',

@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -139,20 +140,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   pillReconnecting: {
-    backgroundColor: '#FEF3C7',
-    borderColor: '#FDE68A',
+    backgroundColor: colors.warningLight,
+    borderColor: colors.warningBorder,
     borderWidth: 1,
   },
   pillBackOnline: {
-    backgroundColor: '#DCFCE7',
-    borderColor: '#BBF7D0',
+    backgroundColor: colors.primaryBorderSubtle,
+    borderColor: colors.primaryBorder,
     borderWidth: 1,
   },
   dot: {
@@ -162,10 +163,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   dotReconnecting: {
-    backgroundColor: '#D97706',
+    backgroundColor: colors.warningMedium,
   },
   dotBackOnline: {
-    backgroundColor: '#16A34A',
+    backgroundColor: colors.primaryDark,
   },
   text: {
     fontFamily: 'PlusJakartaSans-Medium',
@@ -173,9 +174,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   textReconnecting: {
-    color: '#92400E',
+    color: colors.textWarning,
   },
   textBackOnline: {
-    color: '#15803D',
+    color: colors.textGreen,
   },
 });

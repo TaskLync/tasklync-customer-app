@@ -14,7 +14,7 @@ export const UNREAD_COUNT_QUERY_KEY = ['notifications', 'unread-count'] as const
  */
 export function useUnreadCount() {
   const queryClient = useQueryClient();
-  const authState = useAuthStore((s) => s.authState);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const storeUnreadCount = useNotificationStore((s) => s.unreadCount);
   const setStoreUnreadCount = useNotificationStore((s) => s.setUnreadCount);
   const decrementStoreUnread = useNotificationStore((s) => s.decrementUnread);
@@ -26,7 +26,7 @@ export function useUnreadCount() {
       const count = await notificationApi.getUnreadCount();
       return count;
     },
-    enabled: authState === 'authenticated',
+    enabled: isAuthenticated,
     staleTime: 30_000,
     gcTime: 300_000,
     refetchOnWindowFocus: false,

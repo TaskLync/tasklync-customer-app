@@ -1,74 +1,79 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, Pressable, ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import React, { useCallback, useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  Pressable,
+  ViewStyle,
+  LayoutAnimation,
+  NativeSyntheticEvent,
+  TextLayoutEventData,
+} from 'react-native';
 import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
-import { springConfig } from '../../design/animations';
+
+/** Lines shown while collapsed. Bios at or below this length never show a toggle. */
+const COLLAPSED_LINES = 4;
 
 interface WorkerBioProps {
   bio: string | null;
   style?: ViewStyle;
 }
 
+/**
+ * "About" section. Height is fully content-driven: a short bio renders compactly,
+ * a long bio is clamped to COLLAPSED_LINES with a "Read more" toggle. No fixed heights.
+ */
 export const WorkerBio: React.FC<WorkerBioProps> = ({ bio, style }) => {
-  if (!bio) return null;
-
   const [expanded, setExpanded] = useState(false);
-  const [fullHeight, setFullHeight] = useState(0);
+  // Total line count of the full text at the current width (from an off-screen twin).
+  const [lineCount, setLineCount] = useState(0);
 
-  const handleToggle = () => {
-    setExpanded(!expanded);
-  };
+  const handleMeasure = useCallback((e: NativeSyntheticEvent<TextLayoutEventData>) => {
+    setLineCount(e.nativeEvent.lines.length);
+  }, []);
 
-  const onFullLayout = (event: any) => {
-    const { height } = event.nativeEvent.layout;
-    if (height > 0) {
-      setFullHeight(height);
-    }
-  };
+  const handleToggle = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
+    setExpanded((prev) => !prev);
+  }, []);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    // If we haven't measured the full height yet, or it's short, let it fit contents.
-    if (fullHeight === 0) return { maxHeight: undefined };
-    const target = expanded ? fullHeight : 90;
-    return {
-      height: withSpring(target, springConfig.gentle),
-    };
-  });
+  const text = bio?.trim();
+  if (!text) return null;
 
-  const showToggle = fullHeight > 90;
+  const isTruncatable = lineCount > COLLAPSED_LINES;
 
   return (
     <View style={[styles.container, style]}>
       <Text style={styles.sectionHeader}>About</Text>
-      
-      {/* Hidden view for measuring full height */}
-      <View
-        style={[styles.measureContainer, { position: 'absolute', opacity: 0, left: -9999 }]}
-        onLayout={onFullLayout}
+
+      {/* Invisible twin: measures the natural line count without affecting layout. */}
+      <Text
+        style={[styles.bioText, styles.measure]}
+        onTextLayout={handleMeasure}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
       >
-        <Text style={styles.bioText}>{bio}</Text>
-      </View>
+        {text}
+      </Text>
 
-      {/* Visible animated container */}
-      <Animated.View style={[styles.animatedContent, animatedStyle]}>
-        <Text
-          style={styles.bioText}
-          numberOfLines={expanded ? undefined : 4}
-        >
-          {bio}
-        </Text>
-      </Animated.View>
+      <Text
+        style={styles.bioText}
+        numberOfLines={expanded || !isTruncatable ? undefined : COLLAPSED_LINES}
+      >
+        {text}
+      </Text>
 
-      {showToggle && (
+      {isTruncatable && (
         <Pressable
           onPress={handleToggle}
           style={styles.toggleButton}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
         >
-          <Text style={styles.toggleText}>
-            {expanded ? 'Show less ↑' : 'Read more ➔'}
-          </Text>
+          <Text style={styles.toggleText}>{expanded ? 'Show less' : 'Read more'}</Text>
         </Pressable>
       )}
     </View>
@@ -83,14 +88,13 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.poppins.semiBold,
     fontSize: 16,
     color: colors.textPrimary || '#0F172A',
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  measureContainer: {
-    width: '100%',
-  },
-  animatedContent: {
-    overflow: 'hidden',
-    width: '100%',
+  measure: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    opacity: 0,
   },
   bioText: {
     fontFamily: typography.fontFamily.jakarta.regular,

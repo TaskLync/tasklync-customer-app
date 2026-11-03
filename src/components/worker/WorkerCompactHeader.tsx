@@ -16,6 +16,7 @@ import { colors } from '../../design/colors';
 import { shadows } from '../../design/shadows';
 import { typography } from '../../design/typography';
 import { WorkerPublicProfile } from '../../types/worker.types';
+import { WorkerAvatar } from './WorkerAvatar';
 
 interface WorkerCompactHeaderProps {
   worker?: WorkerPublicProfile;
@@ -87,20 +88,16 @@ export const WorkerCompactHeader: React.FC<WorkerCompactHeaderProps> = ({
           style={styles.backButton}
           hitSlop={12}
         >
-          <ChevronLeft size={24} color={colors.textPrimary || '#0F172A'} />
+          <ChevronLeft size={24} color={colors.textPrimary} />
         </Pressable>
 
         {/* Center: Profile Mini Info */}
         <View style={styles.centerGroup}>
-          {worker?.avatarUrl ? (
-            <Image
-              source={{ uri: worker.avatarUrl }}
-              style={styles.avatar}
-              transition={200}
-            />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]} />
-          )}
+          <WorkerAvatar
+            uri={worker?.avatarUrl}
+            name={worker?.name}
+            size={32}
+          />
           <Text style={styles.nameText} numberOfLines={1}>
             {worker?.name || 'Worker'}
           </Text>
@@ -127,11 +124,11 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.bgCard || '#FFFFFF',
+    backgroundColor: colors.bgCard,
     ...shadows.sm,
     zIndex: 10,
     borderBottomWidth: 1,
-    borderColor: colors.border || '#F3F4F6',
+    borderColor: colors.border,
   },
   innerContainer: {
     flexDirection: 'row',
@@ -156,16 +153,16 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.bgInput || '#F3F4F6',
+    backgroundColor: colors.bgInput,
   },
   avatarPlaceholder: {
     borderWidth: 1,
-    borderColor: colors.border || '#E5E7EB',
+    borderColor: colors.border,
   },
   nameText: {
     fontFamily: typography.fontFamily.poppins.semiBold,
     fontSize: 15,
-    color: colors.textPrimary || '#0F172A',
+    color: colors.textPrimary,
     marginLeft: 8,
     flex: 1,
   },

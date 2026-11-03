@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -25,17 +26,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   pill: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgSubtle,
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
   text: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
-    color: '#475569',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 16,
   },

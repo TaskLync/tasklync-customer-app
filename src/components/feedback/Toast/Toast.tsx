@@ -10,7 +10,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react-native';
 import { fontFamily } from '../../../design/typography';
-import { palette } from '../../../design/colors';
+import { colors, palette } from '../../../design/colors';
 import { NETWORK_CONFIG } from '../../../config/networkConfig';
 
 export type ToastVariant = 'error' | 'success' | 'info' | 'warning';
@@ -93,30 +93,30 @@ export const Toast: React.FC<ToastProps> = React.memo(({ toast, onDismiss }) => 
       case 'error':
         return {
           icon: <AlertCircle size={18} color={palette.danger} strokeWidth={2.2} />,
-          borderColor: '#FEE2E2',
-          bgColor: '#FFFFFF',
+          borderColor: colors.borderErrorLight,
+          bgColor: colors.bgCard,
           textColor: palette.gray900,
         };
       case 'success':
         return {
           icon: <CheckCircle2 size={18} color={palette.green600} strokeWidth={2.2} />,
-          borderColor: '#DCFCE7',
-          bgColor: '#FFFFFF',
+          borderColor: colors.primaryBorderSubtle,
+          bgColor: colors.bgCard,
           textColor: palette.gray900,
         };
       case 'warning':
         return {
           icon: <AlertCircle size={18} color={palette.warning} strokeWidth={2.2} />,
-          borderColor: '#FEF3C7',
-          bgColor: '#FFFFFF',
+          borderColor: colors.warningLight,
+          bgColor: colors.bgCard,
           textColor: palette.gray900,
         };
       case 'info':
       default:
         return {
           icon: <Info size={18} color={palette.info} strokeWidth={2.2} />,
-          borderColor: '#DBEAFE',
-          bgColor: '#FFFFFF',
+          borderColor: colors.borderInfoLight,
+          bgColor: colors.bgCard,
           textColor: palette.gray900,
         };
     }
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderRadius: 12,
     borderWidth: 1,
     paddingVertical: 12,
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: '#000000',
+        shadowColor: colors.shadow,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.12,
         shadowRadius: 8,

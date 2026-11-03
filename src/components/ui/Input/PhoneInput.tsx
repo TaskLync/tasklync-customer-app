@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, StyleSheet, Pressable, TextInput as RNTextInput } from 'react-native';
 import { Text } from '@components/ui/Text';
 import { colors, radius } from '@design/index';
@@ -13,6 +13,8 @@ interface PhoneInputProps {
   onCountryPress?: () => void;
   autoFocus?: boolean;
   onSubmitEditing?: () => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 export const PhoneInput = ({
@@ -24,15 +26,21 @@ export const PhoneInput = ({
   onCountryPress,
   autoFocus = true,
   onSubmitEditing,
+  onFocus,
+  onBlur,
 }: PhoneInputProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
-  // Focus border state
-  const borderColor = error ? colors.borderError : isFocused ? colors.primary : 'transparent';
+  const borderColor = error
+    ? colors.borderError
+    : isFocused
+    ? colors.primaryDark
+    : colors.border;
+  const backgroundColor = isFocused ? colors.bgCard : colors.bgInput;
 
   return (
     <View>
-      <View style={[styles.container, { borderColor }]}>
+      <View style={[styles.container, { borderColor, backgroundColor }]}>
         <Pressable 
           style={styles.countrySection} 
           onPress={onCountryPress ? onCountryPress : () => console.log('Country picker pressed')}
@@ -41,9 +49,7 @@ export const PhoneInput = ({
           <Text style={styles.code}>{countryCode}</Text>
           <ChevronDown size={14} color={colors.textMuted} />
         </Pressable>
-
         <View style={styles.divider} />
-
         <RNTextInput
           style={styles.input}
           value={value}
@@ -53,8 +59,14 @@ export const PhoneInput = ({
           placeholderTextColor={colors.textMuted}
           maxLength={10}
           autoFocus={autoFocus}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onFocus={() => {
+            setIsFocused(true);
+            onFocus?.();
+          }}
+          onBlur={() => {
+            setIsFocused(false);
+            onBlur?.();
+          }}
           returnKeyType="done"
           onSubmitEditing={onSubmitEditing}
         />
@@ -72,18 +84,15 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     height: 52,
-    backgroundColor: colors.bgInput,
     borderRadius: radius.md,
-    borderWidth: 1.5,
+    borderWidth: 1,
     alignItems: 'center',
   },
   countrySection: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     height: '100%',
-    borderTopLeftRadius: radius.md,
-    borderBottomLeftRadius: radius.md,
   },
   flag: {
     fontSize: 20,
@@ -97,18 +106,16 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    height: '60%',
+    height: '52%',
     backgroundColor: colors.border,
   },
   input: {
     flex: 1,
     height: '100%',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     fontFamily: 'Inter-Medium',
     fontSize: 16,
     color: colors.textPrimary,
-    borderTopRightRadius: radius.md,
-    borderBottomRightRadius: radius.md,
   },
   errorText: {
     color: colors.textDanger,

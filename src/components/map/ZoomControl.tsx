@@ -58,14 +58,10 @@ export const ZoomControl: FC<ZoomControlProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
     width: 44,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
     overflow: 'hidden',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   button: {
     width: 44,

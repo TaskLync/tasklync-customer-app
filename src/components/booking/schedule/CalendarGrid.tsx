@@ -11,22 +11,25 @@ import { CalendarDayCell } from './CalendarDayCell';
 import { palette } from '../../../design';
 
 export interface CalendarGridProps {
-  daysArray: CalendarDayItem[];
+  daysArray?: CalendarDayItem[];
+  days?: CalendarDayItem[];
   selectedDate: string | null;
   slideDirection: 'next' | 'prev';
-  visibleMonth: number;
-  visibleYear: number;
+  visibleMonth?: number;
+  visibleYear?: number;
   onSelectDate: (dateStr: string) => void;
 }
 
 export const CalendarGrid: React.FC<CalendarGridProps> = ({
-  daysArray,
+  daysArray: propDaysArray,
+  days,
   selectedDate,
   slideDirection,
-  visibleMonth,
-  visibleYear,
+  visibleMonth = 0,
+  visibleYear = 0,
   onSelectDate,
 }) => {
+  const daysArray = propDaysArray ?? days ?? [];
   const translateX = useSharedValue(0);
 
   // Fast minimal slide transition on month change (120ms)
@@ -45,8 +48,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
   const rows = React.useMemo(() => {
     const chunked: CalendarDayItem[][] = [];
-    for (let i = 0; i < daysArray.length; i += 7) {
-      chunked.push(daysArray.slice(i, i + 7));
+    const items = daysArray || [];
+    for (let i = 0; i < items.length; i += 7) {
+      chunked.push(items.slice(i, i + 7));
     }
     return chunked;
   }, [daysArray]);

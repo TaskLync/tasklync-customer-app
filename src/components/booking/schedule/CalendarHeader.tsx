@@ -6,8 +6,12 @@ import { colors, palette, fontFamily } from '../../../design';
 export interface CalendarHeaderProps {
   monthLabel: string; // e.g. "August 2026"
   canGoPrev: boolean;
-  onPrevMonth: () => void;
-  onNextMonth: () => void;
+  onPrevMonth?: () => void;
+  onNextMonth?: () => void;
+  /** Alias for onPrevMonth */
+  onPrev?: () => void;
+  /** Alias for onNextMonth */
+  onNext?: () => void;
 }
 
 export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
@@ -15,7 +19,12 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   canGoPrev,
   onPrevMonth,
   onNextMonth,
+  onPrev,
+  onNext,
 }) => {
+  const handlePrev = onPrevMonth ?? onPrev ?? (() => {});
+  const handleNext = onNextMonth ?? onNext ?? (() => {});
+
   return (
     <View style={styles.container}>
       <Text style={styles.monthText}>{monthLabel}</Text>
@@ -23,7 +32,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
       <View style={styles.navContainer}>
         {/* Previous Month Arrow */}
         <Pressable
-          onPress={onPrevMonth}
+          onPress={handlePrev}
           disabled={!canGoPrev}
           style={[styles.arrowButton, !canGoPrev && styles.arrowDisabled]}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -40,7 +49,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
         {/* Next Month Arrow */}
         <Pressable
-          onPress={onNextMonth}
+          onPress={handleNext}
           style={styles.arrowButton}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           accessibilityRole="button"

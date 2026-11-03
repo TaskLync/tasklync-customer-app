@@ -29,7 +29,6 @@ export default function LiveMapScreen() {
   const router = useRouter();
   const {
     location: activeLocation,
-    gpsLocation,
     isPermissionGranted,
     isServicesEnabled,
     requestLocation,
@@ -151,23 +150,19 @@ export default function LiveMapScreen() {
           Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
           recenter(FAISALABAD_CENTER);
         } else {
-          recenter(freshCoords);
+          recenter(freshCoords, undefined, 'street');
         }
-      } else if (gpsLocation && validateServiceArea(gpsLocation).isServiceable) {
-        recenter(gpsLocation);
-      } else if (activeLocation && validateServiceArea(activeLocation).isServiceable) {
-        recenter(activeLocation);
       } else {
-        recenter(FAISALABAD_CENTER);
+        Alert.alert(
+          'Location Error',
+          'Unable to acquire a high-confidence GPS position. Please check your GPS signal and settings.'
+        );
       }
     } catch (_err) {
-      if (gpsLocation && validateServiceArea(gpsLocation).isServiceable) {
-        recenter(gpsLocation);
-      } else if (activeLocation && validateServiceArea(activeLocation).isServiceable) {
-        recenter(activeLocation);
-      } else {
-        recenter(FAISALABAD_CENTER);
-      }
+      Alert.alert(
+        'Location Error',
+        'An error occurred while acquiring your GPS position. Please try again.'
+      );
     } finally {
       setIsRecentering(false);
     }
@@ -179,8 +174,6 @@ export default function LiveMapScreen() {
     openSettings,
     refreshLocation,
     recenter,
-    gpsLocation,
-    activeLocation,
   ]);
 
   return (
@@ -230,6 +223,7 @@ export default function LiveMapScreen() {
         onZoomOut={zoomOut}
         onRecenter={handleRecenter}
         showRecenter={hasPannedAway || !activeLocation}
+        isRecentering={isRecentering}
         style={styles.mapControlsPosition}
       />
 

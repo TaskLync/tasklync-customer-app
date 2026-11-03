@@ -37,6 +37,13 @@ export const PROFILE_MENU_SECTIONS: ProfileMenuSectionConfig[] = [
         route: '/profile/booking-history',
       },
       {
+        id: 'my-reviews',
+        icon: 'Star',
+        label: 'My Reviews',
+        subtitle: 'View, edit and track service ratings',
+        route: '/profile/reviews',
+      },
+      {
         id: 'settings',
         icon: 'Settings',
         label: 'App Settings',

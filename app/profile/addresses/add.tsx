@@ -12,6 +12,10 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft } from 'lucide-react-native';
 
 import { AddressPickerMap, AddressPickerMapRef } from '../../../src/components/address/AddressPickerMap';
+import { MapErrorBoundary } from '../../../src/components/address/MapErrorBoundary';
+import { RouteErrorBoundary } from '../../../src/components/feedback/RouteErrorBoundary';
+
+export { RouteErrorBoundary as ErrorBoundary };
 import { AddressSearchInput } from '../../../src/components/address/AddressSearchInput';
 import { AddressSearchResultsList } from '../../../src/components/address/AddressSearchResultsList';
 import { UseMyLocationButton } from '../../../src/components/address/UseMyLocationButton';
@@ -60,7 +64,12 @@ export default function AddEditAddressScreen() {
   // Stores & Hooks
   const { addresses, addAddress, updateAddress, deleteAddress, isAdding, isUpdating } =
     useAddresses();
-  const { fetchLocation, isFetching: isFetchingGPS } = useCurrentLocation();
+  const {
+    fetchLocation,
+    acquireLocation,
+    isFetching: isFetchingGPS,
+    error: gpsError,
+  } = useCurrentLocation();
   const currentLocation = useLocationStore((s) => s.currentLocation);
   const selectedAddress = useLocationStore((s) => s.selectedAddress);
   const setSelectedAddress = useLocationStore((s) => s.setSelectedAddress);
@@ -123,7 +132,7 @@ export default function AddEditAddressScreen() {
       setGeocodeResult({
         formatted_address: existingAddress.address_line,
         address_line: existingAddress.address_line,
-        city: existingAddress.city || 'Faisalabad',
+        city: existingAddress.city || '',
         country: existingAddress.country || 'Pakistan',
         lat: existingAddress.lat,
         lng: existingAddress.lng,
@@ -132,7 +141,12 @@ export default function AddEditAddressScreen() {
       // For adding a new address:
       // 1. Center immediately on existing serviceable store GPS or Faisalabad center
       const hasValidStoreGPS =
-        currentLocation && validateServiceArea(currentLocation).isServiceable;
+        currentLocation &&
+        typeof currentLocation.lat === 'number' &&
+        !isNaN(currentLocation.lat) &&
+        typeof currentLocation.lng === 'number' &&
+        !isNaN(currentLocation.lng) &&
+        validateServiceArea(currentLocation).isServiceable;
       const initialLat = hasValidStoreGPS ? currentLocation.lat : DEFAULT_REGION.latitude;
       const initialLng = hasValidStoreGPS ? currentLocation.lng : DEFAULT_REGION.longitude;
       const initialRegion: MapRegion = {
@@ -145,55 +159,11 @@ export default function AddEditAddressScreen() {
       mapRef.current?.animateToRegion(initialRegion, 300);
       setLastPickedCoords({ lat: initialLat, lng: initialLng });
       triggerGeocode(initialLat, initialLng);
-
-      // 2. Automatically request fresh, high-accuracy GPS coordinates on open
-      (async () => {
-        try {
-          const freshCoords = await fetchLocation();
-          // If the user already dragged the map or picked an address, respect user action
-          if (userInteractedRef.current) return;
-
-          if (freshCoords) {
-            const validation = validateServiceArea(freshCoords);
-            if (validation.isServiceable) {
-              const freshRegion: MapRegion = {
-                latitude: freshCoords.lat,
-                longitude: freshCoords.lng,
-                latitudeDelta: 0.006,
-                longitudeDelta: 0.006,
-              };
-              setCurrentRegion(freshRegion);
-              mapRef.current?.animateToRegion(freshRegion, 500);
-              setLastPickedCoords(freshCoords);
-              fetchImmediately(freshCoords.lat, freshCoords.lng);
-            } else {
-              Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
-              const defaultRegion: MapRegion = {
-                latitude: DEFAULT_REGION.latitude,
-                longitude: DEFAULT_REGION.longitude,
-                latitudeDelta: 0.008,
-                longitudeDelta: 0.008,
-              };
-              setCurrentRegion(defaultRegion);
-              mapRef.current?.animateToRegion(defaultRegion, 400);
-              setLastPickedCoords({
-                lat: DEFAULT_REGION.latitude,
-                lng: DEFAULT_REGION.longitude,
-              });
-              fetchImmediately(DEFAULT_REGION.latitude, DEFAULT_REGION.longitude);
-            }
-          }
-        } catch (_e) {
-          // Gracefully fallback to initial region
-        }
-      })();
     }
   }, [
     existingAddress,
     isEditMode,
     currentLocation,
-    fetchLocation,
-    fetchImmediately,
     setGeocodeResult,
     setLastPickedCoords,
     triggerGeocode,
@@ -213,6 +183,16 @@ export default function AddEditAddressScreen() {
 
   const handleRegionChangeComplete = useCallback(
     (region: MapRegion) => {
+      if (
+        !region ||
+        typeof region.latitude !== 'number' ||
+        isNaN(region.latitude) ||
+        typeof region.longitude !== 'number' ||
+        isNaN(region.longitude) ||
+        (Math.abs(region.latitude) < 0.0001 && Math.abs(region.longitude) < 0.0001)
+      ) {
+        return;
+      }
       userInteractedRef.current = true;
       setCurrentRegion(region);
       setLastPickedCoords({ lat: region.latitude, lng: region.longitude });
@@ -223,7 +203,11 @@ export default function AddEditAddressScreen() {
 
   const handleBack = () => {
     Keyboard.dismiss();
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
   };
 
   // Autocomplete prediction selected
@@ -259,7 +243,7 @@ export default function AddEditAddressScreen() {
     setGeocodeResult({
       formatted_address: details.formatted_address,
       address_line: details.formatted_address,
-      city: details.city || 'Faisalabad',
+      city: details.city || '',
       country: details.country || 'Pakistan',
       lat: details.lat,
       lng: details.lng,
@@ -279,11 +263,11 @@ export default function AddEditAddressScreen() {
     const gpsRegion: MapRegion = {
       latitude: coords.lat,
       longitude: coords.lng,
-      latitudeDelta: 0.006,
-      longitudeDelta: 0.006,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
     };
     setCurrentRegion(gpsRegion);
-    mapRef.current?.animateToRegion(gpsRegion, 400);
+    mapRef.current?.animateToRegion(gpsRegion, 500);
     setLastPickedCoords(coords);
     fetchImmediately(coords.lat, coords.lng);
   };
@@ -375,7 +359,11 @@ export default function AddEditAddressScreen() {
 
       // Smooth exit back to address list or booking
       setTimeout(() => {
-        router.back();
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace(params.returnToBooking === 'true' ? '/(tabs)' : '/profile/addresses');
+        }
       }, 180);
     } catch (_err) {
       Alert.alert(
@@ -393,7 +381,11 @@ export default function AddEditAddressScreen() {
         setSelectedAddress(null);
       }
       setLastPickedCoords(null);
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/profile/addresses');
+      }
     } catch (_err) {
       Alert.alert('Error', "Couldn't delete address.");
     }
@@ -406,12 +398,14 @@ export default function AddEditAddressScreen() {
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
       {/* Full-Screen Map View with Fixed Center Pin */}
-      <AddressPickerMap
-        ref={mapRef}
-        initialRegion={currentRegion}
-        onRegionChange={handleRegionChange}
-        onRegionChangeComplete={handleRegionChangeComplete}
-      />
+      <MapErrorBoundary>
+        <AddressPickerMap
+          ref={mapRef}
+          initialRegion={currentRegion}
+          onRegionChange={handleRegionChange}
+          onRegionChangeComplete={handleRegionChangeComplete}
+        />
+      </MapErrorBoundary>
 
       {/* Top Floating Overlay (Back button + Search Input + Autocomplete Results) */}
       <SafeAreaView edges={['top']} style={styles.topSafeArea} pointerEvents="box-none">
@@ -442,7 +436,7 @@ export default function AddEditAddressScreen() {
         </View>
 
         {/* Autocomplete & Recent Searches Dropdown */}
-        {(predictions.length > 0 || (query.trim().length === 0 && recentSearches.length > 0) || query.trim().length >= 2) && (
+        {(predictions.length > 0 || query.trim().length >= 2) && (
           <View style={styles.searchResultsContainer}>
             <AddressSearchResultsList
               predictions={predictions}
@@ -466,8 +460,10 @@ export default function AddEditAddressScreen() {
       >
         <UseMyLocationButton
           onLocationFound={handleGPSLocationFound}
+          acquireLocation={acquireLocation}
           fetchLocation={fetchLocation}
           isFetching={isFetchingGPS}
+          error={gpsError}
         />
       </View>
 

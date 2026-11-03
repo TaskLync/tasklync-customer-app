@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { PriceSummaryRow } from '../cart/PriceSummaryRow';
 import { CartTotalRow } from '../cart/CartTotalRow';
 import { EscrowNote } from '../cart/EscrowNote';
-import { palette } from '../../design';
+import { colors } from '../../design';
 
 export interface BookingPriceSummaryProps {
   subtotal: number;
@@ -44,17 +44,10 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: palette.white,
-    borderRadius: 18,
-    marginHorizontal: 20,
-    marginBottom: 16,
+    backgroundColor: colors.bgSection,
+    borderRadius: 14,
     padding: 18,
-    borderWidth: 1,
-    borderColor: palette.gray100,
-    shadowColor: palette.gray900,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 2,
+    marginTop: 8,
+    marginBottom: 16,
   },
 });

@@ -78,9 +78,9 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       borderColor: interpolateColor(
         focusProgress.value,
         [0, 1],
-        ['transparent', colors.primary]
+        [colors.border, colors.primaryDark]
       ),
-      borderWidth: 1.5,
+      borderWidth: 1,
     };
   });
 
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     height: 56,
     flex: 1,
     backgroundColor: colors.bgInput,
-    borderRadius: 100, // pill
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
   },

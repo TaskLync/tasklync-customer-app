@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Calendar, Plus } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 
 import { useBookingHistory } from '../../src/hooks/useBookingHistory';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
@@ -21,6 +21,7 @@ import {
 } from '../../src/components/booking/BookingHistoryCard';
 import { BookingHistoryCardSkeleton } from '../../src/components/booking/BookingHistoryCardSkeleton';
 import { YearCategoryFilterBar } from '../../src/components/ui/YearCategoryFilterBar';
+import { EmptyState } from '../../src/components/feedback/EmptyState';
 import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../src/design';
 
 export default function BookingHistoryScreen() {
@@ -117,28 +118,17 @@ export default function BookingHistoryScreen() {
           </View>
         ) : allBookings.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <Calendar size={36} color={palette.gray500} />
-            </View>
-            <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.3}>
-              No Bookings Found
-            </Text>
-            <Text style={styles.emptySubtitle} maxFontSizeMultiplier={1.3}>
-              {selectedYear !== 'all' || selectedCategory !== 'all'
-                ? 'No past bookings matched your filter selection. Try resetting filters.'
-                : 'You have not booked any home services yet. Ready for your first task?'}
-            </Text>
-
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleBookNewService}
-              style={styles.bookCtaBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Explore and book services"
-            >
-              <Plus size={18} color={colors.textOnGreen} strokeWidth={2.5} />
-              <Text style={styles.bookCtaText}>Book a Service</Text>
-            </TouchableOpacity>
+            <EmptyState
+              type="no-data"
+              title="No Bookings Found"
+              description={
+                selectedYear !== 'all' || selectedCategory !== 'all'
+                  ? 'No past bookings matched your filter selection. Try resetting filters.'
+                  : 'You have not booked any home services yet. Ready for your first task?'
+              }
+              actionLabel="Book a Service"
+              onAction={handleBookNewService}
+            />
           </View>
         ) : (
           <FlatList

@@ -28,8 +28,8 @@ export const CardBrandIcon: React.FC<CardBrandIconProps> = ({ brand = 'unknown',
             width: dimensions.width,
             height: dimensions.height,
             borderRadius: dimensions.radius,
-            backgroundColor: '#DC2626', // JazzCash Red
-            borderColor: '#B91C1C',
+            backgroundColor: palette.red600, // JazzCash Red
+            borderColor: palette.red700,
           },
         ]}
       >
@@ -47,8 +47,8 @@ export const CardBrandIcon: React.FC<CardBrandIconProps> = ({ brand = 'unknown',
             width: dimensions.width,
             height: dimensions.height,
             borderRadius: dimensions.radius,
-            backgroundColor: '#059669', // EasyPaisa Emerald
-            borderColor: '#047857',
+            backgroundColor: palette.emerald600, // EasyPaisa Emerald
+            borderColor: palette.emerald700,
           },
         ]}
       >
@@ -85,8 +85,8 @@ export const CardBrandIcon: React.FC<CardBrandIconProps> = ({ brand = 'unknown',
             width: dimensions.width,
             height: dimensions.height,
             borderRadius: dimensions.radius,
-            backgroundColor: '#1E3A8A', // Visa Navy
-            borderColor: '#172554',
+            backgroundColor: palette.blue900, // Visa Navy
+            borderColor: palette.blue950 || palette.blue900,
           },
         ]}
       >
@@ -104,14 +104,14 @@ export const CardBrandIcon: React.FC<CardBrandIconProps> = ({ brand = 'unknown',
             width: dimensions.width,
             height: dimensions.height,
             borderRadius: dimensions.radius,
-            backgroundColor: '#1E293B',
-            borderColor: '#334155',
+            backgroundColor: palette.slate800,
+            borderColor: palette.slate700,
           },
         ]}
       >
         <View style={styles.mcCircles}>
-          <View style={[styles.mcCircle, { backgroundColor: '#EB001B' }]} />
-          <View style={[styles.mcCircle, { backgroundColor: '#F79E1B', marginLeft: -5, opacity: 0.9 }]} />
+          <View style={[styles.mcCircle, { backgroundColor: palette.red600 }]} />
+          <View style={[styles.mcCircle, { backgroundColor: palette.amber500, marginLeft: -5, opacity: 0.9 }]} />
         </View>
       </View>
     );
@@ -126,8 +126,8 @@ export const CardBrandIcon: React.FC<CardBrandIconProps> = ({ brand = 'unknown',
             width: dimensions.width,
             height: dimensions.height,
             borderRadius: dimensions.radius,
-            backgroundColor: '#0284C7',
-            borderColor: '#0369A1',
+            backgroundColor: palette.sky600,
+            borderColor: palette.sky700,
           },
         ]}
       >
@@ -145,8 +145,8 @@ export const CardBrandIcon: React.FC<CardBrandIconProps> = ({ brand = 'unknown',
             width: dimensions.width,
             height: dimensions.height,
             borderRadius: dimensions.radius,
-            backgroundColor: '#0284C7',
-            borderColor: '#0369A1',
+            backgroundColor: palette.sky600,
+            borderColor: palette.sky700,
           },
         ]}
       >
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   jazzText: {
     fontFamily: fontFamily.poppins.bold,
     fontSize: 10,
-    color: '#FEF08A', // Bright yellow
+    color: palette.amber200, // Bright yellow
     letterSpacing: 0.5,
   },
   epText: {

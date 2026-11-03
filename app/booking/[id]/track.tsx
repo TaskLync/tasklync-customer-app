@@ -19,7 +19,7 @@ export default function BookingTrackScreen() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#16A34A" />
+      <ActivityIndicator size="large" color={colors.primaryDark} />
     </View>
   );
 }

@@ -1,6 +1,8 @@
 import { WorkerNearby, WorkerPublicProfile, WorkerServiceOffering, WorkerSkill } from '../../types/worker.types';
+import { WorkerSearchDocument } from '../../types/search.types';
 import { WorkerReview, ReviewSummaryData, WorkerPortfolioImage } from '../../types/review.types';
 import { parsePriceNumber } from '../../utils/formatters';
+import { resolveReviewerIdentity } from '../../utils/reviewerUtils';
 
 /**
  * Data Mapper / DTO Transformer for Worker Service API Spec v2.0.0
@@ -65,11 +67,11 @@ export const extractPaginationMeta = (
   limitParam: number = 20
 ) => {
   const pagination =
+    resData?.meta ||
     resData?.pagination ||
     resData?.data?.pagination ||
     resData?.meta?.pagination ||
-    resData?.data?.meta?.pagination ||
-    resData?.meta;
+    resData?.data?.meta?.pagination;
 
   const total =
     typeof pagination?.total === 'number'
@@ -87,44 +89,162 @@ export const extractPaginationMeta = (
       ? pagination.currentPage
       : pageParam;
 
+  const limit =
+    typeof pagination?.limit === 'number'
+      ? pagination.limit
+      : limitParam || 20;
+
   const totalPages =
-    typeof pagination?.totalPages === 'number'
+    typeof pagination?.total_pages === 'number'
+      ? pagination.total_pages
+      : typeof pagination?.totalPages === 'number'
       ? pagination.totalPages
       : typeof pagination?.lastPage === 'number'
       ? pagination.lastPage
-      : Math.ceil(total / (limitParam || 20));
+      : Math.max(1, Math.ceil(total / limit));
+
+  const hasMore =
+    typeof pagination?.has_next === 'boolean'
+      ? pagination.has_next
+      : typeof pagination?.hasNext === 'boolean'
+      ? pagination.hasNext
+      : page < totalPages;
 
   return {
     total,
     page,
-    hasMore: page < totalPages,
+    limit,
+    totalPages,
+    hasMore,
   };
+};
+
+export const mapRawSearchDocument = (raw: any): WorkerSearchDocument => {
+  const workerId = String(
+    raw?.worker_id || raw?.id || raw?._id || raw?.workerId || raw?.user_id || ''
+  );
+  const providerType: 'INDIVIDUAL' | 'COMPANY' =
+    raw?.provider_type === 'COMPANY' || raw?.providerType === 'COMPANY' || raw?.is_company
+      ? 'COMPANY'
+      : 'INDIVIDUAL';
+
+  const doc: WorkerSearchDocument = {
+    worker_id: workerId,
+    name: String(raw?.name || raw?.full_name || raw?.fullName || 'Worker'),
+    bio: typeof raw?.bio === 'string' ? raw.bio : null,
+    avatar_url:
+      raw?.avatar_url || raw?.avatarUrl || raw?.avatar || raw?.photo_url || null,
+    city: typeof raw?.city === 'string' ? raw.city : null,
+    category_ids: Array.isArray(raw?.category_ids)
+      ? raw.category_ids.map(String)
+      : Array.isArray(raw?.categoryIds)
+      ? raw.categoryIds.map(String)
+      : [],
+    category_names: formatCategoryStringList(
+      raw?.category_names || raw?.categoryNames || raw?.categories || raw?.skills
+    ),
+    min_price:
+      typeof raw?.min_price === 'number'
+        ? raw.min_price
+        : typeof raw?.minPrice === 'number'
+        ? raw.minPrice
+        : typeof raw?.starting_price === 'number'
+        ? raw.starting_price
+        : typeof raw?.startingPrice === 'number'
+        ? raw.startingPrice
+        : null,
+    max_price:
+      typeof raw?.max_price === 'number'
+        ? raw.max_price
+        : typeof raw?.maxPrice === 'number'
+        ? raw.maxPrice
+        : null,
+    avg_rating:
+      typeof raw?.avg_rating === 'number'
+        ? raw.avg_rating
+        : typeof raw?.avgRating === 'number'
+        ? raw.avgRating
+        : typeof raw?.rating === 'number'
+        ? raw.rating
+        : 0,
+    total_reviews:
+      typeof raw?.total_reviews === 'number'
+        ? raw.total_reviews
+        : typeof raw?.totalReviews === 'number'
+        ? raw.totalReviews
+        : typeof raw?.review_count === 'number'
+        ? raw.review_count
+        : 0,
+    total_bookings:
+      typeof raw?.total_bookings === 'number'
+        ? raw.total_bookings
+        : typeof raw?.totalBookings === 'number'
+        ? raw.totalBookings
+        : 0,
+    is_verified: Boolean(raw?.is_verified ?? raw?.isVerified ?? true),
+    is_available: Boolean(raw?.is_available ?? raw?.isAvailable ?? true),
+    is_busy: Boolean(raw?.is_busy ?? raw?.isBusy ?? raw?.is_on_job ?? raw?.isOnJob ?? false),
+    response_time_mins:
+      typeof raw?.response_time_mins === 'number'
+        ? raw.response_time_mins
+        : typeof raw?.responseTimeMins === 'number'
+        ? raw.responseTimeMins
+        : 30,
+    badges: Array.isArray(raw?.badges) ? raw.badges.map(String) : [],
+    is_featured: Boolean(raw?.is_featured ?? raw?.isFeatured ?? false),
+    provider_type: providerType,
+    business_name:
+      typeof raw?.business_name === 'string'
+        ? raw.business_name
+        : typeof raw?.businessName === 'string'
+        ? raw.businessName
+        : null,
+    company_verified: Boolean(
+      raw?.company_verified ?? raw?.companyVerified ?? Boolean(raw?.company_verified_at)
+    ),
+    max_concurrent_jobs:
+      typeof raw?.max_concurrent_jobs === 'number'
+        ? raw.max_concurrent_jobs
+        : typeof raw?.maxConcurrentJobs === 'number'
+        ? raw.maxConcurrentJobs
+        : providerType === 'COMPANY'
+        ? 5
+        : 1,
+  };
+
+  if (typeof raw?.distance_meters === 'number' && Number.isFinite(raw.distance_meters)) {
+    doc.distance_meters = raw.distance_meters;
+  } else if (typeof raw?.distanceMeters === 'number' && Number.isFinite(raw.distanceMeters)) {
+    doc.distance_meters = raw.distanceMeters;
+  }
+
+  return doc;
 };
 
 export const mapRawWorkerNearby = (raw: any): WorkerNearby => {
   if (!raw) {
     return {
-      id: `w-${Math.random().toString(36).substring(2, 9)}`,
-      name: 'Worker',
+      id: '',
+      name: '',
       avatarUrl: null,
-      avgRating: 5.0,
+      avgRating: 0,
       totalReviews: 0,
       currency: 'Rs',
       distanceMeters: 0,
-      distanceLabel: 'Nearby',
+      distanceLabel: '',
       categories: [],
-      availabilityStatus: 'AVAILABLE',
+      availabilityStatus: 'OFFLINE',
       availableUntil: null,
       isOnJob: false,
-      responseTimeMins: 15,
-      startingPrice: 500,
+      responseTimeMins: 0,
+      startingPrice: null,
     };
   }
 
   const rawId =
+    raw.worker_id ||
     raw.id ||
     raw._id ||
-    raw.worker_id ||
     raw.workerId ||
     raw.user_id ||
     raw.userId ||
@@ -133,7 +253,7 @@ export const mapRawWorkerNearby = (raw: any): WorkerNearby => {
 
   const id = rawId !== undefined && rawId !== null && rawId !== ''
     ? String(rawId)
-    : `w-${Math.random().toString(36).substring(2, 9)}`;
+    : '';
 
   const name =
     raw.name ||
@@ -145,12 +265,12 @@ export const mapRawWorkerNearby = (raw: any): WorkerNearby => {
     raw.user?.full_name ||
     raw.user?.fullName ||
     (raw.user?.first_name ? `${raw.user.first_name} ${raw.user.last_name || ''}`.trim() : null) ||
-    'Worker';
+    '';
 
   const avatarUrl =
-    raw.avatar ||
     raw.avatar_url ||
     raw.avatarUrl ||
+    raw.avatar ||
     raw.photo_url ||
     raw.photoUrl ||
     raw.profile_picture ||
@@ -160,65 +280,78 @@ export const mapRawWorkerNearby = (raw: any): WorkerNearby => {
     null;
 
   const avgRating =
-    typeof raw.rating === 'number'
-      ? raw.rating
-      : typeof raw.avg_rating === 'number'
+    typeof raw.avg_rating === 'number'
       ? raw.avg_rating
+      : typeof raw.rating === 'number'
+      ? raw.rating
       : typeof raw.avgRating === 'number'
       ? raw.avgRating
       : typeof raw.rating_average === 'number'
       ? raw.rating_average
       : typeof raw.average_rating === 'number'
       ? raw.average_rating
-      : 5.0;
+      : 0;
 
   const totalReviews =
-    typeof raw.review_count === 'number'
-      ? raw.review_count
-      : typeof raw.total_reviews === 'number'
+    typeof raw.total_reviews === 'number'
       ? raw.total_reviews
+      : typeof raw.review_count === 'number'
+      ? raw.review_count
       : typeof raw.totalReviews === 'number'
       ? raw.totalReviews
       : typeof raw.reviews_count === 'number'
       ? raw.reviews_count
       : 0;
 
-  const currency = raw.currency || 'Rs';
-  const distanceMeters =
-    typeof raw.distance_meters === 'number'
-      ? raw.distance_meters
-      : typeof raw.distanceMeters === 'number'
-      ? raw.distanceMeters
-      : typeof raw.distance === 'number'
-      ? raw.distance
-      : typeof raw.distance_in_km === 'number'
-      ? raw.distance_in_km * 1000
-      : typeof raw.distance_km === 'number'
-      ? raw.distance_km * 1000
-      : typeof raw.distanceKm === 'number'
-      ? raw.distanceKm * 1000
+  const totalBookings =
+    typeof raw.total_bookings === 'number'
+      ? raw.total_bookings
+      : typeof raw.totalBookings === 'number'
+      ? raw.totalBookings
+      : typeof raw.total_jobs_completed === 'number'
+      ? raw.total_jobs_completed
       : 0;
 
+  const currency = raw.currency || 'Rs';
+  const rawDist =
+    raw.distance_meters ??
+    raw.distanceMeters ??
+    raw.distance ??
+    (raw.distance_in_km != null ? Number(raw.distance_in_km) * 1000 : null) ??
+    (raw.distance_km != null ? Number(raw.distance_km) * 1000 : null) ??
+    (raw.distanceKm != null ? Number(raw.distanceKm) * 1000 : null);
+
+  const hasExplicitDistance =
+    rawDist !== null && rawDist !== undefined && !isNaN(Number(rawDist));
+  const numDist = hasExplicitDistance ? Number(rawDist) : 0;
+  const distanceMeters = Math.max(0, Math.round(numDist));
+
+  const city = typeof raw.city === 'string' && raw.city.trim() ? raw.city.trim() : null;
+
   let distanceLabel = raw.distanceLabel || raw.distance_label;
-  if (!distanceLabel) {
+  if (!distanceLabel || distanceLabel === '0.0 km' || distanceLabel === '0 km') {
     distanceLabel =
       distanceMeters >= 1000
         ? `${(distanceMeters / 1000).toFixed(1)} km`
         : distanceMeters > 0
         ? `${Math.round(distanceMeters)} m`
-        : 'Nearby';
+        : city || 'Nearby';
   }
+
+  const isBusy = Boolean(raw.is_busy ?? raw.isBusy ?? raw.is_on_job ?? raw.isOnJob ?? false);
+  const isAvailable = Boolean(raw.is_available ?? raw.isAvailable ?? true);
+  const isVerified = Boolean(raw.is_verified ?? raw.isVerified ?? true);
 
   const rawStatus =
     raw.availability_status ||
     raw.availabilityStatus ||
     raw.status ||
-    (raw.is_online ? 'AVAILABLE' : 'AVAILABLE');
+    (isBusy ? 'BUSY' : isAvailable ? 'AVAILABLE' : 'OFFLINE');
 
   const rawCatList =
-    raw.categories ||
     raw.category_names ||
     raw.categoryNames ||
+    raw.categories ||
     raw.skills ||
     raw.skills_list ||
     raw.services ||
@@ -229,9 +362,30 @@ export const mapRawWorkerNearby = (raw: any): WorkerNearby => {
     raw.skillName;
 
   const categories = formatCategoryStringList(rawCatList);
+  const categoryIds = Array.isArray(raw.category_ids)
+    ? raw.category_ids.map(String)
+    : Array.isArray(raw.categoryIds)
+    ? raw.categoryIds.map(String)
+    : [];
+
+  const minPrice =
+    typeof raw.min_price === 'number'
+      ? raw.min_price
+      : typeof raw.minPrice === 'number'
+      ? raw.minPrice
+      : null;
+
+  const maxPrice =
+    typeof raw.max_price === 'number'
+      ? raw.max_price
+      : typeof raw.maxPrice === 'number'
+      ? raw.maxPrice
+      : null;
 
   const startingPrice =
-    typeof raw.starting_price === 'number'
+    minPrice !== null
+      ? minPrice
+      : typeof raw.starting_price === 'number'
       ? raw.starting_price
       : typeof raw.startingPrice === 'number'
       ? raw.startingPrice
@@ -241,7 +395,7 @@ export const mapRawWorkerNearby = (raw: any): WorkerNearby => {
       ? raw.rate
       : typeof raw.base_price === 'number'
       ? raw.base_price
-      : 500;
+      : null;
 
   const lat =
     typeof raw.lat === 'number'
@@ -265,6 +419,24 @@ export const mapRawWorkerNearby = (raw: any): WorkerNearby => {
       ? raw.location.lng
       : null;
 
+  const providerType = (raw.provider_type || raw.providerType || (raw.is_company ? 'COMPANY' : 'INDIVIDUAL')) as 'INDIVIDUAL' | 'COMPANY';
+  const isCompany = providerType === 'COMPANY' || Boolean(raw.is_company || raw.isCompany);
+  const businessName = raw.business_name || raw.businessName || (isCompany ? name : null);
+  const coverImageUrl = raw.cover_image_url || raw.coverImageUrl || raw.cover_url || raw.coverUrl || null;
+  const ntnNumber = raw.ntn_number || raw.ntnNumber || null;
+  const maxConcurrentJobs =
+    typeof raw.max_concurrent_jobs === 'number'
+      ? raw.max_concurrent_jobs
+      : typeof raw.maxConcurrentJobs === 'number'
+      ? raw.maxConcurrentJobs
+      : raw.fleet_size || raw.fleetSize || (isCompany ? 5 : 1);
+  const companyVerified = Boolean(
+    raw.company_verified ?? raw.companyVerified ?? Boolean(raw.company_verified_at)
+  );
+  const badges = Array.isArray(raw.badges) ? raw.badges.map(String) : [];
+  const isFeatured = Boolean(raw.is_featured ?? raw.isFeatured ?? false);
+  const bio = typeof raw.bio === 'string' ? raw.bio : null;
+
   return {
     id,
     name,
@@ -277,11 +449,31 @@ export const mapRawWorkerNearby = (raw: any): WorkerNearby => {
     categories,
     availabilityStatus: rawStatus,
     availableUntil: raw.available_until || raw.availableUntil || null,
-    isOnJob: raw.is_on_job ?? raw.isOnJob ?? false,
+    isOnJob: isBusy,
     responseTimeMins: raw.response_time_mins || raw.responseTimeMins || 15,
     startingPrice,
     lat,
     lng,
+    bio,
+    city,
+    categoryIds,
+    minPrice,
+    maxPrice,
+    totalBookings,
+    isVerified,
+    isAvailable,
+    isBusy,
+    badges,
+    isFeatured,
+    companyVerified,
+    maxConcurrentJobs,
+    hasDistance: hasExplicitDistance,
+    providerType,
+    businessName,
+    isCompany,
+    coverImageUrl,
+    ntnNumber,
+    fleetSize: maxConcurrentJobs,
   };
 };
 
@@ -299,16 +491,35 @@ export const mapRawWorkerProfile = (raw: any): WorkerPublicProfile => {
     ? rawServicesList.map(mapRawWorkerServiceOffering)
     : [];
 
+  const providerType = baseNearby.providerType || (raw.provider_type === 'COMPANY' || raw.is_company ? 'COMPANY' : 'INDIVIDUAL');
+  const isCompany = providerType === 'COMPANY' || Boolean(raw.is_company || raw.isCompany);
+  const businessName = raw.business_name || raw.businessName || baseNearby.businessName || (isCompany ? baseNearby.name : null);
+  const coverImageUrl = baseNearby.coverImageUrl || raw.cover_image_url || raw.coverImageUrl || null;
+  const ntnNumber = baseNearby.ntnNumber || raw.ntn_number || raw.ntnNumber || null;
+  const maxConcurrentJobs = raw.max_concurrent_jobs || raw.maxConcurrentJobs || baseNearby.fleetSize || (isCompany ? 5 : 1);
+  // Never fabricate verification: only reflect what the backend reports.
+  const companyVerifiedAt = raw.company_verified_at || raw.companyVerifiedAt || null;
+  const verificationStatus =
+    raw.verification_status || raw.verificationStatus || (raw.is_verified ? 'VERIFIED' : 'UNVERIFIED');
+
   return {
     ...baseNearby,
-    bio: raw.bio || null,
+    bio: raw.bio || raw.description || null,
     yearsExperience: raw.experience_years ?? raw.years_experience ?? raw.yearsExperience ?? 0,
     totalBookings: raw.total_jobs_completed ?? raw.total_bookings ?? raw.totalBookings ?? 0,
     city: raw.city || null,
-    verificationStatus: raw.verification_status || raw.verificationStatus || (raw.is_verified ? 'VERIFIED' : 'UNVERIFIED'),
-    isVerified: Boolean(raw.is_verified ?? raw.isVerified ?? false),
+    verificationStatus,
+    isVerified: Boolean(raw.is_verified ?? raw.isVerified ?? verificationStatus === 'VERIFIED'),
     skills: Array.isArray(raw.skills_list) ? raw.skills_list.map(mapRawWorkerSkill) : (raw.skills || []),
     serviceOfferings,
+
+    provider_type: providerType,
+    business_name: businessName,
+    ntn_number: ntnNumber,
+    max_concurrent_jobs: maxConcurrentJobs,
+    company_verified_at: companyVerifiedAt,
+    is_company: isCompany,
+    coverImageUrl,
   };
 };
 
@@ -326,14 +537,20 @@ export const mapRawWorkerServiceOffering = (raw: any): WorkerServiceOffering => 
     raw.service?.title ||
     'General Service';
 
+  const description = raw.description || raw.desc || raw.short_description || null;
+  const imageUrl = raw.image_url || raw.imageUrl || raw.image || raw.icon_url || raw.iconUrl || null;
+
   return {
     id,
+    serviceId: raw.serviceId || raw.service_id || null,
     serviceName,
     serviceNameUr: raw.nameUr || raw.name_ur || raw.title_ur || raw.serviceNameUr || null,
     customPrice,
     priceType: (raw.priceType === 'PER_HOUR' || raw.price_unit === 'PER_HOUR' || raw.priceType === 'hourly' || raw.price_type === 'hourly' ? 'hourly' : raw.priceType === 'QUOTE' || raw.price_unit === 'QUOTE' || raw.priceType === 'quote' || raw.price_type === 'quote' ? 'quote' : 'fixed'),
     isCustom: raw.isCustom ?? raw.is_custom ?? false,
     notes: raw.notes || null,
+    description,
+    imageUrl,
   };
 };
 
@@ -362,13 +579,14 @@ export const mapRawWorkerPortfolio = (raw: any): WorkerPortfolioImage => {
 };
 
 export const mapRawWorkerReview = (raw: any): WorkerReview => {
+  const identity = resolveReviewerIdentity(raw);
   return {
     id: raw.id || '',
     bookingId: raw.booking_id || raw.bookingId || '',
     workerId: raw.worker_id || raw.workerId || '',
-    reviewerId: raw.customer_id || raw.reviewerId || '',
-    reviewerName: raw.customer_name || raw.reviewerName || 'Customer',
-    reviewerAvatar: raw.customer_avatar || raw.reviewerAvatar || null,
+    reviewerId: raw.customer_id || raw.reviewerId || raw.user_id || '',
+    reviewerName: identity.name,
+    reviewerAvatar: identity.avatarUrl,
     rating: typeof raw.rating === 'number' ? raw.rating : 5,
     punctuality: raw.punctuality || 5,
     quality: raw.quality || 5,
@@ -378,7 +596,7 @@ export const mapRawWorkerReview = (raw: any): WorkerReview => {
     reply: raw.reply || null,
     repliedAt: raw.replied_at || raw.repliedAt || null,
     createdAt: raw.created_at || raw.createdAt || new Date().toISOString(),
-    isVerified: true,
+    isVerified: identity.isVerified,
     serviceName: raw.service_name || raw.serviceName,
   };
 };

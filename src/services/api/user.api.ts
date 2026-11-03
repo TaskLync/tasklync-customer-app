@@ -382,4 +382,32 @@ export const userApi = {
     const response = await apiClient.patch<any>(`/users/me/addresses/${id}/default`);
     return response.data?.data || response.data;
   },
+
+  /**
+   * Fetch public user profile by ID (name and avatar)
+   */
+  getUserById: async (
+    userId: string
+  ): Promise<{ id: string; name: string; avatar_url: string | null } | null> => {
+    if (!userId) return null;
+    try {
+      const response = await apiClient.get<any>(`/users/${userId}`);
+      const raw = response.data?.data || response.data;
+      if (raw && (raw.name || raw.first_name)) {
+        const fullName =
+          raw.name ||
+          `${raw.first_name || ''} ${raw.last_name || ''}`.trim() ||
+          'Customer';
+        return {
+          id: raw.id || userId,
+          name: fullName,
+          avatar_url: raw.avatar_url || raw.avatarUrl || null,
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
 };
+

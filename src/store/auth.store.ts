@@ -4,7 +4,17 @@ import { AuthUser } from '../types/auth.types';
 
 const storage = createMMKV();
 
-export type AuthState = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
+export type AuthState =
+  | 'INITIALIZING'
+  | 'AUTHENTICATED'
+  | 'UNAUTHENTICATED'
+  | 'REFRESHING_TOKEN'
+  | 'TEMPORARILY_UNAVAILABLE'
+  // Backward compatibility aliases
+  | 'idle'
+  | 'loading'
+  | 'authenticated'
+  | 'unauthenticated';
 
 interface AuthStoreState {
   user: AuthUser | null;
@@ -22,28 +32,36 @@ interface AuthStoreState {
   hydrate: () => void;
   logout: () => void;
   setAuthState: (state: AuthState) => void;
+  setRefreshingToken: () => void;
+  setTemporarilyUnavailable: () => void;
 }
 
 export const useAuthStore = create<AuthStoreState>((set, get) => ({
   user: null,
   accessToken: null,
   refreshToken: null,
-  authState: 'idle',
+  authState: 'INITIALIZING',
   isNewUser: false,
   
   get isAuthenticated() {
-    return get().authState === 'authenticated';
+    const s = get().authState;
+    return (
+      s === 'AUTHENTICATED' ||
+      s === 'authenticated' ||
+      s === 'REFRESHING_TOKEN' ||
+      s === 'TEMPORARILY_UNAVAILABLE'
+    );
   },
   
   get isLoading() {
-    const state = get().authState;
-    return state === 'loading' || state === 'idle';
+    const s = get().authState;
+    return s === 'INITIALIZING' || s === 'loading' || s === 'idle';
   },
   
   setTokens: (accessToken, refreshToken) => {
     storage.set('accessToken', accessToken);
     storage.set('refreshToken', refreshToken);
-    set({ accessToken, refreshToken, authState: 'authenticated' });
+    set({ accessToken, refreshToken, authState: 'AUTHENTICATED' });
   },
   
   setUser: (user) => {
@@ -59,8 +77,30 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     set({ authState: state });
   },
 
+  setRefreshingToken: () => {
+    const current = get().authState;
+    if (
+      current === 'AUTHENTICATED' ||
+      current === 'authenticated' ||
+      current === 'TEMPORARILY_UNAVAILABLE'
+    ) {
+      set({ authState: 'REFRESHING_TOKEN' });
+    }
+  },
+
+  setTemporarilyUnavailable: () => {
+    const current = get().authState;
+    if (
+      current === 'AUTHENTICATED' ||
+      current === 'authenticated' ||
+      current === 'REFRESHING_TOKEN'
+    ) {
+      set({ authState: 'TEMPORARILY_UNAVAILABLE' });
+    }
+  },
+
   hydrate: () => {
-    set({ authState: 'loading' });
+    set({ authState: 'INITIALIZING' });
     const accessToken = storage.getString('accessToken');
     const refreshToken = storage.getString('refreshToken');
     const userStr = storage.getString('user');
@@ -75,13 +115,10 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
         accessToken, 
         refreshToken, 
         user,
-        // we keep state as loading to allow validateToken (auth/me) to run, but in Day 3 plan
-        // hydrate either validates or we assume authenticated until validation fails.
-        // Let's set it to authenticated here for immediate UI hydration, and let the API logic handle token refresh failure
-        authState: 'authenticated' 
+        authState: 'AUTHENTICATED' 
       });
     } else {
-      set({ authState: 'unauthenticated' });
+      set({ authState: 'UNAUTHENTICATED' });
     }
   },
   
@@ -94,7 +131,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
       accessToken: null,
       refreshToken: null,
       isNewUser: false,
-      authState: 'unauthenticated',
+      authState: 'UNAUTHENTICATED',
     });
   },
 }));

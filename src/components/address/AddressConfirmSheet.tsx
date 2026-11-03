@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  useColorScheme,
+  useWindowDimensions,
+  Keyboard,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -73,6 +77,25 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
   onSaveAddress,
   onDeleteAddress,
 }) => {
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
+  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+  const isInputFocusedRef = useRef<boolean>(false);
+
+  // Standardized edge-to-edge system navigation clearance (Uber/Careem/Foodpanda UX spec):
+  // When insets.bottom > 0 (Android 3-button nav, gesture navigation bar, or iOS home indicator),
+  // we add 14px of ergonomic breathing room above the system bar so the "Save Address" CTA
+  // never collides with or touches the system navigation area in light or dark mode.
+  // When insets.bottom is 0 (hardware navigation keys or older devices), we use a safe 20px baseline.
+  const bottomPadding = insets.bottom > 0 ? insets.bottom + 14 : 20;
+
+  // When keyboard is visible, the system navigation bar is already covered/cleared by the keyboard.
+  // We use a clean 12px ergonomic padding above the keyboard so the Save button does not float with dead space.
+  const activeBottomPadding = isKeyboardVisible ? 12 : bottomPadding;
+
   const [isExpanded, setIsExpanded] = useState<boolean>(isEditMode);
   const [selectedLabel, setSelectedLabel] = useState<string>(initialLabel);
   const [customLabel, setCustomLabel] = useState<string>(initialCustomLabel);
@@ -85,6 +108,75 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
 
   // Inactivity auto-expand timer
   const stillnessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const keyboardScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current);
+      }
+      if (keyboardScrollTimeoutRef.current) {
+        clearTimeout(keyboardScrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Listen for keyboard show/hide to adapt bottom padding, sheet height, and auto-scroll
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setIsKeyboardVisible(true);
+      const measuredHeight = e?.endCoordinates?.height || 280;
+      setKeyboardHeight(measuredHeight);
+
+      // If an input is currently active, scroll to reveal it once the keyboard is fully displayed
+      if (isInputFocusedRef.current) {
+        if (keyboardScrollTimeoutRef.current) {
+          clearTimeout(keyboardScrollTimeoutRef.current);
+        }
+        keyboardScrollTimeoutRef.current = setTimeout(
+          () => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          },
+          Platform.OS === 'ios' ? 60 : 100
+        );
+      }
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const handleInputFocus = useCallback(() => {
+    isInputFocusedRef.current = true;
+    if (!isExpanded) {
+      setIsExpanded(true);
+    }
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current);
+    }
+    focusTimeoutRef.current = setTimeout(
+      () => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      },
+      Platform.OS === 'ios' ? 120 : 160
+    );
+  }, [isExpanded]);
+
+  const handleInputBlur = useCallback(() => {
+    isInputFocusedRef.current = false;
+  }, []);
 
   useEffect(() => {
     if (isEditMode) {
@@ -104,6 +196,9 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
       withTiming(0.4, { duration: 60 }),
       withTiming(1, { duration: 120, easing: Easing.out(Easing.ease) })
     );
+    return () => {
+      textFadeOpacity.value = 1;
+    };
   }, [reverseGeocodeResult?.address_line, textFadeOpacity]);
 
   // Auto-expand after 1.5s of map being still (unless user manually collapsed)
@@ -121,15 +216,21 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
   }, [isExpanded, isGeocoding, reverseGeocodeResult]);
 
   const toggleExpand = () => {
+    Keyboard.dismiss();
     setIsExpanded((prev) => !prev);
   };
 
   // Duplicate address detection (~15m radius)
   const nearbyAddress =
-    reverseGeocodeResult && !dismissDuplicateWarning
+    reverseGeocodeResult &&
+    typeof reverseGeocodeResult.lat === 'number' &&
+    !isNaN(reverseGeocodeResult.lat) &&
+    typeof reverseGeocodeResult.lng === 'number' &&
+    !isNaN(reverseGeocodeResult.lng) &&
+    !dismissDuplicateWarning
       ? findNearbySavedAddress(
           { lat: reverseGeocodeResult.lat, lng: reverseGeocodeResult.lng },
-          savedAddresses.filter((a) => a.id !== currentAddressId),
+          (savedAddresses || []).filter((a) => a && a.id !== currentAddressId),
           15
         )
       : null;
@@ -140,18 +241,27 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
     ? 'Locating pinpoint address...'
     : geocodingError || 'Select a point on the map';
 
-  const isServiceable = reverseGeocodeResult
-    ? validateServiceArea({ lat: reverseGeocodeResult.lat, lng: reverseGeocodeResult.lng }).isServiceable
-    : true;
+  const hasValidCoords =
+    Boolean(reverseGeocodeResult) &&
+    typeof reverseGeocodeResult?.lat === 'number' &&
+    !isNaN(reverseGeocodeResult.lat) &&
+    typeof reverseGeocodeResult?.lng === 'number' &&
+    !isNaN(reverseGeocodeResult.lng);
+
+  const isServiceable =
+    hasValidCoords && reverseGeocodeResult
+      ? validateServiceArea({ lat: reverseGeocodeResult.lat, lng: reverseGeocodeResult.lng }).isServiceable
+      : true;
 
   const isFormValid =
-    Boolean(reverseGeocodeResult) &&
+    hasValidCoords &&
     (selectedLabel === 'Home' ||
       selectedLabel === 'Office' ||
       (selectedLabel === 'Other' && customLabel.trim().length > 0) ||
       Boolean(selectedLabel && selectedLabel.trim().length > 0));
 
   const handleSave = () => {
+    Keyboard.dismiss();
     if (!isFormValid || !reverseGeocodeResult || !isServiceable || isSaving) return;
 
     setIsSuccessFeedback(true);
@@ -164,7 +274,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
       custom_label: selectedLabel === 'Other' ? customLabel.trim() : undefined,
       notes: notes.trim() || undefined,
       address_line: reverseGeocodeResult.address_line || currentAddressText,
-      city: reverseGeocodeResult.city || 'Faisalabad',
+      city: reverseGeocodeResult.city || '',
       country: reverseGeocodeResult.country || 'Pakistan',
       lat: reverseGeocodeResult.lat,
       lng: reverseGeocodeResult.lng,
@@ -194,54 +304,83 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
     opacity: textFadeOpacity.value,
   }));
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
-      style={styles.keyboardContainer}
-    >
-      <View style={[styles.sheetContainer, isExpanded ? styles.sheetExpanded : styles.sheetCollapsed]}>
-        {/* Drag Handle Bar */}
-        <Pressable
-          onPress={toggleExpand}
-          style={styles.handleContainer}
-          accessibilityRole="button"
-          accessibilityLabel={isExpanded ? 'Collapse address details' : 'Expand address details'}
-        >
-          <View style={styles.handle} />
-        </Pressable>
+  // Dynamic height constraint when keyboard is open to guarantee the sheet never
+  // collides with the top search bar overlay even on compact screens.
+  const maxAllowedHeight = isKeyboardVisible
+    ? Math.max(220, windowHeight - keyboardHeight - (insets.top + 68))
+    : Platform.OS === 'ios'
+    ? 480
+    : 440;
 
-        {/* Address Header Preview */}
-        <Pressable onPress={toggleExpand} style={styles.headerRow}>
-          <View style={styles.pinIconWrap}>
-            <MapPin size={20} color={colors.primaryDark} strokeWidth={2.4} />
-          </View>
-          <View style={styles.headerTextWrap}>
-            <Text style={styles.headerSectionTitle} maxFontSizeMultiplier={1.3}>
-              Location
-            </Text>
-            <Animated.Text
-              style={[styles.addressPreviewText, animatedAddressStyle]}
-              numberOfLines={isExpanded ? 2 : 1}
-              maxFontSizeMultiplier={1.3}
+  const sheetWrapperProps = {
+    behavior: 'padding' as const,
+    keyboardVerticalOffset: Platform.OS === 'ios' ? 10 : 0,
+    style: styles.keyboardContainer,
+  };
+
+  return (
+    <KeyboardAvoidingView {...sheetWrapperProps}>
+      <View
+        style={[
+          styles.sheetContainer,
+          isDark && styles.sheetContainerDark,
+          isExpanded
+            ? [styles.sheetExpanded, { maxHeight: maxAllowedHeight }]
+            : styles.sheetCollapsed,
+          { paddingBottom: activeBottomPadding },
+        ]}
+      >
+        {/* Draggable Handle & Address Header */}
+        <View collapsable={false}>
+            {/* Drag Handle Bar */}
+            <Pressable
+              onPress={toggleExpand}
+              style={styles.handleContainer}
+              accessibilityRole="button"
+              accessibilityLabel={isExpanded ? 'Collapse address details' : 'Expand address details'}
             >
-              {currentAddressText}
-            </Animated.Text>
+              <View style={[styles.handle, isDark && styles.handleDark]} />
+            </Pressable>
+
+            {/* Address Header Preview */}
+            <Pressable onPress={toggleExpand} style={styles.headerRow}>
+              <View style={[styles.pinIconWrap, isDark && styles.pinIconWrapDark]}>
+                <MapPin size={20} color={isDark ? palette.green400 : colors.primaryDark} strokeWidth={2.4} />
+              </View>
+              <View style={styles.headerTextWrap}>
+                <Text style={[styles.headerSectionTitle, isDark && styles.headerSectionTitleDark]} maxFontSizeMultiplier={1.3}>
+                  Location
+                </Text>
+                <Animated.Text
+                  style={[
+                    styles.addressPreviewText,
+                    isDark && styles.addressPreviewTextDark,
+                    animatedAddressStyle,
+                  ]}
+                  numberOfLines={isExpanded ? 2 : 1}
+                  maxFontSizeMultiplier={1.3}
+                >
+                  {currentAddressText}
+                </Animated.Text>
+              </View>
+              <View style={styles.expandChevronWrap}>
+                {isExpanded ? (
+                  <ChevronDown size={20} color={isDark ? palette.gray400 : palette.gray500} />
+                ) : (
+                  <ChevronUp size={20} color={isDark ? palette.gray400 : palette.gray500} />
+                )}
+              </View>
+            </Pressable>
           </View>
-          <View style={styles.expandChevronWrap}>
-            {isExpanded ? (
-              <ChevronDown size={20} color={palette.gray500} />
-            ) : (
-              <ChevronUp size={20} color={palette.gray500} />
-            )}
-          </View>
-        </Pressable>
 
         {/* Expanded Form Content */}
         {isExpanded && (
           <ScrollView
+            ref={scrollViewRef}
+            style={styles.formScrollView}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             contentContainerStyle={styles.expandedScrollContent}
           >
             {/* Duplicate Address Soft Warning (Non-blocking) */}
@@ -267,10 +406,17 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
               customLabel={customLabel}
               onSelectLabel={setSelectedLabel}
               onChangeCustomLabel={setCustomLabel}
+              onFocusCustomLabel={handleInputFocus}
+              onBlurCustomLabel={handleInputBlur}
             />
 
             {/* Optional Delivery & Entry Notes */}
-            <AddressNotesInput value={notes} onChangeText={setNotes} />
+            <AddressNotesInput
+              value={notes}
+              onChangeText={setNotes}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
+            />
 
             {/* In Edit Mode: Destructive Delete Link */}
             {isEditMode && onDeleteAddress && (
@@ -306,7 +452,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
             disabled={!isFormValid || !isServiceable || isSaving}
             style={({ pressed }) => [
               styles.saveButton,
-              (!isFormValid || !isServiceable) && styles.saveButtonDisabled,
+              (!isFormValid || !isServiceable) && (isDark ? styles.saveButtonDisabledDark : styles.saveButtonDisabled),
               isSuccessFeedback && styles.saveButtonSuccess,
               pressed && isFormValid && isServiceable && styles.saveButtonPressed,
             ]}
@@ -327,7 +473,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
               <Text
                 style={[
                   styles.saveButtonText,
-                  (!isFormValid || !isServiceable) && styles.saveButtonTextDisabled,
+                  (!isFormValid || !isServiceable) && (isDark ? styles.saveButtonTextDisabledDark : styles.saveButtonTextDisabled),
                 ]}
                 maxFontSizeMultiplier={1.3}
               >
@@ -351,7 +497,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    zIndex: 20,
+    zIndex: 28,
   },
   sheetContainer: {
     backgroundColor: palette.white,
@@ -361,13 +507,19 @@ const styles = StyleSheet.create({
     borderColor: palette.gray200,
     ...shadows.xl,
     paddingHorizontal: 20,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 20,
+  },
+  sheetContainerDark: {
+    backgroundColor: palette.slate800,
+    borderColor: palette.gray700,
   },
   sheetCollapsed: {
-    maxHeight: 190,
+    maxHeight: 200,
   },
   sheetExpanded: {
-    maxHeight: 480,
+    maxHeight: Platform.OS === 'ios' ? 480 : 440,
+  },
+  formScrollView: {
+    flexShrink: 1,
   },
   handleContainer: {
     alignItems: 'center',
@@ -378,6 +530,9 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: palette.gray300,
+  },
+  handleDark: {
+    backgroundColor: palette.slate600,
   },
   headerRow: {
     flexDirection: 'row',
@@ -393,6 +548,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
+  pinIconWrapDark: {
+    backgroundColor: palette.gray900,
+  },
   headerTextWrap: {
     flex: 1,
   },
@@ -404,12 +562,18 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  headerSectionTitleDark: {
+    color: colors.textMuted,
+  },
   addressPreviewText: {
     fontFamily: fontFamily.jakarta.medium,
     fontSize: 15,
     lineHeight: 20,
     color: colors.textPrimary,
     marginTop: 2,
+  },
+  addressPreviewTextDark: {
+    color: palette.gray50,
   },
   expandChevronWrap: {
     padding: 6,
@@ -504,6 +668,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
   },
+  saveButtonDisabledDark: {
+    backgroundColor: palette.gray700,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   saveButtonSuccess: {
     backgroundColor: palette.green500,
   },
@@ -515,6 +684,9 @@ const styles = StyleSheet.create({
   },
   saveButtonTextDisabled: {
     color: palette.gray400,
+  },
+  saveButtonTextDisabledDark: {
+    color: colors.textSecondary,
   },
   successRow: {
     flexDirection: 'row',

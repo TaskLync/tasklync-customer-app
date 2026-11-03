@@ -1,46 +1,69 @@
-import { useEffect } from 'react';
-import { runOnJS, useSharedValue, useDerivedValue } from 'react-native-reanimated';
+import { useState, useEffect } from 'react';
 
-export function useBookingCountdown(expiresAt: string | undefined) {
-  const remainingSeconds = useSharedValue(0);
-  const isExpired = useSharedValue(false);
+export interface BookingCountdownResult {
+  minutes: string;
+  seconds: string;
+  isExpired: boolean;
+  formattedText: string;
+}
 
-  useEffect(() => {
+export function useBookingCountdown(expiresAt: string | undefined): BookingCountdownResult {
+  const calculate = (): BookingCountdownResult => {
     if (!expiresAt) {
-      remainingSeconds.value = 0;
-      isExpired.value = true;
-      return;
+      return {
+        minutes: '00',
+        seconds: '00',
+        isExpired: true,
+        formattedText: 'Expired',
+      };
     }
 
     const expiryTime = new Date(expiresAt).getTime();
-    
-    const update = () => {
-      const now = Date.now();
-      const diff = Math.max(0, Math.floor((expiryTime - now) / 1000));
-      remainingSeconds.value = diff;
-      
-      if (diff === 0) {
-        isExpired.value = true;
-      } else {
-        isExpired.value = false;
-      }
-    };
+    if (isNaN(expiryTime)) {
+      return {
+        minutes: '00',
+        seconds: '00',
+        isExpired: true,
+        formattedText: 'Expired',
+      };
+    }
 
-    update();
-    const interval = setInterval(update, 1000);
+    const now = Date.now();
+    const diff = Math.max(0, Math.floor((expiryTime - now) / 1000));
+    const isExpired = diff <= 0;
+    const mins = Math.floor(diff / 60);
+    const secs = diff % 60;
+    const minsStr = mins.toString().padStart(2, '0');
+    const secsStr = secs.toString().padStart(2, '0');
+
+    return {
+      minutes: minsStr,
+      seconds: secsStr,
+      isExpired,
+      formattedText: isExpired ? 'Expired' : `Expires in ${minsStr}:${secsStr}`,
+    };
+  };
+
+  const [state, setState] = useState<BookingCountdownResult>(calculate);
+
+  useEffect(() => {
+    const initial = calculate();
+    setState(initial);
+
+    if (initial.isExpired || !expiresAt) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const next = calculate();
+      setState(next);
+      if (next.isExpired) {
+        clearInterval(interval);
+      }
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [expiresAt, remainingSeconds, isExpired]);
+  }, [expiresAt]);
 
-  const minutes = useDerivedValue(() => {
-    const mins = Math.floor(remainingSeconds.value / 60);
-    return mins.toString().padStart(2, '0');
-  });
-
-  const seconds = useDerivedValue(() => {
-    const secs = remainingSeconds.value % 60;
-    return secs.toString().padStart(2, '0');
-  });
-
-  return { minutes, seconds, isExpired };
+  return state;
 }

@@ -13,6 +13,52 @@ export const PAKISTAN_TIMEZONE = 'Asia/Karachi';
 export const PAKISTAN_OFFSET_HOURS = 5; // UTC+5
 
 /**
+ * Normalizes any date representation (YYYY-MM-DD, ISO-8601 UTC, or Javascript Date string)
+ * into a strict canonical YYYY-MM-DD format.
+ *
+ * Example inputs:
+ * - "2026-11-13" -> "2026-11-13"
+ * - "2026-11-13T00:00:00.000Z" -> "2026-11-13"
+ * - "Fri Nov 13 2026 00:00:00 GMT+0000 (Coordinated Universal Time)" -> "2026-11-13"
+ * - new Date(...) -> "2026-11-13"
+ */
+export function normalizeDateToYYYYMMDD(dateInput?: string | Date | null): string | null {
+  if (!dateInput) return null;
+
+  if (typeof dateInput === 'string') {
+    const trimmed = dateInput.trim();
+    if (!trimmed) return null;
+
+    // Fast path: Exact YYYY-MM-DD pattern
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+
+    // Fast path: ISO string starting with YYYY-MM-DD
+    const isoMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})T/);
+    if (isoMatch) {
+      return isoMatch[1];
+    }
+
+    // Parseable Date string (e.g. "Fri Nov 13 2026 00:00:00 GMT+0000...")
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime())) {
+      const year = parsed.getUTCFullYear();
+      const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(parsed.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  } else if (dateInput instanceof Date && !isNaN(dateInput.getTime())) {
+    const year = dateInput.getUTCFullYear();
+    const month = String(dateInput.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(dateInput.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return null;
+}
+
+/**
  * Returns current date in Pakistan Time formatted as YYYY-MM-DD.
  * Prevents midnight-boundary bugs on devices in other timezones.
  */

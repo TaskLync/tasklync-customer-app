@@ -205,11 +205,9 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     backgroundColor: colors.bgCard,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
     overflow: 'hidden',
-    ...shadows.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   divider: {
     height: 1,

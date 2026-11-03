@@ -22,7 +22,13 @@ export const HomeHeader = () => {
   const user = profileUser || authUser;
   const avatarUrl = user?.avatar_url || (user as any)?.avatarUrl;
 
-  const { cityName, isLocating, locationMode, selectedAddress, location } = useLocation();
+  const {
+    cityName,
+    isLocating,
+    locationMode,
+    selectedAddress,
+    location,
+  } = useLocation();
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const currentStoreCity = useLocationStore((state) => state.currentCity);
   const { addresses } = useAddresses();
@@ -115,7 +121,11 @@ export const HomeHeader = () => {
           accessibilityLabel={`Location: ${displayLocation}. Tap to change location`}
           accessibilityHint="Opens location selector"
         >
-          <MapPin size={20} color="#16A05D" strokeWidth={2.2} />
+          <MapPin
+            size={20}
+            color="#16A05D"
+            strokeWidth={2.2}
+          />
           <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
             {displayLocation}
           </Text>

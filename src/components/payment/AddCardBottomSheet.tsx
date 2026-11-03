@@ -1,6 +1,7 @@
 import { forwardRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { BottomSheet, BottomSheetRef } from '../layout/BottomSheet/BottomSheet';
+import { BottomSheetScrollView } from '../layout/BottomSheet/BottomSheetScrollView';
 import { CardInputForm } from './CardInputForm';
 import { SaveCardCheckbox } from './SaveCardCheckbox';
 import { colors, palette, fontFamily } from '../../design';
@@ -42,34 +43,39 @@ export const AddCardBottomSheet = forwardRef<BottomSheetRef, AddCardBottomSheetP
     };
 
     return (
-      <BottomSheet ref={ref} contentPadding={true}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Add New Card</Text>
-          <Text style={styles.subtitle}>
-            Enter your card details for instant & secure payments.
-          </Text>
-        </View>
-
-        {/* Card Form */}
-        <CardInputForm onCardChange={handleFormChange} />
-
-        {/* Save Card Checkbox */}
-        <SaveCardCheckbox checked={saveCard} onToggle={setSaveCard} />
-
-        {/* Submit Action Button */}
-        <Pressable
-          onPress={handleSave}
-          disabled={!isComplete}
-          style={({ pressed }) => [
-            styles.submitButton,
-            !isComplete && styles.submitDisabled,
-            pressed && isComplete && styles.submitPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Add card and select as payment method"
+      <BottomSheet ref={ref} snapPoints={['75%', '90%']} contentPadding={true}>
+        <BottomSheetScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.submitText}>Add & Use Card</Text>
-        </Pressable>
+          <View style={styles.header}>
+            <Text style={styles.title}>Add New Card</Text>
+            <Text style={styles.subtitle}>
+              Enter your card details for instant & secure payments.
+            </Text>
+          </View>
+
+          {/* Card Form */}
+          <CardInputForm onCardChange={handleFormChange} />
+
+          {/* Save Card Checkbox */}
+          <SaveCardCheckbox checked={saveCard} onToggle={setSaveCard} />
+
+          {/* Submit Action Button */}
+          <Pressable
+            onPress={handleSave}
+            disabled={!isComplete}
+            style={({ pressed }) => [
+              styles.submitButton,
+              !isComplete && styles.submitDisabled,
+              pressed && isComplete && styles.submitPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Add card and select as payment method"
+          >
+            <Text style={styles.submitText}>Add & Use Card</Text>
+          </Pressable>
+        </BottomSheetScrollView>
       </BottomSheet>
     );
   }

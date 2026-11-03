@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Text, Pressable, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -19,19 +19,14 @@ export const SuccessCTAGroup: React.FC<SuccessCTAGroupProps> = ({ bookingId }) =
   const router = useRouter();
   const resetDraft = useBookingDraftStore((s) => s.resetDraft);
 
-  const opacity = useSharedValue(0);
   const scale = useSharedValue(1);
-
-  useEffect(() => {
-    opacity.value = withTiming(1, { duration: 100 });
-  }, [opacity]);
 
   const handlePressIn = () => {
     scale.value = withTiming(0.98, { duration: 80 });
   };
 
   const handlePressOut = () => {
-    scale.value = withTiming(1.0, { duration: 80 });
+    scale.value = withTiming(1.0, { duration: 120 });
   };
 
   const handleTrackBooking = () => {
@@ -47,16 +42,12 @@ export const SuccessCTAGroup: React.FC<SuccessCTAGroupProps> = ({ bookingId }) =
     router.replace('/(tabs)' as any);
   };
 
-  const containerAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   return (
-    <Animated.View style={[styles.container, containerAnimatedStyle]}>
+    <View style={styles.container}>
       {/* Primary Action Button: Track Booking */}
       <AnimatedPressable
         onPressIn={handlePressIn}
@@ -73,47 +64,50 @@ export const SuccessCTAGroup: React.FC<SuccessCTAGroupProps> = ({ bookingId }) =
       <Pressable
         onPress={handleBackToHome}
         style={styles.secondaryLink}
+        hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel="Return to home screen"
       >
         <Text style={styles.secondaryText}>Back to Home</Text>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 20,
     alignItems: 'center',
   },
   primaryButton: {
     width: '100%',
-    height: 52,
+    height: 56,
     borderRadius: 16,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
-    marginBottom: 14,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 4,
+    marginBottom: 8,
   },
   primaryText: {
-    fontFamily: fontFamily.poppins.bold,
+    fontFamily: fontFamily.poppins.semiBold,
     fontSize: 16,
     color: palette.white,
   },
   secondaryLink: {
-    paddingVertical: 8,
+    height: 48,
     paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   secondaryText: {
     fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textSecondary,
   },
 });

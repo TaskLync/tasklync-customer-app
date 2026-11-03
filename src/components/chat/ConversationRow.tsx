@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { CheckCheck } from 'lucide-react-native';
 import { ConversationItem } from '../../types/chat.types';
 import { fontFamily } from '../../design/typography';
+import { colors, palette } from '../../design/colors';
 
 interface ConversationRowProps {
   item: ConversationItem;
@@ -74,18 +75,18 @@ function getBookingStatusInfo(rawStatus?: string): { label: string; color: strin
     case 'PENDING':
       return { label: 'Pending', color: '#D97706' }; // soft amber
     case 'ACCEPTED':
-      return { label: 'Accepted', color: '#16A34A' }; // Tasklync green
+      return { label: 'Accepted', color: colors.primaryDark }; // Tasklync green
     case 'IN_PROGRESS':
     case 'ACTIVE':
-      return { label: 'Active', color: '#16A34A' }; // Tasklync green
+      return { label: 'Active', color: colors.primaryDark }; // Tasklync green
     case 'COMPLETED':
-      return { label: 'Completed', color: '#64748B' }; // muted slate
+      return { label: 'Completed', color: colors.textSecondary }; // muted slate
     case 'REJECTED':
     case 'CANCELLED':
-      return { label: 'Rejected', color: '#DC2626' }; // muted red
+      return { label: 'Rejected', color: colors.dangerMedium }; // muted red
     default: {
       const formatted = s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-      return { label: formatted, color: '#64748B' };
+      return { label: formatted, color: colors.textSecondary };
     }
   }
 }
@@ -181,7 +182,7 @@ export const ConversationRow = React.memo(function ConversationRow({
         <View style={styles.bottomRow}>
           <View style={styles.previewWrapper}>
             {isOutgoing && !isTyping && (
-              <CheckCheck size={14} color="#94A3B8" style={styles.outgoingIcon} />
+              <CheckCheck size={14} color={colors.textMuted} style={styles.outgoingIcon} />
             )}
             <Text
               style={[
@@ -226,10 +227,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
   },
   rowPressed: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgSubtle,
   },
   avatarContainer: {
     position: 'relative',
@@ -241,20 +242,20 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.bgHover,
   },
   avatarFallback: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitial: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 18,
-    color: '#0F172A',
+    color: colors.textPrimary,
   },
   onlineDotWrapper: {
     position: 'absolute',
@@ -263,7 +264,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#16A34A',
+    backgroundColor: colors.primaryDark,
   },
   contentWrap: {
     flex: 1,
@@ -288,21 +289,21 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 16,
     lineHeight: 22,
-    color: '#0F172A',
+    color: colors.textPrimary,
     marginRight: 8,
   },
   workerNameUnread: {
     fontFamily: fontFamily.jakarta.bold,
-    color: '#0F172A',
+    color: colors.textPrimary,
   },
   timestamp: {
     fontFamily: fontFamily.inter.regular,
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.textMuted,
   },
   timestampUnread: {
     fontFamily: fontFamily.inter.semiBold,
-    color: '#16A34A',
+    color: colors.primaryDark,
   },
   metaRow: {
     flexDirection: 'row',
@@ -314,11 +315,11 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.medium,
     fontSize: 13,
     lineHeight: 17,
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   metaDot: {
     fontSize: 12,
-    color: '#CBD5E1',
+    color: colors.textDisabled,
     fontWeight: '700',
   },
   statusText: {
@@ -345,32 +346,32 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 14,
     lineHeight: 19,
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   messagePreviewUnread: {
     fontFamily: fontFamily.jakarta.medium,
-    color: '#0F172A',
+    color: colors.textPrimary,
   },
   typingPreview: {
     fontFamily: fontFamily.jakarta.medium,
-    color: '#16A34A',
+    color: colors.primaryDark,
   },
   youPrefix: {
     fontFamily: fontFamily.jakarta.medium,
-    color: '#94A3B8',
+    color: colors.textMuted,
   },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#16A34A',
+    backgroundColor: colors.primaryDark,
     marginLeft: 6,
   },
   unreadBadge: {
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#16A34A',
+    backgroundColor: colors.primaryDark,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 5,
@@ -379,7 +380,7 @@ const styles = StyleSheet.create({
   unreadBadgeText: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 10.5,
-    color: '#FFFFFF',
+    color: colors.white,
     includeFontPadding: false,
   },
 });

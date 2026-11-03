@@ -54,21 +54,21 @@ export const ContactOptionRow: React.FC<ContactOptionRowProps> = ({
   const renderIcon = () => {
     if (channel === 'whatsapp') {
       return (
-        <View style={[styles.iconCircle, { backgroundColor: '#DCFCE7' }]}>
-          <MessageCircle size={20} color="#16A34A" />
+        <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
+          <MessageCircle size={20} color={colors.primaryDark} />
         </View>
       );
     }
     if (channel === 'email') {
       return (
-        <View style={[styles.iconCircle, { backgroundColor: '#EFF6FF' }]}>
-          <Mail size={20} color="#2563EB" />
+        <View style={[styles.iconCircle, { backgroundColor: colors.infoLight }]}>
+          <Mail size={20} color={colors.textInfo} />
         </View>
       );
     }
     return (
-      <View style={[styles.iconCircle, { backgroundColor: '#FEF3C7' }]}>
-        <Phone size={20} color="#D97706" />
+      <View style={[styles.iconCircle, { backgroundColor: colors.warningLight }]}>
+        <Phone size={20} color={colors.warningMedium} />
       </View>
     );
   };

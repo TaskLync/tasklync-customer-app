@@ -14,13 +14,7 @@ export const DefaultAddressBadge: React.FC = () => {
 
 const styles = StyleSheet.create({
   badge: {
-    backgroundColor: palette.green100,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 100,
     alignSelf: 'center',
-    borderWidth: 1,
-    borderColor: palette.green200,
   },
   badgeText: {
     fontFamily: fontFamily.jakarta.semiBold,

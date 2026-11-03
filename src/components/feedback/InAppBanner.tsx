@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React, { useEffect } from 'react';
 import {
   View,
@@ -115,21 +116,21 @@ export const InAppBanner = React.memo(function InAppBanner({
   const getCategoryIcon = () => {
     const cat = (data.category || '').toLowerCase();
     if (cat.includes('chat') || cat.includes('message')) {
-      return <MessageSquare size={18} color="#2563EB" strokeWidth={2.2} />;
+      return <MessageSquare size={18} color={colors.textInfo} strokeWidth={2.2} />;
     }
     if (cat.includes('booking')) {
-      return <CalendarCheck size={18} color="#16A34A" strokeWidth={2.2} />;
+      return <CalendarCheck size={18} color={colors.primaryDark} strokeWidth={2.2} />;
     }
     if (cat.includes('payment')) {
-      return <CreditCard size={18} color="#D97706" strokeWidth={2.2} />;
+      return <CreditCard size={18} color={colors.warningMedium} strokeWidth={2.2} />;
     }
     if (cat.includes('review')) {
-      return <Star size={18} color="#EAB308" strokeWidth={2.2} />;
+      return <Star size={18} color={colors.starFilled} strokeWidth={2.2} />;
     }
     if (cat.includes('marketing') || cat.includes('promo')) {
-      return <Sparkles size={18} color="#9333EA" strokeWidth={2.2} />;
+      return <Sparkles size={18} color={palette.purple600} strokeWidth={2.2} />;
     }
-    return <Bell size={18} color="#16A34A" strokeWidth={2.2} />;
+    return <Bell size={18} color={colors.primaryDark} strokeWidth={2.2} />;
   };
 
   return (
@@ -177,35 +178,35 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     zIndex: 9999,
-    shadowColor: '#000000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.16,
     shadowRadius: 12,
     elevation: 10,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderRadius: 16,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: colors.borderLight,
   },
   cardPressed: {
     transform: [{ scale: 0.98 }],
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgSubtle,
   },
   iconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgSubtle,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
   textContainer: {
     flex: 1,
@@ -219,19 +220,19 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 14,
-    color: '#0F172A',
+    color: colors.textPrimary,
     flex: 1,
     marginRight: 8,
   },
   timeBadge: {
     fontFamily: 'Inter-Medium',
     fontSize: 11,
-    color: '#94A3B8',
+    color: colors.textMuted,
   },
   body: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 13,
-    color: '#475569',
+    color: colors.textSecondary,
     lineHeight: 18,
   },
 });

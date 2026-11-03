@@ -1,4 +1,4 @@
-import { MapRegion } from '../types/address.types';
+import type { MapRegion } from '../types/address.types.ts';
 
 export interface GeoPoint {
   lat: number;

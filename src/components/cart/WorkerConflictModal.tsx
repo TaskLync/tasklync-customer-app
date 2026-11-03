@@ -37,7 +37,7 @@ export const WorkerConflictModal: FC<WorkerConflictModalProps> = ({
       <View style={styles.backdrop}>
         <View style={styles.dialogCard}>
           <View style={styles.iconCircle}>
-            <AlertTriangle size={24} color="#D97706" />
+            <AlertTriangle size={24} color={colors.warningMedium} />
           </View>
 
           {/* Poppins for dialog title */}
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 16,
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.warningLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,

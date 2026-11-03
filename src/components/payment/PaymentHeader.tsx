@@ -1,18 +1,16 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { colors, palette, fontFamily } from '../../design';
 
 export interface PaymentHeaderProps {
   title?: string;
-  subtitle?: string;
   onBack?: () => void;
 }
 
 export const PaymentHeader: React.FC<PaymentHeaderProps> = ({
-  title = 'Payment Method',
-  subtitle = 'Select your payment card to finalize booking.',
+  title = 'Payment',
   onBack,
 }) => {
   const router = useRouter();
@@ -26,55 +24,68 @@ export const PaymentHeader: React.FC<PaymentHeaderProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.header}>
       <Pressable
         onPress={handleBack}
-        style={styles.backButton}
+        style={({ pressed }) => [
+          styles.backButton,
+          pressed && styles.backButtonPressed,
+        ]}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         accessibilityRole="button"
-        accessibilityLabel="Go back to summary"
+        accessibilityLabel="Go back"
       >
-        <ChevronLeft size={24} color={colors.textPrimary} strokeWidth={2.2} />
+        <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
       </Pressable>
 
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
-      </View>
+      <Text style={styles.title} numberOfLines={1}>
+        {title}
+      </Text>
+
+      {/* Symmetrical placeholder for true visual centering */}
+      <View style={styles.rightPlaceholder} pointerEvents="none" />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  header: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: palette.white,
+    backgroundColor: colors.bgApp,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: palette.gray100,
+    backgroundColor: palette.white,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  titleContainer: {
-    marginTop: 4,
+  backButtonPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.96 }],
   },
   title: {
-    fontFamily: fontFamily.poppins.bold,
-    fontSize: 22,
-    lineHeight: 28,
-    color: colors.textPrimary,
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 18,
+    lineHeight: 24,
+    color: '#111827',
+    letterSpacing: -0.3,
+    textAlign: 'center',
   },
-  subtitle: {
-    fontFamily: fontFamily.jakarta.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-    marginTop: 4,
+  rightPlaceholder: {
+    width: 40,
+    height: 40,
   },
 });

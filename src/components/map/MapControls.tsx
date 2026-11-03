@@ -8,6 +8,7 @@ interface MapControlsProps {
   onZoomOut: () => void;
   onRecenter: () => void;
   showRecenter: boolean;
+  isRecentering?: boolean;
   style?: ViewStyle;
 }
 
@@ -16,11 +17,16 @@ export const MapControls: FC<MapControlsProps> = ({
   onZoomOut,
   onRecenter,
   showRecenter,
+  isRecentering = false,
   style,
 }) => {
   return (
     <View style={[styles.container, style]}>
-      <RecenterButton visible={showRecenter} onRecenter={onRecenter} />
+      <RecenterButton
+        visible={showRecenter}
+        onRecenter={onRecenter}
+        isLoading={isRecentering}
+      />
       <View style={styles.spacer} />
       <ZoomControl onZoomIn={onZoomIn} onZoomOut={onZoomOut} />
     </View>

@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -34,7 +35,16 @@ function BouncingDot({ delay }: { delay: number }) {
   return <Animated.View style={[styles.dot, animatedStyle]} />;
 }
 
-export const TypingIndicator = React.memo(function TypingIndicator() {
+interface TypingIndicatorProps {
+  isVisible?: boolean;
+  workerName?: string;
+}
+
+export const TypingIndicator = React.memo(function TypingIndicator({
+  isVisible = true,
+}: TypingIndicatorProps) {
+  if (!isVisible) return null;
+
   return (
     <View style={styles.container}>
       <View style={styles.bubble}>
@@ -56,14 +66,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 18,
     borderBottomLeftRadius: 4,
     gap: 5,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   dot: {
     width: 6,

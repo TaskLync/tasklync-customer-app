@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { View, ScrollView, Alert, StyleSheet, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 // Design system
@@ -28,6 +28,7 @@ import { AcceptanceWindowBanner } from '../../src/components/booking/summary/Acc
 
 export default function SummaryScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   // Stores
   const cartItems = useCartStore((s) => s.items);
@@ -54,13 +55,17 @@ export default function SummaryScreen() {
   const { submit, isLoading, error: createError } = useCreateBooking();
 
   const handleConfirmBooking = async () => {
-    const { booking, error: submitError } = await submit();
+    const { booking, error: submitError, conflict } = await submit();
     if (booking && booking.id) {
       // Navigate directly to payment screen
       router.push({
         pathname: '/booking/payment',
         params: { bookingId: booking.id },
       } as any);
+    } else if (conflict) {
+      Alert.alert('Slot no longer available', submitError || 'Please pick another time slot.', [
+        { text: 'Choose another slot', onPress: () => router.replace('/booking/schedule' as any) },
+      ]);
     } else {
       Alert.alert('Booking Error', submitError || createError || 'Unable to confirm booking. Please try again.');
     }
@@ -72,8 +77,7 @@ export default function SummaryScreen() {
       <View style={styles.container}>
         {/* Screen Header */}
         <ScheduleHeader
-          title="Review & Confirm"
-          subtitle="Please double-check your booking details before confirming."
+          title="Review & confirm"
         />
 
         {/* Funnel Step Progress Primitive (Step 4 of 4: Review) */}
@@ -117,7 +121,7 @@ export default function SummaryScreen() {
           <AcceptanceWindowBanner />
 
           {/* Bottom Spacer for Sticky Footer */}
-          <View style={styles.footerSpacer} />
+          <View style={{ height: 112 + insets.bottom }} />
         </ScrollView>
 
         {/* Sticky Primary Confirmation Footer CTA */}

@@ -24,7 +24,7 @@ import {
   Wrench,
 } from 'lucide-react-native';
 import { Service } from '../../types/category.types';
-import { colors } from '../../design/colors';
+import { colors, palette } from '../../design/colors';
 import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
 import { typography } from '../../design/typography';
@@ -40,15 +40,15 @@ interface ServiceCardProps {
 }
 
 const CATEGORY_STYLE_MAP: Record<string, { bg: string; color: string; Icon: any }> = {
-  electrician: { bg: '#FEF3C7', color: '#D97706', Icon: Zap },
-  plumber: { bg: '#EFF6FF', color: '#2563EB', Icon: Droplet },
-  ac_repair: { bg: '#F0F9FF', color: '#0284C7', Icon: Wind },
-  cleaning: { bg: '#F0FDF4', color: '#16A34A', Icon: Sparkles },
-  carpenter: { bg: '#FFF7ED', color: '#EA580C', Icon: Hammer },
-  painter: { bg: '#FDF4FF', color: '#C084FC', Icon: Paintbrush },
+  electrician: { bg: palette.amber100, color: colors.warningMedium, Icon: Zap },
+  plumber: { bg: colors.infoLight, color: colors.textInfo, Icon: Droplet },
+  ac_repair: { bg: palette.sky50, color: palette.sky600, Icon: Wind },
+  cleaning: { bg: colors.primaryTint, color: colors.primaryDark, Icon: Sparkles },
+  carpenter: { bg: palette.orange50, color: palette.orange600, Icon: Hammer },
+  painter: { bg: palette.purple50, color: palette.purple600, Icon: Paintbrush },
 };
 
-const DEFAULT_STYLE = { bg: '#F3F4F6', color: '#4B5563', Icon: Wrench };
+const DEFAULT_STYLE = { bg: colors.canvasGray, color: colors.textSecondary, Icon: Wrench };
 
 export const ServiceCard: React.FC<ServiceCardProps> = ({
   service,

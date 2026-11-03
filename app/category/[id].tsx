@@ -13,7 +13,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { colors } from '@design/colors';
 import { typography } from '@design/typography';
 import { useCategoryById } from '@hooks/useCategories';
-import { CategoryFilterBar, CategoryWorkersList } from '@components/category';
+import { CategoryFilterBar, CategoryWorkersList, DistanceSheetContent } from '@components/category';
 import { BottomSheet, BottomSheetRef } from '@components/layout/BottomSheet';
 import { FilterSheetContent } from '@components/search/FilterSheetContent';
 import { FilterState, SortOption, DEFAULT_FILTERS } from '../../src/types/search.types';
@@ -33,9 +33,11 @@ export default function CategoryScreen() {
   const [filters, setFilters] = useState<FilterState>({
     ...DEFAULT_FILTERS,
     categories: categoryId ? [categoryId] : [],
+    radius: 10000,
   });
 
-  const sheetRef = useRef<BottomSheetRef>(null);
+  const filterSheetRef = useRef<BottomSheetRef>(null);
+  const distanceSheetRef = useRef<BottomSheetRef>(null);
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -56,27 +58,45 @@ export default function CategoryScreen() {
       if (key === 'minRating') updated.minRating = 0;
       if (key === 'maxRate') updated.maxRate = 0;
       if (key === 'available') updated.available = 'any';
+      if (key === 'radius') updated.radius = 10000;
       return updated;
     });
   };
 
   const handleOpenFilters = () => {
-    sheetRef.current?.open();
+    filterSheetRef.current?.open();
+  };
+
+  const handleOpenDistance = () => {
+    distanceSheetRef.current?.open();
   };
 
   const handleApplyFilters = (newFilters: FilterState) => {
     setFilters(newFilters);
     setSortBy(newFilters.sortBy);
-    sheetRef.current?.close();
+    filterSheetRef.current?.close();
   };
 
   const handleResetFilters = () => {
     setFilters({
       ...DEFAULT_FILTERS,
       categories: categoryId ? [categoryId] : [],
+      radius: 10000,
     });
     setSortBy('distance');
-    sheetRef.current?.close();
+    filterSheetRef.current?.close();
+  };
+
+  const handleApplyDistance = (newRadius: number, newSort: SortOption) => {
+    setFilters((prev) => ({ ...prev, radius: newRadius, sortBy: newSort }));
+    setSortBy(newSort);
+    distanceSheetRef.current?.close();
+  };
+
+  const handleResetDistance = () => {
+    setFilters((prev) => ({ ...prev, radius: 10000, sortBy: 'distance' }));
+    setSortBy('distance');
+    distanceSheetRef.current?.close();
   };
 
   const categoryName = category?.name || formatCategoryName(categoryId, 'Category', 'title');
@@ -118,6 +138,7 @@ export default function CategoryScreen() {
         activeFilters={filters}
         onRemoveFilter={handleRemoveFilter}
         onOpenFilters={handleOpenFilters}
+        onOpenDistance={handleOpenDistance}
       />
 
       {/* Content Area - Category Workers List */}
@@ -129,12 +150,14 @@ export default function CategoryScreen() {
           maxRate={filters.maxRate}
           minRating={filters.minRating}
           available={filters.available}
+          radius={filters.radius || 10000}
         />
       </View>
 
       {/* Filters Bottom Sheet */}
       <BottomSheet
-        ref={sheetRef}
+        ref={filterSheetRef}
+        snapPoints={['85%']}
         contentPadding={false}
       >
         <FilterSheetContent
@@ -144,6 +167,21 @@ export default function CategoryScreen() {
           resultCount={null}
           showCategories={false}
           showMaxRate={true}
+          showDistance={true}
+        />
+      </BottomSheet>
+
+      {/* Distance & Coverage Bottom Sheet */}
+      <BottomSheet
+        ref={distanceSheetRef}
+        snapPoints={['55%']}
+        contentPadding={false}
+      >
+        <DistanceSheetContent
+          currentRadius={filters.radius || 10000}
+          currentSort={sortBy}
+          onApply={handleApplyDistance}
+          onReset={handleResetDistance}
         />
       </BottomSheet>
     </SafeAreaView>

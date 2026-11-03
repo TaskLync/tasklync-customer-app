@@ -1,4 +1,5 @@
 import { BookingStatus } from '../types/booking.types';
+import { colors, palette } from '../design/colors';
 import { 
   Clock, 
   CheckCircle2, 
@@ -10,20 +11,88 @@ import {
 
 export interface BookingStatusConfig {
   color: string;
+  bg: string;
+  text: string;
   icon: React.ElementType;
   label: string;
 }
 
 export const bookingStatusMap: Record<BookingStatus, BookingStatusConfig> = {
-  PENDING: { color: '#F59E0B', icon: Clock, label: 'Pending' },
-  ACCEPTED: { color: '#3B82F6', icon: CheckCircle2, label: 'Accepted' },
-  REJECTED: { color: '#EF4444', icon: XCircle, label: 'Rejected' },
-  IN_PROGRESS: { color: '#10B981', icon: PlayCircle, label: 'In Progress' },
-  COMPLETED_BY_WORKER: { color: '#10B981', icon: CheckCircle, label: 'Completed by Worker' },
-  COMPLETED: { color: '#6B7280', icon: CheckCircle, label: 'Completed' },
-  AUTO_COMPLETED: { color: '#6B7280', icon: CheckCircle, label: 'Completed' },
-  DISPUTED: { color: '#EF4444', icon: AlertTriangle, label: 'Disputed' },
-  RESOLVED: { color: '#10B981', icon: CheckCircle, label: 'Resolved' },
-  REFUNDED: { color: '#6B7280', icon: CheckCircle, label: 'Refunded' },
-  CANCELLED: { color: '#EF4444', icon: XCircle, label: 'Cancelled' },
+  PENDING: {
+    color: palette.amber500,
+    bg: palette.amber50,
+    text: palette.amber800,
+    icon: Clock,
+    label: 'Pending',
+  },
+  ACCEPTED: {
+    color: palette.blue500,
+    bg: palette.blue50,
+    text: palette.blue800,
+    icon: CheckCircle2,
+    label: 'Confirmed',
+  },
+  REJECTED: {
+    color: palette.red500,
+    bg: palette.red50,
+    text: palette.red800,
+    icon: XCircle,
+    label: 'Declined',
+  },
+  IN_PROGRESS: {
+    color: colors.primary,
+    bg: colors.primaryTint,
+    text: colors.textGreenDark,
+    icon: PlayCircle,
+    label: 'In Progress',
+  },
+  COMPLETED_BY_WORKER: {
+    color: colors.primary,
+    bg: colors.primaryTint,
+    text: colors.textGreenDark,
+    icon: CheckCircle,
+    label: 'Awaiting Confirmation',
+  },
+  COMPLETED: {
+    color: colors.primaryDark,
+    bg: colors.primaryTint,
+    text: colors.textGreen,
+    icon: CheckCircle,
+    label: 'Completed',
+  },
+  AUTO_COMPLETED: {
+    color: colors.primaryDark,
+    bg: colors.primaryTint,
+    text: colors.textGreen,
+    icon: CheckCircle,
+    label: 'Completed',
+  },
+  DISPUTED: {
+    color: palette.red600,
+    bg: palette.red50,
+    text: palette.red800,
+    icon: AlertTriangle,
+    label: 'Disputed',
+  },
+  RESOLVED: {
+    color: colors.primaryDark,
+    bg: colors.primaryTint,
+    text: colors.textGreen,
+    icon: CheckCircle,
+    label: 'Resolved',
+  },
+  REFUNDED: {
+    color: palette.gray500,
+    bg: palette.gray100,
+    text: palette.gray700,
+    icon: CheckCircle,
+    label: 'Refunded',
+  },
+  CANCELLED: {
+    color: palette.red500,
+    bg: palette.red50,
+    text: palette.red800,
+    icon: XCircle,
+    label: 'Cancelled',
+  },
 };

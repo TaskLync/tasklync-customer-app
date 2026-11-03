@@ -11,6 +11,9 @@ import { fontAssets } from '../src/config/fonts';
 import { AppProviders } from '../src/providers/AppProviders';
 import { FloatingCartBar } from '../src/components/cart/FloatingCartBar';
 import { colors } from '../src/design/colors';
+import { RouteErrorBoundary } from '../src/components/feedback';
+
+export { RouteErrorBoundary as ErrorBoundary };
 
 SplashScreen.preventAutoHideAsync();
 
@@ -49,6 +52,24 @@ export default function RootLayout() {
                   fullScreenGestureEnabled: true,
                 }}
               />
+              <Stack.Screen
+                name="company/index"
+                options={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                  contentStyle: { backgroundColor: colors.bgApp },
+                  gestureEnabled: true,
+                }}
+              />
+              <Stack.Screen
+                name="company/[id]"
+                options={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                  contentStyle: { backgroundColor: colors.bgApp },
+                  gestureEnabled: true,
+                }}
+              />
               <Stack.Screen name="booking/schedule" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
               <Stack.Screen name="booking/address" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
               <Stack.Screen name="booking/summary" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
@@ -68,7 +89,11 @@ export default function RootLayout() {
               <Stack.Screen name="profile/booking-history" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
               <Stack.Screen name="profile/blocked-workers" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
               <Stack.Screen name="profile/settings" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
-              <Stack.Screen name="profile/support" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+              <Stack.Screen name="custom-request/new" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+              <Stack.Screen name="custom-request/[id]/index" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+              <Stack.Screen name="custom-request/[id]/quote" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+              <Stack.Screen name="custom-request/[id]/checkout" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+              <Stack.Screen name="chat/request/[requestId]" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
               <Stack.Screen name="search/filters" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
             </Stack>
             <FloatingCartBar />

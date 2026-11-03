@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React, { useCallback, useRef } from 'react';
 import { StyleSheet, View, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -90,8 +91,8 @@ export function BookingList({ bookings, isLoading, isError = false, activeTab, o
           <RefreshControl 
             refreshing={isLoading && !isFirstMount.current} 
             onRefresh={onRefresh}
-            tintColor="#16A34A"
-            colors={['#16A34A']}
+            tintColor={colors.primaryDark}
+            colors={[colors.primaryDark]}
           />
         }
       />
@@ -102,10 +103,11 @@ export function BookingList({ bookings, isLoading, isError = false, activeTab, o
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.bgApp,
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 4,
   },
   skeletonContainer: {
     paddingTop: 8,

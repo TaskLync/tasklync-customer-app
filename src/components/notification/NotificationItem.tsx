@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
 import { NotificationItem as NotificationItemType } from '../../types/notification.types';
 import { NotificationIcon } from './NotificationIcon';
 import { formatRelativeTime } from '../../utils/groupByDate';
+import { colors, palette, fontFamily, radius, shadows } from '../../design';
 
 export interface NotificationItemProps {
   item: NotificationItemType;
@@ -13,12 +13,13 @@ export interface NotificationItemProps {
 /**
  * NotificationItem Component
  *
- * Presentational Row Component adhering to Day 32 UX and typography specs:
- * - Row height >= 72px (Fitts's Law generous touch target)
- * - Microinteraction through typography: Poppins-SemiBold when unread, PlusJakartaSans-Medium when read
- * - 2-line clamp with ellipsis for predictable FlashList item recycling height
- * - Precise Inter typography for relative timestamps ("2m ago", "Yesterday")
- * - Left accent border & glowing indicator dot for unread status
+ * Minimalist, production-grade notification card:
+ * - Neutral white card surface with subtle 1px border
+ * - Top-aligned 38px category icon
+ * - Natural wrapping titles (up to 2 lines) and readable descriptions (up to 3 lines)
+ * - Muted relative timestamp aligned to the top-right
+ * - Small 7px green unread indicator dot positioned beside the title (unread only)
+ * - Understated visual distinction between read and unread states
  */
 export const NotificationItem: React.FC<NotificationItemProps> = React.memo(
   function NotificationItem({ item, onPress }) {
@@ -43,45 +44,43 @@ export const NotificationItem: React.FC<NotificationItemProps> = React.memo(
         }`}
         accessibilityState={{ selected: isUnread }}
       >
-        {/* Category Icon Atom */}
+        {/* Category Icon */}
         <NotificationIcon
           category={item.category}
           templateKey={item.template_key}
           size={18}
-          containerSize={42}
+          containerSize={38}
           style={styles.iconWrapper}
         />
 
-        {/* Content Box */}
+        {/* Content Details */}
         <View style={styles.content}>
           <View style={styles.headerRow}>
-            <Text
-              style={[
-                styles.title,
-                isUnread ? styles.titleUnread : styles.titleRead,
-              ]}
-              numberOfLines={1}
-            >
-              {item.title}
-            </Text>
+            <View style={styles.titleRow}>
+              <Text
+                style={[
+                  styles.title,
+                  isUnread ? styles.titleUnread : styles.titleRead,
+                ]}
+                numberOfLines={2}
+              >
+                {item.title}
+              </Text>
+              {isUnread && <View style={styles.unreadDot} />}
+            </View>
             <Text style={styles.timeText}>{timeDisplay}</Text>
           </View>
 
-          <Text style={styles.body} numberOfLines={2} ellipsizeMode="tail">
+          <Text
+            style={[
+              styles.body,
+              isUnread ? styles.bodyUnread : styles.bodyRead,
+            ]}
+            numberOfLines={3}
+          >
             {item.body}
           </Text>
         </View>
-
-        {/* Right Status (Unread Dot or Chevron) */}
-        {isUnread ? (
-          <View style={styles.unreadDotContainer}>
-            <View style={styles.unreadDot} />
-          </View>
-        ) : (
-          <View style={styles.chevronContainer}>
-            <ChevronRight size={16} color="#CBD5E1" />
-          </View>
-        )}
       </Pressable>
     );
   }
@@ -89,91 +88,85 @@ export const NotificationItem: React.FC<NotificationItemProps> = React.memo(
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 74,
+    minHeight: 68,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  containerRead: {
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
   },
   containerUnread: {
-    borderColor: '#BBF7D0',
-    borderLeftWidth: 4,
-    borderLeftColor: '#16A34A',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#16A34A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    backgroundColor: palette.white,
+    borderColor: palette.gray200,
+    ...shadows.xs,
+  },
+  containerRead: {
+    backgroundColor: palette.white,
+    borderColor: palette.gray100,
   },
   containerPressed: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: palette.gray50,
     transform: [{ scale: 0.995 }],
   },
   iconWrapper: {
     marginRight: 12,
+    marginTop: 1,
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 3,
+    marginBottom: 4,
+  },
+  titleRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginRight: 8,
   },
   title: {
     fontSize: 14,
-    flex: 1,
-    marginRight: 8,
+    lineHeight: 19,
+    flexShrink: 1,
   },
   titleUnread: {
-    fontFamily: 'Poppins-SemiBold',
-    color: '#0F172A',
+    fontFamily: fontFamily.jakarta.semiBold,
+    color: colors.textPrimary,
   },
   titleRead: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    color: '#334155',
-  },
-  timeText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 11,
-    color: '#94A3B8',
-  },
-  body: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 13,
-    color: '#64748B',
-    lineHeight: 18,
-  },
-  unreadDotContainer: {
-    marginLeft: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 16,
+    fontFamily: fontFamily.jakarta.medium,
+    color: colors.textSecondary,
   },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#16A34A',
-    shadowColor: '#16A34A',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: colors.primaryDark,
+    flexShrink: 0,
   },
-  chevronContainer: {
-    marginLeft: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 16,
+  timeText: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 11,
+    lineHeight: 18,
+    color: colors.textMuted,
+    flexShrink: 0,
+    marginTop: 1,
+  },
+  body: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  bodyUnread: {
+    fontFamily: fontFamily.jakarta.regular,
+    color: colors.textSecondary,
+  },
+  bodyRead: {
+    fontFamily: fontFamily.jakarta.regular,
+    color: colors.textMuted,
   },
 });

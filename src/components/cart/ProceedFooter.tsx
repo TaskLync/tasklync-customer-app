@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { StyleSheet, View, Text, Pressable, Platform } from 'react-native';
+import { StyleSheet, View, Text, Pressable, Platform, useColorScheme } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,7 +8,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '../../design/colors';
+import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
 
@@ -26,10 +26,18 @@ export const ProceedFooter: FC<ProceedFooterProps> = ({
   onProceed,
 }) => {
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const router = useRouter();
   const scale = useSharedValue(1);
 
   const isEnabled = itemCount > 0;
+
+  // Standardized edge-to-edge system navigation clearance (Uber/Careem/Foodpanda UX spec):
+  // When insets.bottom > 0 (Android 3-button nav, gesture navigation bar, or iOS home indicator),
+  // we add 14px of ergonomic breathing room above the system bar so the CTA never collides with system UI.
+  // When insets.bottom is 0 (hardware navigation keys or older devices), we use a safe 20px baseline.
+  const bottomPadding = insets.bottom > 0 ? insets.bottom + 14 : 20;
 
   const handlePressIn = () => {
     if (!isEnabled) return;
@@ -43,7 +51,6 @@ export const ProceedFooter: FC<ProceedFooterProps> = ({
 
   const handleProceed = () => {
     if (!isEnabled) return;
-
 
     if (onProceed) {
       onProceed();
@@ -59,11 +66,21 @@ export const ProceedFooter: FC<ProceedFooterProps> = ({
   const formattedTotal = `Rs. ${total.toLocaleString()}`;
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View
+      style={[
+        styles.container,
+        isDark && styles.containerDark,
+        { paddingBottom: bottomPadding },
+      ]}
+    >
       <AnimatedPressable
         style={[
           styles.button,
-          isEnabled ? styles.enabledButton : styles.disabledButton,
+          isEnabled
+            ? styles.enabledButton
+            : isDark
+            ? styles.disabledButtonDark
+            : styles.disabledButton,
           animatedButtonStyle,
         ]}
         onPress={handleProceed}
@@ -75,7 +92,12 @@ export const ProceedFooter: FC<ProceedFooterProps> = ({
       >
         <View style={styles.contentRow}>
           {/* Poppins font for CTA label */}
-          <Text style={[styles.ctaText, !isEnabled && styles.disabledText]}>
+          <Text
+            style={[
+              styles.ctaText,
+              !isEnabled && (isDark ? styles.disabledTextDark : styles.disabledText),
+            ]}
+          >
             Proceed to Booking
           </Text>
 
@@ -99,22 +121,27 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 8,
   },
+  containerDark: {
+    backgroundColor: palette.slate800,
+    borderTopColor: palette.slate700,
+    shadowOpacity: 0.25,
+  },
   button: {
-    height: 52, // Fitts's Law: 52px height CTA
-    borderRadius: 26,
+    height: 52,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
   enabledButton: {
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
+    backgroundColor: colors.primaryDark,
+    shadowColor: colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -122,6 +149,9 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: colors.bgSkeleton,
+  },
+  disabledButtonDark: {
+    backgroundColor: palette.slate700,
   },
   contentRow: {
     width: '100%',
@@ -135,6 +165,11 @@ const styles = StyleSheet.create({
     color: colors.textOnGreen,
   },
   disabledText: {
+    color: colors.textMuted,
+    textAlign: 'center',
+    width: '100%',
+  },
+  disabledTextDark: {
     color: colors.textMuted,
     textAlign: 'center',
     width: '100%',

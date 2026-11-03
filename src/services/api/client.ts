@@ -1,9 +1,25 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
 import { useAuthStore } from '../../store/auth.store';
+import { socketService } from '../socket/socket.service';
+import { classifyError, isCancelledError } from './errorClassifier';
 
 declare const process: any;
 
-const API_URL = process?.env?.EXPO_PUBLIC_API_URL || 'https://api.tasklync.pk/api/v1';
+const resolveApiBaseUrl = (): string => {
+  const envUrl =
+    process?.env?.EXPO_PUBLIC_API_URL ||
+    Constants?.expoConfig?.extra?.apiBaseUrl ||
+    process?.env?.API_BASE_URL;
+
+  if (envUrl && typeof envUrl === 'string' && !envUrl.includes('tasklync.com')) {
+    const trimmed = envUrl.replace(/\/+$/, '');
+    return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
+  }
+  return 'https://api.tasklync.pk/api/v1';
+};
+
+const API_URL = resolveApiBaseUrl();
 
 const generateRequestId = (): string => {
   return 'req-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now();
@@ -40,8 +56,15 @@ apiClient.interceptors.request.use((config) => {
     }
   }
 
-  // Handle FormData in React Native: Do not enforce application/json on FormData payloads
-  if (config.data instanceof FormData && config.headers) {
+  // Handle FormData across all platforms (Web, iOS, Android):
+  // Never hardcode 'Content-Type: multipart/form-data' without browser/client boundary
+  const isFormData =
+    Boolean(config.data) &&
+    (config.data instanceof FormData ||
+      (typeof window !== 'undefined' && (window as any).FormData && config.data instanceof (window as any).FormData) ||
+      typeof config.data?.append === 'function');
+
+  if (isFormData && config.headers) {
     if (typeof config.headers.delete === 'function') {
       config.headers.delete('Content-Type');
     } else {
@@ -59,139 +82,189 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-let isRefreshing = false;
-let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: any) => void }> = [];
+let refreshPromise: Promise<string> | null = null;
 
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
+async function executeTokenRefresh(): Promise<string> {
+  const refreshToken = useAuthStore.getState().refreshToken;
+  if (!refreshToken) {
+    throw new Error('NO_REFRESH_TOKEN');
+  }
+
+  useAuthStore.getState().setRefreshingToken();
+
+  try {
+    const refreshResponse = await axios.post(
+      `${API_URL}/auth/token/refresh`,
+      { refreshToken },
+      {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000,
+      }
+    );
+
+    const newAccessToken =
+      refreshResponse.data?.data?.accessToken || refreshResponse.data?.accessToken;
+    const newRefreshToken =
+      refreshResponse.data?.data?.refreshToken ||
+      refreshResponse.data?.refreshToken ||
+      refreshToken;
+
+    if (!newAccessToken) {
+      throw new Error('EMPTY_ACCESS_TOKEN_IN_RESPONSE');
     }
-  });
-  failedQueue = [];
-};
 
-// Response interceptor: Token refresh & error normalization
+    useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
+    useAuthStore.getState().setAuthState('AUTHENTICATED');
+
+    try {
+      socketService.updateToken(newAccessToken);
+    } catch {}
+
+    return newAccessToken;
+  } catch (error: any) {
+    const status = error.response?.status;
+    const errorData = error.response?.data?.error || error.response?.data;
+    const errorCode = String(errorData?.code || errorData?.reason || '').toUpperCase();
+    const errorMessage = String(errorData?.message || error.message || '').toLowerCase();
+
+    // STRICT: Only revoke the session if the refresh endpoint explicitly returned 401
+    // with confirmed session invalidation/expiry/revocation/reuse from backend.
+    const isConfirmedInvalidSession =
+      status === 401 &&
+      (errorCode === 'UNAUTHORIZED' ||
+        errorCode === 'TOKEN_REUSE_DETECTED' ||
+        errorCode === 'SESSION_EXPIRED' ||
+        errorCode === 'ACCOUNT_NOT_FOUND' ||
+        errorMessage.includes('expired') ||
+        errorMessage.includes('invalid') ||
+        errorMessage.includes('revoked'));
+
+    if (isConfirmedInvalidSession) {
+      if (__DEV__) {
+        console.warn('[API Auth] Refresh token permanently rejected (401). Invalidating session.');
+      }
+      useAuthStore.getState().logout();
+      throw error;
+    }
+
+    // Temporary failure (offline, timeout, 500, 502, 503, 504, 429) -> NEVER LOGOUT!
+    if (__DEV__) {
+      console.warn('[API Auth] Temporary network/server failure during refresh. Preserving session.');
+    }
+    useAuthStore.getState().setTemporarilyUnavailable();
+    throw error;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
+// Response interceptor: Single-flight Token refresh & Centralized Error Classification
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // If we were previously temporarily unavailable and a request succeeds, restore AUTHENTICATED
+    const currentAuthState = useAuthStore.getState().authState;
+    if (
+      currentAuthState === 'TEMPORARILY_UNAVAILABLE' &&
+      useAuthStore.getState().accessToken
+    ) {
+      useAuthStore.getState().setAuthState('AUTHENTICATED');
+    }
+    return response;
+  },
   async (error) => {
-    const originalRequest = error.config;
+    // Preserve AbortController / React Query request cancellation without transforming into SERVER_ERROR
+    if (isCancelledError(error)) {
+      return Promise.reject(error);
+    }
 
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    const originalRequest = error.config;
+    const url = originalRequest?.url || '';
+    const isAuthRoute = Boolean(
+      url.includes('/auth/token/refresh') ||
+        url.includes('/auth/otp/') ||
+        url.includes('/auth/user/logout') ||
+        url.includes('/auth/logout')
+    );
+    const isPublicSearchRoute = Boolean(url.includes('/search/'));
+
+    // 1. Handle HTTP 401 Unauthorized
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthRoute) {
       originalRequest._retry = true;
       const refreshToken = useAuthStore.getState().refreshToken;
 
-      if (__DEV__) {
-        console.warn(`[API Auth Error] 401 Unauthorized on ${originalRequest.url}. Attempting token refresh...`);
-      }
-
-      // 1. Try automatic token refresh if a refresh token is present
-      if (refreshToken && !originalRequest.url?.includes('/auth/')) {
-        if (isRefreshing) {
-          return new Promise((resolve, reject) => {
-            failedQueue.push({ resolve, reject });
-          })
-            .then((token) => {
-              if (typeof originalRequest.headers.set === 'function') {
-                originalRequest.headers.set('Authorization', `Bearer ${token}`);
-              } else {
-                originalRequest.headers.Authorization = `Bearer ${token}`;
-              }
-              return apiClient(originalRequest);
-            })
-            .catch((err) => Promise.reject(err));
+      if (refreshToken) {
+        if (__DEV__) {
+          console.warn(`[API Auth] 401 Unauthorized on ${url}. Awaiting single-flight refresh...`);
         }
 
-        isRefreshing = true;
+        if (!refreshPromise) {
+          refreshPromise = executeTokenRefresh();
+        }
 
         try {
-          const refreshResponse = await axios.post(
-            `${API_URL}/auth/token/refresh`,
-            { refreshToken },
-            { headers: { 'Content-Type': 'application/json' } }
-          );
+          const newAccessToken = await refreshPromise;
 
-          const newAccessToken = refreshResponse.data?.data?.accessToken || refreshResponse.data?.accessToken;
-          const newRefreshToken =
-            refreshResponse.data?.data?.refreshToken || refreshResponse.data?.refreshToken || refreshToken;
+          if (typeof originalRequest.headers?.set === 'function') {
+            originalRequest.headers.set('Authorization', `Bearer ${newAccessToken}`);
+          } else if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          }
 
-          if (newAccessToken) {
-            useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
-            processQueue(null, newAccessToken);
-            if (typeof originalRequest.headers.set === 'function') {
-              originalRequest.headers.set('Authorization', `Bearer ${newAccessToken}`);
+          return apiClient(originalRequest);
+        } catch (refreshErr: any) {
+          // If public search route, retry anonymously without throwing error
+          if (isPublicSearchRoute && originalRequest.headers) {
+            if (typeof originalRequest.headers.delete === 'function') {
+              originalRequest.headers.delete('Authorization');
             } else {
-              originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+              delete originalRequest.headers.Authorization;
             }
             return apiClient(originalRequest);
           }
-        } catch (refreshErr) {
-          processQueue(refreshErr, null);
-        } finally {
-          isRefreshing = false;
+
+          // Otherwise return classified error without logging out (unless confirmed invalid)
+          const classified = classifyError(refreshErr);
+          return Promise.reject({
+            ...classified,
+            details: refreshErr.response?.data?.details,
+            isNetworkError: classified.category === 'NETWORK_ERROR',
+            isTimeout: classified.category === 'REQUEST_TIMEOUT',
+          });
         }
+      } else if (isPublicSearchRoute && originalRequest.headers) {
+        // No refresh token but public search: retry anonymously
+        if (typeof originalRequest.headers.delete === 'function') {
+          originalRequest.headers.delete('Authorization');
+        } else {
+          delete originalRequest.headers.Authorization;
+        }
+        return apiClient(originalRequest);
       }
-
-      // 2. Token refresh failed or no refresh token: Logout expired session
-      useAuthStore.getState().logout();
     }
 
-    // Normalize network, timeout, and backend API error structure
+    // 2. Centralized Error Classification
+    const classified = classifyError(error);
     const rawError = error.response?.data?.error || error.response?.data;
-    const isNetworkError =
-      !error.response &&
-      (error.code === 'ERR_NETWORK' ||
-        error.message === 'Network Error' ||
-        (typeof error.message === 'string' && error.message.toLowerCase().includes('network')));
-    const isTimeout =
-      !error.response &&
-      (error.code === 'ECONNABORTED' ||
-        (typeof error.message === 'string' && error.message.toLowerCase().includes('timeout')));
 
-    let errorCode: string | number = 'SERVER_ERROR';
-    let errorMessage = rawError?.message || error.message || 'An unexpected error occurred';
-
-    if (isNetworkError) {
-      errorCode = 'NETWORK_ERROR';
-      errorMessage = 'No internet connection. Please check your network and try again.';
-    } else if (isTimeout) {
-      errorCode = 'TIMEOUT';
-      errorMessage = 'Request timed out. Please check your connection and retry.';
-    } else if (error.response) {
-      const status = error.response.status;
-      if (status >= 500) {
-        errorCode = 'SERVER_ERROR';
-        errorMessage = rawError?.message || 'Server error. Our team is looking into it. Please try again shortly.';
-      } else if (status === 404) {
-        errorCode = 'NOT_FOUND';
-        errorMessage = rawError?.message || 'The requested item was not found.';
-      } else if (status === 403) {
-        errorCode = 'FORBIDDEN';
-        errorMessage = rawError?.message || 'You do not have permission to perform this action.';
-      } else if (status === 400) {
-        errorCode = 'BAD_REQUEST';
-      }
-    }
-
+    let errorMessage = classified.userMessage || classified.message;
     if (Array.isArray(rawError?.details) && rawError.details.length > 0) {
       const detailMessages = rawError.details
         .map((d: any) => `${d.field ? d.field + ': ' : ''}${d.message || d}`)
         .join(', ');
-      if (detailMessages) {
+      if (detailMessages && !errorMessage.includes(detailMessages)) {
         errorMessage = `${errorMessage} (${detailMessages})`;
       }
     }
 
     const apiError = {
-      code: rawError?.code || errorCode,
+      ...classified,
+      code: rawError?.code || classified.code,
       message: errorMessage,
       details: rawError?.details,
       status: error.response?.status,
-      isNetworkError,
-      isTimeout,
+      retryAfterSeconds: classified.retryAfterSeconds,
+      isNetworkError: classified.category === 'NETWORK_ERROR',
+      isTimeout: classified.category === 'REQUEST_TIMEOUT',
     };
 
     return Promise.reject(apiError);

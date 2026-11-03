@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import { useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import {
   View,
@@ -138,7 +139,7 @@ export const MessageContextMenu = forwardRef<MessageContextMenuRef, MessageConte
               <View
                 style={[
                   styles.modalContent,
-                  { paddingBottom: Math.max(insets.bottom, 16) },
+                  { paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24 },
                 ]}
               >
                 <Pressable
@@ -177,7 +178,11 @@ export const MessageContextMenu = forwardRef<MessageContextMenuRef, MessageConte
         {isToastVisible && (
           <Animated.View
             pointerEvents="none"
-            style={[styles.toastContainer, toastAnimatedStyle]}
+            style={[
+              styles.toastContainer,
+              { top: Math.max(insets.top, 20) + 36 },
+              toastAnimatedStyle,
+            ]}
           >
             <Text style={styles.toastText}>{toastMessage}</Text>
           </Animated.View>
@@ -194,12 +199,12 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 12,
     paddingHorizontal: 16,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -211,11 +216,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgSubtle,
     marginBottom: 8,
   },
   menuOptionPressed: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.bgHover,
   },
   optionIcon: {
     marginRight: 12,
@@ -223,7 +228,7 @@ const styles = StyleSheet.create({
   optionText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 15,
-    color: '#0F172A',
+    color: colors.textPrimary,
   },
   cancelOption: {
     alignItems: 'center',
@@ -234,18 +239,18 @@ const styles = StyleSheet.create({
   cancelText: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 15,
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   toastContainer: {
     position: 'absolute',
     top: 56,
     alignSelf: 'center',
-    backgroundColor: '#0F172A',
+    backgroundColor: colors.textPrimary,
     paddingHorizontal: 20,
     paddingVertical: 9,
     borderRadius: 20,
     zIndex: 9999,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 8,
@@ -254,7 +259,7 @@ const styles = StyleSheet.create({
   toastText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 13,
-    color: '#FFFFFF',
+    color: colors.white,
     letterSpacing: -0.1,
   },
 });

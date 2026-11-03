@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { colors, palette, fontFamily } from '../../design';
+import { colors, fontFamily } from '../../design';
 
 export interface AddressHeaderProps {
   title?: string;
@@ -11,8 +11,8 @@ export interface AddressHeaderProps {
 }
 
 export const AddressHeader: React.FC<AddressHeaderProps> = ({
-  title = 'Where should we come?',
-  subtitle = 'Choose your service location address below.',
+  title = 'Service address',
+  subtitle,
   onBack,
 }) => {
   const router = useRouter();
@@ -34,12 +34,12 @@ export const AddressHeader: React.FC<AddressHeaderProps> = ({
         accessibilityRole="button"
         accessibilityLabel="Go back to schedule"
       >
-        <ChevronLeft size={24} color={colors.textPrimary} strokeWidth={2.2} />
+        <ChevronLeft size={26} color={colors.textPrimary} strokeWidth={2.2} />
       </Pressable>
 
       <View style={styles.titleContainer}>
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
     </View>
   );
@@ -47,27 +47,27 @@ export const AddressHeader: React.FC<AddressHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 8,
     paddingBottom: 12,
-    backgroundColor: palette.white,
+    backgroundColor: colors.bgCard,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: palette.gray100,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
   },
   titleContainer: {
-    marginTop: 4,
+    flex: 1,
+    marginLeft: 4,
   },
   title: {
-    fontFamily: fontFamily.poppins.bold,
-    fontSize: 22,
-    lineHeight: 28,
+    fontFamily: fontFamily.poppins.semiBold,
+    fontSize: 20,
+    lineHeight: 26,
     color: colors.textPrimary,
   },
   subtitle: {
@@ -75,6 +75,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: colors.textSecondary,
-    marginTop: 4,
+    marginTop: 2,
   },
 });

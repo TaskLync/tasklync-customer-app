@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Camera, Image as ImageIcon, X } from 'lucide-react-native';
+import { BottomSheet } from '../layout/BottomSheet';
 import { EvidenceSlotState } from '../../types/booking.types';
 import { DisputeEvidenceSlot } from './DisputeEvidenceSlot';
 import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
@@ -68,56 +69,58 @@ export const DisputeEvidenceUpload: React.FC<DisputeEvidenceUploadProps> = ({
         ))}
       </View>
 
-      {/* Image Picker ActionSheet Modal */}
-      <Modal
+      {/* Image Picker BottomSheet */}
+      <BottomSheet
         visible={activeSlotIndex !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setActiveSlotIndex(null)}
+        onClose={() => setActiveSlotIndex(null)}
+        snapPoints={['auto']}
+        contentPadding={true}
       >
-        <Pressable style={styles.modalBackdrop} onPress={() => setActiveSlotIndex(null)}>
-          <View style={styles.sheetContainer}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Attach Photo Evidence</Text>
-              <Pressable
-                style={styles.sheetCloseBtn}
-                onPress={() => setActiveSlotIndex(null)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <X size={20} color={colors.textSecondary} />
-              </Pressable>
-            </View>
-
-            {/* Camera Option */}
+        <View style={styles.sheetContent}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>Attach Photo Evidence</Text>
             <Pressable
-              style={({ pressed }) => [styles.sheetOption, pressed && styles.sheetOptionPressed]}
-              onPress={() => handleSelectSource('camera')}
+              style={styles.sheetCloseBtn}
+              onPress={() => setActiveSlotIndex(null)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <View style={styles.optionIconCircle}>
-                <Camera size={20} color={colors.primaryDark} />
-              </View>
-              <View style={styles.optionTextCol}>
-                <Text style={styles.optionTitle}>Take Photo</Text>
-                <Text style={styles.optionSubtitle}>Use camera to capture current evidence</Text>
-              </View>
-            </Pressable>
-
-            {/* Gallery Option */}
-            <Pressable
-              style={({ pressed }) => [styles.sheetOption, pressed && styles.sheetOptionPressed]}
-              onPress={() => handleSelectSource('gallery')}
-            >
-              <View style={styles.optionIconCircle}>
-                <ImageIcon size={20} color={palette.infoDark} />
-              </View>
-              <View style={styles.optionTextCol}>
-                <Text style={styles.optionTitle}>Choose from Library</Text>
-                <Text style={styles.optionSubtitle}>Select photos from your device album</Text>
-              </View>
+              <X size={20} color={colors.textSecondary} />
             </Pressable>
           </View>
-        </Pressable>
-      </Modal>
+
+          {/* Camera Option */}
+          <Pressable
+            style={({ pressed }) => [styles.sheetOption, pressed && styles.sheetOptionPressed]}
+            onPress={() => handleSelectSource('camera')}
+          >
+            <View style={styles.optionIconCircle}>
+              <Camera size={20} color={colors.primaryDark} />
+            </View>
+            <View style={styles.optionTextCol}>
+              <Text style={styles.optionTitle}>Take Photo</Text>
+              <Text style={styles.optionSubtitle}>Use camera to capture current evidence</Text>
+            </View>
+          </Pressable>
+
+          {/* Gallery Option */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.sheetOption,
+              { borderBottomWidth: 0 },
+              pressed && styles.sheetOptionPressed,
+            ]}
+            onPress={() => handleSelectSource('gallery')}
+          >
+            <View style={styles.optionIconCircle}>
+              <ImageIcon size={20} color={palette.infoDark} />
+            </View>
+            <View style={styles.optionTextCol}>
+              <Text style={styles.optionTitle}>Choose from Library</Text>
+              <Text style={styles.optionSubtitle}>Select photos from your device album</Text>
+            </View>
+          </Pressable>
+        </View>
+      </BottomSheet>
     </View>
   );
 };
@@ -152,18 +155,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm + 2,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    backgroundColor: colors.bgCard,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl + 12,
+  sheetContent: {
+    paddingBottom: spacing.lg,
   },
   sheetHeader: {
     flexDirection: 'row',

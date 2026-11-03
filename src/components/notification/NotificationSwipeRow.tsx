@@ -12,6 +12,7 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Check, Trash2, MailOpen } from 'lucide-react-native';
 import { NotificationItem } from '../../types/notification.types';
+import { colors, fontFamily, radius } from '../../design';
 
 const ACTION_WIDTH = 72;
 const TOTAL_ACTIONS_WIDTH = ACTION_WIDTH * 2; // 144px
@@ -190,9 +191,9 @@ export const NotificationSwipeRow: React.FC<NotificationSwipeRowProps> = ({
         >
           <Animated.View style={[styles.actionIconContainer, readActionAnimatedStyle]}>
             {item.is_read ? (
-              <MailOpen size={20} color="#FFFFFF" strokeWidth={2.2} />
+              <MailOpen size={20} color={colors.white} strokeWidth={2.2} />
             ) : (
-              <Check size={20} color="#FFFFFF" strokeWidth={2.5} />
+              <Check size={20} color={colors.white} strokeWidth={2.5} />
             )}
             <Text style={styles.actionText}>
               {item.is_read ? 'Unread' : 'Read'}
@@ -208,7 +209,7 @@ export const NotificationSwipeRow: React.FC<NotificationSwipeRowProps> = ({
           accessibilityLabel="Delete notification"
         >
           <Animated.View style={[styles.actionIconContainer, deleteActionAnimatedStyle]}>
-            <Trash2 size={20} color="#FFFFFF" strokeWidth={2.2} />
+            <Trash2 size={20} color={colors.white} strokeWidth={2.2} />
             <Text style={styles.actionText}>Delete</Text>
           </Animated.View>
         </Pressable>
@@ -228,7 +229,7 @@ const styles = StyleSheet.create({
   wrapper: {
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: 16,
+    borderRadius: radius.lg,
     marginBottom: 8,
   },
   actionTray: {
@@ -240,7 +241,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'stretch',
-    borderRadius: 16,
+    borderRadius: radius.lg,
     overflow: 'hidden',
   },
   actionButton: {
@@ -249,10 +250,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   readButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: colors.info,
   },
   deleteButton: {
-    backgroundColor: '#EF4444',
+    backgroundColor: colors.danger,
   },
   actionIconContainer: {
     alignItems: 'center',
@@ -260,12 +261,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   actionText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 11,
-    color: '#FFFFFF',
+    color: colors.white,
   },
   foregroundCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.lg,
   },
 });

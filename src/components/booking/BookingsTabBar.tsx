@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, LayoutChangeEvent } from 'react-native';
 import { TabType } from '../../hooks/useBookingsList';
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     position: 'relative',
   },
   tab: {
@@ -65,6 +66,6 @@ const styles = StyleSheet.create({
   },
   tabLabelActive: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    color: '#16A34A',
+    color: colors.primaryDark,
   },
 });

@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -83,11 +84,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   bubbleIncoming: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bgHover,
     borderBottomLeftRadius: 4,
   },
   bubbleOutgoing: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.primaryBorderSubtle,
     borderBottomRightRadius: 4,
   },
 });

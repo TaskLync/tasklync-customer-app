@@ -31,10 +31,12 @@ export const NearbyWorkersList = () => {
 
   const snapInterval = useMemo(() => cardWidth + CARD_GAP, [cardWidth]);
 
-  // Real data only: zero demo/fallback mock workers
+  // Real data only: zero demo/fallback mock workers & strictly individual workers only
   const displayWorkers = useMemo(() => {
     if (workers && workers.length > 0) {
-      return workers.slice(0, 10);
+      return workers
+        .filter((w) => w.providerType !== 'COMPANY' && !w.isCompany)
+        .slice(0, 10);
     }
     return [];
   }, [workers]);
@@ -117,53 +119,57 @@ export const NearbyWorkersList = () => {
       </View>
 
       {/* ── Content Area ── */}
-      <View style={styles.contentContainer}>
-        {error && displayWorkers.length === 0 ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>Couldn't load nearby workers.</Text>
-            <Pressable onPress={() => refetch()} hitSlop={10}>
-              <Text style={styles.retryText}>Retry</Text>
-            </Pressable>
-          </View>
-        ) : hasEmptyState ? (
-          <View style={styles.emptyContainer}>
-            <EmptyState
-              title="No workers nearby"
-              subtitle="Try expanding your search radius or check back later"
-              actionLabel="Search all workers"
-              onAction={() => router.push('/search' as any)}
-            />
-          </View>
-        ) : (
-          <>
-            {renderSkeleton()}
+      {error && displayWorkers.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <EmptyState
+            type="server-error"
+            title="Couldn't load workers"
+            description="We're having trouble fetching workers. Please check your connection and try again."
+            actionLabel="Try again"
+            onAction={() => refetch()}
+            compact
+          />
+        </View>
+      ) : hasEmptyState ? (
+        <View style={styles.emptyContainer}>
+          <EmptyState
+            type="no-workers"
+            title="No workers nearby"
+            description="Try expanding your search radius or check back later."
+            actionLabel="Search all workers"
+            onAction={() => router.push('/(tabs)/explore' as any)}
+            compact
+          />
+        </View>
+      ) : (
+        <View style={styles.listContainer}>
+          {renderSkeleton()}
 
-            <Animated.View style={[styles.listWrapper, animatedListStyle]}>
-              <FlatList
-                data={displayWorkers}
-                renderItem={renderWorker}
-                keyExtractor={(item) => item.id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                showsVerticalScrollIndicator={false}
-                directionalLockEnabled={true}
-                alwaysBounceVertical={false}
-                snapToInterval={snapInterval}
-                snapToAlignment="start"
-                decelerationRate="fast"
-                bounces={false}
-                nestedScrollEnabled={true}
-                contentContainerStyle={styles.listContent}
-                ItemSeparatorComponent={renderItemSeparator}
-                initialNumToRender={2}
-                maxToRenderPerBatch={3}
-                windowSize={5}
-                removeClippedSubviews={false}
-              />
-            </Animated.View>
-          </>
-        )}
-      </View>
+          <Animated.View style={[styles.listWrapper, animatedListStyle]}>
+            <FlatList
+              data={displayWorkers}
+              renderItem={renderWorker}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+              directionalLockEnabled={true}
+              alwaysBounceVertical={false}
+              snapToInterval={snapInterval}
+              snapToAlignment="start"
+              decelerationRate="fast"
+              bounces={false}
+              nestedScrollEnabled={true}
+              contentContainerStyle={styles.listContent}
+              ItemSeparatorComponent={renderItemSeparator}
+              initialNumToRender={2}
+              maxToRenderPerBatch={3}
+              windowSize={5}
+              removeClippedSubviews={false}
+            />
+          </Animated.View>
+        </View>
+      )}
     </View>
   );
 };
@@ -171,14 +177,13 @@ export const NearbyWorkersList = () => {
 const styles = StyleSheet.create({
   sectionContainer: {
     width: '100%',
-    zIndex: 10,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    marginBottom: 16, // Generous vertical spacing between header and worker cards
+    marginBottom: 12,
   },
   title: {
     fontFamily: 'Poppins-Bold',
@@ -195,15 +200,12 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     color: colors.primary, // Brand green accent color
   },
-  contentContainer: {
+  listContainer: {
     height: 244,
     position: 'relative',
-    overflow: 'visible',
-    zIndex: 10,
   },
   listWrapper: {
     height: 244,
-    overflow: 'visible',
   },
   listContent: {
     paddingHorizontal: 16,
@@ -218,13 +220,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   emptyContainer: {
-    minHeight: 180,
     width: '100%',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   errorContainer: {
-    height: 100,
+    height: 80,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',

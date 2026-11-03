@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PaymentMethod } from '../../types/payment.types';
 import { CardBrandIcon } from './CardBrandIcon';
-import { colors, palette, fontFamily, radius, spacing, shadows } from '../../design';
+import { colors, palette, fontFamily, radius, spacing } from '../../design';
 
 export interface PaymentMethodCardProps {
   method: PaymentMethod;
@@ -54,10 +54,10 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
     account_number ||
     (last4 ? `•••• ${last4}` : title);
 
-  // Determine line 2 text (Inter Regular 13px or Jakarta Regular 13px)
+  // Determine line 2 text (Concise: "Pay after service completion" for cash)
   const line2Text =
     type === 'cash'
-      ? 'Pay directly after service completion'
+      ? 'Pay after service completion'
       : type === 'wallet'
       ? `${brand === 'jazzcash' ? 'JazzCash' : 'EasyPaisa'} Direct Account`
       : exp_month && exp_year
@@ -129,20 +129,21 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
 
 const styles = StyleSheet.create({
   cardContainer: {
-    height: 72,
+    height: 70,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
     borderRadius: radius.lg,
     paddingHorizontal: spacing.base,
-    ...shadows.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   regularBorder: {
     borderWidth: 1,
     borderColor: colors.border,
   },
   defaultBorder: {
-    borderWidth: 1.5,
+    borderWidth: 1.2,
     borderColor: palette.green500,
   },
   iconContainer: {
@@ -175,8 +176,8 @@ const styles = StyleSheet.create({
   },
   defaultChip: {
     backgroundColor: palette.green100,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
     borderRadius: radius.pill,
   },
   defaultChipText: {

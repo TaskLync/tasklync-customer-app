@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, Pressable, Image } from 'react-native';
 import { WorkerNearby } from '../../types/worker.types';
 import { Coordinates } from '../../types/location.types';
 import { WorkerMarkerBadge } from './WorkerMarkerBadge';
-import { colors } from '../../design/colors';
+import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { FAISALABAD_CENTER, validateServiceArea } from '../../config/serviceArea.config';
 
@@ -126,34 +126,34 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#F8FAF9',
+    backgroundColor: colors.bgApp,
   },
   mapGridBackground: {
     width: '100%',
     height: '100%',
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: '#EBF2EE',
+    backgroundColor: colors.canvasGray,
   },
   roadHorizontal: {
     position: 'absolute',
     left: 0,
     right: 0,
     height: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
   roadVertical: {
     position: 'absolute',
     top: 0,
     bottom: 0,
     width: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
   roadDiagonal: {
     position: 'absolute',
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     left: '40%',
     width: 10,
     height: '140%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     transform: [{ rotate: '35deg' }],
   },
   parkBlob: {
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     width: 140,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.primaryLight,
     opacity: 0.8,
   },
   riverLine: {
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: '75%',
     width: 24,
-    backgroundColor: '#BAE6FD',
+    backgroundColor: palette.sky200,
     opacity: 0.6,
   },
   radiusCircleWeb: {
@@ -220,10 +220,10 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.infoMedium,
   },
   userLabelBadge: {
     position: 'absolute',
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   userLabelText: {
     fontFamily: typography.fontFamily.jakarta.semiBold,
     fontSize: 10,
-    color: '#FFFFFF',
+    color: colors.white,
   },
   webMarkerWrapper: {
     position: 'absolute',
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     padding: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     minWidth: 90,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 5,
@@ -339,11 +339,11 @@ const styles = StyleSheet.create({
   tooltipName: {
     fontFamily: typography.fontFamily.poppins.semiBold,
     fontSize: 11,
-    color: '#FFFFFF',
+    color: colors.white,
   },
   tooltipMeta: {
     fontFamily: typography.fontFamily.inter.medium,
     fontSize: 10,
-    color: '#94A3B8',
+    color: colors.textMuted,
   },
 });

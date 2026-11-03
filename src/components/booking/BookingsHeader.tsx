@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NotificationBell } from '../home/NotificationBell';
@@ -21,7 +22,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
   },
   title: {
     fontFamily: 'Poppins-SemiBold',

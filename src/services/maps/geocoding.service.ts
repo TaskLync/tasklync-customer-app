@@ -4,14 +4,16 @@ import { ReverseGeocodeResult } from '../../types/address.types';
 
 /**
  * High-precision reverse geocoding service
- * Combines native platform geocoder (expo-location) with Google Maps Geocoding API
- * with complete offline and coordinate fallbacks.
+ * Combines native platform geocoder (expo-location) with Google Maps Geocoding API.
+ * Never hardcodes or defaults to any specific city (e.g. Faisalabad).
  */
 export async function reverseGeocode(
   lat: number,
   lng: number
 ): Promise<ReverseGeocodeResult> {
-  const fallbackCoords = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  const safeLat = typeof lat === 'number' && !isNaN(lat) ? lat : 0;
+  const safeLng = typeof lng === 'number' && !isNaN(lng) ? lng : 0;
+  const fallbackCoords = `${safeLat.toFixed(5)}, ${safeLng.toFixed(5)}`;
 
   const apiKey =
     Constants.expoConfig?.extra?.googleMapsKey ||
@@ -28,12 +30,26 @@ export async function reverseGeocode(
       if (json.status === 'OK' && Array.isArray(json.results) && json.results.length > 0) {
         const first = json.results[0];
         const formatted = first.formatted_address || fallbackCoords;
-        let city = 'Faisalabad';
+        let city = '';
         let country = 'Pakistan';
+
         for (const comp of first.address_components || []) {
-          if (comp.types.includes('locality')) city = comp.long_name;
-          if (comp.types.includes('country')) country = comp.long_name;
+          if (comp.types.includes('locality')) {
+            city = comp.long_name;
+          } else if (!city && comp.types.includes('administrative_area_level_2')) {
+            city = comp.long_name; // e.g. Toba Tek Singh District
+          } else if (!city && comp.types.includes('sublocality')) {
+            city = comp.long_name;
+          }
+          if (comp.types.includes('country')) {
+            country = comp.long_name;
+          }
         }
+
+        if (!city) {
+          city = 'Current Area';
+        }
+
         return {
           formatted_address: formatted,
           address_line: formatted.split(',')[0] || formatted,
@@ -76,15 +92,21 @@ export async function reverseGeocode(
         addressParts.push(item.subregion);
       }
 
-      const city = item.city || item.subregion || 'Faisalabad';
+      // Extract real city without any Faisalabad fallback
+      const detectedCity =
+        item.city?.trim() ||
+        item.district?.trim() ||
+        item.subregion?.trim() ||
+        'Current Area';
+
       const country = item.country || 'Pakistan';
-      const addressLine = addressParts.length > 0 ? addressParts.join(', ') : city;
-      const formattedAddress = `${addressLine}, ${city}, ${country}`;
+      const addressLine = addressParts.length > 0 ? addressParts.join(', ') : detectedCity;
+      const formattedAddress = `${addressLine}, ${detectedCity}, ${country}`;
 
       return {
         formatted_address: formattedAddress,
         address_line: addressLine,
-        city,
+        city: detectedCity,
         country,
         lat,
         lng,
@@ -94,13 +116,17 @@ export async function reverseGeocode(
     // Native geocoding failed or not permitted, proceed to fallback
   }
 
-  // 2. Return high-reliability coordinates fallback (for unmapped roads/plots)
+  // 3. High-reliability coordinates fallback (never hardcode Faisalabad)
   return {
     formatted_address: `Pin Location (${fallbackCoords})`,
     address_line: `Location (${fallbackCoords})`,
-    city: 'Faisalabad',
+    city: 'Current Area',
     country: 'Pakistan',
     lat,
     lng,
   };
 }
+
+export const geocodingService = {
+  reverseGeocode,
+};

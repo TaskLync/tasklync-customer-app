@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, ViewStyle, useWindowDimensions, Pressable } fro
 import { WorkerPortfolioImage } from '../../types/review.types';
 import { PortfolioCell } from './PortfolioCell';
 
-import { colors } from '@design/colors';
+import { colors, palette } from '@design/colors';
 import { fontFamily as fonts } from '@design/typography';
 
 interface WorkerPortfolioGridProps {
@@ -129,6 +129,6 @@ const styles = StyleSheet.create({
   remainingText: {
     fontFamily: fonts.inter.bold,
     fontSize: 20,
-    color: '#FFFFFF',
+    color: colors.white,
   },
 });

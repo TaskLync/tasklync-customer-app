@@ -1,31 +1,35 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { reviewApi } from '../services/api/review.api';
-import { ReviewSubmitPayload, WorkerReview } from '../types/review.types';
+import { CreateReviewPayload, ReviewSubmitPayload, ReviewItem } from '../types/review.types';
 
 export function useSubmitReview() {
   const queryClient = useQueryClient();
 
-  const mutation = useMutation<WorkerReview, Error, ReviewSubmitPayload>({
-    mutationFn: async (payload: ReviewSubmitPayload) => {
+  const mutation = useMutation<ReviewItem, Error, CreateReviewPayload | ReviewSubmitPayload>({
+    mutationFn: async (payload: CreateReviewPayload | ReviewSubmitPayload) => {
       return reviewApi.submitReview(payload);
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
+      const bookingId = (variables as CreateReviewPayload).booking_id || (variables as ReviewSubmitPayload).bookingId;
+      const workerId = data?.worker_id || (variables as ReviewSubmitPayload).targetId;
 
-      // 1. Invalidate worker queries so avg_rating & review list re-fetch
-      if (variables.targetId) {
-        queryClient.invalidateQueries({ queryKey: ['worker', variables.targetId] });
-        queryClient.invalidateQueries({ queryKey: ['worker-profile', variables.targetId] });
-        queryClient.invalidateQueries({ queryKey: ['worker-reviews', variables.targetId] });
+      if (workerId) {
+        queryClient.invalidateQueries({ queryKey: ['worker', workerId] });
+        queryClient.invalidateQueries({ queryKey: ['worker-profile', workerId] });
+        queryClient.invalidateQueries({ queryKey: ['worker-reviews', workerId] });
+        queryClient.invalidateQueries({ queryKey: ['worker-review-summary', workerId] });
       }
 
-      // 2. Invalidate booking queries so "Rate now" prompt drops from booking card
-      if (variables.bookingId) {
-        queryClient.invalidateQueries({ queryKey: ['booking', variables.bookingId] });
+      if (bookingId) {
+        queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
+        queryClient.invalidateQueries({ queryKey: ['booking-details', bookingId] });
+        queryClient.invalidateQueries({ queryKey: ['review-eligibility', bookingId] });
         queryClient.invalidateQueries({ queryKey: ['bookings'] });
       }
 
-      // 3. Invalidate pending reviews cache
+      queryClient.invalidateQueries({ queryKey: ['user-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['reviews', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['reviews/pending'] });
     },
   });
 

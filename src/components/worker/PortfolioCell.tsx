@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React from 'react';
 import { StyleSheet, Pressable, View } from 'react-native';
 import { Image } from 'expo-image';

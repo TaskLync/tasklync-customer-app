@@ -1,7 +1,9 @@
+import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Phone } from 'lucide-react-native';
+import { WorkerAvatar } from '../worker/WorkerAvatar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ChatHeaderProps {
@@ -10,6 +12,7 @@ interface ChatHeaderProps {
   categoryName?: string | undefined;
   isOnline?: boolean | undefined;
   workerPhone?: string | undefined;
+  isCompany?: boolean | undefined;
   onCallPress?: () => void;
 }
 
@@ -19,13 +22,14 @@ export const ChatHeader = React.memo(function ChatHeader({
   categoryName,
   isOnline = true,
   workerPhone,
+  isCompany = false,
   onCallPress,
 }: ChatHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const trimmedName = workerName ? workerName.trim() : '';
-  const avatarInitial = trimmedName.length > 0 ? trimmedName.charAt(0).toUpperCase() : 'W';
+  const avatarInitial = trimmedName.length > 0 ? trimmedName.charAt(0).toUpperCase() : (isCompany ? 'A' : 'W');
 
   return (
     <View style={[styles.container, { paddingTop: insets.top > 0 ? insets.top : Platform.OS === 'ios' ? 44 : 12 }]}>
@@ -38,27 +42,39 @@ export const ChatHeader = React.memo(function ChatHeader({
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <ChevronLeft size={24} color="#111827" />
+          <ChevronLeft size={24} color={colors.textPrimary} />
         </Pressable>
 
         {/* Profile Info */}
         <View style={styles.profileSection}>
-          {workerAvatarUrl ? (
-            <Image source={{ uri: workerAvatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarInitial}>{avatarInitial}</Text>
-            </View>
-          )}
+          <WorkerAvatar
+            uri={workerAvatarUrl}
+            name={workerName}
+            size={36}
+            isCompany={isCompany}
+          />
 
           <View style={styles.textDetails}>
-            <Text style={styles.name} numberOfLines={1}>
-              {trimmedName || 'Assigned Professional'}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.name} numberOfLines={1}>
+                {trimmedName || (isCompany ? 'Agency Support' : 'Assigned Professional')}
+              </Text>
+              {isCompany && (
+                <View style={styles.agencyBadge}>
+                  <Text style={styles.agencyBadgeText}>Agency</Text>
+                </View>
+              )}
+            </View>
             <View style={styles.statusRow}>
               <View style={[styles.statusDot, isOnline ? styles.dotOnline : styles.dotOffline]} />
               <Text style={styles.statusText} numberOfLines={1}>
-                {categoryName ? `${categoryName} • ${isOnline ? 'Online' : 'Offline'}` : isOnline ? 'Online' : 'Offline'}
+                {isCompany
+                  ? `Support Office • ${isOnline ? 'Online' : 'Active'}`
+                  : categoryName
+                  ? `${categoryName} • ${isOnline ? 'Online' : 'Offline'}`
+                  : isOnline
+                  ? 'Online'
+                  : 'Offline'}
               </Text>
             </View>
           </View>
@@ -74,7 +90,7 @@ export const ChatHeader = React.memo(function ChatHeader({
               accessibilityLabel="Call worker"
               accessibilityRole="button"
             >
-              <Phone size={20} color="#16A34A" />
+              <Phone size={20} color={colors.primaryDark} />
             </Pressable>
           )}
         </View>
@@ -85,12 +101,12 @@ export const ChatHeader = React.memo(function ChatHeader({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.borderLight,
     zIndex: 10,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 3,
@@ -120,20 +136,20 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.borderLight,
   },
   avatarPlaceholder: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.primaryBorderSubtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitial: {
     fontFamily: 'Poppins-SemiBold',
     fontSize: 15,
-    color: '#16A34A',
+    color: colors.primaryDark,
   },
   textDetails: {
     marginLeft: 10,
@@ -142,7 +158,7 @@ const styles = StyleSheet.create({
   name: {
     fontFamily: 'Poppins-SemiBold',
     fontSize: 15,
-    color: '#111827',
+    color: colors.textPrimary,
     lineHeight: 20,
   },
   statusRow: {
@@ -157,15 +173,15 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   dotOnline: {
-    backgroundColor: '#16A34A',
+    backgroundColor: colors.primaryDark,
   },
   dotOffline: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: colors.textMuted,
   },
   statusText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   actions: {
     flexDirection: 'row',
@@ -177,10 +193,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 19,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: colors.primaryTint,
     marginLeft: 6,
   },
   pressed: {
     opacity: 0.7,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  agencyBadge: {
+    backgroundColor: colors.infoLight,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.borderInfoLight,
+  },
+  agencyBadgeText: {
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 9.5,
+    color: colors.textInfo,
   },
 });

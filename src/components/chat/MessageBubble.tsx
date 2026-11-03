@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, ViewStyle } from 'react-native';
 import Animated, {
@@ -10,6 +11,7 @@ import { MessageBubbleItem } from '../../types/chat.types';
 import { ReadReceipt } from './ReadReceipt';
 import { ImageMessage } from './ImageMessage';
 import { formatPKTTime } from '../../utils/timezone';
+import { WorkerAvatar } from '../worker/WorkerAvatar';
 
 interface MessageBubbleProps {
   item: MessageBubbleItem;
@@ -29,8 +31,16 @@ export const MessageBubble = React.memo(function MessageBubble({
   onRetry,
   onLongPressText,
   onImagePress,
-}: MessageBubbleProps) {
-  const { message, isFirstInGroup, isLastInGroup, showAvatar, isOutgoing, readReceiptStatus } = item;
+  ...restProps
+}: MessageBubbleProps & Record<string, any>) {
+  const message = item?.message || (restProps as any)?.message;
+  if (!message) return null;
+
+  const isFirstInGroup = item?.isFirstInGroup ?? (restProps as any)?.isFirstInGroup ?? true;
+  const isLastInGroup = item?.isLastInGroup ?? (restProps as any)?.isLastInGroup ?? true;
+  const showAvatar = item?.showAvatar ?? (restProps as any)?.showAvatar ?? false;
+  const isOutgoing = item?.isOutgoing ?? (restProps as any)?.isMe ?? (restProps as any)?.isOutgoing ?? (message.sender_type === 'user' || message.sender_type === 'customer');
+  const readReceiptStatus = item?.readReceiptStatus ?? (restProps as any)?.readReceiptStatus ?? 'sent';
 
   const trimmedWorkerName = workerName ? workerName.trim() : '';
   const avatarInitial = trimmedWorkerName.length > 0 ? trimmedWorkerName.charAt(0).toUpperCase() : 'W';
@@ -93,13 +103,11 @@ export const MessageBubble = React.memo(function MessageBubble({
       {!isOutgoing && (
         <View style={styles.avatarColumn}>
           {showAvatar ? (
-            workerAvatarUrl ? (
-              <Image source={{ uri: workerAvatarUrl }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarInitial}>{avatarInitial}</Text>
-              </View>
-            )
+            <WorkerAvatar
+              uri={workerAvatarUrl}
+              name={workerName}
+              size={28}
+            />
           ) : (
             <View style={styles.avatarSpacer} />
           )}
@@ -146,7 +154,7 @@ export const MessageBubble = React.memo(function MessageBubble({
             <Text style={[styles.timeText, isOutgoing ? styles.timeOutgoing : styles.timeIncoming]}>
               {timeString}
             </Text>
-            {isOutgoing && <ReadReceipt status={readReceiptStatus} color="#6B7280" />}
+            {isOutgoing && <ReadReceipt status={readReceiptStatus} color={colors.textSecondary} />}
           </View>
         </Pressable>
 
@@ -203,7 +211,7 @@ const styles = StyleSheet.create({
   avatarInitial: {
     fontFamily: 'Poppins-Medium',
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   avatarSpacer: {
     width: 28,
@@ -230,22 +238,22 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   bubbleIncoming: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderBottomLeftRadius: 4,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
     elevation: 1,
   },
   bubbleOutgoing: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.primaryBorderSubtle,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: colors.primaryBorder,
     borderBottomRightRadius: 4,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
@@ -277,10 +285,10 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   textIncoming: {
-    color: '#111827',
+    color: colors.textPrimary,
   },
   textOutgoing: {
-    color: '#111827',
+    color: colors.textPrimary,
   },
   metaRow: {
     flexDirection: 'row',
@@ -295,10 +303,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   timeIncoming: {
-    color: '#9CA3AF',
+    color: colors.textMuted,
   },
   timeOutgoing: {
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   retryButton: {
     marginTop: 4,
@@ -306,6 +314,6 @@ const styles = StyleSheet.create({
   retryText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
-    color: '#EF4444',
+    color: colors.danger,
   },
 });

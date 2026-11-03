@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, useColorScheme, Platform, Keyboard } from 'react-native';
 import { Home, Building2, MapPin } from 'lucide-react-native';
 import { colors, palette, fontFamily, radius } from '../../design';
 
@@ -7,6 +7,8 @@ export interface AddressLabelChipsProps {
   customLabel?: string | undefined;
   onSelectLabel: (label: string) => void;
   onChangeCustomLabel?: ((custom: string) => void) | undefined;
+  onFocusCustomLabel?: (() => void) | undefined;
+  onBlurCustomLabel?: (() => void) | undefined;
 }
 
 const CHIP_OPTIONS: Array<{
@@ -24,7 +26,12 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
   customLabel = '',
   onSelectLabel,
   onChangeCustomLabel,
+  onFocusCustomLabel,
+  onBlurCustomLabel,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const isOtherSelected =
     selectedLabel === 'Other' ||
     (!['Home', 'Office'].includes(selectedLabel) && Boolean(selectedLabel));
@@ -35,7 +42,7 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionHeading} maxFontSizeMultiplier={1.3}>
+      <Text style={[styles.sectionHeading, isDark && styles.sectionHeadingDark]} maxFontSizeMultiplier={1.3}>
         Save address as
       </Text>
 
@@ -54,7 +61,9 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
               onPress={() => handleSelect(opt.id)}
               style={[
                 styles.chip,
-                isSelected ? styles.chipSelected : styles.chipUnselected,
+                isSelected
+                  ? [styles.chipSelected, isDark && styles.chipSelectedDark]
+                  : [styles.chipUnselected, isDark && styles.chipUnselectedDark],
               ]}
               accessibilityRole="radio"
               accessibilityState={{ selected: isSelected }}
@@ -62,13 +71,19 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
             >
               <Icon
                 size={16}
-                color={isSelected ? colors.primaryDark : palette.gray500}
+                color={
+                  isSelected
+                    ? (isDark ? palette.green400 : colors.primaryDark)
+                    : (isDark ? palette.slate400 : palette.gray500)
+                }
                 strokeWidth={2.2}
               />
               <Text
                 style={[
                   styles.chipText,
-                  isSelected ? styles.chipTextSelected : styles.chipTextUnselected,
+                  isSelected
+                    ? [styles.chipTextSelected, isDark && styles.chipTextSelectedDark]
+                    : [styles.chipTextUnselected, isDark && styles.chipTextUnselectedDark],
                 ]}
                 maxFontSizeMultiplier={1.3}
               >
@@ -83,14 +98,17 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
       {isOtherSelected && (
         <View style={styles.customInputContainer}>
           <TextInput
-            style={styles.customInput}
+            style={[styles.customInput, isDark && styles.customInputDark]}
             value={customLabel}
             onChangeText={onChangeCustomLabel}
+            onFocus={onFocusCustomLabel}
+            onBlur={onBlurCustomLabel}
             placeholder="e.g. Mom's House, Gym, Warehouse"
-            placeholderTextColor={palette.gray400}
+            placeholderTextColor={isDark ? palette.slate500 : palette.gray400}
             maxLength={30}
             autoCapitalize="words"
             returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
             maxFontSizeMultiplier={1.3}
             accessibilityLabel="Custom address label name"
           />
@@ -155,10 +173,33 @@ const styles = StyleSheet.create({
     backgroundColor: palette.iceGray,
     borderRadius: radius.md,
     paddingHorizontal: 14,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 6,
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 14,
     color: colors.textPrimary,
     borderWidth: 1,
     borderColor: palette.gray200,
+  },
+  sectionHeadingDark: {
+    color: colors.textMuted,
+  },
+  chipUnselectedDark: {
+    backgroundColor: palette.gray700,
+    borderColor: palette.gray600,
+  },
+  chipSelectedDark: {
+    backgroundColor: 'rgba(74, 222, 128, 0.15)',
+    borderColor: palette.green400,
+  },
+  chipTextUnselectedDark: {
+    color: colors.textDisabled,
+  },
+  chipTextSelectedDark: {
+    color: palette.green400,
+  },
+  customInputDark: {
+    backgroundColor: palette.gray900,
+    borderColor: palette.gray700,
+    color: palette.gray50,
   },
 });

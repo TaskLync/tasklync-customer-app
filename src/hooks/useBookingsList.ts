@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BookingDetails, BookingStatus } from '../types/booking.types';
-import { bookingApi } from '../services/api/booking.api';
+import { bookingApi, isGenericWorkerName } from '../services/api/booking.api';
 import { workerApi } from '../services/api/worker.api';
 import { formatCategoryName } from '../utils/formatters';
 
@@ -31,18 +31,24 @@ export function useBookingsList(activeTab: TabType) {
       );
 
       // Initial pass: ensure category names and worker names are formatted
-      const normalizedBookings: BookingDetails[] = bookingsList.map((b) => ({
-        ...b,
-        category_name: b.category_name || formatCategoryName(b.category_id, 'Service', 'title'),
-        worker_name: b.worker_name || (workerProfileCache.get(b.worker_id)?.name) || undefined,
-        worker_avatar_url: (b.worker_avatar_url || workerProfileCache.get(b.worker_id)?.avatarUrl) || undefined,
-      }));
+      const normalizedBookings: BookingDetails[] = bookingsList.map((b) => {
+        const cached = workerProfileCache.get(b.worker_id);
+        const resolvedName = (b.worker_name && !isGenericWorkerName(b.worker_name) ? b.worker_name : cached?.name) || b.worker_name;
+        const resolvedAvatar = b.worker_avatar_url || cached?.avatarUrl || undefined;
+
+        return {
+          ...b,
+          category_name: b.category_name || formatCategoryName(b.category_id, 'Service', 'title'),
+          worker_name: resolvedName,
+          worker_avatar_url: resolvedAvatar,
+        };
+      });
 
       setAllBookings(normalizedBookings);
 
-      // Secondary pass: Asynchronously enrich any missing worker names from worker service
+      // Secondary pass: Asynchronously enrich any missing or generic worker names from worker service
       const missingWorkers = normalizedBookings.filter(
-        (b) => !b.worker_name && b.worker_id && b.worker_id.includes('-')
+        (b) => (!b.worker_name || isGenericWorkerName(b.worker_name) || !b.worker_avatar_url) && b.worker_id && b.worker_id.includes('-')
       );
 
       if (missingWorkers.length > 0) {
@@ -53,7 +59,7 @@ export function useBookingsList(activeTab: TabType) {
             }
             try {
               const profile = await workerApi.getWorkerProfile(b.worker_id);
-              if (profile?.name) {
+              if (profile?.name && !isGenericWorkerName(profile.name)) {
                 const info = { name: profile.name, avatarUrl: profile.avatarUrl };
                 workerProfileCache.set(b.worker_id, info);
                 return { workerId: b.worker_id, profile: info };
@@ -66,14 +72,16 @@ export function useBookingsList(activeTab: TabType) {
         ).then((results) => {
           let hasUpdates = false;
           const updatedBookings: BookingDetails[] = normalizedBookings.map((b) => {
-            if (!b.worker_name && workerProfileCache.has(b.worker_id)) {
+            if (b.worker_id && workerProfileCache.has(b.worker_id)) {
               const cached = workerProfileCache.get(b.worker_id)!;
-              hasUpdates = true;
-              return {
-                ...b,
-                worker_name: cached.name,
-                worker_avatar_url: (b.worker_avatar_url || cached.avatarUrl) || undefined,
-              };
+              if (b.worker_name !== cached.name || (!b.worker_avatar_url && cached.avatarUrl)) {
+                hasUpdates = true;
+                return {
+                  ...b,
+                  worker_name: cached.name,
+                  worker_avatar_url: (b.worker_avatar_url || cached.avatarUrl) || undefined,
+                };
+              }
             }
             return b;
           });

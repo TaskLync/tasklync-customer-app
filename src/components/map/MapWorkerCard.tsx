@@ -1,5 +1,5 @@
 import { FC, useEffect } from 'react';
-import { StyleSheet, View, Text, Image, Pressable, Platform } from 'react-native';
+import { StyleSheet, View, Text, Image, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -17,7 +17,7 @@ interface MapWorkerCardProps {
   worker: WorkerNearby;
   isSelected: boolean;
   onPressCard: (worker: WorkerNearby) => void;
-  onPressBook?: (worker: WorkerNearby) => void;
+  onPressBook?: ((worker: WorkerNearby) => void) | undefined;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -48,11 +48,12 @@ export const MapWorkerCard: FC<MapWorkerCardProps> = ({
     onPressCard(worker);
   };
 
-  const handleBookPress = () => {
+  const handleBookPress = (e?: any) => {
+    e?.stopPropagation?.();
     if (onPressBook) {
       onPressBook(worker);
     } else {
-      router.push(`/worker/${worker.id}`);
+      router.push(`/worker/${worker.id}` as any);
     }
   };
 
@@ -84,7 +85,8 @@ export const MapWorkerCard: FC<MapWorkerCardProps> = ({
       onPress={handleCardPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      accessibilityRole="button"
+      accessible={true}
+      accessibilityRole="none"
       accessibilityLabel={`Worker ${worker.name}, Rating ${worker.avgRating}, Distance ${formattedDistance}`}
     >
       {/* Avatar Container */}
@@ -103,7 +105,7 @@ export const MapWorkerCard: FC<MapWorkerCardProps> = ({
           </View>
         )}
         <View style={styles.badgeContainer}>
-          <WorkerMarkerBadge category={primaryCategory} size={16} />
+          <WorkerMarkerBadge category={primaryCategory || ''} size={16} />
         </View>
       </View>
 

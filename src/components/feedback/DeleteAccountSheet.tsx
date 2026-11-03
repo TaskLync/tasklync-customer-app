@@ -5,14 +5,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
-  Platform,
-  ScrollView,
 } from 'react-native';
 import { X, HeartHandshake } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomSheet, BottomSheetScrollView } from '../layout/BottomSheet';
 import { DeleteAccountReason } from '../../types/moderation.types';
 import { DeleteAccountReasonStep } from './DeleteAccountReasonStep';
 import { DeleteAccountConfirmStep } from './DeleteAccountConfirmStep';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { colors, palette, fontFamily, fontSize, spacing } from '../../design';
 
 export interface DeleteAccountSheetProps {
   visible: boolean;
@@ -27,6 +27,7 @@ export const DeleteAccountSheet: React.FC<DeleteAccountSheetProps> = ({
   onDeleteAccount,
   isLoading = false,
 }) => {
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState<1 | 2>(1);
   const [chosenReason, setChosenReason] = useState<DeleteAccountReason | undefined>(undefined);
   const [isDeletedSuccess, setIsDeletedSuccess] = useState<boolean>(false);
@@ -55,7 +56,10 @@ export const DeleteAccountSheet: React.FC<DeleteAccountSheetProps> = ({
     return (
       <Modal visible={true} transparent={false} animationType="fade">
         <View
-          style={styles.goodbyeContainer}
+          style={[
+            styles.goodbyeContainer,
+            { paddingTop: insets.top, paddingBottom: insets.bottom },
+          ]}
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
         >
@@ -74,88 +78,51 @@ export const DeleteAccountSheet: React.FC<DeleteAccountSheetProps> = ({
   }
 
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={resetAndClose}
+      onClose={isLoading ? undefined : resetAndClose}
+      snapPoints={['75%', '92%']}
+      contentPadding={true}
     >
-      <View style={styles.modalOverlay}>
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={resetAndClose}
-        />
-
-        <View style={styles.sheetContainer}>
-          {/* Drag Handle */}
-          <View style={styles.handle} />
-
-          {/* Close button */}
-          <View style={styles.topRow}>
-            <TouchableOpacity
-              onPress={resetAndClose}
-              style={styles.closeBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Close account deletion sheet"
-            >
-              <X size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
+      <View style={styles.sheetContent}>
+        {/* Close button */}
+        <View style={styles.topRow}>
+          <TouchableOpacity
+            onPress={resetAndClose}
+            style={styles.closeBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Close account deletion sheet"
+            disabled={isLoading}
           >
-            {step === 1 ? (
-              <DeleteAccountReasonStep
-                onContinue={handleReasonContinue}
-                onSkip={() => setStep(2)}
-              />
-            ) : (
-              <DeleteAccountConfirmStep
-                onConfirmDelete={handleConfirmDelete}
-                onBack={() => setStep(1)}
-                isLoading={isLoading}
-              />
-            )}
-          </ScrollView>
+            <X size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
+
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {step === 1 ? (
+            <DeleteAccountReasonStep
+              onContinue={handleReasonContinue}
+              onSkip={() => setStep(2)}
+            />
+          ) : (
+            <DeleteAccountConfirmStep
+              onConfirmDelete={handleConfirmDelete}
+              onBack={() => setStep(1)}
+              isLoading={isLoading}
+            />
+          )}
+        </BottomSheetScrollView>
       </View>
-    </Modal>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  sheetContent: {
     flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-  },
-  sheetContainer: {
-    backgroundColor: colors.bgCard,
-    borderTopLeftRadius: radius['2xl'],
-    borderTopRightRadius: radius['2xl'],
-    paddingTop: spacing.sm,
-    paddingHorizontal: spacing.base,
-    paddingBottom: Platform.OS === 'ios' ? 36 : spacing.lg,
-    maxHeight: '85%',
-    ...shadows.lg,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: palette.gray300,
-    alignSelf: 'center',
-    marginBottom: spacing.xs,
   },
   topRow: {
     flexDirection: 'row',

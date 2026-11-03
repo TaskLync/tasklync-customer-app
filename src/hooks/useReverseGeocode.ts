@@ -21,6 +21,15 @@ export function useReverseGeocode(options?: UseReverseGeocodeOptions) {
   const lastGeocodedCoordsRef = useRef<GeoPoint | null>(null);
 
   const fetchGeocode = useCallback(async (lat: number, lng: number) => {
+    if (
+      typeof lat !== 'number' ||
+      isNaN(lat) ||
+      typeof lng !== 'number' ||
+      isNaN(lng)
+    ) {
+      return;
+    }
+
     // Avoid re-requesting if moved less than 2 meters
     if (lastGeocodedCoordsRef.current) {
       const dist = calculateDistanceMeters(
@@ -47,14 +56,16 @@ export function useReverseGeocode(options?: UseReverseGeocodeOptions) {
       setErrorMessage(
         err?.message || "Couldn't determine address — try adjusting the pin"
       );
+      const safeLatStr = typeof lat === 'number' && !isNaN(lat) ? lat.toFixed(5) : '0.00000';
+      const safeLngStr = typeof lng === 'number' && !isNaN(lng) ? lng.toFixed(5) : '0.00000';
       // Fallback coordinate object so user can still proceed if in unmapped zone
       setResult({
-        formatted_address: `Coordinates (${lat.toFixed(5)}, ${lng.toFixed(5)})`,
-        address_line: `Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`,
-        city: 'Faisalabad',
+        formatted_address: `Coordinates (${safeLatStr}, ${safeLngStr})`,
+        address_line: `Location (${safeLatStr}, ${safeLngStr})`,
+        city: 'Current Area',
         country: 'Pakistan',
-        lat,
-        lng,
+        lat: typeof lat === 'number' && !isNaN(lat) ? lat : 0,
+        lng: typeof lng === 'number' && !isNaN(lng) ? lng : 0,
       });
     } finally {
       setIsLoading(false);
@@ -63,6 +74,14 @@ export function useReverseGeocode(options?: UseReverseGeocodeOptions) {
 
   const triggerGeocode = useCallback(
     (lat: number, lng: number) => {
+      if (
+        typeof lat !== 'number' ||
+        isNaN(lat) ||
+        typeof lng !== 'number' ||
+        isNaN(lng)
+      ) {
+        return;
+      }
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }

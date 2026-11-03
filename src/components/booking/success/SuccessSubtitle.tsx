@@ -1,72 +1,70 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
 import { colors, palette, fontFamily } from '../../../design';
 
 export interface SuccessSubtitleProps {
-  bookingId: string;
   subtitle?: string;
 }
 
 export const SuccessSubtitle: React.FC<SuccessSubtitleProps> = ({
-  bookingId,
   subtitle = 'Your service request has been sent to the professional.',
-}) => {
-  const opacity = useSharedValue(0);
+}) => (
+  <View style={styles.container}>
+    <Text style={styles.subtitleText}>{subtitle}</Text>
+  </View>
+);
 
-  useEffect(() => {
-    opacity.value = withTiming(1, { duration: 100 });
-  }, [opacity]);
+export interface BookingIdCardProps {
+  bookingId: string;
+}
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
+export const BookingIdCard: React.FC<BookingIdCardProps> = ({ bookingId }) => {
+  if (!bookingId) return null;
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
-      <Text style={styles.subtitleText}>{subtitle}</Text>
-      <View style={styles.idBadge}>
-        <Text style={styles.idLabel}>BOOKING ID:</Text>
-        <Text style={styles.idValue}> #{bookingId}</Text>
-      </View>
-    </Animated.View>
+    <View style={styles.card} accessible accessibilityLabel={`Booking ID ${bookingId}`}>
+      <Text style={styles.idLabel}>BOOKING ID</Text>
+      <Text style={styles.idValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+        #{bookingId}
+      </Text>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 20,
+    paddingHorizontal: 16,
   },
   subtitleText: {
     fontFamily: fontFamily.jakarta.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 10,
   },
-  idBadge: {
-    flexDirection: 'row',
+  card: {
+    alignSelf: 'center',
     alignItems: 'center',
-    backgroundColor: palette.gray100,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 8,
+    minWidth: 180,
+    maxWidth: '100%',
+    marginTop: 28,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    backgroundColor: palette.white,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   idLabel: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 11,
+    letterSpacing: 1,
     color: colors.textMuted,
+    marginBottom: 4,
   },
   idValue: {
     fontFamily: fontFamily.inter.bold,
-    fontSize: 12,
+    fontSize: 18,
+    letterSpacing: 0.3,
     color: colors.textPrimary,
   },
 });

@@ -17,7 +17,7 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { Check } from 'lucide-react-native';
-import { colors } from '../../../design/colors';
+import { colors, palette } from '../../../design/colors';
 import { typography } from '../../../design/typography';
 import { springConfig } from '../../../design/animations';
 
@@ -94,20 +94,20 @@ export const Chip: React.FC<ChipProps> = ({
     } else if (variant === 'status') {
       switch (statusColor) {
         case 'success':
-          backgroundColor = '#F0FDF4';
-          borderColor = '#BBF7D0';
+          backgroundColor = colors.bgSuccess;
+          borderColor = colors.borderSuccessLight;
           break;
         case 'warning':
-          backgroundColor = '#FEF3C7';
-          borderColor = '#FCD34D';
+          backgroundColor = colors.warningLight;
+          borderColor = colors.warningBorder;
           break;
         case 'danger':
-          backgroundColor = '#FEF2F2';
-          borderColor = '#FCA5A5';
+          backgroundColor = colors.dangerLight;
+          borderColor = colors.borderErrorLight;
           break;
         case 'info':
-          backgroundColor = '#EFF6FF';
-          borderColor = '#BFDBFE';
+          backgroundColor = colors.infoLight;
+          borderColor = colors.borderInfoLight;
           break;
       }
     } else if (variant === 'skill') {
@@ -136,14 +136,14 @@ export const Chip: React.FC<ChipProps> = ({
       color = interpolateColor(
         selectionProgress.value,
         [0, 1],
-        [colors.textMuted, '#FFFFFF']
+        [colors.textMuted, colors.white]
       );
     } else if (variant === 'status') {
       switch (statusColor) {
-        case 'success': color = '#14532D'; break;
-        case 'warning': color = '#92400E'; break;
-        case 'danger': color = '#991B1B'; break;
-        case 'info': color = '#1E40AF'; break;
+        case 'success': color = colors.textGreenDark; break;
+        case 'warning': color = colors.textWarning; break;
+        case 'danger': color = colors.textDangerDark; break;
+        case 'info': color = colors.textInfoDark; break;
       }
     } else if (variant === 'skill') {
       color = selected ? colors.textGreen || colors.primary : colors.textMuted;
@@ -193,7 +193,7 @@ export const Chip: React.FC<ChipProps> = ({
     >
       {variant === 'filter' && showCheckmark && (
         <AnimatedView style={[styles.checkmarkContainer, checkmarkAnimatedStyle]}>
-          <Check size={14} color="#FFFFFF" />
+          <Check size={14} color={colors.white} />
         </AnimatedView>
       )}
 
@@ -207,7 +207,7 @@ export const Chip: React.FC<ChipProps> = ({
               return (
                 <IconComponent
                   size={size === 'xs' ? 12 : 14}
-                  color={variant === 'filter' && selected ? '#FFFFFF' : colors.textMuted}
+                  color={variant === 'filter' && selected ? colors.white : colors.textMuted}
                 />
               );
             })()
@@ -247,7 +247,7 @@ export const Chip: React.FC<ChipProps> = ({
               return (
                 <TrailingIconComponent
                   size={size === 'xs' ? 12 : 14}
-                  color={variant === 'filter' && selected ? '#FFFFFF' : colors.textMuted}
+                  color={variant === 'filter' && selected ? colors.white : colors.textMuted}
                 />
               );
             })()

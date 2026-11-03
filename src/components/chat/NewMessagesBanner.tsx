@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, Pressable } from 'react-native';
 import Animated, {
@@ -64,7 +65,7 @@ export const NewMessagesBanner = React.memo(function NewMessagesBanner({
       accessibilityRole="button"
       accessibilityLabel={`Scroll down, ${label}`}
     >
-      <ArrowDown size={15} color="#FFFFFF" strokeWidth={2.5} style={styles.icon} />
+      <ArrowDown size={15} color={colors.white} strokeWidth={2.5} style={styles.icon} />
       <Text style={styles.text}>{label}</Text>
     </AnimatedPressable>
   );
@@ -78,12 +79,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0F172A',
+    backgroundColor: colors.textPrimary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 22,
     zIndex: 99,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.16,
     shadowRadius: 8,
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
   text: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 13,
-    color: '#FFFFFF',
+    color: colors.white,
     letterSpacing: -0.1,
   },
 });

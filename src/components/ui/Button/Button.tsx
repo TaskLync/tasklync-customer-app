@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   interpolateColor
 } from 'react-native-reanimated';
-import { colors } from '@design/colors';
+import { colors, palette } from '@design/colors';
 import { layout, spacing } from '@design/spacing';
 import { radius } from '@design/radius';
 import { springConfig } from '@design/animations';
@@ -115,16 +115,16 @@ export const Button = ({
         case 'primary': return { bg: colors.primaryBorder, text: colors.textPrimary, border: 'transparent' };
         case 'secondary': return { bg: 'transparent', text: colors.primaryBorder, border: colors.primaryBorder };
         case 'ghost': return { bg: colors.bgInput, text: colors.textPrimary, border: 'transparent', opacity: 0.5 };
-        case 'danger': return { bg: '#FCA5A5', text: colors.textOnGreen, border: 'transparent' };
+        case 'danger': return { bg: palette.red300, text: colors.textOnGreen, border: 'transparent' };
         case 'text': return { bg: 'transparent', text: colors.textGreen, border: 'transparent', opacity: 0.4 };
       }
     }
 
     switch (variant) {
-      case 'primary': return { idleBg: colors.primary, pressedBg: colors.primaryDark, text: colors.textOnGreen, border: 'transparent' };
+      case 'primary': return { idleBg: colors.primaryDark, pressedBg: palette.green700, text: colors.textOnGreen, border: 'transparent' };
       case 'secondary': return { idleBg: 'transparent', pressedBg: colors.primaryTint, text: colors.textGreen, border: colors.primaryDark }; // Using primaryDark for border to be visible or green600 as per spec (#16A34A)
-      case 'ghost': return { idleBg: colors.bgInput, pressedBg: '#E9EAEC', text: colors.textPrimary, border: 'transparent' };
-      case 'danger': return { idleBg: colors.textDanger, pressedBg: '#DC2626', text: colors.textOnGreen, border: 'transparent' };
+      case 'ghost': return { idleBg: colors.bgInput, pressedBg: palette.gray100, text: colors.textPrimary, border: 'transparent' };
+      case 'danger': return { idleBg: colors.danger, pressedBg: colors.dangerMedium, text: colors.textOnGreen, border: 'transparent' };
       case 'text': return { idleBg: 'transparent', pressedBg: 'transparent', text: colors.textGreen, border: 'transparent' };
     }
     return { idleBg: 'transparent', pressedBg: 'transparent', text: colors.textPrimary, border: 'transparent' };
@@ -176,7 +176,7 @@ export const Button = ({
   const containerBaseStyle: ViewStyle = {
     height: sizeStyles.height,
     paddingHorizontal: sizeStyles.paddingHorizontal,
-    borderRadius: radius.pill,
+    borderRadius: size === 'sm' ? 10 : 12,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -185,7 +185,7 @@ export const Button = ({
     borderWidth: variant === 'secondary' ? 1.5 : 0,
     borderColor: variant === 'secondary' ? colorConfig.border : 'transparent',
     opacity: (colorConfig as any).opacity || 1,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: ['primary', 'danger'].includes(variant) && !disabled ? 0.05 : 0,
     shadowRadius: 2,

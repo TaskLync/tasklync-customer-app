@@ -11,13 +11,14 @@ export const palette = {
   green800: '#166534',
   green900: '#14532D',
 
-  // Neutrals
+  // Neutrals / Slate scale
   white: '#FFFFFF',
-  zenWhite: '#F6F7F9', // bgApp canvas
-  canvasGray: '#F6F7F9', // #F6F7F9 universal app canvas
-  lowGray: '#F8F9FA', // bgSection
-  iceGray: '#F4F5F7', // bgInput
-  mintHaze: '#EFF0F3', // bgSkeleton
+  black: '#000000',
+  zenWhite: '#FFFFFF', // bgApp canvas
+  canvasGray: '#FFFFFF', // #F6F7F9 universal app canvas
+  lowGray: '#F8FAFC', // bgSection
+  iceGray: '#F8FAFC', // bgInput
+  mintHaze: '#F1F5F9', // bgSkeleton
   softGray: '#E2E8F0', // border
 
   gray50: '#F8FAFC',
@@ -31,69 +32,187 @@ export const palette = {
   gray800: '#1E293B',
   gray900: '#0F172A', // textPrimary
 
-  // Semantics raw
+  // Red / Danger scale
+  red50: '#FEF2F2',
+  red100: '#FEE2E2',
+  red200: '#FECACA',
+  red300: '#FCA5A5',
+  red400: '#F87171',
+  red500: '#EF4444',
+  red600: '#DC2626',
+  red700: '#B91C1C',
+  red800: '#991B1B',
+  red900: '#7F1D1D',
+
+  // Amber / Warning scale
+  amber50: '#FFFBEB',
+  amber100: '#FEF3C7',
+  amber200: '#FDE68A',
+  amber300: '#FCD34D',
+  amber400: '#FBBF24',
+  amber500: '#F59E0B',
+  amber600: '#D97706',
+  amber700: '#B45309',
+  amber800: '#92400E',
+  amber900: '#78350F',
+
+  // Blue / Info scale
+  blue50: '#EFF6FF',
+  blue100: '#DBEAFE',
+  blue200: '#BFDBFE',
+  blue300: '#93C5FD',
+  blue400: '#60A5FA',
+  blue500: '#3B82F6',
+  blue600: '#2563EB',
+  blue700: '#1D4ED8',
+  blue800: '#1E40AF',
+  blue900: '#1E3A8A',
+
+  // Purple / Violet scale
+  purple50: '#FAF5FF',
+  purple100: '#F3E8FF',
+  purple200: '#E9D5FF',
+  purple300: '#D8B4FE',
+  purple400: '#C084FC',
+  purple500: '#A855F7',
+  purple600: '#9333EA',
+  purple700: '#7E22CE',
+  purple800: '#6B21A8',
+  purple900: '#581C87',
+
+  // Sky scale
+  sky50: '#F0F9FF',
+  sky100: '#E0F2FE',
+  sky500: '#0EA5E9',
+  sky600: '#0284C7',
+  sky700: '#0369A1',
+
+  // Orange scale
+  orange50: '#FFF7ED',
+  orange100: '#FFEDD5',
+  orange500: '#F97316',
+  orange600: '#EA580C',
+  orange700: '#C2410C',
+
+  // Legacy semantic aliases for backward compatibility
   warningLight: '#FEF3C7',
   warning: '#F59E0B',
   warningDark: '#92400E',
+  amberLight: '#FEF3C7',
+  amberDark: '#92400E',
+  amberBorder: '#FDE68A',
   dangerLight: '#FEF2F2',
   danger: '#EF4444',
   dangerDark: '#991B1B',
   infoLight: '#EFF6FF',
   info: '#3B82F6',
   infoDark: '#1E40AF',
+
+  // Overlays
+  overlay: 'rgba(15, 23, 42, 0.55)',
+  overlayDark: 'rgba(0, 0, 0, 0.7)',
+  overlayLight: 'rgba(15, 23, 42, 0.3)',
 };
 
 export const colors = {
   // Brand
-  primary: palette.green500,
-  primaryDark: palette.green600,
-  primaryLight: palette.green400,
-  primaryTint: palette.green50,
-  primaryBorder: palette.green200,
+  primary: palette.green500, // #22C55E
+  primaryDark: palette.green600, // #16A34A (high contrast on white for text & icons)
+  primaryLight: palette.green400, // #4ADE80
+  primaryTint: palette.green50, // #F0FDF4
+  primaryBorder: palette.green200, // #BBF7D0
+  primaryBorderSubtle: palette.green100, // #DCFCE7
 
   // Backgrounds
+  canvasGray: palette.canvasGray, // #F6F7F9 universal app canvas
+  lightGreen: palette.green100, // #DCFCE7 distinct light green
+  lightGreenBorder: palette.green200, // #BBF7D0
+  lightGreenText: palette.green700, // #15803D
   bgApp: palette.canvasGray, // #F6F7F9 universal app background
   bgHome: palette.canvasGray, // #F6F7F9
   bgCard: palette.white,
   bgInput: palette.iceGray,
   bgSection: palette.lowGray,
+  bgSubtle: palette.gray50, // #F8FAFC
+  bgHover: palette.gray100, // #F1F5F9
   bgSuccess: palette.green50,
+  bgSuccessSubtle: palette.green100,
   bgSkeleton: palette.mintHaze,
 
   // Text
-  textPrimary: palette.gray900,
-  textSecondary: palette.gray600,
-  textMuted: palette.gray400,
-  textDisabled: palette.gray300,
+  textPrimary: palette.gray900, // #0F172A
+  textSecondary: palette.gray600, // #475569
+  textMuted: palette.gray400, // #94A3B8
+  textDisabled: palette.gray300, // #CBD5E1
   textOnGreen: palette.white,
-  textGreen: palette.green700,
-  textDanger: palette.danger,
-  textWarning: palette.warningDark,
+  textGreen: palette.green700, // #15803D
+  textGreenDark: palette.green900, // #14532D
+  textDanger: palette.red600, // #DC2626
+  textDangerDark: palette.red800, // #991B1B
+  textWarning: palette.amber800, // #92400E
+  textWarningMedium: palette.amber700, // #B45309
+  textInfo: palette.blue600, // #2563EB
+  textInfoDark: palette.blue800, // #1E40AF
 
   // Borders
-  border: palette.softGray,
-  borderFocus: palette.green600,
-  borderError: palette.danger,
-  borderSuccess: palette.green500,
+  border: palette.softGray, // #E2E8F0
+  borderLight: palette.gray100, // #F1F5F9
+  borderStrong: palette.gray300, // #CBD5E1
+  borderFocus: palette.green600, // #16A34A
+  borderError: palette.red500, // #EF4444
+  borderErrorLight: palette.red200, // #FECACA
+  borderWarning: palette.amber500, // #F59E0B
+  borderWarningLight: palette.amber200, // #FDE68A
+  borderSuccess: palette.green500, // #22C55E
+  borderSuccessLight: palette.green200, // #BBF7D0
+  borderInfo: palette.blue500, // #3B82F6
+  borderInfoLight: palette.blue200, // #BFDBFE
+
+  // Semantic States
+  danger: palette.red500, // #EF4444
+  dangerMedium: palette.red600, // #DC2626
+  dangerDark: palette.red800, // #991B1B
+  dangerLight: palette.red50, // #FEF2F2
+  dangerBorder: palette.red200, // #FECACA
+
+  warning: palette.amber500, // #F59E0B
+  warningMedium: palette.amber600, // #D97706
+  warningDark: palette.amber800, // #92400E
+  warningLight: palette.amber100, // #FEF3C7
+  warningBorder: palette.amber200, // #FDE68A
+
+  info: palette.blue500, // #3B82F6
+  infoMedium: palette.blue600, // #2563EB
+  infoDark: palette.blue800, // #1E40AF
+  infoLight: palette.blue50, // #EFF6FF
+  infoBorder: palette.blue200, // #BFDBFE
 
   // Status indicators
   online: palette.green500,
   offline: palette.gray400,
-  busy: palette.warning,
+  busy: palette.amber500,
+
+  // Common UI
+  white: palette.white,
+  black: palette.black,
+  overlay: palette.overlay,
+  shadow: palette.gray900,
+  starFilled: palette.amber500,
+  starEmpty: palette.gray300,
 };
 
 export const bookingStatusColors = {
   PENDING: {
-    bg: palette.warningLight,
-    border: palette.warning,
-    text: palette.warningDark,
-    dot: palette.warning,
+    bg: palette.amber100,
+    border: palette.amber500,
+    text: palette.amber800,
+    dot: palette.amber500,
   },
   ACCEPTED: {
-    bg: palette.infoLight,
-    border: palette.info,
-    text: palette.infoDark,
-    dot: palette.info,
+    bg: palette.blue50,
+    border: palette.blue500,
+    text: palette.blue800,
+    dot: palette.blue500,
   },
   IN_PROGRESS: {
     bg: palette.green50,
@@ -108,10 +227,16 @@ export const bookingStatusColors = {
     dot: palette.gray400,
   },
   CANCELLED: {
-    bg: palette.dangerLight,
-    border: palette.danger,
-    text: palette.dangerDark,
-    dot: palette.danger,
+    bg: palette.red50,
+    border: palette.red500,
+    text: palette.red800,
+    dot: palette.red500,
+  },
+  DISPUTED: {
+    bg: palette.red100,
+    border: palette.red600,
+    text: palette.red900,
+    dot: palette.red600,
   },
 };
 

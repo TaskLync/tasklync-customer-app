@@ -1,147 +1,124 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { ShieldCheck, AlertCircle, Info } from 'lucide-react-native';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { RefundPolicyResult } from '../../types/booking.types';
 import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
 
 export interface RefundPolicyNoticeProps {
   policy: RefundPolicyResult;
   currency?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
 /**
- * RefundPolicyNotice Component
+ * RefundPolicyNotice Component (Ultra-Minimalist Uber/Foodpanda Style)
  *
- * Implements Hard Problem #2:
- * - Dynamic plain-language refund summary computed by pure policy rules
- * - Explicit breakdown of refunded vs retained amounts
- * - Reusable across cancellation modals and dispute expectations
+ * Strips all extra paragraphs, nested containers, and duplicate badges.
+ * Displays only the essential financial reality: refund percentage and exact amount.
  */
 export const RefundPolicyNotice: React.FC<RefundPolicyNoticeProps> = ({
   policy,
   currency = 'PKR',
+  style,
 }) => {
   const isFullRefund = policy.percentage === 100;
   const isPartialRefund = policy.percentage > 0 && policy.percentage < 100;
-  const isNoRefund = policy.percentage === 0;
+
+  const refundAmount =
+    policy.estimatedRefundAmount !== undefined && policy.estimatedRefundAmount > 0
+      ? policy.estimatedRefundAmount
+      : null;
+
+  const formattedAmount = refundAmount ? `${currency} ${refundAmount.toLocaleString()}` : null;
+
+  const refundLabel = isFullRefund
+    ? '100% Refund'
+    : isPartialRefund
+    ? `${policy.percentage}% Refund`
+    : 'No Refund';
 
   return (
     <View
       style={[
-        styles.container,
-        isFullRefund && styles.containerFull,
-        isPartialRefund && styles.containerPartial,
-        isNoRefund && styles.containerNoRefund,
+        styles.row,
+        isFullRefund && styles.rowFull,
+        isPartialRefund && styles.rowPartial,
+        policy.percentage === 0 && styles.rowNone,
+        style,
       ]}
       accessibilityRole="summary"
+      accessibilityLabel={`Refund: ${refundLabel}${formattedAmount ? `, ${formattedAmount}` : ''}`}
     >
-      <View style={styles.headerRow}>
-        <View style={styles.iconCircle}>
-          {isFullRefund ? (
-            <ShieldCheck size={20} color={colors.primaryDark} />
-          ) : isPartialRefund ? (
-            <Info size={20} color={palette.warningDark} />
-          ) : (
-            <AlertCircle size={20} color={colors.textDanger} />
-          )}
-        </View>
-
-        <View style={styles.textCol}>
-          <Text style={styles.headline}>{policy.headline}</Text>
-          <Text style={styles.labelBadge}>{policy.label}</Text>
-        </View>
+      <View style={styles.labelCol}>
+        <View style={[styles.dot, isFullRefund && styles.dotFull, isPartialRefund && styles.dotPartial]} />
+        <Text style={[styles.labelText, isFullRefund && styles.labelTextFull]}>
+          {refundLabel}
+        </Text>
       </View>
 
-      <Text style={styles.reasonText}>{policy.reason}</Text>
-
-      {policy.estimatedRefundAmount !== undefined && policy.estimatedRefundAmount > 0 ? (
-        <View style={styles.amountBox}>
-          <Text style={styles.amountLabel}>Estimated Refund Amount:</Text>
-          <Text style={styles.amountValue}>
-            {currency} {policy.estimatedRefundAmount.toLocaleString()}
-          </Text>
-        </View>
+      {formattedAmount ? (
+        <Text style={[styles.amountText, isFullRefund && styles.amountTextFull]}>
+          {formattedAmount}
+        </Text>
       ) : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
     borderRadius: radius.md,
-    padding: spacing.md,
-    marginVertical: spacing.sm,
+    backgroundColor: palette.gray50,
     borderWidth: 1,
+    borderColor: palette.gray200,
   },
-  containerFull: {
+  rowFull: {
     backgroundColor: palette.green50,
     borderColor: palette.green200,
   },
-  containerPartial: {
-    backgroundColor: palette.warningLight,
-    borderColor: palette.warning,
+  rowPartial: {
+    backgroundColor: palette.amberLight,
+    borderColor: palette.amberBorder,
   },
-  containerNoRefund: {
+  rowNone: {
     backgroundColor: palette.dangerLight,
-    borderColor: '#FECACA',
+    borderColor: colors.borderErrorLight,
   },
-  headerRow: {
+  labelCol: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    gap: spacing.sm,
   },
-  iconCircle: {
-    marginRight: spacing.sm + 2,
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.textMuted,
   },
-  textCol: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  dotFull: {
+    backgroundColor: palette.green500,
   },
-  headline: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: fontSize.body2 + 0.5,
+  dotPartial: {
+    backgroundColor: palette.warning,
+  },
+  labelText: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: fontSize.body2,
     color: colors.textPrimary,
-    flex: 1,
-    marginRight: spacing.xs,
   },
-  labelBadge: {
+  labelTextFull: {
+    color: palette.green800,
+  },
+  amountText: {
     fontFamily: fontFamily.inter.bold,
-    fontSize: fontSize.nano + 1,
+    fontSize: fontSize.body1,
     color: colors.textPrimary,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    paddingHorizontal: spacing.xs + 2,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    overflow: 'hidden',
   },
-  reasonText: {
-    fontFamily: fontFamily.jakarta.regular,
-    fontSize: fontSize.caption,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  amountBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs + 2,
-    marginTop: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  amountLabel: {
-    fontFamily: fontFamily.jakarta.medium,
-    fontSize: fontSize.dataXS,
-    color: colors.textSecondary,
-  },
-  amountValue: {
-    fontFamily: fontFamily.inter.bold,
-    fontSize: fontSize.dataSM + 1,
-    color: colors.primaryDark,
+  amountTextFull: {
+    color: palette.green700,
   },
 });

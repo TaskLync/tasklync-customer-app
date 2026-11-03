@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     top: 50,
   },
   roadVertical: {
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     left: '45%',
   },
   pinWrapper: {

@@ -7,3 +7,7 @@ export * from './AddCardSheet';
 export * from './AddCardButton';
 export * from './SecurePaymentNotice';
 export * from './PaymentEmptyState';
+export * from './PaymentHeader';
+export * from './PaymentAmountCard';
+export * from './PaymentMethodSelectCard';
+export * from './PaymentStickyFooter';

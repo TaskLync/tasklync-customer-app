@@ -1,6 +1,7 @@
+import React from 'react';
 import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { format, parseISO } from 'date-fns';
-import { colors } from '../../design/colors';
+import { colors, palette } from '../../design/colors';
 import { fontFamily as fonts } from '../../design/typography';
 import { radius } from '../../design/radius';
 
@@ -12,62 +13,78 @@ interface ReviewReplyBubbleProps {
   style?: ViewStyle;
 }
 
-export const ReviewReplyBubble = ({
+/**
+ * Compact, lightly tinted provider response container with a thin green accent.
+ * Completely hidden when no reply exists.
+ */
+export const ReviewReplyBubble: React.FC<ReviewReplyBubbleProps> = ({
   reply,
   workerName,
   repliedAt,
   style,
-}: ReviewReplyBubbleProps) => {
+}) => {
+  if (!reply || !reply.trim()) {
+    return null;
+  }
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
     try {
       const parsedDate = parseISO(dateString);
-      return `Replied ${format(parsedDate, 'MMM d, yyyy')}`;
+      return format(parsedDate, 'MMM d, yyyy');
     } catch {
       return '';
     }
   };
 
+  const formattedDate = formatDate(repliedAt);
+
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.headerText} numberOfLines={1}>
-        Reply from {workerName}:
-      </Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.headerText} numberOfLines={1}>
+          Response from {workerName || 'Provider'}
+        </Text>
+        {formattedDate ? <Text style={styles.dateText}>{formattedDate}</Text> : null}
+      </View>
 
-      <Text style={styles.replyText} numberOfLines={4}>
-        {reply}
-      </Text>
-
-      {repliedAt && <Text style={styles.dateText}>{formatDate(repliedAt)}</Text>}
+      <Text style={styles.replyText}>{reply.trim()}</Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.bgSection,
-    borderRadius: radius.md,
-    padding: 12,
-    borderLeftWidth: 3,
+    backgroundColor: '#F8FAFC',
+    borderRadius: radius.sm, // 8
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderLeftWidth: 2.5,
     borderLeftColor: colors.primaryDark,
+    marginTop: 10,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
   },
   headerText: {
     fontFamily: fonts.jakarta.semiBold,
-    fontSize: 12,
+    fontSize: 11.5,
     color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  replyText: {
-    fontFamily: fonts.jakarta.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
+    flex: 1,
+    marginRight: 8,
   },
   dateText: {
     fontFamily: fonts.inter.regular,
-    fontSize: 10.5,
-    color: colors.textMuted,
-    marginTop: 6,
-    alignSelf: 'flex-end',
+    fontSize: 10,
+    color: palette.gray400,
+  },
+  replyText: {
+    fontFamily: fonts.jakarta.regular,
+    fontSize: 12.5,
+    color: palette.gray700,
+    lineHeight: 18,
   },
 });

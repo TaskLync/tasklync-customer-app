@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 // Design system
 import { palette, colors } from '../../src/design';
@@ -11,6 +11,7 @@ import { useCalendarMonth } from '../../src/hooks/useCalendarMonth';
 import { useWorkerSlots } from '../../src/hooks/useWorkerSlots';
 import { useBookingDraftStore } from '../../src/store/bookingDraft.store';
 import { useCartStore } from '../../src/store/cart.store';
+import { normalizeDateToYYYYMMDD } from '../../src/utils/timezone';
 
 // Components
 import { StepProgress } from '../../src/components/booking/StepProgress';
@@ -26,9 +27,21 @@ import { UrgentToggleRow } from '../../src/components/booking/schedule/UrgentTog
 
 export default function ScheduleScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
-  // Cart store for selected worker info if available
+  // Cart store for selected worker and items info
   const cartWorker = useCartStore((s) => s.worker);
+  const cartItems = useCartStore((s) => s.items);
+
+  // Derive service duration dynamically from cart (defaults to 0.5 hours / 30 mins)
+  const serviceDurationHours = useMemo(() => {
+    if (!cartItems || cartItems.length === 0) return 0.5;
+    const total = cartItems.reduce((acc, item) => {
+      const itemHours = item.durationHours || (item.durationMins ? item.durationMins / 60 : 0.5);
+      return acc + itemHours * (item.quantity || 1);
+    }, 0);
+    return Math.max(0.5, Math.min(12, total));
+  }, [cartItems]);
 
   // Booking draft store
   const {
@@ -55,14 +68,20 @@ export default function ScheduleScreen() {
   // previously persisted (and valid) workerId.
   useEffect(() => {
     if (cartWorker?.id && cartWorker.id !== 'default') {
+      // A different worker has a different calendar: drop a slot picked for the previous worker.
+      if (draftWorkerId && draftWorkerId !== cartWorker.id) {
+        setSelectedTimeSlot(null);
+      }
       setWorkerId(cartWorker.id);
     }
-  }, [cartWorker, setWorkerId]);
+  }, [cartWorker, draftWorkerId, setWorkerId, setSelectedTimeSlot]);
 
   // Derive a single stable workerId for both availability hooks.
   // Prefer the draft store's persisted value (survives navigation) over the
   // live cart value to avoid an unnecessary extra render/fetch cycle.
-  const resolvedWorkerId = draftWorkerId || cartWorker?.id || null;
+  const resolvedWorkerId = cartWorker?.id && cartWorker.id !== 'default' ? cartWorker.id : (draftWorkerId || null);
+
+  const normalizedSelectedDate = normalizeDateToYYYYMMDD(selectedDate);
 
   // Calendar month state hook
   const {
@@ -75,13 +94,37 @@ export default function ScheduleScreen() {
     nextMonth,
     prevMonth,
     selectDate,
-  } = useCalendarMonth(selectedDate || undefined, resolvedWorkerId);
+  } = useCalendarMonth(normalizedSelectedDate || undefined, resolvedWorkerId);
 
-  // Time slots hook (re-queries automatically whenever selectedDate or workerId changes)
+  // Time slots hook with dynamic duration & race-condition cancellation
   const { slots, isLoading, isError: isSlotsError, refetch: refetchSlots } = useWorkerSlots(
-    selectedDate,
+    normalizedSelectedDate,
     resolvedWorkerId,
-    2
+    serviceDurationHours
+  );
+
+  // Refetch slots on screen focus (e.g. after navigating back from payment or other screens)
+  useFocusEffect(
+    useCallback(() => {
+      refetchSlots();
+    }, [refetchSlots])
+  );
+
+  // Invalidate selectedTimeSlot if it is occupied / unavailable in newly fetched slots
+  useEffect(() => {
+    if (selectedTimeSlot && slots.length > 0) {
+      const matching = slots.find((s) => s.timeStr === selectedTimeSlot);
+      if (matching && !matching.available) {
+        setSelectedTimeSlot(null);
+      }
+    }
+  }, [slots, selectedTimeSlot, setSelectedTimeSlot]);
+
+  // Determine whether the currently selected slot is genuinely available
+  const isSelectedSlotAvailable = Boolean(
+    selectedDate &&
+      selectedTimeSlot &&
+      slots.some((s) => s.timeStr === selectedTimeSlot && s.available)
   );
 
   // Navigation action
@@ -119,16 +162,16 @@ export default function ScheduleScreen() {
 
             <CalendarGrid
               daysArray={daysArray}
-              selectedDate={selectedDate}
+              selectedDate={normalizedSelectedDate}
               slideDirection={slideDirection}
               visibleMonth={visibleMonth}
               visibleYear={visibleYear}
-              onSelectDate={selectDate}
+              onSelectDate={(d) => selectDate(normalizeDateToYYYYMMDD(d) || d)}
             />
           </View>
 
           {/* Time Slot Grid Section (only rendered when date is selected) */}
-          {selectedDate && (
+          {normalizedSelectedDate && (
             <TimeSlotGrid
               slots={slots}
               isLoading={isLoading}
@@ -143,7 +186,7 @@ export default function ScheduleScreen() {
           <UrgentToggleRow isUrgent={isUrgent} onToggle={setIsUrgent} />
 
           {/* Bottom spacing to ensure scroll clears sticky footer */}
-          <View style={styles.footerSpacer} />
+          <View style={{ height: 112 + insets.bottom }} />
         </ScrollView>
 
         {/* Sticky Continue Footer */}
@@ -154,7 +197,7 @@ export default function ScheduleScreen() {
               ? `${selectedDate} • ${selectedTimeSlot}`
               : 'Select date & time slot'
           }
-          enabled={Boolean(selectedDate && selectedTimeSlot)}
+          enabled={isSelectedSlotAvailable}
           onPress={handleContinue}
         />
       </View>
@@ -180,19 +223,13 @@ const styles = StyleSheet.create({
   },
   calendarCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: 20,
     marginHorizontal: 20,
     marginTop: 8,
     marginBottom: 16,
     paddingBottom: 14,
-    borderWidth: 1,
-    borderColor: palette.gray200,
     overflow: 'hidden',
-    shadowColor: palette.gray900,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   footerSpacer: {
     height: 120,

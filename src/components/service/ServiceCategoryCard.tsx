@@ -9,7 +9,7 @@ import Animated, {
 import { Image } from 'expo-image';
 import { Text } from '../ui/Text/Text';
 import { Category } from '../../types/category.types';
-import { colors } from '../../design/colors';
+import { colors, palette } from '../../design/colors';
 import { fontFamily } from '../../design/typography';
 
 interface ServiceCategoryCardProps {
@@ -25,44 +25,44 @@ interface CategoryStyleConfig {
 
 const CATEGORY_STYLES: Record<string, CategoryStyleConfig> = {
   electrician: {
-    bg: '#FFF1C9',
+    bg: palette.amber100,
     iconSource: require('../../../assets/icons/categories/electrician.svg'),
     displayName: 'Electrician',
   },
   plumber: {
-    bg: '#E6F0FF',
+    bg: palette.blue100,
     iconSource: require('../../../assets/icons/categories/plumber.svg'),
     displayName: 'Plumber',
   },
   carpenter: {
-    bg: '#FFE7E3',
+    bg: palette.orange100,
     iconSource: require('../../../assets/icons/categories/carpenter.svg'),
     displayName: 'Carpenter',
   },
   painter: {
-    bg: '#EEE7FF',
+    bg: palette.purple100,
     iconSource: require('../../../assets/icons/categories/painter.svg'),
     displayName: 'Painter',
   },
   cleaning: {
-    bg: '#DFF4EC',
+    bg: colors.primaryLight,
     iconSource: require('../../../assets/icons/categories/cleaning.svg'),
     displayName: 'Cleaner',
   },
   cleaner: {
-    bg: '#DFF4EC',
+    bg: colors.primaryLight,
     iconSource: require('../../../assets/icons/categories/cleaning.svg'),
     displayName: 'Cleaner',
   },
   ac_repair: {
-    bg: '#E6F7FA',
+    bg: palette.sky100,
     iconSource: require('../../../assets/icons/categories/air-conditioner.svg'),
     displayName: 'AC Repair',
   },
 };
 
 const DEFAULT_STYLE: CategoryStyleConfig = {
-  bg: '#F1F5F9',
+  bg: colors.canvasGray,
   iconSource: require('../../../assets/icons/categories/cleaning.svg'),
 };
 

@@ -59,7 +59,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
         if (isMounted) {
           setPermissionStatus(status);
-          if (status === 'granted' && useAuthStore.getState().authState === 'authenticated') {
+          if (status === 'granted' && useAuthStore.getState().isAuthenticated) {
             register().catch(() => {});
           }
         }
@@ -104,7 +104,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // 2. Auth State Sync & Push Token Rotation Listener
   useEffect(() => {
-    if (authState === 'authenticated' && currentUserId) {
+    const isAuthed = authState === 'authenticated' || authState === 'AUTHENTICATED';
+    if (isAuthed && currentUserId) {
       register().catch(() => {});
 
       // Initial Unread Count Hydration (Page 1)
@@ -117,13 +118,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           }
         })
         .catch(() => {});
-    } else if (authState === 'unauthenticated') {
+    } else if (authState === 'unauthenticated' || authState === 'UNAUTHENTICATED') {
       unregister().catch(() => {});
     }
 
     // Subscribe to push token rotations
     const tokenSub = pushService.addPushTokenListener(async (tokenData) => {
-      if (tokenData?.data && useAuthStore.getState().authState === 'authenticated') {
+      if (tokenData?.data && useAuthStore.getState().isAuthenticated) {
         await notificationApi.registerPushToken(String(tokenData.data)).catch(() => {});
       }
     });
@@ -225,14 +226,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             setPermissionStatus(detail.status);
             setCanAskAgain(detail.canAskAgain);
 
-            if (detail.status === 'granted' && useAuthStore.getState().authState === 'authenticated') {
+            if (detail.status === 'granted' && useAuthStore.getState().isAuthenticated) {
               register().catch(() => {});
             }
           })
           .catch(() => {});
 
         // Refresh unread counter & feed if authenticated
-        if (useAuthStore.getState().authState === 'authenticated') {
+        if (useAuthStore.getState().isAuthenticated) {
           queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
 

@@ -37,7 +37,7 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
         style,
       ]}
     >
-      <ShieldCheck size={iconSize} color={colors.textGreen || '#15803D'} style={styles.icon} />
+      <ShieldCheck size={iconSize} color={colors.primaryDark} style={styles.icon} />
       <Text style={[styles.text, isMd ? styles.textMd : styles.textSm]}>
         Verified Worker
       </Text>
@@ -49,13 +49,16 @@ const styles = StyleSheet.create({
   compactContainer: {
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.lightGreen,
+    borderRadius: radius.pill,
+    padding: 3,
   },
   badgeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgSuccess || '#F0FDF4',
+    backgroundColor: colors.lightGreen,
     borderWidth: 1,
-    borderColor: colors.primaryBorder || '#BBF7D0',
+    borderColor: colors.lightGreenBorder,
     borderRadius: radius.pill,
     alignSelf: 'flex-start',
   },
@@ -72,7 +75,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontFamily: typography.fontFamily.jakarta.semiBold,
-    color: colors.textGreen || '#15803D',
+    color: colors.primaryDark,
   },
   textSm: {
     fontSize: 11,

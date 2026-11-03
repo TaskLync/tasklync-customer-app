@@ -1,111 +1,73 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, Pressable, ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import React, { useCallback, useMemo, useState } from 'react';
+import { StyleSheet, View, Text, Pressable, ViewStyle, LayoutAnimation } from 'react-native';
 import { Chip } from '../ui/Chip/Chip';
 import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
-import { springConfig } from '../../design/animations';
 import { WorkerSkill } from '../../types/worker.types';
+
+/** Chips shown before the "Show more" toggle appears. */
+const INITIAL_VISIBLE = 6;
 
 interface WorkerSkillListProps {
   skills: WorkerSkill[];
-  maxVisibleRows?: number;
   style?: ViewStyle;
 }
 
-export const WorkerSkillList: React.FC<WorkerSkillListProps> = ({
-  skills,
-  maxVisibleRows = 3,
-  style,
-}) => {
-  if (!skills || skills.length === 0) return null;
-
+/**
+ * "Skills & Expertise". Chips wrap naturally and the section height follows the number of
+ * rows — 2 skills = one compact row, many skills = as many rows as needed. No fixed heights.
+ */
+export const WorkerSkillList: React.FC<WorkerSkillListProps> = ({ skills, style }) => {
   const [expanded, setExpanded] = useState(false);
-  const [containerHeight, setContainerHeight] = useState(0);
 
-  // Sort: Verified skills first
-  const sortedSkills = [...skills].sort((a, b) => {
-    if (a.isVerified && !b.isVerified) return -1;
-    if (!a.isVerified && b.isVerified) return 1;
-    return 0;
-  });
+  // Verified skills first (stable for equal verification state).
+  const sortedSkills = useMemo(
+    () =>
+      [...(skills ?? [])].sort((a, b) => {
+        if (a.isVerified && !b.isVerified) return -1;
+        if (!a.isVerified && b.isVerified) return 1;
+        return 0;
+      }),
+    [skills],
+  );
 
-  const handleToggle = () => {
-    setExpanded(!expanded);
-  };
+  const handleToggle = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
+    setExpanded((prev) => !prev);
+  }, []);
 
-  const onLayout = (event: any) => {
-    const { height } = event.nativeEvent.layout;
-    if (height > 0) {
-      setContainerHeight(height);
-    }
-  };
+  if (sortedSkills.length === 0) return null;
 
-  const animatedStyle = useAnimatedStyle(() => {
-    if (containerHeight === 0) return { maxHeight: undefined };
-    
-    // Collapsed max height approximation:
-    // 3 rows of chips (height ~30 each + gap 8) = ~106px
-    const collapsedHeight = 114;
-    const target = expanded ? containerHeight : collapsedHeight;
-    return {
-      height: withSpring(target, springConfig.gentle),
-    };
-  });
-
-  // Decide if we need to show the toggle.
-  // Standard approximation: if skills.length > 6, we likely have more than 3 rows.
-  const showToggle = sortedSkills.length > 6;
-  const visibleSkills = expanded ? sortedSkills : sortedSkills.slice(0, 6);
-  const remainingCount = sortedSkills.length - 6;
+  const hasOverflow = sortedSkills.length > INITIAL_VISIBLE;
+  const visibleSkills = expanded || !hasOverflow ? sortedSkills : sortedSkills.slice(0, INITIAL_VISIBLE);
+  const remainingCount = sortedSkills.length - INITIAL_VISIBLE;
 
   return (
     <View style={[styles.container, style]}>
       <Text style={styles.sectionHeader}>Skills & Expertise</Text>
-      
-      {/* Hidden full container for layout measurement */}
-      <View
-        style={[styles.measureContainer, { position: 'absolute', opacity: 0, left: -9999 }]}
-        onLayout={onLayout}
-      >
-        <View style={styles.chipGrid}>
-          {sortedSkills.map((skill) => (
-            <Chip
-              key={`measure-${skill.id}`}
-              variant={skill.isVerified ? 'skill' : 'tag'}
-              selected={skill.isVerified}
-              label={skill.isVerified ? `✓ ${skill.categoryName}` : skill.categoryName}
-              size="sm"
-              style={styles.chip}
-            />
-          ))}
-        </View>
+
+      <View style={styles.chipGrid}>
+        {visibleSkills.map((skill) => (
+          <Chip
+            key={skill.id}
+            variant={skill.isVerified ? 'skill' : 'tag'}
+            selected={skill.isVerified}
+            label={skill.isVerified ? `✓ ${skill.categoryName}` : skill.categoryName}
+            size="sm"
+          />
+        ))}
       </View>
 
-      {/* Animated visible container */}
-      <Animated.View style={[styles.animatedContent, animatedStyle]}>
-        <View style={styles.chipGrid}>
-          {visibleSkills.map((skill) => (
-            <Chip
-              key={skill.id}
-              variant={skill.isVerified ? 'skill' : 'tag'}
-              selected={skill.isVerified}
-              label={skill.isVerified ? `✓ ${skill.categoryName}` : skill.categoryName}
-              size="sm"
-              style={styles.chip}
-            />
-          ))}
-        </View>
-      </Animated.View>
-
-      {showToggle && (
+      {hasOverflow && (
         <Pressable
           onPress={handleToggle}
           style={styles.toggleButton}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
         >
           <Text style={styles.toggleText}>
-            {expanded ? 'Show fewer skills' : `Show ${remainingCount} more skills ➔`}
+            {expanded ? 'Show fewer skills' : `Show ${remainingCount} more`}
           </Text>
         </Pressable>
       )}
@@ -121,25 +83,15 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.poppins.semiBold,
     fontSize: 16,
     color: colors.textPrimary || '#0F172A',
-    marginBottom: 10,
-  },
-  measureContainer: {
-    width: '100%',
-  },
-  animatedContent: {
-    overflow: 'hidden',
-    width: '100%',
+    marginBottom: 12,
   },
   chipGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  chip: {
-    marginBottom: 4,
-  },
   toggleButton: {
-    marginTop: 10,
+    marginTop: 12,
     alignSelf: 'flex-start',
   },
   toggleText: {

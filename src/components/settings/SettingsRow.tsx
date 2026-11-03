@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { colors, palette, fontFamily, spacing } from '../../design';
@@ -46,8 +47,8 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
         {subtitle ? (
           <Text
             style={styles.subtitle}
-            numberOfLines={2}
-            maxFontSizeMultiplier={1.3}
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.2}
           >
             {subtitle}
           </Text>
@@ -67,7 +68,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
   if (isInteractive) {
     return (
       <TouchableOpacity
-        activeOpacity={0.7}
+        activeOpacity={0.65}
         onPress={handlePress}
         style={styles.container}
         accessibilityRole="button"
@@ -91,7 +92,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 56,
+    minHeight: 52,
     justifyContent: 'center',
   },
   row: {
@@ -99,13 +100,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm + 4,
+    paddingVertical: spacing.sm + 2,
   },
   iconContainer: {
     marginRight: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    width: 20,
   },
   textContainer: {
     flex: 1,
@@ -126,12 +128,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   trailingContainer: {
-    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
+    flexShrink: 0,
   },
   chevron: {
-    marginLeft: 4,
+    marginLeft: spacing.xs,
   },
 });

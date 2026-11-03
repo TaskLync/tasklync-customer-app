@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { FileText, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
@@ -42,7 +42,6 @@ export const CartNoteInput: FC<CartNoteInputProps> = ({
         accessibilityLabel={isExpanded ? 'Collapse note for worker' : 'Add note for worker'}
       >
         <View style={styles.leftGroup}>
-          <FileText size={18} color={colors.textSecondary} />
           {/* Plus Jakarta Sans text */}
           <Text style={styles.headerText}>
             {value ? 'Note for worker' : '+ Add a note for the worker'}
@@ -77,13 +76,10 @@ export const CartNoteInput: FC<CartNoteInputProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    paddingHorizontal: 16,
+    marginHorizontal: 20,
     paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   headerRow: {
     flexDirection: 'row',
@@ -111,8 +107,10 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.body2,
     color: colors.textPrimary,
     minHeight: 70,
-    padding: 10,
+    padding: 12,
     backgroundColor: colors.bgInput,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 });

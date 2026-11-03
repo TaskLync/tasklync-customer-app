@@ -15,41 +15,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [hydrateAuth, hydrateLocation]);
 
   useEffect(() => {
-    if (authState === 'idle' || authState === 'loading') return;
+    // 1. Never make navigation decisions while authentication is initializing
+    if (
+      authState === 'INITIALIZING' ||
+      authState === 'idle' ||
+      authState === 'loading' ||
+      authState === 'REFRESHING_TOKEN' ||
+      authState === 'TEMPORARILY_UNAVAILABLE'
+    ) {
+      return;
+    }
 
     const inAuthGroup = segments[0] === '(auth)';
     const authScreen = segments[1];
 
-    if (authState === 'unauthenticated' && !inAuthGroup) {
-      // Redirect to the sign-in page.
+    // 2. Confirmed unauthenticated: send to Welcome screen ONLY if not already in auth stack
+    if ((authState === 'UNAUTHENTICATED' || authState === 'unauthenticated') && !inAuthGroup) {
       router.replace('/(auth)/welcome');
-    } else if (authState === 'authenticated') {
-      // Wait for OTP success animation to finish before redirecting (handled in useAuth)
+      return;
+    }
+
+    // 3. Authenticated: manage transitions within the auth group
+    if (authState === 'AUTHENTICATED' || authState === 'authenticated') {
+      // Allow OTP completion cascade to run smoothly
       if (authScreen === 'otp') return;
 
-      const user = useAuthStore.getState().user;
       const isNewUser = useAuthStore.getState().isNewUser;
-      const hasValidName = user?.name && user.name !== 'null' && user.name !== '' && user.name !== 'New User';
-      const needsProfileSetup = isNewUser || !hasValidName;
 
       if (inAuthGroup) {
-        // Allow user to stay on setup screens
+        // Allow newly registered users to complete name and location setup
         if (authScreen === 'name' || authScreen === 'location-permission') {
           return;
         }
 
-        // Redirect away from login screens (welcome, phone)
-        if (needsProfileSetup) {
+        // Redirect away from login entry screens (welcome, phone)
+        if (isNewUser) {
           router.replace('/(auth)/name');
         } else {
           router.replace('/(tabs)' as any);
         }
-      } else {
-        // If they somehow got to tabs without setting up their profile, force them back
-        if (needsProfileSetup) {
-          router.replace('/(auth)/name');
-        }
       }
+      // If already outside auth group (e.g. tabs, booking, profile), preserve their current screen!
     }
   }, [authState, segments, router]);
 

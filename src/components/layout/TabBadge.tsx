@@ -1,73 +1,76 @@
-import { useEffect } from 'react';
-import { StyleSheet, Text } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
-} from 'react-native-reanimated';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { fontFamily } from '../../design/typography';
+import { colors } from '../../design/colors';
 
 interface TabBadgeProps {
   count: number;
 }
 
-export const TabBadge = ({ count }: TabBadgeProps) => {
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    if (count > 0) {
-      scale.value = withSequence(
-        withSpring(1.3, { damping: 10, stiffness: 260 }),
-        withSpring(1.0, { damping: 14, stiffness: 200 })
-      );
-    }
-  }, [count, scale]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  if (count <= 0) return null;
+/**
+ * TabBadge
+ *
+ * Minimalist, compact, high-legibility notification badge for bottom navigation.
+ * - Pure static render without animation overhead for instant response
+ * - Crisp cutout border matching tab bar background (#F5F6F7)
+ * - Scaled circular geometry for single-digits, neat pill shape for multi-digits
+ * - Sensible count ceiling (99+)
+ */
+export const TabBadge: React.FC<TabBadgeProps> = React.memo(({ count }) => {
+  if (!count || count <= 0) return null;
 
   const displayCount = count > 99 ? '99+' : `${count}`;
+  const isMultiDigit = count > 9;
 
   return (
-    <Animated.View style={[styles.badge, animatedStyle]} pointerEvents="none">
+    <View
+      style={[
+        styles.badge,
+        isMultiDigit ? styles.badgeMultiDigit : styles.badgeSingleDigit,
+      ]}
+      pointerEvents="none"
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no"
+    >
       <Text style={styles.badgeText} numberOfLines={1}>
         {displayCount}
       </Text>
-    </Animated.View>
+    </View>
   );
-};
+});
+
+TabBadge.displayName = 'TabBadge';
 
 const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     top: -4,
     right: -8,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#EF4444', // Premium notification badge red
+    height: 16,
+    backgroundColor: colors.danger,
     borderWidth: 1.5,
-    borderColor: '#FFFFFF', // Crisp cutout against tab background
+    borderColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
-    zIndex: 999,
-    elevation: 8,
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 3,
+    zIndex: 10,
+  },
+  badgeSingleDigit: {
+    width: 16,
+    borderRadius: 8,
+    paddingHorizontal: 0,
+  },
+  badgeMultiDigit: {
+    minWidth: 16,
+    borderRadius: 8,
+    paddingHorizontal: 3.5,
   },
   badgeText: {
     fontFamily: fontFamily.jakarta.bold,
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.white,
     textAlign: 'center',
     includeFontPadding: false,
+    lineHeight: 11,
   },
 });

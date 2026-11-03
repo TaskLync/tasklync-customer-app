@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { bookingApi } from '../services/api/booking.api';
+import { bookingApi, isGenericWorkerName } from '../services/api/booking.api';
+import { localStorage } from '../services/storage/local.storage';
 import { BookingStatus } from '../types/booking.types';
 import { formatPKTRelativeSchedule } from '../utils/timezone';
 
@@ -34,11 +35,21 @@ export const useActiveBooking = () => {
           return null;
         }
 
+        let workerName = active.worker_name;
+        let workerAvatar = active.worker_avatar_url || null;
+        if (active.worker_id && (!workerName || isGenericWorkerName(workerName) || !workerAvatar)) {
+          const cached = localStorage.getCachedWorkerProfile<any>(active.worker_id)?.data;
+          if (cached?.name && !isGenericWorkerName(cached.name)) {
+            workerName = cached.name;
+            workerAvatar = cached.avatarUrl || cached.avatar_url || workerAvatar;
+          }
+        }
+
         return {
           id: active.id,
           status: active.status,
-          workerName: active.worker_name || 'Assigned Professional',
-          workerAvatarUrl: active.worker_avatar_url || null,
+          workerName: workerName || 'Assigned Professional',
+          workerAvatarUrl: workerAvatar,
           scheduledTime: formatPKTRelativeSchedule(active.scheduled_at),
           startedAt: active.started_at || null,
           distanceLabel: '1.2 km',

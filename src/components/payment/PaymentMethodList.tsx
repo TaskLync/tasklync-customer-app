@@ -19,10 +19,13 @@ export const PaymentMethodList: React.FC<PaymentMethodListProps> = ({
   const { methods: apiMethods, isLoading } = usePaymentMethods();
   const methods = [...extraMethods, ...apiMethods];
 
-  // Auto-select default card if none selected
+  // Auto-select enabled default payment method if none selected
   useEffect(() => {
     if (!selectedMethodId && methods.length > 0) {
-      const defaultMethod = methods.find((m) => m.is_default || m.isDefault) || methods[0];
+      const defaultMethod =
+        methods.find((m) => m.isEnabled !== false && m.is_enabled !== false && (m.is_default || m.isDefault)) ||
+        methods.find((m) => m.isEnabled !== false && m.is_enabled !== false) ||
+        methods[0];
       if (defaultMethod) {
         onSelectMethod(defaultMethod);
       }

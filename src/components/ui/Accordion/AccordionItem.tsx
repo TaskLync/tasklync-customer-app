@@ -143,8 +143,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    ...shadows.sm,
     marginBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   headerRow: {
     minHeight: 52,

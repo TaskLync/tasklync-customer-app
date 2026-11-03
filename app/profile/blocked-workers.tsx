@@ -16,6 +16,7 @@ import { useBlockedWorkers } from '../../src/hooks/useBlockedWorkers';
 import { BlockedWorkerRow } from '../../src/components/worker/BlockedWorkerRow';
 import { ToastUndo } from '../../src/components/ui/ToastUndo';
 import { BlockedWorker } from '../../src/types/moderation.types';
+import { EmptyState } from '../../src/components/feedback/EmptyState';
 import { colors, palette, fontFamily, fontSize, spacing } from '../../src/design';
 
 export default function BlockedWorkersScreen() {
@@ -87,12 +88,11 @@ export default function BlockedWorkersScreen() {
           </View>
         ) : blockedWorkers.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.3}>
-              You haven't blocked anyone
-            </Text>
-            <Text style={styles.emptySubtitle} maxFontSizeMultiplier={1.3}>
-              When you block a service provider from their profile, they will appear here.
-            </Text>
+            <EmptyState
+              type="no-data"
+              title="You haven't blocked anyone"
+              description="When you block a service provider from their profile, they will appear here."
+            />
           </View>
         ) : (
           <FlatList

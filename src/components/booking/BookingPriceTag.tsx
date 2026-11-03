@@ -1,4 +1,4 @@
-import React from 'react';
+import { colors } from '../../design';
 import { View, Text, StyleSheet } from 'react-native';
 
 interface BookingPriceTagProps {
@@ -7,16 +7,22 @@ interface BookingPriceTagProps {
 }
 
 const formatCurrency = (amount: number, currency: string) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-  }).format(amount);
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency || 'PKR',
+    }).format(amount);
+  } catch {
+    return `${currency || 'PKR'} ${amount.toLocaleString()}`;
+  }
 };
 
 export function BookingPriceTag({ amount, currency }: BookingPriceTagProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.price}>{formatCurrency(amount, currency)}</Text>
+      <Text style={styles.price} numberOfLines={1}>
+        {formatCurrency(amount, currency)}
+      </Text>
     </View>
   );
 }
@@ -25,10 +31,14 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'flex-end',
     justifyContent: 'center',
+    flexShrink: 0,
+    marginLeft: 8,
   },
   price: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-Bold',
     fontSize: 16,
-    color: '#111827',
+    letterSpacing: -0.3,
+    color: colors.textPrimary,
+    textAlign: 'right',
   },
 });

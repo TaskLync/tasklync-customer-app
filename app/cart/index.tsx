@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, useColorScheme } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,6 +18,8 @@ import { colors } from '../../src/design/colors';
 
 export default function CartScreen() {
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const items = useCartStore((state) => state.items);
   const worker = useCartStore((state) => state.worker);
@@ -52,8 +54,8 @@ export default function CartScreen() {
   };
 
   return (
-    <View style={[styles.screenContainer, { paddingTop: insets.top }]}>
-      <StatusBar style="dark" />
+    <View style={[styles.screenContainer, isDark && styles.screenContainerDark, { paddingTop: insets.top }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       {/* 1. Header with back button & item count badge */}
       <CartHeader itemCount={totals.itemCount} />
@@ -101,6 +103,9 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
     backgroundColor: colors.bgApp,
+  },
+  screenContainerDark: {
+    backgroundColor: colors.textPrimary,
   },
   contentWrapper: {
     flex: 1,

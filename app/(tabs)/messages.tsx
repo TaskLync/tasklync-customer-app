@@ -53,7 +53,7 @@ export default function MessagesScreen() {
 
   const handleConversationPress = useCallback(
     (item: ConversationItem) => {
-      markAsRead(item.bookingId);
+      markAsRead(item);
       router.push({
         pathname: '/booking/[id]/chat' as any,
         params: {
@@ -102,7 +102,7 @@ export default function MessagesScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
 
       {/* Screen Header */}
       <MessagesHeader totalUnreadCount={totalUnreadCount} />
@@ -134,6 +134,7 @@ export default function MessagesScreen() {
         keyExtractor={keyExtractor}
         contentContainerStyle={[
           styles.listContent,
+          conversations.length === 0 && !isLoading && styles.listContentEmpty,
           { paddingBottom: Math.max(insets.bottom, 16) + 96 },
         ]}
         ListEmptyComponent={renderEmptyComponent}
@@ -155,27 +156,32 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgApp,
   },
   searchContainer: {
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: colors.borderLight,
   },
   searchInput: {
     height: 56,
     minHeight: 56,
     borderRadius: radius.pill,
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
+    backgroundColor: colors.bgApp,
+    borderColor: colors.border,
     borderWidth: 1.2,
   },
   listContent: {
     paddingTop: 12,
     flexGrow: 1,
+  },
+  listContentEmpty: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingTop: 0,
   },
   skeletonContainer: {
     paddingTop: 6,

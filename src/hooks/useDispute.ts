@@ -19,6 +19,8 @@ export function useDispute(bookingId?: string | null) {
       return await bookingApi.getDispute(bookingId);
     },
     enabled: Boolean(bookingId),
+    retry: false,
+    staleTime: 1000 * 30,
   });
 
   const openMutation = useMutation<DisputeDetails, Error, OpenDisputeArgs>({

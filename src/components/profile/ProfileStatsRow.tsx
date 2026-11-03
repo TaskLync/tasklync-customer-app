@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { CheckCircle2, Star } from 'lucide-react-native';
 import { UserProfileStats } from '../../types/user.types';
 import { colors, fontFamily } from '../../design';
 
@@ -24,9 +23,6 @@ export const ProfileStatsRow: React.FC<ProfileStatsRowProps> = ({ stats }) => {
     <View style={styles.container}>
       {/* Stat 1: Completed Bookings */}
       <View style={styles.statCard}>
-        <View style={styles.iconCircle}>
-          <CheckCircle2 size={18} color={colors.primaryDark} strokeWidth={2.2} />
-        </View>
         <View style={styles.textCol}>
           <Text style={styles.statValue}>{bookingsCount}</Text>
           <Text style={styles.statLabel}>Jobs Completed</Text>
@@ -35,9 +31,6 @@ export const ProfileStatsRow: React.FC<ProfileStatsRowProps> = ({ stats }) => {
 
       {/* Stat 2: Customer Rating */}
       <View style={styles.statCard}>
-        <View style={[styles.iconCircle, styles.iconCircleRating]}>
-          <Star size={17} color="#D97706" fill="#F59E0B" strokeWidth={1.5} />
-        </View>
         <View style={styles.textCol}>
           <View style={styles.ratingRow}>
             <Text style={styles.statValue}>{rating}</Text>
@@ -60,32 +53,25 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
+    backgroundColor: colors.bgSection,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   iconCircle: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: colors.primaryBorderSubtle,
   },
   iconCircleRating: {
-    backgroundColor: '#FEF3C7',
-    borderColor: '#FDE68A',
+    backgroundColor: colors.warningLight,
+    borderColor: colors.warningBorder,
   },
   textCol: {
     flex: 1,
@@ -96,19 +82,20 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   statValue: {
-    fontFamily: fontFamily.jakarta.bold,
-    fontSize: 17,
-    color: '#0F172A',
+    fontFamily: fontFamily.inter.bold,
+    fontSize: 18,
+    letterSpacing: -0.3,
+    color: colors.textPrimary,
   },
   ratingMax: {
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.textMuted,
   },
   statLabel: {
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 12,
-    color: '#64748B',
+    color: colors.textSecondary,
     marginTop: -1,
   },
 });

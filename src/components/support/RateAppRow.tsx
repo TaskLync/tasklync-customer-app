@@ -33,7 +33,7 @@ export const RateAppRow: React.FC = () => {
       accessibilityLabel="Rate Tasklync App on App Store or Google Play"
     >
       <View style={styles.iconCircle}>
-        <Star size={20} color="#EAB308" fill="#FEF08A" />
+        <Star size={20} color={palette.amber500} fill={palette.amber200} />
       </View>
 
       <View style={styles.textContainer}>
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FEF9C3',
+    backgroundColor: palette.amber100,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,

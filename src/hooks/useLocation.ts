@@ -69,10 +69,43 @@ export const useLocation = (options?: UseLocationOptions) => {
           return store.currentLocation;
         }
 
+        if (force) {
+          const freshResult = await locationService.acquireFreshGPSPosition();
+          if (freshResult.success) {
+            const coords: Coordinates = {
+              lat: freshResult.location.lat,
+              lng: freshResult.location.lng,
+            };
+            store.setCurrentLocation(coords);
+
+            // Reverse geocode in background without blocking position acquisition
+            locationService
+              .reverseGeocode(coords)
+              .then((res) => {
+                const cityName = res?.cityName?.trim();
+                if (cityName && cityName !== 'Current Area' && cityName !== 'Your area') {
+                  useLocationStore.getState().setCurrentCity(cityName);
+                } else if (!useLocationStore.getState().currentCity) {
+                  useLocationStore.getState().setCurrentCity('Current Location');
+                }
+              })
+              .catch(() => {
+                if (!useLocationStore.getState().currentCity) {
+                  useLocationStore.getState().setCurrentCity('Current Location');
+                }
+              });
+
+            return coords;
+          } else {
+            setError(freshResult.error.userMessage);
+            return null;
+          }
+        }
+
         const coords = await locationService.getCurrentPosition({
           enableHighAccuracy,
           timeoutMs: 8000,
-          useCacheFirst: !force,
+          useCacheFirst: true,
         });
 
         if (coords) {
@@ -98,9 +131,6 @@ export const useLocation = (options?: UseLocationOptions) => {
           return coords;
         }
 
-        if (force) {
-          return null;
-        }
         return store.currentLocation;
       } catch (err: any) {
         console.warn('[useLocation] Failed to fetch position:', err);

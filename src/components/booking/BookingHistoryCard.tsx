@@ -1,9 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Wrench, Zap, Sparkles, Paintbrush, Hammer, Shield, Clock } from 'lucide-react-native';
-import { StatusDot } from '../ui/StatusDot';
 import { statusToLabel } from '../../utils/bookingStatus';
-import { colors, palette, fontFamily, radius, spacing, shadows } from '../../design';
+import { colors, palette, fontFamily, spacing } from '../../design';
 
 export interface BookingHistoryItem {
   id: string;
@@ -23,16 +21,6 @@ export interface BookingHistoryItem {
 export interface BookingHistoryCardProps {
   booking: BookingHistoryItem;
 }
-
-const getCategoryIcon = (category: string) => {
-  const normalized = category.toLowerCase();
-  if (normalized.includes('electr')) return <Zap size={16} color="#D97706" />;
-  if (normalized.includes('plumb')) return <Wrench size={16} color="#2563EB" />;
-  if (normalized.includes('clean')) return <Sparkles size={16} color="#059669" />;
-  if (normalized.includes('paint')) return <Paintbrush size={16} color="#9333EA" />;
-  if (normalized.includes('carpent')) return <Hammer size={16} color="#B45309" />;
-  return <Wrench size={16} color={palette.green700} />;
-};
 
 const formatDate = (isoString: string): string => {
   try {
@@ -73,14 +61,6 @@ export const BookingHistoryCard: React.FC<BookingHistoryCardProps> = ({ booking 
       accessibilityLabel={a11yLabel}
       accessibilityHint="Double tap to view booking receipt and details"
     >
-      {/* Left: Category Icon & StatusDot */}
-      <View style={styles.leftContainer}>
-        <View style={styles.iconBox}>{getCategoryIcon(booking.category)}</View>
-        <View style={styles.dotBadge}>
-          <StatusDot status={booking.status} size={8} />
-        </View>
-      </View>
-
       {/* Middle: Worker & Service Info */}
       <View style={styles.middleContainer}>
         <Text style={styles.workerName} numberOfLines={1} maxFontSizeMultiplier={1.3}>
@@ -111,16 +91,13 @@ export const BookingHistoryCard: React.FC<BookingHistoryCardProps> = ({ booking 
 
 const styles = StyleSheet.create({
   card: {
-    height: 84,
+    minHeight: 76,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.base,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.xs,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   leftContainer: {
     position: 'relative',
@@ -148,9 +125,9 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   workerName: {
-    fontFamily: fontFamily.jakarta.medium,
-    fontSize: 14.5,
-    lineHeight: 19,
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 15,
+    lineHeight: 20,
     color: colors.textPrimary,
   },
   serviceSubtitle: {
@@ -175,9 +152,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   amountText: {
-    fontFamily: fontFamily.inter.semiBold,
-    fontSize: 14,
-    lineHeight: 18,
+    fontFamily: fontFamily.inter.bold,
+    fontSize: 15,
+    lineHeight: 20,
+    letterSpacing: -0.2,
     color: colors.textPrimary,
   },
   dateText: {

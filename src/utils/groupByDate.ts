@@ -1,9 +1,9 @@
-import {
+import type {
   NotificationItem,
   NotificationListItem,
   NotificationHeaderItem,
   NotificationRowItem,
-} from '../types/notification.types';
+} from '../types/notification.types.ts';
 
 export interface GroupedNotificationsResult {
   groupedItems: NotificationListItem[];
@@ -90,12 +90,9 @@ export function formatGroupHeaderTitle(dateKey: string, sampleDate: Date): strin
 
 /**
  * Pure function: takes flat NotificationItem[] and returns flat NotificationListItem[]
- * with header items injected at section boundaries, plus recalculates stickyHeaderIndices for FlashList.
+ * grouped into intuitive sections: "Today", "Yesterday", and "Earlier" (only when relevant).
  *
- * Guaranteed properties:
- * 1. Stable across pagination (re-runs on the entire flattened cache).
- * 2. Empty groups are completely dropped (if user deletes last item in a group, the header is removed).
- * 3. Exact sticky header indices mapped to the flat array indices.
+ * Re-indexes stickyHeaderIndices for FlashList.
  */
 export function groupNotificationsByDate(
   items: NotificationItem[]
@@ -109,14 +106,13 @@ export function groupNotificationsByDate(
     };
   }
 
-  // Group items by local calendar day key (YYYY-MM-DD)
-  const groupsMap = new Map<
-    string,
-    {
-      date: Date;
-      items: NotificationItem[];
-    }
-  >();
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const yesterdayStart = todayStart - 86400000;
+
+  const todayItems: NotificationItem[] = [];
+  const yesterdayItems: NotificationItem[] = [];
+  const earlierItems: NotificationItem[] = [];
 
   let totalUnread = 0;
 
@@ -126,60 +122,51 @@ export function groupNotificationsByDate(
       totalUnread += 1;
     }
 
-    let date: Date;
+    let timestamp: number;
     try {
-      date = new Date(item.created_at);
-      if (isNaN(date.getTime())) {
-        date = new Date();
-      }
+      const d = new Date(item.created_at);
+      timestamp = isNaN(d.getTime()) ? Date.now() : d.getTime();
     } catch {
-      date = new Date();
+      timestamp = Date.now();
     }
 
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateKey = `${year}-${month}-${day}`;
-
-    const existing = groupsMap.get(dateKey);
-    if (existing) {
-      existing.items.push(item);
+    if (timestamp >= todayStart) {
+      todayItems.push(item);
+    } else if (timestamp >= yesterdayStart) {
+      yesterdayItems.push(item);
     } else {
-      groupsMap.set(dateKey, {
-        date,
-        items: [item],
-      });
+      earlierItems.push(item);
     }
   }
 
-  // Sort groups descending by date key
-  const sortedDateKeys = Array.from(groupsMap.keys()).sort((a, b) => b.localeCompare(a));
+  const buckets: Array<{ id: string; title: string; items: NotificationItem[] }> = [
+    { id: 'today', title: 'Today', items: todayItems },
+    { id: 'yesterday', title: 'Yesterday', items: yesterdayItems },
+    { id: 'earlier', title: 'Earlier', items: earlierItems },
+  ];
 
   const groupedItems: NotificationListItem[] = [];
   const stickyHeaderIndices: number[] = [];
 
-  for (const dateKey of sortedDateKeys) {
-    const group = groupsMap.get(dateKey);
-    if (!group || group.items.length === 0) {
-      // Drop empty group
+  for (const bucket of buckets) {
+    if (bucket.items.length === 0) {
       continue;
     }
 
-    const headerTitle = formatGroupHeaderTitle(dateKey, group.date);
     const headerIndex = groupedItems.length;
     stickyHeaderIndices.push(headerIndex);
 
     const headerItem: NotificationHeaderItem = {
       type: 'header',
-      id: `header_${dateKey}`,
-      title: headerTitle,
-      dateKey,
-      count: group.items.length,
+      id: `header_${bucket.id}`,
+      title: bucket.title,
+      dateKey: bucket.id,
+      count: bucket.items.length,
     };
     groupedItems.push(headerItem);
 
     // Add each notification row item
-    for (const notification of group.items) {
+    for (const notification of bucket.items) {
       const rowItem: NotificationRowItem = {
         type: 'notification',
         id: notification.id,

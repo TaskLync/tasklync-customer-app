@@ -14,7 +14,7 @@ export const SummaryAddressRow: React.FC<SummaryAddressRowProps> = ({ address })
   const label = address?.label || 'Service Location';
   const street = address?.street || 'Select delivery address';
   const unit = address?.unit;
-  const city = address?.city || 'Faisalabad';
+  const city = address?.city;
   const isDefault = address?.isDefault;
 
   const renderLabelIcon = () => {
@@ -43,7 +43,7 @@ export const SummaryAddressRow: React.FC<SummaryAddressRowProps> = ({ address })
           {street}
           {unit ? `, ${unit}` : ''}
         </Text>
-        <Text style={styles.cityText}>{city}</Text>
+        {city ? <Text style={styles.cityText}>{city}</Text> : null}
       </View>
     </SummarySectionCard>
   );

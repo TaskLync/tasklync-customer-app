@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Lock } from 'lucide-react-native';
@@ -39,9 +40,14 @@ export const ArchivedBanner = React.memo(function ArchivedBanner({
   };
 
   return (
-    <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+    <View
+      style={[
+        styles.wrapper,
+        { paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 18 },
+      ]}
+    >
       <View style={styles.content}>
-        <Lock size={15} color="#94A3B8" strokeWidth={2} style={styles.icon} />
+        <Lock size={15} color={colors.textMuted} strokeWidth={2} style={styles.icon} />
         <Text style={styles.text}>{getNotice()}</Text>
       </View>
     </View>
@@ -50,9 +56,9 @@ export const ArchivedBanner = React.memo(function ArchivedBanner({
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgSubtle,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: colors.border,
     paddingTop: 14,
     paddingHorizontal: 20,
     alignItems: 'center',
@@ -62,7 +68,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
@@ -73,7 +79,7 @@ const styles = StyleSheet.create({
   text: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
-    color: '#64748B',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 16,
   },

@@ -1,98 +1,116 @@
+import React, { useState } from 'react';
 import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
-import { ShieldCheck } from 'lucide-react-native';
 import { formatDistanceToNow, format, parseISO, differenceInDays } from 'date-fns';
-import { colors } from '../../design/colors';
+import { colors, palette } from '../../design/colors';
 import { fontFamily as fonts } from '../../design/typography';
+import { ReviewStarRow } from './ReviewStarRow';
 
-interface ReviewMetaRowProps {
+export interface ReviewMetaRowProps {
   avatarUrl: string | null;
   reviewerName: string;
   date: string;
-  isVerified?: boolean;
-  size?: 'sm' | 'md';
-  style?: ViewStyle;
+  isVerified?: boolean | undefined;
+  rating?: number | undefined;
+  editedAt?: string | null | undefined;
+  rightAction?: React.ReactNode | undefined;
+  size?: 'sm' | 'md' | undefined;
+  style?: ViewStyle | undefined;
 }
 
 const getInitials = (name: string) => {
-  const parts = name.trim().split(' ');
+  const clean = (name || '').trim();
+  if (!clean || clean.toLowerCase() === 'verified customer') {
+    return 'C';
+  }
+  const parts = clean.split(' ').filter(Boolean);
   if (parts.length > 1) {
     return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   }
-  return name.substring(0, 2).toUpperCase();
+  return clean.substring(0, 2).toUpperCase() || 'C';
 };
 
-export const ReviewMetaRow = ({
+const formatDate = (dateString: string) => {
+  try {
+    const parsedDate = parseISO(dateString);
+    const days = differenceInDays(new Date(), parsedDate);
+    if (days < 30) {
+      return formatDistanceToNow(parsedDate, { addSuffix: true });
+    }
+    return format(parsedDate, 'MMM d, yyyy');
+  } catch {
+    return dateString;
+  }
+};
+
+/**
+ * ReviewMetaRow Component
+ *
+ * Implements clean, scannable reviewer identity header:
+ * [Avatar]  Reviewer Name  [✓ Verified]         [Action / Flag]
+ *           ★★★★★ 5.0 · 2 days ago
+ */
+export const ReviewMetaRow: React.FC<ReviewMetaRowProps> = ({
   avatarUrl,
   reviewerName,
   date,
-  isVerified = false,
+  isVerified: _isVerified = false,
+  rating,
+  editedAt,
+  rightAction,
   size = 'md',
   style,
-}: ReviewMetaRowProps) => {
-  const avatarSize = size === 'md' ? 40 : 32;
-  const nameSize = size === 'md' ? 14 : 13;
+}) => {
+  const [imageError, setImageError] = useState(false);
+  const avatarSize = size === 'md' ? 36 : 30;
+  const avatarShape = { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 };
 
-  const formatDate = (dateString: string) => {
-    try {
-      const parsedDate = parseISO(dateString);
-      const days = differenceInDays(new Date(), parsedDate);
-      if (days < 30) {
-        return formatDistanceToNow(parsedDate, { addSuffix: true });
-      }
-      return format(parsedDate, 'MMM d, yyyy');
-    } catch {
-      return dateString;
-    }
-  };
+  const hasValidImage = Boolean(avatarUrl) && !imageError;
 
   return (
     <View style={[styles.container, style]}>
-      {/* Left Avatar */}
-      {avatarUrl ? (
+      {hasValidImage ? (
         <Image
-          source={{ uri: avatarUrl }}
-          style={[
-            styles.avatar,
-            { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
-          ]}
+          source={{ uri: avatarUrl as string }}
+          style={[styles.avatar, avatarShape]}
           contentFit="cover"
-          transition={200}
+          transition={150}
+          onError={() => setImageError(true)}
+          accessibilityIgnoresInvertColors
         />
       ) : (
-        <View
-          style={[
-            styles.fallbackAvatar,
-            { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
-          ]}
-        >
-          <Text style={[styles.fallbackText, { fontSize: avatarSize * 0.4 }]}>
+        <View style={[styles.fallbackAvatar, avatarShape]}>
+          <Text style={[styles.fallbackText, { fontSize: avatarSize * 0.38 }]}>
             {getInitials(reviewerName)}
           </Text>
         </View>
       )}
 
-      {/* Center Details */}
       <View style={styles.centerCol}>
+        {/* Row 1: Reviewer Name + Inline Verified Indicator */}
         <View style={styles.nameRow}>
-          <Text
-            style={[styles.nameText, { fontSize: nameSize }]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
+          <Text style={styles.nameText} numberOfLines={1}>
             {reviewerName}
           </Text>
-          {isVerified && (
-            <View style={styles.verifiedBadge}>
-              <ShieldCheck size={12} color={colors.primaryDark} strokeWidth={2.5} />
-              <Text style={styles.verifiedText}>Verified</Text>
-            </View>
+        </View>
+
+        {/* Row 2: Star rating (if provided) + Relative date */}
+        <View style={styles.metaRow}>
+          {typeof rating === 'number' && (
+            <>
+              <ReviewStarRow rating={rating} size="xs" />
+              <Text style={styles.ratingNumberText}>{rating.toFixed(1)}</Text>
+              <Text style={styles.dot}>·</Text>
+            </>
           )}
+          <Text style={styles.dateText} numberOfLines={1}>
+            {formatDate(date)}
+          </Text>
+          {editedAt && <Text style={styles.editedTag}>(edited)</Text>}
         </View>
       </View>
 
-      {/* Right Date */}
-      <Text style={styles.dateText}>{formatDate(date)}</Text>
+      {rightAction ? <View style={styles.rightActionWrap}>{rightAction}</View> : null}
     </View>
   );
 };
@@ -106,46 +124,77 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgSection,
   },
   fallbackAvatar: {
-    backgroundColor: colors.bgSection,
+    backgroundColor: palette.gray100,
     alignItems: 'center',
     justifyContent: 'center',
   },
   fallbackText: {
-    fontFamily: fonts.poppins.semiBold,
-    color: colors.textSecondary,
+    fontFamily: fonts.jakarta.semiBold,
+    color: palette.gray600,
   },
   centerCol: {
     flex: 1,
     marginLeft: 10,
+    justifyContent: 'center',
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
     gap: 6,
   },
   nameText: {
     fontFamily: fonts.jakarta.semiBold,
+    fontSize: 13.5,
     color: colors.textPrimary,
+    flexShrink: 1,
   },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgSuccess,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
     gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 100,
+    backgroundColor: palette.green50,
+    borderWidth: 1,
+    borderColor: palette.green100,
+    flexShrink: 0,
   },
   verifiedText: {
-    fontFamily: fonts.jakarta.medium,
+    fontFamily: fonts.jakarta.semiBold,
     fontSize: 10,
     color: colors.primaryDark,
   },
-  dateText: {
-    fontFamily: fonts.inter.regular,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 4,
+  },
+  ratingNumberText: {
+    fontFamily: fonts.inter.semiBold,
     fontSize: 11,
-    color: colors.textMuted,
+    color: colors.textPrimary,
+    marginLeft: 1,
+  },
+  dot: {
+    fontSize: 11,
+    color: palette.gray400,
+  },
+  dateText: {
+    fontFamily: fonts.jakarta.regular,
+    fontSize: 11.5,
+    color: palette.gray500,
+  },
+  editedTag: {
+    fontFamily: fonts.jakarta.regular,
+    fontSize: 10.5,
+    color: palette.gray400,
+    marginLeft: 2,
+  },
+  rightActionWrap: {
     marginLeft: 8,
+    alignSelf: 'flex-start',
+    paddingTop: 2,
   },
 });

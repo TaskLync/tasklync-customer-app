@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
 import { AlertCircle, RefreshCw } from 'lucide-react-native';
 import { BookingAddress, useBookingDraftStore } from '../../store/bookingDraft.store';
 import { Address } from '../../types/address.types';
@@ -13,8 +12,6 @@ export interface AddressListProps {
   selectedAddressId: string | null;
   onSelectAddress: (address: BookingAddress) => void;
 }
-
-const AnyFlashList = FlashList as any;
 
 export const AddressList: React.FC<AddressListProps> = ({
   selectedAddressId,
@@ -32,7 +29,7 @@ export const AddressList: React.FC<AddressListProps> = ({
           id: defaultAddr.id,
           label: defaultAddr.label,
           street: defaultAddr.address_line,
-          city: defaultAddr.city || 'Faisalabad',
+          city: defaultAddr.city || '',
           latitude: defaultAddr.lat,
           longitude: defaultAddr.lng,
           isDefault: Boolean(defaultAddr.is_default),
@@ -83,31 +80,25 @@ export const AddressList: React.FC<AddressListProps> = ({
 
   return (
     <View style={styles.container}>
-      <AnyFlashList
-        data={addresses}
-        estimatedItemSize={76}
-        keyExtractor={(item: Address) => item.id}
-        renderItem={({ item }: { item: Address }) => (
-          <View style={styles.cardItemWrap}>
-            <AddressCard
-              address={item}
-              isSelected={selectedAddressId === item.id}
-              onSelect={(selected) => {
-                onSelectAddress({
-                  id: selected.id,
-                  label: selected.label,
-                  street: selected.address_line,
-                  city: selected.city || 'Faisalabad',
-                  latitude: selected.lat,
-                  longitude: selected.lng,
-                  isDefault: Boolean(selected.is_default),
-                });
-              }}
-            />
-          </View>
-        )}
-        scrollEnabled={false}
-      />
+      {addresses.map((item: Address, index: number) => (
+        <View key={item.id || `addr-${index}`} style={styles.cardItemWrap}>
+          <AddressCard
+            address={item}
+            isSelected={selectedAddressId === item.id}
+            onSelect={(selected) => {
+              onSelectAddress({
+                id: selected.id,
+                label: selected.label,
+                street: selected.address_line,
+                city: selected.city || '',
+                latitude: selected.lat,
+                longitude: selected.lng,
+                isDefault: Boolean(selected.is_default),
+              });
+            }}
+          />
+        </View>
+      ))}
     </View>
   );
 };
@@ -143,7 +134,7 @@ const styles = StyleSheet.create({
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.dangerLight,
     borderWidth: 1,
     borderColor: '#FECACA',
     borderRadius: 16,
@@ -172,7 +163,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderWidth: 1,
     borderColor: colors.border,
   },

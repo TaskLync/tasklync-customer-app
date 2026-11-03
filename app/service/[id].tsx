@@ -33,7 +33,7 @@ import {
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@design/colors';
+import { colors, palette } from '@design/colors';
 import { typography } from '@design/typography';
 import { radius } from '@design/radius';
 import { shadows } from '@design/shadows';
@@ -45,21 +45,22 @@ import { ServicePriceTag } from '@components/service/ServicePriceTag';
 import { AddToCartButton } from '@components/cart/AddToCartButton';
 import { Chip } from '@components/ui/Chip/Chip';
 import { WorkerNearby } from '../../src/types/worker.types';
+import { WorkerAvatar } from '../../src/components/worker/WorkerAvatar';
 import { OnlineBadge } from '@components/ui/Badge/OnlineBadge';
 import { getServicePrice } from '../../src/utils/formatters';
 
 const HERO_HEIGHT = 240;
 
 const CATEGORY_STYLE_MAP: Record<string, { bg: string; color: string; Icon: any }> = {
-  electrician: { bg: '#FEF3C7', color: '#D97706', Icon: Zap },
-  plumber: { bg: '#EFF6FF', color: '#2563EB', Icon: Droplet },
-  ac_repair: { bg: '#F0F9FF', color: '#0284C7', Icon: Wind },
-  cleaning: { bg: '#F0FDF4', color: '#16A34A', Icon: Sparkles },
-  carpenter: { bg: '#FFF7ED', color: '#EA580C', Icon: Hammer },
-  painter: { bg: '#FDF4FF', color: '#C084FC', Icon: Paintbrush },
+  electrician: { bg: palette.amber100, color: colors.warningMedium, Icon: Zap },
+  plumber: { bg: colors.infoLight, color: colors.textInfo, Icon: Droplet },
+  ac_repair: { bg: palette.sky50, color: palette.sky600, Icon: Wind },
+  cleaning: { bg: colors.primaryTint, color: colors.primaryDark, Icon: Sparkles },
+  carpenter: { bg: palette.orange50, color: palette.orange600, Icon: Hammer },
+  painter: { bg: palette.purple50, color: palette.purple400, Icon: Paintbrush },
 };
 
-const DEFAULT_STYLE = { bg: '#F3F4F6', color: '#4B5563', Icon: Wrench };
+const DEFAULT_STYLE = { bg: colors.bgHover, color: colors.textSecondary, Icon: Wrench };
 
 export default function ServiceDetailScreen() {
   const router = useRouter();
@@ -217,7 +218,13 @@ export default function ServiceDetailScreen() {
       />
 
       {/* Floating Header */}
-      <Animated.View style={[styles.header, { paddingTop: insets.top }, headerAnimatedStyle]}>
+      <Animated.View
+        style={[
+          styles.header,
+          { paddingTop: Math.max(insets.top, 10) },
+          headerAnimatedStyle,
+        ]}
+      >
         <Pressable
           onPress={handleBack}
           style={styles.backButton}
@@ -369,18 +376,14 @@ export default function ServiceDetailScreen() {
                         isSelected && styles.workerCardSelected,
                       ]}
                     >
-                      <View style={styles.workerAvatarContainer}>
-                        <Image
-                          source={{ uri: worker.avatarUrl || 'https://i.pravatar.cc/150?u=' + worker.id }}
-                          style={styles.workerAvatar}
+                      <WorkerAvatar
+                          uri={worker.avatarUrl || (worker as any)?.avatar || (worker as any)?.avatar_url}
+                          name={worker.name}
+                          size={48}
+                          showOnlineBadge={true}
+                          isOnline={worker.availabilityStatus === 'AVAILABLE'}
+                          badgeSize={10}
                         />
-                        <View style={styles.workerOnlineBadge}>
-                          <OnlineBadge
-                            status={worker.availabilityStatus === 'AVAILABLE' ? 'online' : 'offline'}
-                            size={10}
-                          />
-                        </View>
-                      </View>
 
                       <Text
                         style={styles.workerName}
@@ -411,18 +414,24 @@ export default function ServiceDetailScreen() {
           </View>
 
           {/* Bottom spacing for footer clearance */}
-          <View style={{ height: 100 }} />
+          <View style={{ height: 108 + insets.bottom }} />
         </View>
       </Animated.ScrollView>
 
       {/* Sticky Footer */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: insets.bottom > 0 ? insets.bottom + 14 : 20 },
+        ]}
+      >
         {selectedWorker ? (
           <View style={styles.footerBookingRow}>
             <View style={styles.selectedWorkerInfo}>
-              <Image
-                source={{ uri: selectedWorker.avatarUrl || 'https://i.pravatar.cc/150?u=' + selectedWorker.id }}
-                style={styles.footerWorkerAvatar}
+              <WorkerAvatar
+                uri={selectedWorker.avatarUrl || (selectedWorker as any)?.avatar || (selectedWorker as any)?.avatar_url}
+                name={selectedWorker.name}
+                size={40}
               />
               <View>
                 <Text
@@ -491,7 +500,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: Platform.OS === 'ios' ? 88 : 72,
+    minHeight: 56,
+    paddingBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -502,7 +512,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.sm,
@@ -680,7 +690,7 @@ const styles = StyleSheet.create({
   selectedText: {
     fontFamily: typography.fontFamily.jakarta.bold,
     fontSize: 9,
-    color: '#FFFFFF',
+    color: colors.white,
   },
   emptyText: {
     fontFamily: typography.fontFamily.jakarta.regular,
@@ -699,7 +709,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: colors.shadow,
         shadowOffset: { width: 0, height: -3 },
         shadowOpacity: 0.05,
         shadowRadius: 8,

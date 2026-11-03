@@ -2,25 +2,33 @@ import { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { HomeHeader } from '../../src/components/home/HomeHeader';
 import { SearchPromptBar } from '../../src/components/home/SearchPromptBar';
 import { CategoryGrid } from '../../src/components/home/CategoryGrid';
+import { CompanyRow } from '../../src/components/home/CompanyRow';
 import { NearbyWorkersList } from '../../src/components/home/NearbyWorkersList';
 import { BannerCarousel } from '../../src/components/home/BannerCarousel';
 import { AllWorkersSection } from '../../src/components/home/AllWorkersSection';
 import { CustomRefreshControl } from '../../src/components/feedback/CustomRefreshControl';
 
 import { useCategories } from '../../src/hooks/useCategories';
+import { useCompanies } from '../../src/hooks/useCompanies';
 import { useNearbyWorkers } from '../../src/hooks/useNearbyWorkers';
 import { useLocation } from '../../src/hooks/useLocation';
 
-import { colors } from '../../src/design/colors';
+import { colors } from '../../src/design';
 
 export default function HomeScreen() {
+  const queryClient = useQueryClient();
   const { refetch: refetchCategories } = useCategories();
+  const { refetch: refetchCompanies } = useCompanies({ limit: 10 });
   const { refetch: refetchWorkers } = useNearbyWorkers();
-  const { getCurrentPosition, locationMode } = useLocation({ autoFetch: false });
+  const {
+    getCurrentPosition,
+    locationMode,
+  } = useLocation({ autoFetch: false });
 
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
@@ -30,7 +38,10 @@ export default function HomeScreen() {
     try {
       const promises: Promise<any>[] = [
         refetchCategories(),
+        refetchCompanies(),
         refetchWorkers(),
+        queryClient.invalidateQueries({ queryKey: ['workers'] }),
+        queryClient.invalidateQueries({ queryKey: ['companies'] }),
       ];
       if (locationMode === 'gps') {
         promises.push(getCurrentPosition(true));
@@ -64,22 +75,28 @@ export default function HomeScreen() {
           <SearchPromptBar />
         </View>
         
+        {/* 3. Category Grid */}
         <View style={styles.sectionSpacer}>
           <CategoryGrid />
         </View>
         
+        {/* 4. Promotional Banner */}
         <View style={styles.sectionSpacer}>
           <BannerCarousel />
         </View>
+
+        {/* 5. Companies Section (Single Horizontal Row) */}
+        <View style={styles.sectionSpacer}>
+          <CompanyRow />
+        </View>
         
-        <View style={styles.nearbySectionWrapper}>
+        {/* 6. Nearby Workers Section */}
+        <View style={styles.sectionSpacer}>
           <NearbyWorkersList />
         </View>
 
-        {/* All Workers — replaces Popular Services with a full scalable list */}
-        <View style={styles.sectionSpacer}>
-          <AllWorkersSection />
-        </View>
+        {/* 7. All Workers Section */}
+        <AllWorkersSection />
         
       </ScrollView>
     </View>
@@ -97,14 +114,9 @@ const styles = StyleSheet.create({
   searchWrapper: {
     marginTop: 12,
     paddingHorizontal: 16,
-    marginBottom: 24, // Spacing to next section
+    marginBottom: 20, // Clean, consistent spacing to next section
   },
   sectionSpacer: {
-    marginBottom: 24,
-  },
-  nearbySectionWrapper: {
-    marginBottom: 14, // 14px margin + 10px internal bottom padding = 24px visual rhythm to All Workers
-    zIndex: 10,
-    elevation: 10,
+    marginBottom: 20,
   },
 });

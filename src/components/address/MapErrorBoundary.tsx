@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MapPinOff, RefreshCw, Edit3 } from 'lucide-react-native';
 import { colors, palette, fontFamily, fontSize, radius } from '../../design';

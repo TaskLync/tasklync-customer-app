@@ -52,8 +52,8 @@ export const PaymentMethodRow: React.FC<PaymentMethodRowProps> = ({
   const getLabel = () => {
     if (paymentMethod.type === 'card') {
       const brand = (paymentMethod.brand || 'Card').toUpperCase();
-      const last4 = paymentMethod.last4 ? `•••• ${paymentMethod.last4}` : '•••• 4242';
-      return `${brand} ${last4}`;
+      const last4 = paymentMethod.last4 ? `•••• ${paymentMethod.last4}` : '';
+      return `${brand} ${last4}`.trim();
     }
     if (paymentMethod.type === 'wallet') {
       return 'Mobile Wallet (JazzCash / EasyPaisa)';

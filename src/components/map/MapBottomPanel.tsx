@@ -1,5 +1,5 @@
 import { FC, useEffect, ReactNode } from 'react';
-import { StyleSheet, View, Dimensions, Platform } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,8 +10,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../design/colors';
 import { springConfig } from '../../design/animations';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 const SNAP_COLLAPSED = 210; // Collapsed height (~210px) showing header + card list
 const SNAP_EXPANDED = 390;  // Expanded height (~390px)
 
@@ -21,11 +19,12 @@ interface MapBottomPanelProps {
 
 export const MapBottomPanel: FC<MapBottomPanelProps> = ({ children }) => {
   const insets = useSafeAreaInsets();
-  const translateY = useSharedValue(SCREEN_HEIGHT); // Start off-screen
+  const { height: screenHeight } = useWindowDimensions();
+  const translateY = useSharedValue(screenHeight); // Start off-screen
   const contextY = useSharedValue(0);
 
-  const maxTranslateY = SCREEN_HEIGHT - SNAP_COLLAPSED - insets.bottom;
-  const minTranslateY = SCREEN_HEIGHT - SNAP_EXPANDED - insets.bottom;
+  const maxTranslateY = screenHeight - SNAP_COLLAPSED - insets.bottom;
+  const minTranslateY = screenHeight - SNAP_EXPANDED - insets.bottom;
 
   // Mount slide-up animation (0 -> 200px)
   useEffect(() => {
@@ -58,14 +57,19 @@ export const MapBottomPanel: FC<MapBottomPanelProps> = ({ children }) => {
   }));
 
   return (
-    <Animated.View style={[styles.panel, animatedPanelStyle]}>
+    <Animated.View style={[styles.panel, { height: screenHeight }, animatedPanelStyle]}>
       <GestureDetector gesture={gesture}>
         <View style={styles.handleContainer}>
           <View style={styles.handleBar} />
         </View>
       </GestureDetector>
 
-      <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View
+        style={[
+          styles.content,
+          { paddingBottom: insets.bottom > 0 ? insets.bottom + 14 : 20 },
+        ]}
+      >
         {children}
       </View>
     </Animated.View>
@@ -77,7 +81,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT,
     backgroundColor: colors.bgCard,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,

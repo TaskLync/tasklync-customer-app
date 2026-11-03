@@ -8,8 +8,6 @@ import { AddToCartButton } from '../cart/AddToCartButton';
 import { Button } from '../ui/Button/Button';
 import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
-import { radius } from '../../design/radius';
-import { shadows } from '../../design/shadows';
 import { springConfig } from '../../design/animations';
 import { WorkerServiceOffering } from '../../types/worker.types';
 
@@ -84,7 +82,7 @@ export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
         </Text>
 
         <View style={styles.metaRow}>
-          <Clock size={13} color={colors.textMuted || '#6B7280'} style={styles.clockIcon} />
+          <Clock size={13} color={colors.textMuted} style={styles.clockIcon} />
           <Text style={styles.durationText}>
             45–60 min
           </Text>
@@ -117,7 +115,7 @@ export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
           />
         ) : (
           <AddToCartButton
-            serviceId={service.id}
+            serviceId={service.serviceId || service.id}
             serviceName={service.serviceName}
             price={service.customPrice}
             workerId={workerId}
@@ -137,16 +135,13 @@ export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    backgroundColor: colors.bgCard || '#FFFFFF',
-    borderRadius: radius.lg,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border || '#F1F5F9',
-    marginBottom: 10,
+    backgroundColor: colors.bgCard,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    ...shadows.xs,
   },
   leftGroup: {
     flex: 1,
@@ -156,7 +151,7 @@ const styles = StyleSheet.create({
   nameText: {
     fontFamily: typography.fontFamily.jakarta.semiBold,
     fontSize: 14,
-    color: colors.textPrimary || '#0F172A',
+    color: colors.textPrimary,
     lineHeight: 19,
     marginBottom: 4,
   },
@@ -170,17 +165,17 @@ const styles = StyleSheet.create({
   durationText: {
     fontFamily: typography.fontFamily.inter.regular,
     fontSize: 12,
-    color: colors.textMuted || '#6B7280',
+    color: colors.textMuted,
   },
   dotSeparator: {
     fontFamily: typography.fontFamily.jakarta.regular,
     fontSize: 12,
-    color: colors.textMuted || '#6B7280',
+    color: colors.textMuted,
   },
   notesText: {
     fontFamily: typography.fontFamily.jakarta.regular,
     fontSize: 12,
-    color: colors.textMuted || '#6B7280',
+    color: colors.textMuted,
     flex: 1,
   },
   rightGroup: {

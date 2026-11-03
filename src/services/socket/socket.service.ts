@@ -36,12 +36,10 @@ class SocketService {
     // Already connected with the same credentials — nothing to do.
     if (this.socket?.connected && this.currentToken === token) return;
 
-    // Token changed (e.g. refresh) or socket is stale — tear down first.
+    this.currentToken = token;
     if (this.socket) {
       this.disconnect();
     }
-
-    this.currentToken = token;
 
     this.socket = io(SOCKET_CONFIG.SOCKET_URL, {
       path: '/chat',
@@ -69,6 +67,28 @@ class SocketService {
         this.socket?.on(event, handler);
       });
     });
+  }
+
+  /**
+   * Updates the socket auth token after a session token refresh without breaking active connections.
+   */
+  public updateToken(token: string): void {
+    if (this.currentToken === token) return;
+    this.currentToken = token;
+    if (this.socket) {
+      if ((this.socket as any).auth) {
+        (this.socket as any).auth = { token };
+      }
+      if (this.socket.io?.opts) {
+        (this.socket.io.opts as any).auth = { token };
+        (this.socket.io.opts as any).query = { token };
+      }
+      // If the socket was disconnected due to expired token, reconnect immediately with new token
+      if (!this.socket.connected) {
+        this.clearTimers();
+        this.socket.connect();
+      }
+    }
   }
 
   /**
@@ -197,7 +217,9 @@ class SocketService {
 
     const { reconnectAttempts } = useSocketStore.getState();
     const delays = SOCKET_CONFIG.RECONNECT_DELAYS_MS;
-    const delay = delays[Math.min(reconnectAttempts, delays.length - 1)];
+    const baseDelay = delays[Math.min(reconnectAttempts, delays.length - 1)] ?? 1000;
+    const jitter = Math.floor(Math.random() * 500);
+    const delay = baseDelay + jitter;
 
     useSocketStore.getState().incrementReconnectAttempt();
 

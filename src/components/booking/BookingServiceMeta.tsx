@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { formatPKTDateTime } from '../../utils/timezone';
@@ -11,7 +12,7 @@ export function BookingServiceMeta({ scheduledAt }: BookingServiceMetaProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.dateTime}>
+      <Text style={styles.dateTime} numberOfLines={1} ellipsizeMode="tail">
         {formattedDateTime}
       </Text>
     </View>
@@ -20,11 +21,19 @@ export function BookingServiceMeta({ scheduledAt }: BookingServiceMetaProps) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    marginBottom: 0,
+  },
+  icon: {
+    marginRight: 6,
+    flexShrink: 0,
   },
   dateTime: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    color: '#374151',
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 12.5,
+    color: colors.textSecondary,
+    flexShrink: 1,
   },
 });

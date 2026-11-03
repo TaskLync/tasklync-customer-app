@@ -11,20 +11,38 @@ import {
 
 const chatStorage = createMMKV({ id: 'tasklync_chat_cache' });
 
-export function getCachedChatMessages(bookingId: string): Message[] {
+export function getCachedChatMessages(bookingOrRoomId: string): Message[] {
   try {
-    const raw = chatStorage.getString(`chat_msgs_${bookingId}`);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const raw = chatStorage.getString(`chat_msgs_${bookingOrRoomId}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    const mappedRoomId = chatStorage.getString(`bkg_room_${bookingOrRoomId}`);
+    if (mappedRoomId && mappedRoomId !== bookingOrRoomId) {
+      const roomRaw = chatStorage.getString(`chat_msgs_${mappedRoomId}`);
+      if (roomRaw) {
+        const parsed = JSON.parse(roomRaw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    }
+    return [];
   } catch {
     return [];
   }
 }
 
-export function saveCachedChatMessages(bookingId: string, messages: Message[]): void {
+export function saveCachedChatMessages(
+  bookingOrRoomId: string,
+  messages: Message[],
+  roomId?: string
+): void {
   try {
-    chatStorage.set(`chat_msgs_${bookingId}`, JSON.stringify(messages));
+    chatStorage.set(`chat_msgs_${bookingOrRoomId}`, JSON.stringify(messages));
+    if (roomId && roomId !== bookingOrRoomId) {
+      chatStorage.set(`chat_msgs_${roomId}`, JSON.stringify(messages));
+      chatStorage.set(`bkg_room_${bookingOrRoomId}`, roomId);
+    }
   } catch {
     // MMKV fallback safe
   }
@@ -243,6 +261,29 @@ export const chatApi = {
       await apiClient.patch(`/chat/rooms/${bookingId}/read`, {});
     } catch (_error) {
       // Silent error handling for background read receipt
+    }
+  },
+
+  /**
+   * 2.6 Create or Open Pre-Booking Clarification Chat Room for Custom Request
+   * POST /api/v1/chat/rooms/request/:requestId
+   */
+  createRequestRoom: async (requestId: string): Promise<ChatRoom> => {
+    try {
+      const response = await apiClient.post<any>(`/chat/rooms/request/${requestId}`);
+      const data = response.data?.data || response.data;
+      return {
+        ...data,
+        id: data.id || data.room_id,
+        booking_id: data.booking_id || data.bookingId || data.request_id || requestId,
+        status: data.status,
+      };
+    } catch (error: any) {
+      const apiMsg =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message;
+      throw new Error(apiMsg || 'Failed to open clarification chat.');
     }
   },
 };

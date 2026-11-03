@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   View,
   Text,
@@ -6,22 +5,21 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Lock } from 'lucide-react-native';
 
 import { usePaymentMethods } from '../../src/hooks/usePaymentMethods';
-import { AddWalletDTO, AddCardDTO } from '../../src/types/payment.types';
 import {
   PaymentMethodCard,
   PaymentMethodCardSkeleton,
   PaymentMethodSwipeActions,
-  AddCardSheet,
   AddCardButton,
-  PaymentEmptyState,
 } from '../../src/components/payment';
-import { colors, palette, fontFamily, fontSize, spacing, shadows } from '../../src/design';
+import { colors, palette, fontFamily, fontSize, spacing, shadows, radius } from '../../src/design';
+import { ONLINE_PAYMENTS_DISABLED_MESSAGE } from '../../src/types/payment.types';
 
 export default function PaymentMethodsScreen() {
   const router = useRouter();
@@ -30,35 +28,31 @@ export default function PaymentMethodsScreen() {
   const {
     methods,
     isLoading,
-    addWallet,
-    addCard,
     deleteMethod,
     setDefaultMethod,
-    isAdding,
   } = usePaymentMethods();
-
-  const [addSheetVisible, setAddSheetVisible] = useState<boolean>(false);
-  const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null);
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleAddWalletSubmit = async (dto: AddWalletDTO) => {
-    const res = await addWallet(dto);
-    if (res?.id) {
-      setNewlyAddedId(res.id);
-      setTimeout(() => setNewlyAddedId(null), 1000);
-    }
+  const handleAddPress = () => {
+    Alert.alert(
+      'Online Payments Unavailable',
+      `${ONLINE_PAYMENTS_DISABLED_MESSAGE}\n\nAdding credit/debit cards or mobile wallets is temporarily paused while online gateways are safely disconnected.`
+    );
   };
 
-  const handleAddCardSubmit = async (dto: AddCardDTO) => {
-    const res = await addCard(dto);
-    if (res?.id) {
-      setNewlyAddedId(res.id);
-      setTimeout(() => setNewlyAddedId(null), 1000);
-    }
-  };
+  const renderHeaderNotice = () => (
+    <View style={styles.statusBanner}>
+      <View style={styles.statusDotWrapper}>
+        <View style={styles.statusDot} />
+      </View>
+      <Text style={styles.statusBannerText} maxFontSizeMultiplier={1.2}>
+        Cash on Delivery Active
+      </Text>
+    </View>
+  );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -73,7 +67,7 @@ export default function PaymentMethodsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={colors.textPrimary} />
+          <ArrowLeft size={20} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3}>
@@ -85,14 +79,12 @@ export default function PaymentMethodsScreen() {
 
       {/* Main Content Area */}
       <View style={styles.content}>
+        {renderHeaderNotice()}
+
         {isLoading ? (
           <View style={styles.skeletonContainer}>
             <PaymentMethodCardSkeleton />
-            <PaymentMethodCardSkeleton />
-            <PaymentMethodCardSkeleton />
           </View>
-        ) : methods.length === 0 ? (
-          <PaymentEmptyState onAddPress={() => setAddSheetVisible(true)} />
         ) : (
           <FlatList
             data={methods}
@@ -109,7 +101,6 @@ export default function PaymentMethodsScreen() {
               >
                 <PaymentMethodCard
                   method={item}
-                  isNewlyAdded={item.id === newlyAddedId}
                   onSetDefault={(id) => setDefaultMethod(id)}
                 />
               </PaymentMethodSwipeActions>
@@ -119,21 +110,18 @@ export default function PaymentMethodsScreen() {
       </View>
 
       {/* Sticky Bottom Footer CTA */}
-      <View style={[styles.footerContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View
+        style={[
+          styles.footerContainer,
+          { paddingBottom: insets.bottom > 0 ? insets.bottom + 14 : 20 },
+        ]}
+      >
         <AddCardButton
-          label="+ Add New Payment Method"
-          onPress={() => setAddSheetVisible(true)}
+          label="Online Payments Unavailable"
+          icon={<Lock size={15} color={colors.textOnGreen} strokeWidth={2.2} />}
+          onPress={handleAddPress}
         />
       </View>
-
-      {/* Add Payment Method Bottom Sheet */}
-      <AddCardSheet
-        visible={addSheetVisible}
-        onClose={() => setAddSheetVisible(false)}
-        onAddWallet={handleAddWalletSubmit}
-        onAddCard={handleAddCardSubmit}
-        isLoading={isAdding}
-      />
     </View>
   );
 }
@@ -154,9 +142,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgApp,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: palette.iceGray,
@@ -167,12 +155,44 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   headerRightSpacer: {
-    width: 40,
+    width: 38,
   },
   content: {
     flex: 1,
     paddingHorizontal: spacing.base,
     paddingTop: spacing.base,
+  },
+  statusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: palette.green50,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: palette.green200,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    gap: 8,
+  },
+  statusDotWrapper: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: palette.green100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+  },
+  statusBannerText: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 13,
+    color: colors.primaryDark,
+    includeFontPadding: false,
   },
   skeletonContainer: {
     gap: spacing.xs,
@@ -184,7 +204,7 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: colors.bgCard,
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.md,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     ...shadows.md,

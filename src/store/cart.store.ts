@@ -9,6 +9,8 @@ export interface CartItem {
   price: number;
   quantity: number;
   workerId: string;
+  durationMins?: number | undefined;
+  durationHours?: number | undefined;
 }
 
 export interface WorkerInfo {
@@ -18,6 +20,9 @@ export interface WorkerInfo {
   avgRating?: number;
   category?: string;
   isVerified?: boolean;
+  businessName?: string | null;
+  isCompany?: boolean;
+  providerType?: 'INDIVIDUAL' | 'COMPANY';
 }
 
 export interface CartState {
@@ -35,6 +40,11 @@ export interface CartState {
       workerRating?: number;
       workerCategory?: string;
       isVerified?: boolean;
+      businessName?: string | null;
+      isCompany?: boolean;
+      providerType?: 'INDIVIDUAL' | 'COMPANY';
+      durationMins?: number | undefined;
+      durationHours?: number | undefined;
     },
     quantity?: number
   ) => { success: boolean; hasConflict?: boolean };
@@ -52,6 +62,9 @@ export interface CartState {
     workerRating?: number;
     workerCategory?: string;
     isVerified?: boolean;
+    businessName?: string | null;
+    isCompany?: boolean;
+    providerType?: 'INDIVIDUAL' | 'COMPANY';
   }) => void;
   hydrate: () => void;
 }
@@ -87,11 +100,17 @@ export const useCartStore = create<CartState>((set, get) => ({
           price: item.price,
           quantity,
           workerId: item.workerId,
+          ...(item.durationMins !== undefined ? { durationMins: item.durationMins } : {}),
+          ...(item.durationHours !== undefined ? { durationHours: item.durationHours } : {}),
         },
       ];
     }
 
-    // Always keep worker info fully synchronized with the selected professional
+    // Always keep worker info fully synchronized with the selected professional or company
+    const isCompany =
+      item.isCompany !== undefined
+        ? item.isCompany
+        : item.providerType === 'COMPANY' || Boolean(item.businessName) || Boolean(worker?.isCompany);
     const updatedWorker: WorkerInfo = {
       id: item.workerId,
       name: item.workerName || worker?.name || 'Selected Professional',
@@ -99,6 +118,9 @@ export const useCartStore = create<CartState>((set, get) => ({
       avgRating: item.workerRating ?? worker?.avgRating ?? 4.9,
       category: item.workerCategory || worker?.category || 'Professional Service',
       isVerified: item.isVerified ?? worker?.isVerified ?? false,
+      businessName: item.businessName || worker?.businessName || null,
+      isCompany,
+      providerType: isCompany ? 'COMPANY' : 'INDIVIDUAL',
     };
 
     const newState = { items: updatedItems, worker: updatedWorker };
@@ -166,6 +188,10 @@ export const useCartStore = create<CartState>((set, get) => ({
       quantity: 1,
       workerId: item.workerId,
     };
+    const isCompany =
+      item.isCompany !== undefined
+        ? item.isCompany
+        : item.providerType === 'COMPANY' || Boolean(item.businessName);
     const newWorker: WorkerInfo = {
       id: item.workerId,
       name: item.workerName || 'Selected Professional',
@@ -173,6 +199,9 @@ export const useCartStore = create<CartState>((set, get) => ({
       avgRating: item.workerRating ?? 4.9,
       category: item.workerCategory || 'Professional Service',
       isVerified: item.isVerified ?? false,
+      businessName: item.businessName || null,
+      isCompany,
+      providerType: isCompany ? 'COMPANY' : 'INDIVIDUAL',
     };
 
     const newState = { items: [newItem], worker: newWorker, note: '' };

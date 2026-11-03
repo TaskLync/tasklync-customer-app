@@ -1,34 +1,44 @@
-import { useRef } from 'react';
-import { View, StyleSheet, Text, ScrollView, Pressable } from 'react-native';
+import { useRef, useCallback } from 'react';
+import { View, StyleSheet, Text, ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { useRouter } from 'expo-router';
 import { useSharedValue } from 'react-native-reanimated';
 import { SearchHeader } from '../../src/components/home/SearchHeader';
 import { BottomSheet, BottomSheetRef } from '../../src/components/layout/BottomSheet';
 import { FilterSheetContent } from '../../src/components/search/FilterSheetContent';
 import { RecentSearchesSection } from '../../src/components/search/RecentSearchesSection';
+import { TrendingSearchChips } from '../../src/components/search/TrendingSearchChips';
+import { AutocompleteDropdown } from '../../src/components/search/AutocompleteDropdown';
 import { WorkerSearchCard } from '../../src/components/worker/WorkerSearchCard';
 import { SkeletonWorkerSearchCard } from '../../src/components/ui/Skeleton';
 import { ChipGroup, Chip } from '../../src/components/ui/Chip';
-import { ErrorState } from '../../src/components/feedback/ErrorState';
+import { ProviderTypeFilterChips } from '../../src/components/search/ProviderTypeFilterChips';
+import { EmptyState } from '../../src/components/feedback/EmptyState';
 import { useSearch } from '../../src/hooks/useSearch';
 import { useRecentSearches } from '../../src/hooks/useRecentSearches';
+import { useCategories } from '../../src/hooks/useCategories';
+import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { colors } from '../../src/design/colors';
 import { typography } from '../../src/design/typography';
-import { DEFAULT_FILTERS } from '../../src/types/search.types';
-import { Search, X } from 'lucide-react-native';
+import { AutocompleteSuggestion, DEFAULT_FILTERS, FilterState } from '../../src/types/search.types';
+import { X } from 'lucide-react-native';
 
 export default function ExploreScreen() {
+  const router = useRouter();
+  const { isOffline } = useNetworkStatus();
   const scrollY = useSharedValue(0);
   const filterSheetRef = useRef<BottomSheetRef>(null);
 
   const {
     query,
     setQuery,
-    debouncedQuery,
     filters,
     setFilters,
     resetFilters,
     activeFilterCount,
+    suggestions,
+    handleSelectSuggestion,
+    trendingTerms,
     workers,
     total,
     isLoading,
@@ -38,89 +48,176 @@ export default function ExploreScreen() {
     hasMore,
     loadMore,
     clearSearch,
+    hasSearchIntent,
   } = useSearch();
 
-  const {
-    searches,
-    addSearch,
-    removeSearch,
-    clearAll,
-  } = useRecentSearches();
+  const { searches, addSearch, removeSearch, clearAll } = useRecentSearches();
+  const { categories: fetchedCategories } = useCategories();
 
-  const handleRecentSearchSelect = (term: string) => {
-    setQuery(term);
-    addSearch(term);
-  };
+  const categoryChipOptions =
+    Array.isArray(fetchedCategories) && fetchedCategories.length > 0
+      ? fetchedCategories.slice(0, 8).map((c) => ({ label: c.name, value: c.id || c.name }))
+      : [];
 
-  const handleFilterApply = (newFilters: any) => {
-    setFilters(newFilters);
-    filterSheetRef.current?.close();
-  };
+  const handleSelectRecent = useCallback(
+    (term: string) => {
+      setQuery(term);
+      addSearch(term);
+    },
+    [setQuery, addSearch]
+  );
 
-  const handleFilterReset = () => {
+  const handleSelectTrending = useCallback(
+    (term: string) => {
+      setQuery(term);
+      addSearch(term);
+    },
+    [setQuery, addSearch]
+  );
+
+  const onSelectSuggestion = useCallback(
+    (item: AutocompleteSuggestion) => {
+      if (item.type === 'category') {
+        handleSelectSuggestion(item);
+        addSearch(item.label);
+      } else if (item.type === 'worker' && item.worker_id) {
+        addSearch(item.label);
+        router.push(`/worker/${item.worker_id}` as any);
+      }
+    },
+    [handleSelectSuggestion, addSearch, router]
+  );
+
+  const handleFilterApply = useCallback(
+    (newFilters: FilterState) => {
+      setFilters(newFilters);
+      filterSheetRef.current?.close();
+    },
+    [setFilters]
+  );
+
+  const handleFilterReset = useCallback(() => {
     resetFilters();
     filterSheetRef.current?.close();
-  };
+  }, [resetFilters]);
 
-  const removeFilter = (key: keyof typeof filters, value?: any) => {
+  const removeFilter = (key: keyof FilterState, value?: string) => {
     if (key === 'categories' && value) {
-      setFilters({ ...filters, categories: (filters?.categories || []).filter(c => c !== value) });
+      setFilters((prev) => ({
+        ...prev,
+        categories: prev.categories.filter((c) => c !== value),
+        categoryId: undefined,
+        categoryLabel: undefined,
+      }));
+    } else if (key === 'categoryId') {
+      setFilters((prev) => ({
+        ...prev,
+        categoryId: undefined,
+        categoryLabel: undefined,
+        categories: [],
+      }));
     } else {
-      setFilters({ ...filters, [key]: DEFAULT_FILTERS[key] });
+      setFilters((prev) => ({
+        ...prev,
+        [key]: DEFAULT_FILTERS[key],
+      }));
     }
   };
 
   const renderActiveFilters = () => {
     if (activeFilterCount === 0) return null;
 
-    const safeCategories = filters?.categories || [];
+    const safeCategories = filters.categories || [];
 
     return (
       <View style={styles.activeFiltersContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeFiltersScroll}>
-          {safeCategories.map(cat => (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.activeFiltersScroll}
+        >
+          {filters.categoryLabel ? (
             <Chip
-              key={cat}
-              label={`Category: ${cat}`}
+              key="cat-id"
+              label={`Category: ${filters.categoryLabel}`}
               variant="tag"
               size="sm"
               trailingIcon={X}
-              onTrailingPress={() => removeFilter('categories', cat)}
+              onTrailingPress={() => removeFilter('categoryId')}
               style={styles.activeFilterChip}
             />
-          ))}
+          ) : (
+            safeCategories.map((cat) => (
+              <Chip
+                key={cat}
+                label={`Category: ${cat}`}
+                variant="tag"
+                size="sm"
+                trailingIcon={X}
+                onTrailingPress={() => removeFilter('categories', cat)}
+                style={styles.activeFilterChip}
+              />
+            ))
+          )}
+
+          {filters.city && (
+            <Chip
+              key="city"
+              label={`City: ${filters.city}`}
+              variant="tag"
+              size="sm"
+              trailingIcon={X}
+              onTrailingPress={() => removeFilter('city')}
+              style={styles.activeFilterChip}
+            />
+          )}
+
           {filters.minRating > 0 && (
-             <Chip
-             key="rating"
-             label={`${filters.minRating}★ & up`}
-             variant="tag"
-             size="sm"
-             trailingIcon={X}
-             onTrailingPress={() => removeFilter('minRating')}
-             style={styles.activeFilterChip}
-           />
+            <Chip
+              key="rating"
+              label={`${filters.minRating}★ & up`}
+              variant="tag"
+              size="sm"
+              trailingIcon={X}
+              onTrailingPress={() => removeFilter('minRating')}
+              style={styles.activeFilterChip}
+            />
           )}
-          {filters.available !== 'any' && (
-             <Chip
-             key="avail"
-             label={filters.available === 'now' ? 'Available now' : 'Available today'}
-             variant="tag"
-             size="sm"
-             trailingIcon={X}
-             onTrailingPress={() => removeFilter('available')}
-             style={styles.activeFilterChip}
-           />
+
+          {filters.maxRate > 0 && (
+            <Chip
+              key="price"
+              label={`Under Rs ${filters.maxRate.toLocaleString()}`}
+              variant="tag"
+              size="sm"
+              trailingIcon={X}
+              onTrailingPress={() => removeFilter('maxRate')}
+              style={styles.activeFilterChip}
+            />
           )}
-          {filters.sortBy !== 'distance' && (
-             <Chip
-             key="sort"
-             label={`Sort: ${filters.sortBy}`}
-             variant="tag"
-             size="sm"
-             trailingIcon={X}
-             onTrailingPress={() => removeFilter('sortBy')}
-             style={styles.activeFilterChip}
-           />
+
+          {filters.sortBy !== 'relevance' && (
+            <Chip
+              key="sort"
+              label={`Sort: ${filters.sortBy === 'distance' ? 'Nearest' : filters.sortBy === 'rating' ? 'Top Rated' : 'Price'}`}
+              variant="tag"
+              size="sm"
+              trailingIcon={X}
+              onTrailingPress={() => removeFilter('sortBy')}
+              style={styles.activeFilterChip}
+            />
+          )}
+
+          {filters.provider_type && filters.provider_type !== 'ALL' && (
+            <Chip
+              key="provider"
+              label={filters.provider_type === 'COMPANY' ? 'Agencies only' : 'Solo Handymen'}
+              variant="tag"
+              size="sm"
+              trailingIcon={X}
+              onTrailingPress={() => removeFilter('provider_type')}
+              style={styles.activeFilterChip}
+            />
           )}
         </ScrollView>
       </View>
@@ -130,57 +227,72 @@ export default function ExploreScreen() {
   const renderEmptyQueryState = () => {
     return (
       <View style={styles.emptyQueryContainer}>
+        {/* 1. Recent Searches */}
         <RecentSearchesSection
           searches={searches}
-          onSelect={handleRecentSearchSelect}
+          onSelect={handleSelectRecent}
           onRemove={removeSearch}
           onClearAll={clearAll}
         />
 
-        <View style={styles.browseSection}>
-          <Text style={styles.sectionTitle}>Browse by Category</Text>
-          <ChipGroup
-            options={[
-              { label: 'Electrician', value: 'Electrician' },
-              { label: 'Plumber', value: 'Plumber' },
-              { label: 'Cleaning', value: 'Cleaning' },
-              { label: 'Painter', value: 'Painter' },
-            ]}
-            selected=""
-            onSelect={(cat) => {
-              setQuery(cat);
-              addSearch(cat);
-            }}
-            multiSelect={false}
-            scrollable={false}
-          />
-        </View>
+        {/* 2. Trending Searches from Search Service */}
+        <TrendingSearchChips
+          terms={trendingTerms}
+          onSelect={handleSelectTrending}
+        />
 
-        <View style={styles.browseSection}>
-          <Text style={styles.sectionTitle}>Popular Searches</Text>
-          {['AC Repair', 'Deep Cleaning', 'Geyser Repair'].map(term => (
-            <Pressable key={term} style={styles.popularRow} onPress={() => handleRecentSearchSelect(term)}>
-              <Search size={16} color={colors.textMuted} />
-              <Text style={styles.popularText}>{term}</Text>
-            </Pressable>
-          ))}
-        </View>
+        {/* 3. Browse by Category */}
+        {categoryChipOptions.length > 0 && (
+          <View style={styles.browseSection}>
+            <Text style={styles.sectionTitle}>Browse by Category</Text>
+            <ChipGroup
+              options={categoryChipOptions}
+              selected={filters.categoryLabel || ''}
+              onSelect={(cat) => {
+                const matched = fetchedCategories.find((c) => c.name === cat || c.id === cat);
+                if (matched) {
+                  setFilters((prev) => ({
+                    ...prev,
+                    categoryId: matched.id,
+                    categoryLabel: matched.name,
+                    categories: [matched.name],
+                  }));
+                } else {
+                  setQuery(cat);
+                }
+                addSearch(cat);
+              }}
+              multiSelect={false}
+              scrollable={false}
+            />
+          </View>
+        )}
       </View>
     );
   };
 
   const renderEmptyResults = () => {
-    if (isLoading) return null; // handled by ListEmptyComponent
+    if (isLoading) return null;
     return (
       <View style={styles.emptyResultsContainer}>
-        <View style={styles.emptyIconContainer}>
-          <Search size={40} color={colors.textMuted} />
-        </View>
-        <Text style={styles.emptyTitle}>No workers found</Text>
-        <Text style={styles.emptySub}>Try different terms or adjust filters</Text>
+        <EmptyState
+          type="no-workers"
+          title="No service providers found"
+          description="Try searching for something else, checking spelling, or clearing some filters."
+          actionLabel={activeFilterCount > 0 ? 'Reset Filters' : 'Clear Search'}
+          onAction={() => {
+            if (activeFilterCount > 0) {
+              resetFilters();
+            } else {
+              clearSearch();
+            }
+          }}
+        />
       </View>
     );
   };
+
+  const showSuggestionsDropdown = query.trim().length >= 2 && suggestions.length > 0;
 
   return (
     <View style={styles.container}>
@@ -191,14 +303,29 @@ export default function ExploreScreen() {
         activeFilterCount={activeFilterCount}
         onFilterPress={() => filterSheetRef.current?.open()}
         scrollY={scrollY}
+        placeholder="Search electrician, AC repair, mistri..."
       />
+
+      {/* Autocomplete Dropdown */}
+      {showSuggestionsDropdown && (
+        <AutocompleteDropdown
+          suggestions={suggestions}
+          onSelect={onSelectSuggestion}
+          visible={showSuggestionsDropdown}
+        />
+      )}
 
       {renderActiveFilters()}
 
-      {debouncedQuery.length < 2 && activeFilterCount === 0 ? (
-        <ScrollView style={styles.listContainer} onScroll={(e) => {
-          scrollY.value = e.nativeEvent.contentOffset.y;
-        }} scrollEventThrottle={16}>
+      {!hasSearchIntent ? (
+        <ScrollView
+          style={styles.listContainer}
+          onScroll={(e) => {
+            scrollY.value = e.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
+          keyboardShouldPersistTaps="handled"
+        >
           {renderEmptyQueryState()}
         </ScrollView>
       ) : (
@@ -207,8 +334,8 @@ export default function ExploreScreen() {
             data={workers}
             renderItem={({ item }) => <WorkerSearchCard worker={item} />}
             keyExtractor={(item) => item.id}
-            // @ts-ignore - estimatedItemSize exists but TS is complaining due to version mismatch
-            estimatedItemSize={96}
+            // @ts-ignore
+            estimatedItemSize={104}
             contentContainerStyle={styles.flashListContent}
             onScroll={(e) => {
               scrollY.value = e.nativeEvent.contentOffset.y;
@@ -216,20 +343,29 @@ export default function ExploreScreen() {
             onEndReached={() => {
               if (hasMore && !isLoadingMore) loadMore();
             }}
-            onEndReachedThreshold={0.8}
+            onEndReachedThreshold={0.7}
             ListHeaderComponent={
               !isLoading ? (
                 <View style={styles.resultsHeader}>
-                  <Text style={styles.resultsCount}>{total} workers found</Text>
+                  <ProviderTypeFilterChips
+                    selected={(filters.provider_type as any) || 'ALL'}
+                    onSelect={(val) => setFilters((prev) => ({ ...prev, provider_type: val }))}
+                  />
+                  <Text style={styles.resultsCount}>
+                    {total} {total === 1 ? 'provider' : 'providers'} found
+                  </Text>
                   <View style={styles.sortRow}>
                     <ChipGroup
                       options={[
+                        { label: 'Recommended', value: 'relevance' },
                         { label: 'Nearest', value: 'distance' },
                         { label: 'Top Rated', value: 'rating' },
                         { label: 'Lowest Price', value: 'price_low' },
                       ]}
                       selected={filters.sortBy}
-                      onSelect={(val) => setFilters({ ...filters, sortBy: val as any })}
+                      onSelect={(val) =>
+                        setFilters((prev) => ({ ...prev, sortBy: val as any }))
+                      }
                       scrollable
                       paddingH={0}
                       chipSize="sm"
@@ -246,12 +382,16 @@ export default function ExploreScreen() {
                   ))}
                 </View>
               ) : isError ? (
-                <ErrorState
-                  type="error"
-                  title="Couldn't load workers"
-                  subtitle="Please check your internet connection and try again."
-                  onRetry={refetch}
-                  retryButtonText="Retry"
+                <EmptyState
+                  type={isOffline ? 'no-internet' : 'server-error'}
+                  title={isOffline ? 'No Internet Connection' : "Couldn't load search results"}
+                  description={
+                    isOffline
+                      ? 'Please check your connection and tap retry.'
+                      : 'An unexpected error occurred while loading search results. Please try again.'
+                  }
+                  onAction={refetch}
+                  actionLabel="Retry"
                   style={{ paddingVertical: 40 }}
                 />
               ) : (
@@ -271,9 +411,10 @@ export default function ExploreScreen() {
         </View>
       )}
 
+      {/* Filter Bottom Sheet */}
       <BottomSheet
         ref={filterSheetRef}
-        snapPoints={['85%']}
+        snapPoints={['88%']}
         contentPadding={false}
       >
         <FilterSheetContent
@@ -303,7 +444,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   activeFilterChip: {
-    backgroundColor: colors.bgSection, // distinguish from input bg slightly
+    backgroundColor: colors.bgSection,
   },
   listContainer: {
     flex: 1,
@@ -313,24 +454,13 @@ const styles = StyleSheet.create({
   },
   browseSection: {
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingTop: 18,
   },
   sectionTitle: {
     fontFamily: typography.fontFamily.poppins.semiBold,
-    fontSize: 16,
+    fontSize: 15,
     color: colors.textPrimary,
     marginBottom: 12,
-  },
-  popularRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 48,
-  },
-  popularText: {
-    fontFamily: typography.fontFamily.jakarta.semiBold,
-    fontSize: 14,
-    color: colors.textPrimary,
-    marginLeft: 12,
   },
   flashListContent: {
     paddingHorizontal: 16,
@@ -338,16 +468,16 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   resultsHeader: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   resultsCount: {
     fontFamily: typography.fontFamily.inter.medium,
     fontSize: 13,
     color: colors.textMuted,
-    marginBottom: 12,
+    marginVertical: 10,
   },
   sortRow: {
-    // optional spacing if needed
+    marginBottom: 4,
   },
   skeletonContainer: {
     gap: 10,
@@ -356,11 +486,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 60,
+    paddingHorizontal: 32,
   },
   emptyIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: colors.bgSection,
     alignItems: 'center',
     justifyContent: 'center',
@@ -368,13 +499,16 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontFamily: typography.fontFamily.poppins.semiBold,
-    fontSize: 18,
+    fontSize: 17,
     color: colors.textPrimary,
-    marginBottom: 8,
+    marginBottom: 6,
+    textAlign: 'center',
   },
   emptySub: {
     fontFamily: typography.fontFamily.jakarta.regular,
-    fontSize: 14,
+    fontSize: 13.5,
     color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 19,
   },
 });

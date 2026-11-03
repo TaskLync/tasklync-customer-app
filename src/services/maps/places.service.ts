@@ -104,7 +104,7 @@ export async function autocompletePlaces(
         place_id: `geo_${r.latitude}_${r.longitude}_${index}`,
         description: cleanQuery,
         primary_text: cleanQuery,
-        secondary_text: `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)} • Faisalabad`,
+        secondary_text: `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}`,
       }));
     }
   } catch (_e) {}
@@ -137,7 +137,11 @@ export async function getPlaceDetails(
           longitude: lng,
         });
         const first = reverseResults?.[0];
-        const city = first?.city || first?.subregion || 'Faisalabad';
+        const city =
+          first?.city?.trim() ||
+          first?.district?.trim() ||
+          first?.subregion?.trim() ||
+          'Current Area';
         const country = first?.country || 'Pakistan';
         const address = [first?.name || first?.street, first?.district, city].filter(Boolean).join(', ');
 
@@ -157,7 +161,7 @@ export async function getPlaceDetails(
           formatted_address: `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
           lat,
           lng,
-          city: 'Faisalabad',
+          city: 'Current Area',
           country: 'Pakistan',
         };
       }
@@ -179,10 +183,12 @@ export async function getPlaceDetails(
       );
       const newJson = await newDetailsRes.json();
       if (newJson.location && typeof newJson.location.latitude === 'number') {
-        let city = 'Faisalabad';
+        let city = 'Current Area';
         let country = 'Pakistan';
         for (const comp of newJson.addressComponents || []) {
-          if (comp.types?.includes('locality')) city = comp.longText || comp.shortText;
+          if (comp.types?.includes('locality') || comp.types?.includes('administrative_area_level_2')) {
+            city = comp.longText || comp.shortText;
+          }
           if (comp.types?.includes('country')) country = comp.longText || comp.shortText;
         }
         return {
@@ -210,10 +216,10 @@ export async function getPlaceDetails(
 
       if (json.status === 'OK' && json.result) {
         const result = json.result;
-        const lat = result.geometry?.location?.lat || 31.4187;
-        const lng = result.geometry?.location?.lng || 73.0791;
+        const lat = result.geometry?.location?.lat || 0;
+        const lng = result.geometry?.location?.lng || 0;
         const cityComp = result.address_components?.find((c: any) =>
-          c.types.includes('locality')
+          c.types.includes('locality') || c.types.includes('administrative_area_level_2')
         );
 
         return {
@@ -222,7 +228,7 @@ export async function getPlaceDetails(
           formatted_address: result.formatted_address,
           lat,
           lng,
-          city: cityComp?.long_name || 'Faisalabad',
+          city: cityComp?.long_name || 'Current Area',
           country: 'Pakistan',
         };
       }

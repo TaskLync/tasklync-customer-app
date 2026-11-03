@@ -16,7 +16,7 @@ import { Screen } from '@components/layout/Screen';
 import { Text } from '@components/ui/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@components/ui/Button';
-import { colors, fontFamily, layout, radius } from '@design/index';
+import { colors, palette, fontFamily, layout, radius } from '@design/index';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -26,21 +26,21 @@ const SLIDES = [
     title: 'Verified Workers You Can Trust',
     subtitle: 'Every worker is background-checked, ID-verified, and reviewed by real customers near you.',
     image: require('../../assets/images/verfied-worker.png'),
-    color: '#F0FDF4', 
+    color: colors.primaryTint, 
   },
   {
     id: '2',
     title: 'Book in Under 60 Seconds',
     subtitle: 'Find nearby electricians, plumbers, and cleaners. Schedule instantly or get help right now.',
     image: require('../../assets/images/book-in-under.png'),
-    color: '#FEF3C7',
+    color: colors.warningLight,
   },
   {
     id: '3',
     title: 'Track Every Step, Live',
     subtitle: 'Watch your worker travel to you in real-time. Chat, call, or reschedule — all in one place.',
     image: require('../../assets/images/track-step.png'),
-    color: '#E0E7FF',
+    color: palette.blue100,
   }
 ];
 
@@ -272,13 +272,13 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.04,
     shadowRadius: 16,
     elevation: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.02)',
+    borderTopColor: colors.borderLight,
   },
   buttonShadow: {
     shadowOpacity: 0.02,

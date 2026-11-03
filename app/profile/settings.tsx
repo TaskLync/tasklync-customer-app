@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   View,
   Text,
@@ -9,7 +10,14 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, FileText, ShieldCheck, Globe, DollarSign } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  FileText,
+  ShieldCheck,
+  Globe,
+  DollarSign,
+  Info,
+} from 'lucide-react-native';
 
 import { useAppPreferences } from '../../src/hooks/useAppPreferences';
 import { useNotificationPreferences } from '../../src/hooks/useNotificationPreferences';
@@ -23,6 +31,16 @@ import {
 } from '../../src/components/settings';
 import { colors, palette, fontFamily, fontSize, spacing } from '../../src/design';
 
+/**
+ * SettingsScreen (Uber / Foodpanda / Careem Minimalist Standard)
+ *
+ * Architecture & UX:
+ * 1. Three clearly segregated grouped cards: Preferences, Notifications, and About & Legal.
+ * 2. Visual Hierarchy: Clean typography, uniform 18px neutral icons, and aligned dividers.
+ * 3. Modern Segmented Controls: Pill-style active state with consistent dimensions.
+ * 4. Native Notification Switches: Pure white thumb on brand-green active track, full row touch target.
+ * 5. Full Persistence: MMKV storage cache + background sync with graceful error handling.
+ */
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -42,7 +60,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgApp} />
+      <StatusBar barStyle="dark-content" backgroundColor={palette.white} />
 
       {/* Screen Header */}
       <View style={styles.header}>
@@ -50,10 +68,11 @@ export default function SettingsScreen() {
           activeOpacity={0.7}
           onPress={handleBack}
           style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={colors.textPrimary} />
+          <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3}>
@@ -74,8 +93,7 @@ export default function SettingsScreen() {
         <SettingsSection title="Preferences">
           <SettingsRow
             label="App Language"
-            subtitle="Choose your preferred interface language"
-            icon={<Globe size={20} color={colors.primaryDark} />}
+            icon={<Globe size={18} color={palette.gray500} />}
             rightElement={
               <LanguageToggle value={language} onChange={setLanguage} />
             }
@@ -83,8 +101,7 @@ export default function SettingsScreen() {
 
           <SettingsRow
             label="Display Currency"
-            subtitle="Pricing format displayed across services"
-            icon={<DollarSign size={20} color={colors.primaryDark} />}
+            icon={<DollarSign size={18} color={palette.gray500} />}
             rightElement={
               <CurrencyToggle value={currency} onChange={setCurrency} />
             }
@@ -103,21 +120,23 @@ export default function SettingsScreen() {
         <SettingsSection title="About & Legal">
           <SettingsRow
             label="Terms of Service"
-            subtitle="Customer rights and escrow protection policy"
-            icon={<FileText size={20} color={palette.gray600} />}
+            icon={<FileText size={18} color={palette.gray500} />}
             showChevron={true}
             onPress={() => handleOpenLegal('https://tasklync.pk/terms')}
           />
 
           <SettingsRow
             label="Privacy Policy"
-            subtitle="Data encryption and privacy standards"
-            icon={<ShieldCheck size={20} color={palette.gray600} />}
+            icon={<ShieldCheck size={18} color={palette.gray500} />}
             showChevron={true}
             onPress={() => handleOpenLegal('https://tasklync.pk/privacy')}
           />
 
-          <AppVersionRow version="v1.0.0" buildNumber="Build 37" />
+          <AppVersionRow
+            version="v1.0.0"
+            buildNumber="Build 37"
+            icon={<Info size={18} color={palette.gray500} />}
+          />
         </SettingsSection>
       </ScrollView>
     </View>
@@ -134,26 +153,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.bgApp,
+    paddingVertical: spacing.sm + 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: palette.gray200,
+    backgroundColor: palette.white,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.iceGray,
+    backgroundColor: palette.gray100,
   },
   headerTitle: {
     fontFamily: fontFamily.poppins.semiBold,
-    fontSize: fontSize.h3,
+    fontSize: fontSize.h4 + 1,
     color: colors.textPrimary,
   },
   headerRightSpacer: {
-    width: 40,
+    width: 36,
   },
   scrollContent: {
     paddingHorizontal: spacing.base,

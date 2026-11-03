@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Tasklync',
   slug: 'tasklync-user',
-  owner: 'uzairsarwar164',
+  owner: 'uzairsarwar3423',
   version: '1.0.0',
   scheme: 'tasklync',
   orientation: 'portrait',
@@ -36,11 +36,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: 'com.tasklync.user',
     versionCode: 1,
     googleServicesFile: './google-services.json',
-    // 'pan' mode: Android pans the entire layout up when keyboard opens.
-    // This is the correct pairing with KeyboardAvoidingView behavior='height'.
-    // 'resize' (default) shrinks the root view which causes layout jitter
-    // and breaks SafeAreaView bottom insets on many Android OEMs.
-    softwareKeyboardLayoutMode: 'pan',
+    // 'resize' (default): Android resizes the root window when the keyboard opens.
+    // This allows chat message lists to adapt dynamically, keeps the ChatHeader pinned,
+    // and pairs cleanly with KeyboardAvoidingView behavior=undefined on Android without double-adjustment.
+    softwareKeyboardLayoutMode: 'resize',
     adaptiveIcon: {
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundColor: '#16A34A',
@@ -99,11 +98,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   experiments: {
     typedRoutes: true,
   },
+ 
   extra: {
     apiBaseUrl: process.env.API_BASE_URL,
     googleMapsKey: GOOGLE_MAPS_API_KEY,
-    eas: {
-      projectId: process.env.EAS_PROJECT_ID || '90b1f7d5-14e1-4cf6-9035-b1beb8832a36',
-    },
+     "eas": {
+        "projectId": "daf33c8f-d27a-42d8-af25-f68ce0abbbe0"
+      }
   },
+ 
 });

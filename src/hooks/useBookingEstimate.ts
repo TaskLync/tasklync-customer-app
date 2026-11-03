@@ -16,7 +16,8 @@ export function useBookingEstimate() {
   const selectedTimeSlot = useBookingDraftStore((s) => s.selectedTimeSlot);
   const isUrgent = useBookingDraftStore((s) => s.isUrgent);
   const address = useBookingDraftStore((s) => s.address);
-  const workerId = useBookingDraftStore((s) => s.workerId) || cartWorker?.id || 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+  const draftWorkerId = useBookingDraftStore((s) => s.workerId);
+  const workerId = cartWorker?.id || draftWorkerId || 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
   const currentLocation = useLocationStore((s) => s.currentLocation);
 
@@ -48,7 +49,11 @@ export function useBookingEstimate() {
         category_id: categoryId,
         service_id: serviceId,
         scheduled_at: scheduledAt,
-        duration_hours: 2,
+        duration_hours:
+          cartItems.reduce((acc, item) => {
+            const itemHours = item.durationHours || (item.durationMins ? item.durationMins / 60 : 0.5);
+            return acc + itemHours * (item.quantity || 1);
+          }, 0) || 0.5,
         latitude: lat,
         longitude: lng,
         is_urgent: isUrgent,

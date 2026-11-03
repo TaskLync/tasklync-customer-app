@@ -50,7 +50,7 @@ export const BookingFooterCTA: React.FC<BookingFooterCTAProps> = ({
     transform: [{ scale: scale.value }],
   }));
 
-  const bottomPadding = insets.bottom > 0 ? insets.bottom + 8 : 16;
+  const bottomPadding = insets.bottom > 0 ? insets.bottom + 14 : 20;
 
   return (
     <View style={[styles.container, { paddingBottom: bottomPadding }]}>
@@ -58,7 +58,6 @@ export const BookingFooterCTA: React.FC<BookingFooterCTAProps> = ({
         {/* Optional Subtext / Summary info */}
         {subtext !== undefined && (
           <View style={styles.summaryContainer}>
-            <Text style={styles.summaryLabel}>BOOKING SUMMARY</Text>
             <Text style={styles.summaryValue} numberOfLines={1}>
               {subtext || 'Select details to proceed'}
             </Text>
@@ -106,16 +105,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: palette.white,
-    borderTopWidth: 1,
-    borderTopColor: palette.gray100,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 24,
-    shadowColor: palette.gray900,
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 8,
     zIndex: 100,
   },
   innerContainer: {
@@ -134,36 +128,36 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   summaryValue: {
-    fontFamily: fontFamily.inter.semiBold,
-    fontSize: 13,
+    fontFamily: fontFamily.inter.bold,
+    fontSize: 15,
     color: colors.textPrimary,
-    marginTop: 2,
+    letterSpacing: -0.2,
   },
   button: {
     paddingVertical: 14,
     paddingHorizontal: 22,
-    borderRadius: 16,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 150,
-    minHeight: 50,
+    minWidth: 164,
+    minHeight: 52,
   },
   fullWidthButton: {
     flex: 1,
   },
   buttonEnabled: {
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
+    backgroundColor: colors.primaryDark,
+    shadowColor: colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.16,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   buttonDisabled: {
-    backgroundColor: palette.gray200,
+    backgroundColor: palette.gray100,
   },
   buttonText: {
-    fontFamily: fontFamily.poppins.bold,
+    fontFamily: fontFamily.poppins.semiBold,
     fontSize: 15,
   },
   textEnabled: {

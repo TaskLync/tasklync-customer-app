@@ -5,7 +5,6 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-na
 import { Text } from '../ui/Text/Text';
 import { colors } from '../../design/colors';
 import { radius } from '../../design/radius';
-import { shadows } from '../../design/shadows';
 import { fontFamily } from '../../design/typography';
 
 export const SearchPromptBar = () => {
@@ -52,13 +51,12 @@ export const SearchPromptBar = () => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 54,
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.pill,
+    height: 50,
+    backgroundColor: colors.bgSection,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: 'hidden', // Ensure border respects radius
-    ...shadows.xs,
+    overflow: 'hidden',
   },
   pressable: {
     flex: 1,

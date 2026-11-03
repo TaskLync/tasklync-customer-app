@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, Alert, Share, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useWorkerProfile } from '@hooks/useWorkerProfile';
 import { useWorkerReviews } from '@hooks/useWorkerReviews';
 import { useWorkerPortfolio } from '@hooks/useWorkerPortfolio';
 import { WorkerProfileHeader } from '@components/worker/WorkerProfileHeader';
 import { WorkerCompactHeader } from '@components/worker/WorkerCompactHeader';
-import { VerifiedBadge } from '@components/worker/VerifiedBadge';
 import { WorkerAvailabilityCard } from '@components/worker/WorkerAvailabilityCard';
 import { WorkerStats } from '@components/worker/WorkerStats';
 import { WorkerBio } from '@components/worker/WorkerBio';
@@ -20,15 +20,15 @@ import { WorkerSkillList } from '@components/worker/WorkerSkillList';
 import { WorkerServicesSection } from '@components/worker/WorkerServicesSection';
 import { WorkerProfileStickyFooter } from '@components/worker/WorkerProfileStickyFooter';
 import { MoreOptionsMenu } from '@components/worker/MoreOptionsMenu';
-import { WorkerSocialProof } from '@components/worker/WorkerSocialProof';
 import { WorkerPortfolioGrid } from '@components/worker/WorkerPortfolioGrid';
 import { ReviewSummary } from '@components/review/ReviewSummary';
-import { ReviewCard } from '@components/review/ReviewCard';
+import { ReviewCard, REVIEW_CARD_GAP } from '@components/review/ReviewCard';
 import { SectionDivider } from '@components/ui/Divider';
 import { ImageViewer } from '@components/common/ImageViewer';
 import { BlockWorkerSheet } from '../../src/components/worker/BlockWorkerSheet';
 import { useBlockWorker } from '../../src/hooks/useBlockWorker';
 import { getPersistedBookings } from '../../src/services/api/booking.api';
+import { ChevronRight } from 'lucide-react-native';
 
 import {
   SkeletonWorkerProfileHero,
@@ -42,12 +42,28 @@ import {
 } from '@components/ui/Skeleton';
 
 import { colors } from '@design/colors';
-import { radius } from '@design/radius';
 import { typography } from '@design/typography';
+import { EmptyState } from '../../src/components/feedback/EmptyState';
+
+// Spacing system: 20 screen gutter · 16 within a group · 24 between sections.
+const SCREEN_PADDING = 20;
+const GROUP_GAP = 16;
+const SECTION_GAP = 24;
+// Header already has its own bottom padding; this adds the visible gap below it.
+const HEADER_CONTENT_GAP = 12;
+// Clearance for the floating footer (Chat / Book Now).
+const FOOTER_CLEARANCE = 112;
 
 export default function WorkerProfileScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
+
+  // Dynamic clearance for the floating footer (Chat / Book Now) accounting for Android edge-to-edge system navigation
+  const dynamicFooterClearance = Math.max(
+    FOOTER_CLEARANCE,
+    72 + (insets.bottom > 0 ? insets.bottom + 14 : 20) + 16
+  );
   
   const scrollY = useSharedValue(0);
   const [optionsVisible, setOptionsVisible] = useState(false);
@@ -121,8 +137,8 @@ export default function WorkerProfileScreen() {
         pathname: `/booking/${existing.id}/chat`,
         params: {
           workerName: worker?.name || existing.worker_name,
-          workerAvatar: worker?.avatar_url || existing.worker_avatar_url,
-          workerPhone: worker?.phone_number || existing.worker_phone,
+          workerAvatar: worker?.avatarUrl || (worker as any)?.avatar_url || existing.worker_avatar_url,
+          workerPhone: (worker as any)?.phone || (worker as any)?.phone_number || existing.worker_phone,
           workerId: worker?.id || existing.worker_id,
         },
       } as any);
@@ -147,7 +163,7 @@ export default function WorkerProfileScreen() {
       <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <SkeletonWorkerProfileHero />
-          <View style={[styles.contentCard, { marginTop: -24 }]}>
+          <View style={styles.contentCard}>
             <SkeletonWorkerStats />
             <View style={styles.sectionSpacer} />
             <SkeletonWorkerBio />
@@ -162,8 +178,10 @@ export default function WorkerProfileScreen() {
             <SkeletonPortfolioGrid />
             <View style={styles.sectionSpacer} />
             <SkeletonReviewSummary />
-            <SkeletonReviewCard />
-            <SkeletonReviewCard />
+            <View style={styles.reviewList}>
+              <SkeletonReviewCard />
+              <SkeletonReviewCard />
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -173,8 +191,13 @@ export default function WorkerProfileScreen() {
   if (isError || !worker) {
     return (
       <SafeAreaView style={styles.errorContainer} edges={['top', 'bottom']}>
-        <Text style={styles.errorText}>Worker profile not found</Text>
-        <Text style={styles.errorSubtext} onPress={() => refetch()}>Tap here to retry</Text>
+        <EmptyState
+          type="no-workers"
+          title="Worker Profile Not Found"
+          description="This service professional is unavailable or does not exist."
+          actionLabel="Try Again"
+          onAction={() => refetch()}
+        />
       </SafeAreaView>
     );
   }
@@ -182,7 +205,8 @@ export default function WorkerProfileScreen() {
   const isAvailable = worker.availabilityStatus === 'AVAILABLE';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar style="dark" />
       {/* Sticky Compact Header (Visible past scroll offset) */}
       <WorkerCompactHeader
         worker={worker}
@@ -208,12 +232,9 @@ export default function WorkerProfileScreen() {
         />
 
         {/* Content Card Overlapping Hero */}
-        <View style={styles.contentCard}>
-          {/* Trust Row: Verified badge & availability card */}
+        <View style={[styles.contentCard, { paddingBottom: dynamicFooterClearance }]}>
+          {/* Trust Row: Availability card */}
           <View style={styles.trustRow}>
-            {worker.isVerified && (
-              <VerifiedBadge size="md" style={styles.verifiedBadge} />
-            )}
             <WorkerAvailabilityCard
               status={worker.availabilityStatus}
               availableUntil={worker.availableUntil}
@@ -231,12 +252,6 @@ export default function WorkerProfileScreen() {
             style={styles.statsCard}
           />
           
-          <WorkerSocialProof
-            jobCount={worker.totalBookings}
-            city={worker.city}
-            style={{ marginBottom: 20 }}
-          />
-
           <View style={styles.divider} />
 
           {/* About Bio */}
@@ -262,6 +277,23 @@ export default function WorkerProfileScreen() {
             style={styles.servicesSection}
           />
 
+          <Pressable
+            style={styles.customQuoteRow}
+            onPress={() =>
+              router.push({
+                pathname: '/custom-request/new' as any,
+                params: {
+                  workerId: worker.id,
+                  categoryId: worker.categories?.[0] || '',
+                },
+              })
+            }
+            accessibilityRole="button"
+          >
+            <Text style={styles.customQuoteTitle}>Request a custom quote</Text>
+            <ChevronRight size={18} color={colors.textMuted} />
+          </Pressable>
+
           <SectionDivider marginV={8} />
 
           <WorkerPortfolioGrid
@@ -283,29 +315,30 @@ export default function WorkerProfileScreen() {
             onViewAll={() => router.push(`/worker/${id}/reviews`)}
           />
 
-          {previewReviews.slice(0, 3).map((review) => (
-            <ReviewCard
-              key={review.id}
-              review={review}
-              showReply={true}
-              maxCommentLines={3}
-            />
-          ))}
+          {previewReviews.length > 0 && (
+            <View style={styles.reviewList}>
+              {previewReviews.slice(0, 3).map((review) => (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  showReply={true}
+                  maxCommentLines={3}
+                />
+              ))}
 
-          {summary && summary.totalReviews > 3 && (
-            <Pressable
-              onPress={() => router.push(`/worker/${id}/reviews`)}
-              hitSlop={12}
-              style={{ marginVertical: 8, alignSelf: 'center' }}
-            >
-              <Text style={{ fontFamily: typography.fontFamily.jakarta.semiBold, fontSize: 14, color: colors.primary }}>
-                See all {summary.totalReviews} reviews →
-              </Text>
-            </Pressable>
+              {summary && (summary.totalReviews ?? (summary as any).total ?? 0) > 3 && (
+                <Pressable
+                  onPress={() => router.push(`/worker/${id}/reviews`)}
+                  hitSlop={12}
+                  style={styles.seeAllLink}
+                >
+                  <Text style={styles.seeAllText}>
+                    See all {summary.totalReviews ?? (summary as any).total} reviews →
+                  </Text>
+                </Pressable>
+              )}
+            </View>
           )}
-
-          {/* Space for bottom sticky footer padding */}
-          <View style={{ height: 100 }} />
         </View>
       </Animated.ScrollView>
 
@@ -357,46 +390,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     overflow: 'hidden',
   },
   loadingContainer: {
     flex: 1,
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     overflow: 'hidden',
   },
   scrollContent: {
     flexGrow: 1,
   },
   contentCard: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    marginTop: -24,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    zIndex: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 4,
+    backgroundColor: colors.bgCard,
+    paddingHorizontal: SCREEN_PADDING,
+    // Clear breathing room between the worker header and the first content block.
+    paddingTop: HEADER_CONTENT_GAP,
+    // Keeps the last section clear of the floating footer without a fixed spacer view.
+    paddingBottom: FOOTER_CLEARANCE,
   },
   trustRow: {
-    marginBottom: 20,
+    marginBottom: GROUP_GAP,
     width: '100%',
   },
-  verifiedBadge: {
-    marginBottom: 10,
-  },
   statsCard: {
-    marginBottom: 20,
+    marginBottom: GROUP_GAP,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border || '#E5E7EB',
-    marginVertical: 20,
+    backgroundColor: colors.border,
+    marginVertical: SECTION_GAP,
     width: '100%',
   },
   bioSection: {
@@ -408,9 +432,36 @@ const styles = StyleSheet.create({
   servicesSection: {
     width: '100%',
   },
-  sectionSpacer: {
-    height: 24,
+  reviewList: {
+    marginTop: 8,
+    gap: REVIEW_CARD_GAP,
   },
+  seeAllLink: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  seeAllText: {
+    fontFamily: typography.fontFamily.jakarta.semiBold,
+    fontSize: 13,
+    color: colors.primaryDark,
+  },
+  sectionSpacer: {
+    height: SECTION_GAP,
+  },
+  customQuoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    marginTop: 8,
+  },
+  customQuoteTitle: {
+    fontFamily: typography.fontFamily.jakarta.semiBold,
+    fontSize: 14,
+    color: colors.primaryDark,
+  },
+
   servicesHeaderSkeleton: {
     marginTop: 12,
   },
@@ -418,18 +469,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     padding: 20,
   },
   errorText: {
     fontFamily: typography.fontFamily.poppins.semiBold,
     fontSize: 16,
-    color: colors.textPrimary || '#0F172A',
+    color: colors.textPrimary,
   },
   errorSubtext: {
     fontFamily: typography.fontFamily.jakarta.medium,
     fontSize: 14,
-    color: colors.primary || '#16A34A',
+    color: colors.primary,
     marginTop: 8,
     textDecorationLine: 'underline',
   },

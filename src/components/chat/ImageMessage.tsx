@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -130,7 +131,7 @@ export const ImageMessage = React.memo(function ImageMessage({
                     cx={RING_SIZE / 2}
                     cy={RING_SIZE / 2}
                     r={RADIUS}
-                    stroke="#FFFFFF"
+                    stroke={colors.white}
                     strokeWidth={STROKE_WIDTH}
                     fill="transparent"
                     strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
@@ -158,7 +159,7 @@ export const ImageMessage = React.memo(function ImageMessage({
                 accessibilityRole="button"
                 accessibilityLabel="Retry photo upload"
               >
-                <RotateCcw size={22} color="#FFFFFF" strokeWidth={2.5} />
+                <RotateCcw size={22} color={colors.white} strokeWidth={2.5} />
               </Pressable>
               <Text style={styles.failedBadgeText}>Tap to retry</Text>
             </View>
@@ -173,7 +174,7 @@ export const ImageMessage = React.memo(function ImageMessage({
         animationType="fade"
         onRequestClose={() => setIsViewerVisible(false)}
       >
-        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        <StatusBar barStyle="light-content" backgroundColor={colors.black} />
         <View style={styles.viewerContainer}>
           {/* Close Button Header with Safe Area Insets */}
           <View style={[styles.viewerHeader, { paddingTop: Math.max(insets.top, 16) }]}>
@@ -184,7 +185,7 @@ export const ImageMessage = React.memo(function ImageMessage({
               accessibilityRole="button"
               accessibilityLabel="Close photo viewer"
             >
-              <X size={24} color="#FFFFFF" strokeWidth={2.5} />
+              <X size={24} color={colors.white} strokeWidth={2.5} />
             </Pressable>
           </View>
 
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.borderLight,
   },
   imagePressable: {
     position: 'relative',
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.borderLight,
   },
   overlay: {
     ...StyleSheet.absoluteFill,
@@ -244,7 +245,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontFamily: 'Inter-Medium',
     fontSize: 11,
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '600',
   },
   retryCircleButton: {
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(239, 68, 68, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -262,12 +263,12 @@ const styles = StyleSheet.create({
   },
   retryButtonPressed: {
     transform: [{ scale: 0.94 }],
-    backgroundColor: '#DC2626',
+    backgroundColor: colors.dangerMedium,
   },
   failedBadgeText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
-    color: '#FFFFFF',
+    color: colors.white,
     marginTop: 6,
     textShadowColor: 'rgba(0, 0, 0, 0.4)',
     textShadowOffset: { width: 0, height: 1 },
@@ -275,7 +276,7 @@ const styles = StyleSheet.create({
   },
   viewerContainer: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: colors.black,
   },
   viewerHeader: {
     paddingHorizontal: 16,

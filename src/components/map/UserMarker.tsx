@@ -1,6 +1,7 @@
 import { FC } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Marker } from 'react-native-maps';
+import { colors } from '../../design/colors';
 import { Coordinates } from '../../types/location.types';
 
 interface UserMarkerProps {

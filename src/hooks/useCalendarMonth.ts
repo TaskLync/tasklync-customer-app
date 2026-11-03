@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useBookingDraftStore } from '../store/bookingDraft.store';
 import { workerApi } from '../services/api/worker.api';
 import { getPKTTodayDateString } from '../utils/timezone';
+import { onAvailabilityInvalidated } from '../utils/availabilityEvents';
 
 export interface CalendarDayItem {
   dateStr: string; // Format: YYYY-MM-DD
@@ -62,6 +63,19 @@ export function useCalendarMonth(initialDateStr?: string, workerId?: string | nu
   // Month availability state
   const [availableDatesSet, setAvailableDatesSet] = useState<Set<string>>(new Set());
   const [isAvailabilityLoaded, setIsAvailabilityLoaded] = useState<boolean>(false);
+  const [refreshTick, setRefreshTick] = useState<number>(0);
+
+  // A different worker has a different calendar: never keep showing the previous worker's dates.
+  useEffect(() => {
+    setAvailableDatesSet(new Set());
+    setIsAvailabilityLoaded(false);
+  }, [workerId]);
+
+  useEffect(() => {
+    return onAvailabilityInvalidated((id) => {
+      if (id === null || id === workerId) setRefreshTick((t) => t + 1);
+    });
+  }, [workerId]);
 
   // Fetch month availability when visible month/year or workerId changes.
   // Only runs when a valid UUID workerId is provided — never falls back to a
@@ -99,7 +113,7 @@ export function useCalendarMonth(initialDateStr?: string, workerId?: string | nu
     return () => {
       isMounted = false;
     };
-  }, [workerId, visibleYear, visibleMonth]);
+  }, [workerId, visibleYear, visibleMonth, refreshTick]);
 
   // Check if we can navigate to previous month (cannot go prior to current month)
   const canGoPrev = useMemo(() => {

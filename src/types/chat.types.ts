@@ -88,6 +88,7 @@ export type ConversationFilterTab = 'all' | 'active' | 'unread';
 export interface ConversationItem {
   id: string;
   bookingId: string;
+  roomId?: string | undefined;
   workerId?: string | undefined;
   workerName: string;
   workerAvatarUrl?: string | undefined;
@@ -99,4 +100,5 @@ export interface ConversationItem {
   unreadCount: number;
   isOnline: boolean;
   bookingStatus?: string | undefined;
+  allBookingIds?: string[] | undefined;
 }

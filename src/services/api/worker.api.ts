@@ -12,6 +12,8 @@ import {
   extractRawWorkerList,
   extractPaginationMeta,
 } from '../mappers/worker.mapper';
+import { FAISALABAD_CENTER } from '../../config/serviceArea.config';
+import { normalizeDateToYYYYMMDD } from '../../utils/timezone';
 
 /**
  * Worker Service API Specification v2.0.0 (Modules 5-10)
@@ -35,6 +37,7 @@ export const workerApi = {
         minRating: params.minRating,
         page: params.page || 1,
         limit: params.limit || 20,
+        provider_type: params.provider_type,
       },
     });
 
@@ -157,12 +160,44 @@ export const workerApi = {
    * GET /workers/:id/slots?date=YYYY-MM-DD
    * Fetch real-time open time slots for worker on a date
    */
-  getWorkerSlots: async (workerId: string, dateStr: string, durationHours: number = 2) => {
+  getWorkerSlots: async (
+    workerId: string,
+    dateStr: string,
+    durationHours: number = 0.5,
+    signal?: AbortSignal
+  ) => {
     try {
-      const response = await apiClient.get<ApiResponse<any>>(`/workers/${workerId}/slots`, {
-        params: { date: dateStr, duration_hours: durationHours },
-      });
-      const rawSlots: string[] = response.data?.data?.slots || [];
+      const formattedDate = normalizeDateToYYYYMMDD(dateStr) || dateStr;
+      const reqConfig: any = {
+        params: { date: formattedDate, duration_hours: durationHours },
+      };
+      if (signal) reqConfig.signal = signal;
+
+      const response = await apiClient.get<any>(`/workers/${workerId}/slots`, reqConfig);
+      const resData = response.data?.data || response.data;
+
+      // Handle structured slot_details with per-slot availability
+      const slotDetails = resData?.slot_details;
+      if (Array.isArray(slotDetails) && slotDetails.length > 0) {
+        return slotDetails.map((item: any) => {
+          const time24 = item.time;
+          const parts = time24.split(':');
+          let h = parseInt(parts[0], 10);
+          const m = parseInt(parts[1] || '0', 10);
+          const period = h >= 12 ? 'PM' : 'AM';
+          h = h % 12;
+          if (h === 0) h = 12;
+          const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+          return {
+            id: `slot-${formattedDate}-${time24}`,
+            timeStr,
+            available: Boolean(item.available),
+          };
+        });
+      }
+
+      // Backward compatible fallback for string array slots
+      const rawSlots: string[] = resData?.slots || [];
       return rawSlots.map((time24) => {
         const parts = time24.split(':');
         let h = parseInt(parts[0], 10);
@@ -172,12 +207,16 @@ export const workerApi = {
         if (h === 0) h = 12;
         const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
         return {
-          id: `slot-${dateStr}-${time24}`,
+          id: `slot-${formattedDate}-${time24}`,
           timeStr,
           available: true,
         };
       });
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') {
+        // Request was aborted by newer request; let caller maintain state
+        return null;
+      }
       return [];
     }
   },
@@ -201,6 +240,122 @@ export const workerApi = {
       };
     } catch (err) {
       return { availableDates: [], unavailableDates: [] };
+    }
+  },
+
+  /**
+   * Module 11: GET /workers/nearby & /search/workers?provider_type=COMPANY
+   * Fetch registered service companies and agencies
+   */
+  getCompanies: async (params?: {
+    page?: number;
+    limit?: number;
+    lat?: number;
+    lng?: number;
+    category?: string;
+  }): Promise<{ companies: WorkerNearby[]; total: number; page: number; hasMore: boolean }> => {
+    try {
+      const lat = params?.lat ?? FAISALABAD_CENTER.lat;
+      const lng = params?.lng ?? FAISALABAD_CENTER.lng;
+      const isCompanyRaw = (w: any) =>
+        w?.provider_type === 'COMPANY' ||
+        w?.providerType === 'COMPANY' ||
+        w?.is_company === true ||
+        w?.isCompany === true ||
+        Boolean(w?.business_name || w?.businessName);
+
+      const categoryParam = params?.category ? { category: params.category } : {};
+      const limit = Math.min(params?.limit || 20, 20);
+
+      // Ordered discovery strategies. First one that yields companies wins.
+      // 1) Geo-scoped provider search (search-service with provider_type=COMPANY)
+      // 2) Platform-wide provider search (no geo filter; covers agencies outside radius)
+      // 3) Proximity feed with provider_type=COMPANY at user coords
+      // 4) Proximity feed with provider_type=COMPANY at city center
+      const strategies: Array<() => Promise<any[]>> = [
+        async () => {
+          const r = await apiClient.get<ApiResponse<any>>('/search/workers', {
+            params: {
+              provider_type: 'COMPANY',
+              lat,
+              lng,
+              radius: 20000,
+              limit,
+              page: params?.page || 1,
+              ...categoryParam,
+            },
+          });
+          return extractRawWorkerList(r.data);
+        },
+        async () => {
+          const r = await apiClient.get<ApiResponse<any>>('/search/workers', {
+            params: { provider_type: 'COMPANY', limit, page: params?.page || 1, ...categoryParam },
+          });
+          return extractRawWorkerList(r.data);
+        },
+        async () => {
+          const r = await apiClient.get<ApiResponse<any>>('/workers/nearby', {
+            params: { lat, lng, radius: 20000, limit: 20, provider_type: 'COMPANY', ...categoryParam },
+          });
+          return extractRawWorkerList(r.data);
+        },
+        async () => {
+          const r = await apiClient.get<ApiResponse<any>>('/workers/nearby', {
+            params: {
+              lat: FAISALABAD_CENTER.lat,
+              lng: FAISALABAD_CENTER.lng,
+              radius: 20000,
+              limit: 20,
+              provider_type: 'COMPANY',
+              ...categoryParam,
+            },
+          });
+          return extractRawWorkerList(r.data);
+        },
+      ];
+
+      let rawCompanies: any[] = [];
+      let anySucceeded = false;
+      let lastError: unknown = null;
+
+      for (let i = 0; i < strategies.length && rawCompanies.length === 0; i++) {
+        try {
+          const list = await strategies[i]!();
+          anySucceeded = true;
+          rawCompanies = list.filter(isCompanyRaw);
+          if (__DEV__) {
+            console.log(
+              `[getCompanies] strategy ${i + 1}: ${list.length} results, ${rawCompanies.length} companies`
+            );
+          }
+        } catch (err) {
+          lastError = err;
+          console.warn(`[getCompanies] strategy ${i + 1} failed:`, err);
+        }
+      }
+
+      // Every network strategy failed: surface the error instead of pretending there are no companies.
+      if (!anySucceeded && lastError) throw lastError;
+
+      const mappedCompanies: WorkerNearby[] = rawCompanies.map((raw: any) => {
+        const base = mapRawWorkerNearby(raw);
+        return {
+          ...base,
+          providerType: 'COMPANY' as const,
+          isCompany: true,
+          businessName: raw.business_name || raw.businessName || base.businessName || base.name,
+        };
+      });
+
+      return {
+        companies: mappedCompanies,
+        total: mappedCompanies.length,
+        page: params?.page || 1,
+        hasMore: false,
+      };
+    } catch (err) {
+      console.warn('[workerApi.getCompanies] Error fetching companies:', err);
+      throw err;
     }
   },
 };

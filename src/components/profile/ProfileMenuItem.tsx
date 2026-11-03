@@ -94,11 +94,6 @@ export const ProfileMenuItem: React.FC<ProfileMenuItemProps> = ({
         <Text style={[styles.label, isDanger && styles.labelDanger]} numberOfLines={1}>
           {item.label}
         </Text>
-        {item.subtitle ? (
-          <Text style={styles.subtitle} numberOfLines={1}>
-            {item.subtitle}
-          </Text>
-        ) : null}
       </View>
 
       {/* Right Accessory (Badge or Chevron) */}
@@ -108,7 +103,7 @@ export const ProfileMenuItem: React.FC<ProfileMenuItemProps> = ({
             <Text style={styles.badgeText}>{item.badge}</Text>
           </View>
         ) : (
-          <ChevronRight size={17} color={isDanger ? colors.textDanger : '#94A3B8'} strokeWidth={2.2} />
+          <ChevronRight size={17} color={isDanger ? colors.textDanger : colors.textMuted} strokeWidth={2.2} />
         )}
       </View>
     </TouchableOpacity>
@@ -119,35 +114,20 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 13,
-    paddingHorizontal: 15,
-    minHeight: 56,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
+    backgroundColor: colors.bgCard,
+    paddingVertical: 14,
+    minHeight: 54,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  cardDanger: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FEE2E2',
-  },
+  cardDanger: {},
   iconContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: '#F0FDF4',
-    alignItems: 'center',
+    width: 28,
+    alignItems: 'flex-start',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
-  iconContainerDanger: {
-    backgroundColor: '#FEE2E2',
-  },
+  iconContainerDanger: {},
   textCol: {
     flex: 1,
     paddingRight: 10,
@@ -155,7 +135,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 14.5,
-    color: '#0F172A',
+    color: colors.textPrimary,
     letterSpacing: -0.2,
   },
   labelDanger: {
@@ -164,7 +144,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 12,
-    color: '#64748B',
+    color: colors.textSecondary,
     marginTop: 1.5,
   },
   rightAccessory: {
@@ -172,7 +152,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badgePill: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.primaryBorderSubtle,
     paddingHorizontal: 8,
     paddingVertical: 2.5,
     borderRadius: radius.pill,
@@ -180,6 +160,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontFamily: fontFamily.inter.bold,
     fontSize: 11,
-    color: '#15803D',
+    color: colors.textGreen,
   },
 });

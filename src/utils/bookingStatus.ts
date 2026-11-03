@@ -1,56 +1,81 @@
 import { BookingStatus } from '../types/booking.types';
+import { colors, palette } from '../design/colors';
 
 /**
- * Single source of truth for booking status styling & labels (Day 38)
+ * Single source of truth for booking status styling & labels
  */
 
 export function statusToColor(status?: BookingStatus | string): string {
   switch (status) {
     case 'PENDING':
-      return '#F59E0B'; // Amber
+      return colors.warning; // Amber
     case 'ACCEPTED':
-      return '#2563EB'; // Blue
+      return colors.info; // Blue
     case 'IN_PROGRESS':
     case 'COMPLETED_BY_WORKER':
     case 'RESOLVED':
-      return '#16A34A'; // Green
+      return colors.primaryDark; // Green
     case 'COMPLETED':
     case 'AUTO_COMPLETED':
-      return '#64748B'; // Slate Gray
+      return colors.textSecondary; // Slate Gray
     case 'CANCELLED':
     case 'REJECTED':
-      return '#EF4444'; // Red
+      return colors.danger; // Red
     case 'DISPUTED':
-      return '#DC2626'; // Deep Red
+      return colors.dangerMedium; // Deep Red
     case 'REFUNDED':
-      return '#0284C7'; // Sky Blue
+      return palette.sky600; // Sky Blue
     default:
-      return '#94A3B8'; // Neutral Slate
+      return colors.textMuted; // Neutral Slate
   }
 }
 
 export function statusToBgColor(status?: BookingStatus | string): string {
   switch (status) {
     case 'PENDING':
-      return '#FEF3C7'; // Amber 100
+      return colors.warningLight; // Amber 100
     case 'ACCEPTED':
-      return '#DBEAFE'; // Blue 100
+      return palette.blue100; // Blue 100
     case 'IN_PROGRESS':
     case 'COMPLETED_BY_WORKER':
     case 'RESOLVED':
-      return '#DCFCE7'; // Green 100
+      return palette.green100; // Green 100
     case 'COMPLETED':
     case 'AUTO_COMPLETED':
-      return '#F1F5F9'; // Slate 100
+      return colors.bgHover; // Slate 100
     case 'CANCELLED':
     case 'REJECTED':
-      return '#FEE2E2'; // Red 100
+      return palette.red100; // Red 100
     case 'DISPUTED':
-      return '#FFE4E6'; // Rose 100
+      return palette.red100; // Red 100
     case 'REFUNDED':
-      return '#E0F2FE'; // Sky 100
+      return palette.sky100; // Sky 100
     default:
-      return '#F1F5F9';
+      return colors.bgHover;
+  }
+}
+
+export function statusToTextColor(status?: BookingStatus | string): string {
+  switch (status) {
+    case 'PENDING':
+      return colors.textWarning;
+    case 'ACCEPTED':
+      return colors.textInfoDark;
+    case 'IN_PROGRESS':
+    case 'COMPLETED_BY_WORKER':
+    case 'RESOLVED':
+      return colors.textGreenDark;
+    case 'COMPLETED':
+    case 'AUTO_COMPLETED':
+      return colors.textSecondary;
+    case 'CANCELLED':
+    case 'REJECTED':
+    case 'DISPUTED':
+      return colors.textDangerDark;
+    case 'REFUNDED':
+      return palette.sky700;
+    default:
+      return colors.textPrimary;
   }
 }
 

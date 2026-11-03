@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { Trash2, X, AlertTriangle } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
 
 export interface DeleteAccountModalProps {
@@ -36,6 +37,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   onClose,
   isLoading = false,
 }) => {
+  const insets = useSafeAreaInsets();
   const [inputText, setInputText] = useState<string>('');
 
   const isConfirmed = inputText.trim().toUpperCase() === CONFIRMATION_KEYWORD;
@@ -62,7 +64,12 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
         style={styles.backdrop}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.sheet}>
+        <View
+          style={[
+            styles.sheet,
+            { paddingBottom: insets.bottom > 0 ? insets.bottom + 18 : 28 },
+          ]}
+        >
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.iconCircle}>

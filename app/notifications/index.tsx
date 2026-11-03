@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
-import { ArrowLeft, CheckCheck, BellOff, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, Check, BellOff, ChevronRight } from 'lucide-react-native';
 
 import { useNotifications } from '../../src/hooks/useNotifications';
 import { useNotificationPermission } from '../../src/hooks/useNotificationPermission';
@@ -28,17 +28,17 @@ import { EmptyNotifications } from '../../src/components/feedback/EmptyState/Emp
 import { ErrorState } from '../../src/components/feedback/ErrorState';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { resolveNotificationRoute } from '../../src/utils/deepLink';
-import { colors } from '../../src/design/colors';
+import { colors, palette, fontFamily, radius } from '../../src/design';
 
 /**
- * NotificationsScreen (Day 32 Notification Center)
+ * NotificationsScreen
  *
- * Implements Principal-level React Native Architecture:
- * - High-performance FlashList with separate recycling item types (header vs notification)
- * - Dynamic sticky header indices computed from pure date grouping transform
- * - Optimistic cache mutations across infinite pages with instant badge reconciliation
- * - 2-zone simultaneous swipe gesture rows (Mark read / Delete)
- * - Safe area & Fitts's Law ergonomics
+ * Production-grade minimalist notification center:
+ * - Clean centered header with ergonomic back button & subtle green "Mark all as read" action
+ * - Compact segmented filter pills ("All", "Unread (X)") with clear visual states
+ * - Elegant grouping ("Today", "Yesterday", "Earlier") without noisy dividers or badges
+ * - High-performance FlashList with swipe actions (Mark read / Delete)
+ * - Safe area handling for Android status & navigation bars
  */
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -79,7 +79,6 @@ export default function NotificationsScreen() {
   // Navigation & Deep Linking Handler
   const handleItemPress = useCallback(
     (item: NotificationItemType) => {
-
       // 1. Optimistic read mark
       if (!item.is_read) {
         markRead(item.id);
@@ -146,45 +145,58 @@ export default function NotificationsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={palette.white} />
 
       {/* Screen Header */}
       <View style={styles.header}>
+        {/* Back Button */}
         <Pressable
-          style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           onPress={() => router.back()}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color="#0F172A" />
+          <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.4} />
         </Pressable>
 
-        <Text style={styles.headerTitle}>Notifications</Text>
+        {/* Centered Notifications Title */}
+        <View style={styles.titleContainer} pointerEvents="none">
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Notifications
+          </Text>
+        </View>
 
-        {unreadCount > 0 ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.markAllButton,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={markAllRead}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Mark all notifications as read"
-          >
-            <CheckCheck size={16} color="#16A34A" style={styles.markAllIcon} />
-            <Text style={styles.markAllText}>Mark all</Text>
-          </Pressable>
-        ) : (
-          <View style={styles.headerPlaceholder} />
-        )}
+        {/* Right Action: Mark all as read */}
+        <View style={styles.rightActionContainer}>
+          {unreadCount > 0 ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.markAllButton,
+                pressed && styles.markAllButtonPressed,
+              ]}
+              onPress={markAllRead}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Mark all notifications as read"
+            >
+              <Check size={14} color={colors.primaryDark} strokeWidth={2.4} />
+              <Text style={styles.markAllText}>Mark all as read</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.rightActionPlaceholder} />
+          )}
+        </View>
       </View>
 
       {/* Filter Tabs (All / Unread) */}
       <View style={styles.filterBar}>
         <Pressable
-          style={[styles.filterTab, activeFilter === 'all' && styles.filterTabActive]}
+          style={({ pressed }) => [
+            styles.filterPill,
+            activeFilter === 'all' ? styles.filterPillActive : styles.filterPillInactive,
+            pressed && styles.filterPillPressed,
+          ]}
           onPress={() => handleFilterChange('all')}
           accessibilityRole="tab"
           accessibilityState={{ selected: activeFilter === 'all' }}
@@ -192,7 +204,7 @@ export default function NotificationsScreen() {
           <Text
             style={[
               styles.filterText,
-              activeFilter === 'all' && styles.filterTextActive,
+              activeFilter === 'all' ? styles.filterTextActive : styles.filterTextInactive,
             ]}
           >
             All
@@ -200,7 +212,11 @@ export default function NotificationsScreen() {
         </Pressable>
 
         <Pressable
-          style={[styles.filterTab, activeFilter === 'unread' && styles.filterTabActive]}
+          style={({ pressed }) => [
+            styles.filterPill,
+            activeFilter === 'unread' ? styles.filterPillActive : styles.filterPillInactive,
+            pressed && styles.filterPillPressed,
+          ]}
           onPress={() => handleFilterChange('unread')}
           accessibilityRole="tab"
           accessibilityState={{ selected: activeFilter === 'unread' }}
@@ -208,10 +224,10 @@ export default function NotificationsScreen() {
           <Text
             style={[
               styles.filterText,
-              activeFilter === 'unread' && styles.filterTextActive,
+              activeFilter === 'unread' ? styles.filterTextActive : styles.filterTextInactive,
             ]}
           >
-            Unread{unreadCount > 0 ? ` (${unreadCount})` : ''}
+            {unreadCount > 0 ? `Unread (${unreadCount})` : 'Unread'}
           </Text>
         </Pressable>
       </View>
@@ -225,22 +241,22 @@ export default function NotificationsScreen() {
           accessibilityLabel="Enable push notifications"
         >
           <View style={styles.permissionIconCircle}>
-            <BellOff size={16} color="#DC2626" />
+            <BellOff size={15} color={colors.danger} strokeWidth={2.2} />
           </View>
           <View style={styles.permissionTextCol}>
             <Text style={styles.permissionTitle}>Push notifications are disabled</Text>
             <Text style={styles.permissionSubtitle}>
-              Tap to enable real-time booking alerts and messages
+              Enable to get real-time booking alerts and messages
             </Text>
           </View>
-          <ChevronRight size={18} color="#94A3B8" />
+          <ChevronRight size={16} color={colors.textMuted} />
         </Pressable>
       )}
 
       {/* Main FlashList Feed */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#16A34A" />
+          <ActivityIndicator size="large" color={colors.primaryDark} />
         </View>
       ) : isError && groupedList.length === 0 ? (
         <ErrorState
@@ -263,8 +279,8 @@ export default function NotificationsScreen() {
           stickyHeaderIndices={stickyHeaderIndices}
           contentContainerStyle={{
             paddingHorizontal: 16,
-            paddingTop: 8,
-            paddingBottom: Math.max(insets.bottom, 24) + 16,
+            paddingTop: 4,
+            paddingBottom: Math.max(insets.bottom, 20) + 16,
           }}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
@@ -272,8 +288,8 @@ export default function NotificationsScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={refetch}
-              tintColor="#16A34A"
-              colors={['#16A34A']}
+              tintColor={colors.primaryDark}
+              colors={[colors.primaryDark]}
             />
           }
           ListEmptyComponent={
@@ -284,7 +300,7 @@ export default function NotificationsScreen() {
           ListFooterComponent={
             isFetchingNextPage ? (
               <View style={styles.footerLoader}>
-                <ActivityIndicator size="small" color="#16A34A" />
+                <ActivityIndicator size="small" color={colors.primaryDark} />
               </View>
             ) : null
           }
@@ -300,110 +316,145 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgApp,
   },
   header: {
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: palette.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: palette.gray100,
+    position: 'relative',
   },
   backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: radius.circle,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: palette.gray50,
+    borderWidth: 1,
+    borderColor: palette.gray200,
+    zIndex: 2,
+  },
+  backButtonPressed: {
+    backgroundColor: palette.gray100,
+    transform: [{ scale: 0.96 }],
+  },
+  titleContainer: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
   },
   headerTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 18,
-    color: '#0F172A',
+    fontFamily: fontFamily.poppins.semiBold,
+    fontSize: 16,
+    color: colors.textPrimary,
   },
-  headerPlaceholder: {
-    width: 38,
+  rightActionContainer: {
+    zIndex: 2,
+    minWidth: 36,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  rightActionPlaceholder: {
+    width: 36,
+    height: 36,
   },
   markAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    gap: 4,
     paddingVertical: 6,
-    borderRadius: 14,
-    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 4,
   },
-  markAllIcon: {
-    marginRight: 4,
+  markAllButtonPressed: {
+    opacity: 0.6,
   },
   markAllText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 12,
-    color: '#16A34A',
-  },
-  buttonPressed: {
-    opacity: 0.7,
+    color: colors.primaryDark,
   },
   filterBar: {
     flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: palette.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: palette.gray100,
     gap: 8,
   },
-  filterTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+  filterPill: {
+    height: 32,
+    paddingHorizontal: 14,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  filterTabActive: {
-    backgroundColor: '#0F172A',
+  filterPillActive: {
+    backgroundColor: palette.green50,
+    borderWidth: 1,
+    borderColor: palette.green200,
+  },
+  filterPillInactive: {
+    backgroundColor: palette.gray100,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  filterPillPressed: {
+    opacity: 0.8,
   },
   filterText: {
-    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 13,
-    color: '#64748B',
+    lineHeight: 16,
   },
   filterTextActive: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    color: '#FFFFFF',
+    fontFamily: fontFamily.jakarta.semiBold,
+    color: colors.primaryDark,
+  },
+  filterTextInactive: {
+    fontFamily: fontFamily.jakarta.medium,
+    color: colors.textSecondary,
   },
   permissionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 16,
-    marginTop: 12,
+    marginTop: 10,
     marginBottom: 4,
-    padding: 12,
-    backgroundColor: '#FEF2F2',
-    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: palette.red50,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: palette.red200,
+    gap: 10,
   },
   permissionIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FEE2E2',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: palette.red100,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
   },
   permissionTextCol: {
     flex: 1,
   },
   permissionTitle: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 13,
-    color: '#991B1B',
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.textDangerDark,
   },
   permissionSubtitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: fontFamily.jakarta.regular,
     fontSize: 11,
-    color: '#B91C1C',
+    lineHeight: 15,
+    color: palette.red700,
     marginTop: 1,
   },
   loadingContainer: {

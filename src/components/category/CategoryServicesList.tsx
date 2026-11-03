@@ -75,6 +75,7 @@ export const CategoryServicesList: React.FC<CategoryServicesListProps> = ({
           count={0}
         />
         <EmptyState
+          type="no-data"
           title="No services listed for this category yet"
           subtitle="Please check back later or choose another category."
         />

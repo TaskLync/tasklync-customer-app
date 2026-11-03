@@ -8,7 +8,9 @@ export function useConfirmCompletion() {
     mutationFn: async (bookingId: string) => {
       return await bookingApi.confirmCompletion(bookingId);
     },
-    onSuccess: (_, bookingId) => {
+    onSuccess: (_data, bookingId) => {
+      // Backend is the source of truth: invalidate and let the refetch supply the final status
+      // instead of optimistically writing COMPLETED into the cache.
       queryClient.invalidateQueries({ queryKey: ['bookings-list'] });
       queryClient.invalidateQueries({ queryKey: ['booking-details', bookingId] });
       queryClient.invalidateQueries({ queryKey: ['booking-track', bookingId] });

@@ -16,7 +16,8 @@ export const OnlineBadge: React.FC<OnlineBadgeProps> = ({
   const getStatusColor = () => {
     switch (status) {
       case 'online': return colors.online; // Green
-      default: return colors.textMuted; // Gray
+      case 'busy': return colors.busy;
+      default: return colors.offline;
     }
   };
 
@@ -44,6 +45,6 @@ const styles = StyleSheet.create({
   },
   solidDot: {
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: colors.white,
   },
 });

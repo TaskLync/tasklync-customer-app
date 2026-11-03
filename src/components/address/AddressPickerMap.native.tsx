@@ -43,6 +43,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
     const isMapReadyRef = useRef<boolean>(false);
     const pendingAnimateRegionRef = useRef<{ region: MapRegion; duration: number } | null>(null);
     const isDraggingRef = useRef<boolean>(false);
+    const isMountedRef = useRef<boolean>(true);
     const [reduceMotion, setReduceMotion] = useState(false);
 
     // Reanimated values for pin lift & drop bounce
@@ -52,17 +53,19 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
     const shadowOpacity = useSharedValue(0.25);
 
     useEffect(() => {
-      let isMounted = true;
+      isMountedRef.current = true;
+      let isLocalMounted = true;
       AccessibilityInfo.isReduceMotionEnabled()
         .then((enabled) => {
-          if (isMounted) setReduceMotion(enabled);
+          if (isLocalMounted) setReduceMotion(enabled);
         })
         .catch(() => {
-          if (isMounted) setReduceMotion(false);
+          if (isLocalMounted) setReduceMotion(false);
         });
 
       return () => {
-        isMounted = false;
+        isMountedRef.current = false;
+        isLocalMounted = false;
       };
     }, []);
 
@@ -103,6 +106,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
 
     const handleRegionChange = useCallback(
       (region: MapRegion) => {
+        if (!isMountedRef.current) return;
         if (!isDraggingRef.current) {
           isDraggingRef.current = true;
           if (reduceMotion) {
@@ -117,7 +121,13 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
             shadowOpacity.value = withTiming(0.12, { duration: 120 });
           }
         }
-        if (onRegionChange) {
+        if (
+          onRegionChange &&
+          typeof region?.latitude === 'number' &&
+          !isNaN(region.latitude) &&
+          typeof region?.longitude === 'number' &&
+          !isNaN(region.longitude)
+        ) {
           onRegionChange(region);
         }
       },
@@ -126,6 +136,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
 
     const handleRegionChangeComplete = useCallback(
       (region: MapRegion) => {
+        if (!isMountedRef.current) return;
         isDraggingRef.current = false;
         if (reduceMotion) {
           pinTranslateY.value = 0;
@@ -139,7 +150,15 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
           shadowScale.value = withSpring(1.0, { damping: 16, stiffness: 350 });
           shadowOpacity.value = withTiming(0.25, { duration: 150 });
         }
-        onRegionChangeComplete(region);
+        if (
+          typeof region?.latitude === 'number' &&
+          !isNaN(region.latitude) &&
+          typeof region?.longitude === 'number' &&
+          !isNaN(region.longitude) &&
+          (Math.abs(region.latitude) > 0.0001 || Math.abs(region.longitude) > 0.0001)
+        ) {
+          onRegionChangeComplete(region);
+        }
       },
       [onRegionChangeComplete, pinScale, pinTranslateY, reduceMotion, shadowOpacity, shadowScale]
     );
@@ -175,7 +194,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
           toolbarEnabled={false}
           rotateEnabled={false}
           pitchEnabled={false}
-          loadingEnabled={true}
+          loadingEnabled={Platform.OS === 'ios'}
         />
 
         {/* Fixed Absolutely-Positioned Center Pin Overlay */}

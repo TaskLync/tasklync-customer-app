@@ -1,6 +1,8 @@
+import { colors, palette } from '../../design';
 import React from 'react';
 import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fontFamily as fonts } from '@design/typography';
 
 interface PortfolioCaptionProps {
@@ -14,13 +16,17 @@ export const PortfolioCaption = ({
   imageIndex,
   style,
 }: PortfolioCaptionProps) => {
+  const insets = useSafeAreaInsets();
   if (!caption) return null;
 
   return (
     <View style={[styles.container, style]} pointerEvents="none">
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.7)']}
-        style={styles.gradient}
+        style={[
+          styles.gradient,
+          { paddingBottom: Math.max(insets.bottom, 16) + 24 },
+        ]}
       >
         <Text style={styles.captionText} numberOfLines={2}>
           {caption}

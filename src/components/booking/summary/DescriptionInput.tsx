@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { MessageSquare, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { colors, palette, fontFamily } from '../../../design';
 
 export interface DescriptionInputProps {
@@ -39,8 +39,7 @@ export const DescriptionInput: React.FC<DescriptionInputProps> = ({
     <View style={styles.card}>
       <Pressable onPress={toggleExpand} style={styles.headerRow}>
         <View style={styles.leftGroup}>
-          <MessageSquare size={16} color={colors.primaryDark} strokeWidth={2.2} />
-          <Text style={styles.headerTitle}>Special Instructions for Provider</Text>
+          <Text style={styles.headerTitle}>Notes for provider (optional)</Text>
         </View>
 
         {isExpanded ? (
@@ -73,16 +72,10 @@ export const DescriptionInput: React.FC<DescriptionInputProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.white,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: palette.gray100,
-    padding: 16,
+    paddingVertical: 16,
     marginBottom: 14,
-    shadowColor: palette.gray900,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   headerRow: {
     flexDirection: 'row',
@@ -96,7 +89,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 18,
     color: colors.textPrimary,
   },
@@ -104,10 +97,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   textInput: {
-    backgroundColor: palette.iceGray,
+    backgroundColor: colors.bgInput,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: palette.softGray,
+    borderColor: colors.border,
     padding: 12,
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 13,

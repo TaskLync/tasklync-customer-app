@@ -1,21 +1,27 @@
-import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, StyleProp, ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { colors } from '../../../design/colors';
 import { radius } from '../../../design/radius';
 import { springConfig } from '../../../design/animations';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export const BottomSheetHandle = () => {
+export interface BottomSheetHandleProps {
+  style?: StyleProp<ViewStyle>;
+  indicatorStyle?: StyleProp<ViewStyle>;
+}
+
+export const BottomSheetHandle: React.FC<BottomSheetHandleProps> = ({
+  style,
+  indicatorStyle,
+}) => {
   const scale = useSharedValue(1);
 
   const handlePressIn = () => {
-    scale.value = withSpring(1.2, springConfig.snappy);
+    scale.value = withSpring(1.15, springConfig.snappy);
   };
 
   const handlePressOut = () => {
@@ -27,13 +33,15 @@ export const BottomSheetHandle = () => {
   }));
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <AnimatedPressable
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         style={[styles.touchArea, animatedStyle]}
+        accessibilityRole="none"
+        accessibilityLabel="Bottom sheet drag handle"
       >
-        <View style={styles.handle} />
+        <View style={[styles.handle, indicatorStyle]} />
       </AnimatedPressable>
     </View>
   );
@@ -43,18 +51,19 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
-    paddingVertical: 10, // 10 top, 8 bottom roughly achieved by 10 padding + handle size
+    paddingVertical: 10,
   },
   touchArea: {
-    width: 40,
-    height: 28, // 28px height comfortable drag zone
+    width: 64,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   handle: {
-    width: 40,
-    height: 4,
+    width: 38,
+    height: 4.5,
     borderRadius: radius.pill,
-    backgroundColor: colors.border,
+    backgroundColor: '#CBD5E1', // High-contrast subtle neutral gray pill
   },
 });
+

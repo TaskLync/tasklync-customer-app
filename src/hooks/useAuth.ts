@@ -5,6 +5,7 @@ import { userApi } from '../services/api/user.api';
 import { phoneSchema, nameSchema } from '../utils/validation';
 import { useAuthStore, useUIStore } from '../store';
 import { useQuery } from '@tanstack/react-query';
+import { mapOtpVerificationError, mapOtpResendError } from '../utils/authError';
 
 export const useSendOtp = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -29,17 +30,39 @@ export const useSendOtp = () => {
       
       router.push({ pathname: '/(auth)/otp', params: { phone: formattedPhone } });
     } catch (err: any) {
-      const msg = err.response?.status === 429 
-        ? "Too many attempts. Try again later." 
-        : "Could not send code. Please try again.";
-      setError(msg);
-      showToast({ type: 'error', title: msg });
+      const mapped = mapOtpResendError(err);
+      setError(mapped.message);
+      showToast({ type: 'error', title: mapped.message });
     } finally {
       setIsLoading(false);
     }
   };
 
   return { sendOtp, isLoading, error };
+};
+
+export const useResendOtp = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const resendOtp = async (
+    phone: string
+  ): Promise<{ success: boolean; expiresIn?: number; error?: string }> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await authApi.sendOtp(phone);
+      return { success: true, expiresIn: response.expiresIn };
+    } catch (err: any) {
+      const mapped = mapOtpResendError(err);
+      setError(mapped.message);
+      return { success: false, error: mapped.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { resendOtp, isLoading, error };
 };
 
 export const useVerifyOtp = () => {
@@ -52,7 +75,10 @@ export const useVerifyOtp = () => {
   const setUser = useAuthStore((state) => state.setUser);
   const setIsNewUser = useAuthStore((state) => state.setIsNewUser);
 
-  const verifyOtp = async (phone: string, otp: string) => {
+  const verifyOtp = async (
+    phone: string,
+    otp: string
+  ): Promise<{ success: boolean; error?: string; isOtpError?: boolean; user?: any }> => {
     setIsLoading(true);
     setError(null);
     setOtpError(false);
@@ -64,8 +90,7 @@ export const useVerifyOtp = () => {
       setUser(response.user);
       setIsNewUser(response.isNewUser);
       
-      
-      // Delay to let the success cascade animation play
+      // Delay to let the confirmed success cascade animation play
       setTimeout(() => {
         console.log("OTP Response Payload:", JSON.stringify(response));
         const hasValidName = response.user?.name && response.user.name !== 'null' && response.user.name !== '' && response.user.name !== 'New User';
@@ -77,21 +102,13 @@ export const useVerifyOtp = () => {
           router.replace('/(tabs)' as any);
         }
       }, 800);
-      
+
+      return { success: true, user: response.user };
     } catch (err: any) {
-      const status = err.response?.status;
-      let msg = "Something went wrong.";
-      if (status === 401) {
-        setOtpError(true);
-        msg = "Wrong code. Please check your SMS.";
-        setTimeout(() => setOtpError(false), 600); // reset after shake
-      } else if (status === 410) {
-        msg = "Code expired. Please request a new one.";
-      } else if (status === 429) {
-        msg = "Too many attempts. Please try later.";
-      }
-      
-      setError(msg);
+      const mapped = mapOtpVerificationError(err);
+      setError(mapped.message);
+      setOtpError(mapped.isOtpError);
+      return { success: false, error: mapped.message, isOtpError: mapped.isOtpError };
     } finally {
       setIsLoading(false);
     }
@@ -99,6 +116,7 @@ export const useVerifyOtp = () => {
 
   return { verifyOtp, isLoading, error, otpError };
 };
+
 
 export const useUpdateName = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -157,9 +175,11 @@ export const useLogout = () => {
 };
 
 export const useCurrentUser = () => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: ['currentUser'],
     queryFn: userApi.getMe,
+    enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

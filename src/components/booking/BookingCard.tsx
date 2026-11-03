@@ -1,4 +1,4 @@
-import React from 'react';
+import { colors } from '../../design';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { BookingDetails } from '../../types/booking.types';
 import { BookingStatusBadge } from './BookingStatusBadge';
@@ -16,6 +16,21 @@ interface BookingCardProps {
 export function BookingCard({ booking }: BookingCardProps) {
   const router = useRouter();
 
+  const isCompany = Boolean(
+    booking.is_company ||
+    booking.provider_type === 'COMPANY'
+  );
+
+  const displayName =
+    (isCompany
+      ? (booking.provider_name || (booking as any).business_name || booking.worker_name)
+      : (booking.worker_name || booking.provider_name)) ?? undefined;
+
+  const displayAvatar =
+    (isCompany
+      ? (booking.provider_avatar_url || booking.worker_avatar_url)
+      : (booking.worker_avatar_url || booking.provider_avatar_url)) ?? undefined;
+
   const handlePress = () => {
     router.push(`/booking/${booking.id}` as any);
   };
@@ -29,11 +44,13 @@ export function BookingCard({ booking }: BookingCardProps) {
         router.push({
           pathname: `/booking/${booking.id}/chat`,
           params: {
-            workerName: booking.worker_name,
-            workerAvatar: booking.worker_avatar_url,
+            workerName: displayName,
+            companyName: isCompany ? displayName : undefined,
+            workerAvatar: displayAvatar,
             workerPhone: booking.worker_phone,
             categoryName: booking.category_name,
             workerId: booking.worker_id,
+            isCompany: isCompany ? 'true' : 'false',
           },
         } as any);
         break;
@@ -69,9 +86,11 @@ export function BookingCard({ booking }: BookingCardProps) {
       </View>
 
       <BookingWorkerRow
-        workerName={booking.worker_name}
+        workerName={displayName}
         categoryName={booking.category_name}
-        workerAvatarUrl={booking.worker_avatar_url}
+        workerAvatarUrl={displayAvatar}
+        isCompany={isCompany}
+        assignedWorkerName={booking.assigned_worker_name || (booking as any).assignee?.name}
       />
 
       <BookingServiceMeta scheduledAt={booking.scheduled_at} />
@@ -87,25 +106,19 @@ export function BookingCard({ booking }: BookingCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: colors.bgCard,
+    paddingVertical: 18,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   cardPressed: {
-    opacity: 0.85,
+    backgroundColor: colors.bgSection,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
+    width: '100%',
   },
 });

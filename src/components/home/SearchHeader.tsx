@@ -1,13 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, Pressable, Text, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { ChevronLeft, SlidersHorizontal } from 'lucide-react-native';
 import Animated, {
   SharedValue,
-  useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
-  interpolate,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SearchInput } from '../ui/Input/SearchInput';

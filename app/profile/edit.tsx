@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Modal,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
@@ -18,11 +17,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Lock, Camera, Image as ImageIcon, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 
+import { BottomSheet } from '../../src/components/layout/BottomSheet';
 import { useCurrentUser, useUpdateProfile, useUploadAvatar, useUpdatePreferences } from '../../src/hooks/useProfile';
 import { useEditProfileForm } from '../../src/hooks/useEditProfileForm';
 import { AvatarUploadRing } from '../../src/components/profile/AvatarUploadRing';
 import { PreferenceToggleRow } from '../../src/components/profile/PreferenceToggleRow';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../src/design';
+import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../src/design';
 
 /**
  * EditProfileScreen (Day 35 Edit Profile Flow)
@@ -302,59 +302,53 @@ export default function EditProfileScreen() {
           </View>
         </ScrollView>
 
-        {/* Photo Selection ActionSheet Modal */}
-        <Modal
+        {/* Photo Selection ActionSheet */}
+        <BottomSheet
           visible={photoSheetVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setPhotoSheetVisible(false)}
+          onClose={() => setPhotoSheetVisible(false)}
+          snapPoints={['auto']}
+          contentPadding={true}
         >
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={() => setPhotoSheetVisible(false)}
-          >
-            <View style={styles.photoSheet}>
-              <View style={styles.sheetHeader}>
-                <Text style={styles.sheetTitle}>Change Profile Photo</Text>
-                <TouchableOpacity
-                  style={styles.sheetCloseBtn}
-                  onPress={() => setPhotoSheetVisible(false)}
-                >
-                  <X size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
+          <View style={styles.photoSheetContent}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Change Profile Photo</Text>
               <TouchableOpacity
-                activeOpacity={0.75}
-                style={styles.sheetOption}
-                onPress={() => handlePickPhoto('camera')}
+                style={styles.sheetCloseBtn}
+                onPress={() => setPhotoSheetVisible(false)}
               >
-                <View style={styles.optionIconCircle}>
-                  <Camera size={20} color={colors.primaryDark} />
-                </View>
-                <View style={styles.optionTextCol}>
-                  <Text style={styles.optionTitle}>Take New Photo</Text>
-                  <Text style={styles.optionSubtitle}>Open camera to capture image</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.75}
-                style={styles.sheetOption}
-                onPress={() => handlePickPhoto('gallery')}
-              >
-                <View style={styles.optionIconCircle}>
-                  <ImageIcon size={20} color={palette.infoDark} />
-                </View>
-                <View style={styles.optionTextCol}>
-                  <Text style={styles.optionTitle}>Choose from Library</Text>
-                  <Text style={styles.optionSubtitle}>Select from your photos</Text>
-                </View>
+                <X size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-        </Modal>
+
+            <TouchableOpacity
+              activeOpacity={0.75}
+              style={styles.sheetOption}
+              onPress={() => handlePickPhoto('camera')}
+            >
+              <View style={styles.optionIconCircle}>
+                <Camera size={20} color={colors.primaryDark} />
+              </View>
+              <View style={styles.optionTextCol}>
+                <Text style={styles.optionTitle}>Take New Photo</Text>
+                <Text style={styles.optionSubtitle}>Open camera to capture image</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.75}
+              style={[styles.sheetOption, { borderBottomWidth: 0 }]}
+              onPress={() => handlePickPhoto('gallery')}
+            >
+              <View style={styles.optionIconCircle}>
+                <ImageIcon size={20} color={palette.infoDark} />
+              </View>
+              <View style={styles.optionTextCol}>
+                <Text style={styles.optionTitle}>Choose from Library</Text>
+                <Text style={styles.optionSubtitle}>Select from your photos</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </BottomSheet>
       </View>
     </KeyboardAvoidingView>
   );
@@ -439,12 +433,10 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
     padding: spacing.md + 2,
-    borderWidth: 1,
-    borderColor: colors.border,
     marginBottom: spacing.lg,
-    ...shadows.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   cardHeading: {
     fontFamily: fontFamily.poppins.semiBold,
@@ -469,30 +461,25 @@ const styles = StyleSheet.create({
   },
   textInput: {
     height: 48,
-    backgroundColor: palette.gray50,
+    backgroundColor: colors.bgInput,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 14,
     fontFamily: fontFamily.jakarta.regular,
     fontSize: fontSize.body2,
     color: colors.textPrimary,
   },
   textInputFocused: {
-    borderColor: colors.primaryDark,
     backgroundColor: colors.bgCard,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: colors.primaryDark,
   },
   disabledInput: {
     height: 48,
-    backgroundColor: palette.gray100,
+    backgroundColor: colors.bgInput,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderLight,
     paddingHorizontal: spacing.md,
     justifyContent: 'center',
   },
@@ -507,19 +494,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 4,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    justifyContent: 'flex-end',
-  },
-  photoSheet: {
-    backgroundColor: colors.bgCard,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl + 12,
-    ...shadows.lg,
+  photoSheetContent: {
+    paddingBottom: spacing.lg,
   },
   sheetHeader: {
     flexDirection: 'row',

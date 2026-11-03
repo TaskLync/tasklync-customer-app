@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { CheckCircle2, User } from 'lucide-react-native';
-import { colors, palette, fontFamily, fontSize, radius, shadows, spacing } from '../../design';
+import { colors, palette, fontFamily, fontSize } from '../../design';
 
 export interface ReviewWorkerContextProps {
   workerName: string;
@@ -54,7 +54,7 @@ export const ReviewWorkerContext: React.FC<ReviewWorkerContextProps> = ({
           />
         ) : (
           <View style={styles.avatarFallback}>
-            <User size={24} color={colors.textMuted} />
+            <User size={20} color={colors.textMuted} />
           </View>
         )}
       </View>
@@ -65,16 +65,19 @@ export const ReviewWorkerContext: React.FC<ReviewWorkerContextProps> = ({
           <Text style={styles.workerName} numberOfLines={1}>
             {workerName || 'Service Professional'}
           </Text>
-          <CheckCircle2 size={16} color={colors.primary} style={styles.verifiedIcon} />
+          <CheckCircle2 size={15} color={colors.primary} style={styles.verifiedIcon} />
         </View>
 
-        {serviceName ? (
-          <Text style={styles.serviceName} numberOfLines={1}>
-            {serviceName}
-          </Text>
-        ) : null}
-
-        <Text style={styles.dateText}>{formattedDate}</Text>
+        <View style={styles.metaRow}>
+          {serviceName ? (
+            <View style={styles.serviceBadge}>
+              <Text style={styles.serviceName} numberOfLines={1}>
+                {serviceName}
+              </Text>
+            </View>
+          ) : null}
+          <Text style={styles.dateText}>{formattedDate}</Text>
+        </View>
       </View>
     </View>
   );
@@ -84,20 +87,18 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    paddingVertical: 14,
     backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   avatarContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     overflow: 'hidden',
     backgroundColor: palette.gray100,
-    marginRight: spacing.md,
+    marginRight: 12,
   },
   avatarImage: {
     width: '100%',
@@ -117,27 +118,35 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   workerName: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: fontSize.body1 - 1,
     color: colors.textPrimary,
     flexShrink: 1,
-    marginRight: spacing.xs,
+    marginRight: 6,
   },
   verifiedIcon: {
     flexShrink: 0,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  serviceBadge: {
+
+  },
   serviceName: {
     fontFamily: fontFamily.jakarta.medium,
-    fontSize: fontSize.body2 - 1,
+    fontSize: 11,
     color: colors.textSecondary,
-    marginBottom: 2,
   },
   dateText: {
-    fontFamily: fontFamily.inter.regular,
-    fontSize: fontSize.dataXS + 0.5,
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 11,
     color: colors.textMuted,
   },
 });

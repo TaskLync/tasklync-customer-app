@@ -1,6 +1,6 @@
-import { Children, isValidElement, Fragment } from 'react';
+import React, { Children, isValidElement, Fragment } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, palette, fontFamily, radius, spacing, shadows } from '../../design';
+import { palette, colors, fontFamily, spacing } from '../../design';
 
 export interface SettingsSectionProps {
   title: string;
@@ -34,25 +34,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionHeader: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-    letterSpacing: 0.8,
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 12,
+    lineHeight: 16,
+    color: palette.gray500,
+    letterSpacing: 0.6,
     paddingHorizontal: spacing.xs,
     marginBottom: spacing.xs + 2,
   },
   cardContainer: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: palette.white,
     overflow: 'hidden',
-    ...shadows.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   divider: {
-    height: 1,
-    backgroundColor: palette.gray100,
-    marginLeft: spacing.base,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: palette.gray200,
+    marginLeft: 48,
   },
 });

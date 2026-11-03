@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
   indicatorLine: {
     width: '60%',
     height: '100%',
-    backgroundColor: '#16A34A',
+    backgroundColor: colors.primaryDark,
     borderRadius: 2,
   },
 });

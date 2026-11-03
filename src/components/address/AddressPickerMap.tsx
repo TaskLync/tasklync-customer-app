@@ -19,7 +19,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import * as Location from 'expo-location';
 import { MapPin } from 'lucide-react-native';
 import { MapRegion } from '../../types/address.types';
 import { colors, palette } from '../../design';
@@ -44,8 +43,8 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
     const isMapReadyRef = useRef<boolean>(false);
     const pendingAnimateRegionRef = useRef<{ region: MapRegion; duration: number } | null>(null);
     const isDraggingRef = useRef<boolean>(false);
+    const isMountedRef = useRef<boolean>(true);
     const [reduceMotion, setReduceMotion] = useState(false);
-    const [hasLocationPermission, setHasLocationPermission] = useState(false);
 
     // Reanimated values for pin lift & drop bounce
     const pinTranslateY = useSharedValue(0);
@@ -54,22 +53,19 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
     const shadowOpacity = useSharedValue(0.25);
 
     useEffect(() => {
-      let isMounted = true;
-      AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-        if (isMounted) setReduceMotion(enabled);
-      });
-
-      // Verify native OS permissions to prevent SecurityException on Android
-      Location.getForegroundPermissionsAsync()
-        .then(({ status }) => {
-          if (isMounted) setHasLocationPermission(status === 'granted');
+      isMountedRef.current = true;
+      let isLocalMounted = true;
+      AccessibilityInfo.isReduceMotionEnabled()
+        .then((enabled) => {
+          if (isLocalMounted) setReduceMotion(enabled);
         })
         .catch(() => {
-          if (isMounted) setHasLocationPermission(false);
+          if (isLocalMounted) setReduceMotion(false);
         });
 
       return () => {
-        isMounted = false;
+        isMountedRef.current = false;
+        isLocalMounted = false;
       };
     }, []);
 
@@ -110,6 +106,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
 
     const handleRegionChange = useCallback(
       (region: MapRegion) => {
+        if (!isMountedRef.current) return;
         if (!isDraggingRef.current) {
           isDraggingRef.current = true;
           if (reduceMotion) {
@@ -124,7 +121,13 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
             shadowOpacity.value = withTiming(0.12, { duration: 120 });
           }
         }
-        if (onRegionChange) {
+        if (
+          onRegionChange &&
+          typeof region?.latitude === 'number' &&
+          !isNaN(region.latitude) &&
+          typeof region?.longitude === 'number' &&
+          !isNaN(region.longitude)
+        ) {
           onRegionChange(region);
         }
       },
@@ -133,6 +136,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
 
     const handleRegionChangeComplete = useCallback(
       (region: MapRegion) => {
+        if (!isMountedRef.current) return;
         isDraggingRef.current = false;
         if (reduceMotion) {
           pinTranslateY.value = 0;
@@ -182,12 +186,15 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
           onMapReady={handleMapReady}
           onRegionChange={handleRegionChange}
           onRegionChangeComplete={handleRegionChangeComplete}
-          showsUserLocation={hasLocationPermission}
+          showsUserLocation={false}
           showsMyLocationButton={false}
           showsCompass={false}
+          showsBuildings={true}
+          showsIndoors={false}
+          toolbarEnabled={false}
           rotateEnabled={false}
           pitchEnabled={false}
-          loadingEnabled={true}
+          loadingEnabled={Platform.OS === 'ios'}
         />
 
         {/* Fixed Absolutely-Positioned Center Pin Overlay */}

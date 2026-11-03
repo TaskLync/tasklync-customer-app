@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { StyleSheet, Text, Pressable, Platform } from 'react-native';
+import { StyleSheet, Text, Pressable } from 'react-native';
 import { Search, SlidersHorizontal } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '../../design/colors';
@@ -53,16 +53,12 @@ const styles = StyleSheet.create({
   container: {
     height: 48,
     backgroundColor: colors.bgCard,
-    borderRadius: 24,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 5,
     marginHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   pressed: {
     opacity: 0.94,

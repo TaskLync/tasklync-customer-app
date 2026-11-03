@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { ConversationFilterTab } from '../../types/chat.types';
 import { fontFamily } from '../../design/typography';
+import { colors, palette } from '../../design/colors';
 
 interface ConversationTabsProps {
   activeTab: ConversationFilterTab;
@@ -35,6 +36,7 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
                 styles.tab,
                 isActive && styles.tabActive,
                 pressed && styles.tabPressed,
+                !showCount && styles.tabSingleContent,
               ]}
               accessibilityRole="tab"
               accessibilityState={{ selected: isActive }}
@@ -67,35 +69,41 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
   },
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgSubtle,
     borderRadius: 12,
     padding: 3,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
+    alignItems: 'center',
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 7,
+    height: 38,
     borderRadius: 9,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    paddingHorizontal: 8,
     gap: 6,
   },
+  tabSingleContent: {
+    gap: 0,
+  },
   tabActive: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
+    backgroundColor: colors.bgCard,
+    borderColor: colors.border,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 2,
     elevation: 1,
   },
@@ -104,12 +112,18 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontFamily: fontFamily.jakarta.medium,
-    fontSize: 13.5,
-    color: '#64748B',
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   tabTextActive: {
     fontFamily: fontFamily.jakarta.semiBold,
-    color: '#16A34A',
+    color: colors.primaryDark,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   countBadge: {
     minWidth: 18,
@@ -121,14 +135,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   countBadgeActive: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.primaryBorderSubtle,
   },
   countText: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 10.5,
-    color: '#64748B',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   countTextActive: {
-    color: '#16A34A',
+    color: colors.primaryDark,
   },
 });

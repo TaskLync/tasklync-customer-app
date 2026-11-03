@@ -1,6 +1,5 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, Pressable, useWindowDimensions, ViewStyle, Platform } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -16,6 +15,7 @@ import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
 import { springConfig } from '../../design/animations';
 import { WorkerNearby } from '../../types/worker.types';
+import { WorkerAvatar } from './WorkerAvatar';
 import { useFavoritesStore } from '../../store/favorites.store';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -127,22 +127,14 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
         {/* Top Area: Avatar (top-left) & Minimal Heart Icon (top-right) */}
         <View style={styles.topArea}>
           {/* Circular Profile Image with Online Indicator */}
-          <View style={styles.avatarWrapper}>
-            <Image
-              source={{ uri: worker.avatarUrl || `https://i.pravatar.cc/150?u=${worker.id}` }}
-              style={styles.avatar}
-              placeholder={BLURHASH}
-              contentFit="cover"
-              transition={200}
-            />
-            {/* Green online status indicator */}
-            <View
-              style={[
-                styles.onlineBadge,
-                { backgroundColor: isOnline ? colors.online : colors.textMuted },
-              ]}
-            />
-          </View>
+          <WorkerAvatar
+            uri={worker.avatarUrl || (worker as any)?.avatar || (worker as any)?.avatar_url}
+            name={worker.name}
+            size={56}
+            showOnlineBadge={true}
+            isOnline={isOnline}
+            badgeSize={14}
+          />
 
           {/* Minimal Heart Outline Icon in Top-Right */}
           <Pressable

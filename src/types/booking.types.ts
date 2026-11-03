@@ -19,9 +19,19 @@ export type BookingStatus =
 
 export type ServiceType = 'ONE_TIME' | 'RECURRING';
 
-export type PriceType = 'hourly' | 'fixed';
+export type PriceType = 'hourly' | 'fixed' | 'quote';
 
-export type DisputeStatus = 'OPEN' | 'WORKER_RESPONDED' | 'RESOLVED' | 'REFUNDED' | 'REJECTED';
+export type DisputeStatus =
+  | 'OPEN'
+  | 'SUBMITTED'
+  | 'PENDING'
+  | 'WORKER_RESPONDED'
+  | 'UNDER_REVIEW'
+  | 'UNDER_INVESTIGATION'
+  | 'RESOLVED'
+  | 'REFUNDED'
+  | 'REJECTED'
+  | 'CLOSED';
 
 /**
  * Day 34: Fixed 5-Reason Union for Guided Conflict Resolution (Hick's Law)
@@ -218,6 +228,25 @@ export interface BookingDetails {
   worker_avatar_url?: string | undefined;
   worker_phone?: string | undefined;
   category_name?: string | undefined;
+  custom_request_id?: string | undefined;
+  quote_id?: string | undefined;
+  quote_type?: string | undefined;
+  dispute?: DisputeDetails | null | undefined;
+
+  // ── Company / Agency & Dispatched Technician Specifications ──
+  provider_type?: 'INDIVIDUAL' | 'COMPANY' | undefined;
+  provider_name?: string | null | undefined;
+  provider_avatar_url?: string | null | undefined;
+  is_company?: boolean | undefined;
+  assigned_worker_name?: string | null | undefined;
+  assigned_worker_phone?: string | null | undefined;
+  assignee?: BookingDispatchedTechnician | null | undefined;
+}
+
+export interface BookingDispatchedTechnician {
+  name: string;
+  phone: string | null;
+  dispatched_at?: string | undefined;
 }
 
 /**
@@ -330,3 +359,22 @@ export interface ApiEnvelope<T> {
   code?: string | undefined;
   meta?: BookingPaginationMeta | undefined;
 }
+
+/**
+ * Job Start Verification Credentials (Customer-Side)
+ * Strictly matches backend booking-service verification contracts
+ */
+export interface VerificationOtpData {
+  booking_id: string;
+  otp: string;
+  expires_at: string;
+  expires_in: number;
+}
+
+export interface VerificationQrData {
+  booking_id: string;
+  qr_token: string;
+  expires_at: string;
+  expires_in: number;
+}
+

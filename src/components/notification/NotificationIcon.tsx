@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react-native';
+import { colors, palette } from '../../design';
 
 export interface NotificationIconProps {
   category?: string | null;
@@ -41,13 +42,13 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
             width: containerSize,
             height: containerSize,
             borderRadius: containerSize / 2,
-            backgroundColor: '#EFF6FF',
-            borderColor: '#DBEAFE',
+            backgroundColor: colors.infoLight,
+            borderColor: colors.borderInfoLight,
           },
           style,
         ]}
       >
-        <MessageSquare size={size} color="#2563EB" strokeWidth={2.2} />
+        <MessageSquare size={size} color={colors.textInfo} strokeWidth={2.2} />
       </View>
     );
   }
@@ -63,13 +64,13 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
               width: containerSize,
               height: containerSize,
               borderRadius: containerSize / 2,
-              backgroundColor: '#FEF2F2',
-              borderColor: '#FEE2E2',
+              backgroundColor: colors.dangerLight,
+              borderColor: colors.borderErrorLight,
             },
             style,
           ]}
         >
-          <AlertCircle size={size} color="#DC2626" strokeWidth={2.2} />
+          <AlertCircle size={size} color={colors.dangerMedium} strokeWidth={2.2} />
         </View>
       );
     }
@@ -83,13 +84,13 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
               width: containerSize,
               height: containerSize,
               borderRadius: containerSize / 2,
-              backgroundColor: '#F0FDF4',
-              borderColor: '#DCFCE7',
+              backgroundColor: colors.primaryTint,
+              borderColor: colors.primaryBorderSubtle,
             },
             style,
           ]}
         >
-          <CheckCircle2 size={size} color="#16A34A" strokeWidth={2.2} />
+          <CheckCircle2 size={size} color={colors.primaryDark} strokeWidth={2.2} />
         </View>
       );
     }
@@ -102,13 +103,13 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
             width: containerSize,
             height: containerSize,
             borderRadius: containerSize / 2,
-            backgroundColor: '#F0FDF4',
-            borderColor: '#DCFCE7',
+            backgroundColor: colors.primaryTint,
+            borderColor: colors.primaryBorderSubtle,
           },
           style,
         ]}
       >
-        <CalendarCheck size={size} color="#16A34A" strokeWidth={2.2} />
+        <CalendarCheck size={size} color={colors.primaryDark} strokeWidth={2.2} />
       </View>
     );
   }
@@ -123,13 +124,13 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
             width: containerSize,
             height: containerSize,
             borderRadius: containerSize / 2,
-            backgroundColor: '#FEF3C7',
-            borderColor: '#FDE68A',
+            backgroundColor: colors.warningLight,
+            borderColor: colors.warningBorder,
           },
           style,
         ]}
       >
-        <CreditCard size={size} color="#D97706" strokeWidth={2.2} />
+        <CreditCard size={size} color={colors.warningMedium} strokeWidth={2.2} />
       </View>
     );
   }
@@ -144,13 +145,13 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
             width: containerSize,
             height: containerSize,
             borderRadius: containerSize / 2,
-            backgroundColor: '#FEF9C3',
-            borderColor: '#FEF08A',
+            backgroundColor: palette.amber100,
+            borderColor: palette.amber200,
           },
           style,
         ]}
       >
-        <Star size={size} color="#CA8A04" strokeWidth={2.2} />
+        <Star size={size} color={colors.warning} strokeWidth={2.2} />
       </View>
     );
   }
@@ -170,13 +171,13 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
             width: containerSize,
             height: containerSize,
             borderRadius: containerSize / 2,
-            backgroundColor: '#F0FDFA',
-            borderColor: '#CCFBF1',
+            backgroundColor: colors.primaryTint,
+            borderColor: colors.primaryBorder,
           },
           style,
         ]}
       >
-        <MapPin size={size} color="#0D9488" strokeWidth={2.2} />
+        <MapPin size={size} color={colors.primaryDark} strokeWidth={2.2} />
       </View>
     );
   }
@@ -191,13 +192,13 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
             width: containerSize,
             height: containerSize,
             borderRadius: containerSize / 2,
-            backgroundColor: '#FFF1F2',
-            borderColor: '#FFE4E6',
+            backgroundColor: colors.dangerLight,
+            borderColor: colors.borderErrorLight,
           },
           style,
         ]}
       >
-        <ShieldAlert size={size} color="#E11D48" strokeWidth={2.2} />
+        <ShieldAlert size={size} color={colors.dangerMedium} strokeWidth={2.2} />
       </View>
     );
   }
@@ -212,13 +213,13 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
             width: containerSize,
             height: containerSize,
             borderRadius: containerSize / 2,
-            backgroundColor: '#FAF5FF',
-            borderColor: '#F3E8FF',
+            backgroundColor: palette.purple50,
+            borderColor: palette.purple100,
           },
           style,
         ]}
       >
-        <Sparkles size={size} color="#9333EA" strokeWidth={2.2} />
+        <Sparkles size={size} color={palette.purple600} strokeWidth={2.2} />
       </View>
     );
   }
@@ -232,13 +233,13 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
           width: containerSize,
           height: containerSize,
           borderRadius: containerSize / 2,
-          backgroundColor: '#F1F5F9',
-          borderColor: '#E2E8F0',
+          backgroundColor: colors.bgHover,
+          borderColor: colors.border,
         },
         style,
       ]}
     >
-      <Bell size={size} color="#475569" strokeWidth={2.2} />
+      <Bell size={size} color={colors.textSecondary} strokeWidth={2.2} />
     </View>
   );
 };

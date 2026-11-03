@@ -1,3 +1,4 @@
+import { colors, palette } from '../../design';
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
@@ -47,7 +48,7 @@ export function BookingCardSkeleton() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -64,13 +65,13 @@ const styles = StyleSheet.create({
     width: 80,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bgHover,
   },
   pricePlaceholder: {
     width: 60,
     height: 20,
     borderRadius: 4,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bgHover,
   },
   workerRow: {
     flexDirection: 'row',
@@ -81,7 +82,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bgHover,
     marginRight: 12,
   },
   textColumn: {
@@ -91,20 +92,20 @@ const styles = StyleSheet.create({
     width: 120,
     height: 16,
     borderRadius: 4,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bgHover,
     marginBottom: 8,
   },
   categoryPlaceholder: {
     width: 80,
     height: 14,
     borderRadius: 4,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bgHover,
   },
   datePlaceholder: {
     width: 140,
     height: 16,
     borderRadius: 4,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bgHover,
     marginBottom: 12,
   },
   actionsPlaceholder: {
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bgHover,
     marginHorizontal: 6,
   },
 });

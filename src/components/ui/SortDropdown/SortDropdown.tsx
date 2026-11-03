@@ -4,7 +4,6 @@ import {
   Text,
   Pressable,
   ViewStyle,
-  Platform,
 } from 'react-native';
 import { ChevronDown, MapPin, Star, ArrowDownAZ } from 'lucide-react-native';
 import { colors } from '../../../design/colors';

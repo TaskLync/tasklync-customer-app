@@ -12,7 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RefreshCw, Check } from 'lucide-react-native';
 import { fontFamily } from '../../design/typography';
-import { palette } from '../../design/colors';
+import { colors, palette } from '../../design/colors';
 import { NETWORK_CONFIG } from '../../config/networkConfig';
 import { SyncState } from '../../types/network.types';
 
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: colors.shadow,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 4,
@@ -184,12 +184,12 @@ const styles = StyleSheet.create({
     }),
   },
   pillSyncing: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    backgroundColor: colors.bgCard,
+    borderColor: colors.border,
   },
   pillCompleted: {
-    backgroundColor: '#F0FDF4', // palette.green50
-    borderColor: '#BBF7D0', // palette.green200
+    backgroundColor: colors.primaryTint, // palette.green50
+    borderColor: colors.primaryBorder, // palette.green200
   },
   icon: {
     marginRight: 6,

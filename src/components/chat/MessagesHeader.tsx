@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NotificationBell } from '../home/NotificationBell';
 import { fontFamily } from '../../design/typography';
+import { colors, palette } from '../../design/colors';
 
 interface MessagesHeaderProps {
   totalUnreadCount?: number;
@@ -39,7 +40,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
   },
   titleRow: {
     flexDirection: 'row',
@@ -50,23 +51,23 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 28,
     lineHeight: 34,
-    color: '#0F172A',
+    color: colors.textPrimary,
     letterSpacing: -0.5,
   },
   unreadBadge: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: colors.primaryTint,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: colors.primaryBorderSubtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
   unreadBadgeText: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 12,
-    color: '#16A34A',
+    color: colors.primaryDark,
   },
   actionWrap: {
     alignItems: 'center',

@@ -55,7 +55,7 @@ export function useChat(bookingId: string) {
           (m) => m.status === 'sending' && !serverIds.has(m.id)
         );
         const merged = [...serverMessages, ...pendingOptimistic];
-        saveCachedChatMessages(bookingId, merged);
+        saveCachedChatMessages(bookingId, merged, roomIdRef.current);
         return merged;
       });
 
@@ -240,7 +240,7 @@ export function useChat(bookingId: string) {
             media_url: incoming.media_url || localUri || prev[matchIndex].media_url,
             status: 'sent',
           };
-          saveCachedChatMessages(bookingId, updated);
+          saveCachedChatMessages(bookingId, updated, roomIdRef.current);
           return updated;
         }
 
@@ -250,7 +250,7 @@ export function useChat(bookingId: string) {
         }
 
         const updated = [...prev, incoming];
-        saveCachedChatMessages(bookingId, updated);
+        saveCachedChatMessages(bookingId, updated, roomIdRef.current);
         return updated;
       });
 
@@ -411,7 +411,7 @@ export function useChat(bookingId: string) {
           }
           return m;
         });
-        saveCachedChatMessages(bookingId, updated);
+        saveCachedChatMessages(bookingId, updated, roomIdRef.current);
         return updated;
       });
     },
@@ -468,7 +468,7 @@ export function useChat(bookingId: string) {
       // 1. Immediately append optimistic bubble
       setMessages((prev) => {
         const next = [...prev, optimisticMsg];
-        saveCachedChatMessages(bookingId, next);
+        saveCachedChatMessages(bookingId, next, roomIdRef.current);
         return next;
       });
 
@@ -623,7 +623,7 @@ export function useChat(bookingId: string) {
         const existingIds = new Set(prev.map((m) => m.id));
         const newUnique = (res.messages || []).filter((m) => !existingIds.has(m.id));
         const merged = [...newUnique, ...prev];
-        saveCachedChatMessages(bookingId, merged);
+        saveCachedChatMessages(bookingId, merged, roomIdRef.current);
         return merged;
       });
       setNextCursor(res.next_cursor);

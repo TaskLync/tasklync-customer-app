@@ -44,7 +44,12 @@ export function formatAddressLine(
     return address.formatted_address.trim();
   }
 
-  if (address.lat !== undefined && address.lng !== undefined) {
+  if (
+    typeof address.lat === 'number' &&
+    !isNaN(address.lat) &&
+    typeof address.lng === 'number' &&
+    !isNaN(address.lng)
+  ) {
     return `${address.lat.toFixed(5)}, ${address.lng.toFixed(5)}`;
   }
 
@@ -99,9 +104,24 @@ export function findNearbySavedAddress(
   thresholdMeters: number = 15
 ): Address | null {
   if (!existingAddresses || existingAddresses.length === 0) return null;
+  if (
+    !coords ||
+    typeof coords.lat !== 'number' ||
+    isNaN(coords.lat) ||
+    typeof coords.lng !== 'number' ||
+    isNaN(coords.lng)
+  ) {
+    return null;
+  }
 
   for (const addr of existingAddresses) {
-    if (typeof addr.lat === 'number' && typeof addr.lng === 'number') {
+    if (
+      addr &&
+      typeof addr.lat === 'number' &&
+      !isNaN(addr.lat) &&
+      typeof addr.lng === 'number' &&
+      !isNaN(addr.lng)
+    ) {
       const distance = calculateDistanceMeters(coords.lat, coords.lng, addr.lat, addr.lng);
       if (distance <= thresholdMeters) {
         return addr;

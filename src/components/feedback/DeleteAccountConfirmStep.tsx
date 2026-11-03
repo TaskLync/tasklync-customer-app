@@ -75,7 +75,7 @@ export const DeleteAccountConfirmStep: React.FC<DeleteAccountConfirmStepProps> =
 
       {/* Warning Box */}
       <View style={styles.warningBox}>
-        <AlertTriangle size={20} color="#DC2626" style={styles.warningIcon} />
+        <AlertTriangle size={20} color={colors.dangerMedium} style={styles.warningIcon} />
         <View style={styles.warningTextContainer}>
           <Text style={styles.warningTitle}>This action is permanent and irreversible</Text>
           <Text style={styles.warningBody}>
@@ -163,9 +163,9 @@ const styles = StyleSheet.create({
   warningBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.dangerLight,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: palette.red200,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
@@ -181,14 +181,14 @@ const styles = StyleSheet.create({
   warningTitle: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 13,
-    color: '#991B1B',
+    color: palette.red800,
     marginBottom: 4,
   },
   warningBody: {
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 12,
     lineHeight: 17,
-    color: '#B91C1C',
+    color: palette.red700,
   },
   inputGroup: {
     marginBottom: spacing.xl,
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   },
   inputLabelBold: {
     fontFamily: fontFamily.jakarta.bold,
-    color: '#DC2626',
+    color: colors.dangerMedium,
   },
   textInput: {
     height: 52,
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   },
   textInputMatched: {
     borderColor: palette.danger,
-    backgroundColor: '#FFF5F5',
+    backgroundColor: colors.dangerLight,
   },
   textInputError: {
     borderColor: palette.danger,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   deleteBtnMuted: {
-    backgroundColor: '#FCA5A5',
+    backgroundColor: palette.red300,
   },
   deleteBtnText: {
     fontFamily: fontFamily.poppins.semiBold,

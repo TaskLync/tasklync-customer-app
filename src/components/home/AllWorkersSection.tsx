@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -27,10 +27,13 @@ export const AllWorkersSection: React.FC<AllWorkersSectionProps> = ({
 }) => {
   const router = useRouter();
 
-  const workerParams: Parameters<typeof useInfiniteWorkers>[0] = {
-    limit: PAGE_LIMIT,
-  };
-  if (category) workerParams.category = category;
+  const workerParams = useMemo(() => {
+    const p: Parameters<typeof useInfiniteWorkers>[0] = {
+      limit: PAGE_LIMIT,
+    };
+    if (category) p.category = category;
+    return p;
+  }, [category]);
 
   const {
     workers,
@@ -39,7 +42,6 @@ export const AllWorkersSection: React.FC<AllWorkersSectionProps> = ({
     isLoadingMore,
     hasNextPage,
     loadMore,
-    refetch,
     isError,
   } = useInfiniteWorkers(workerParams);
 
@@ -61,118 +63,101 @@ export const AllWorkersSection: React.FC<AllWorkersSectionProps> = ({
     router.push('/(tabs)/explore' as any);
   }, [router]);
 
+  // The visible slice of workers to render (defensively ensuring only individual workers)
+  // Must be called unconditionally before any early returns to satisfy Rules of Hooks
+  const individualWorkers = useMemo(
+    () => (workers || []).filter((w) => w && w.providerType !== 'COMPANY' && !w.isCompany),
+    [workers]
+  );
+  const visibleWorkers: WorkerNearby[] = individualWorkers.slice(0, visibleCount);
+  const hasMoreToShow =
+    visibleCount < individualWorkers.length || (hasNextPage && !isLoadingMore);
+
   // ── Render: skeletons while loading ──────────────────────────────────────
   if (isLoading) {
     return (
-      <Section
-        title="All Workers"
-        actionLabel="See all →"
-        onAction={handleSeeAll}
-      >
-        <View style={styles.listContainer}>
-          {Array.from({ length: INITIAL_VISIBLE_COUNT }).map((_, i) => (
-            <SkeletonWorkerSearchCard key={`skel-${i}`} />
-          ))}
-        </View>
-      </Section>
+      <View style={styles.sectionSpacer}>
+        <Section
+          title="All Workers"
+          actionLabel="See all →"
+          onAction={handleSeeAll}
+        >
+          <View style={styles.listContainer}>
+            {Array.from({ length: INITIAL_VISIBLE_COUNT }).map((_, i) => (
+              <SkeletonWorkerSearchCard key={`skel-${i}`} />
+            ))}
+          </View>
+        </Section>
+      </View>
     );
   }
 
-  // ── Render: API error ─────────────────────────────────────────────────────
-  if (isError) {
-    return (
-      <Section
-        title="All Workers"
-        actionLabel="See all →"
-        onAction={handleSeeAll}
-      >
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Couldn't load workers.</Text>
-          <Pressable onPress={() => refetch()} hitSlop={12}>
-            <Text style={styles.retryText}>Retry</Text>
-          </Pressable>
-        </View>
-      </Section>
-    );
+  // ── Render: API error or empty state ───────────────────────────────────────
+  // Suppress duplicate empty/error state on the Home Screen.
+  // NearbyWorkersList already displays the primary authoritative empty state with CTA.
+  if (isError || individualWorkers.length === 0) {
+    return null;
   }
-
-  // ── Render: empty state ───────────────────────────────────────────────────
-  if (!isLoading && workers.length === 0) {
-    return (
-      <Section
-        title="All Workers"
-        actionLabel="See all →"
-        onAction={handleSeeAll}
-      >
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>No workers found</Text>
-          <Text style={styles.emptySubtitle}>
-            Check back later or explore a different category.
-          </Text>
-        </View>
-      </Section>
-    );
-  }
-
-  // The visible slice of workers to render
-  const visibleWorkers: WorkerNearby[] = workers.slice(0, visibleCount);
-  const hasMoreToShow =
-    visibleCount < workers.length || (hasNextPage && !isLoadingMore);
 
   // ── Render: worker list ───────────────────────────────────────────────────
   return (
-    <Section
-      title="All Workers"
-      actionLabel="See all →"
-      onAction={handleSeeAll}
-    >
-      {/* Results count */}
-      <View style={styles.resultsHeader}>
-        <Text style={styles.resultsCount}>{total} workers available</Text>
-      </View>
-
-      {/* Worker cards rendered inline (no nested scroll) */}
-      <View style={styles.listContainer}>
-        {visibleWorkers.map((worker) => (
-          <WorkerSearchCard key={worker.id} worker={worker} />
-        ))}
-      </View>
-
-      {/* Loading more skeletons */}
-      {isLoadingMore && (
-        <View style={styles.loadMoreSkeletons}>
-          <SkeletonWorkerSearchCard />
-          <SkeletonWorkerSearchCard />
+    <View style={styles.sectionSpacer}>
+      <Section
+        title="All Workers"
+        actionLabel="See all →"
+        onAction={handleSeeAll}
+      >
+        {/* Results count */}
+        <View style={styles.resultsHeader}>
+          <Text style={styles.resultsCount}>{total} workers available</Text>
         </View>
-      )}
 
-      {/* Show More / Load More button */}
-      {hasMoreToShow && !isLoadingMore && (
-        <Pressable
-          onPress={handleShowMore}
-          style={({ pressed }) => [
-            styles.showMoreButton,
-            pressed && styles.showMorePressed,
-          ]}
-        >
-          <Text style={styles.showMoreLabel}>Show more workers</Text>
-        </Pressable>
-      )}
-
-      {/* End of list indicator */}
-      {!hasMoreToShow && !isLoadingMore && workers.length > INITIAL_VISIBLE_COUNT && (
-        <View style={styles.endOfList}>
-          <View style={styles.endLine} />
-          <Text style={styles.endText}>You've seen all workers</Text>
-          <View style={styles.endLine} />
+        {/* Worker cards rendered inline (no nested scroll) */}
+        <View style={styles.listContainer}>
+          {visibleWorkers.map((worker) => (
+            <WorkerSearchCard key={worker.id} worker={worker} />
+          ))}
         </View>
-      )}
-    </Section>
+
+        {/* Loading more skeletons */}
+        {isLoadingMore && (
+          <View style={styles.loadMoreSkeletons}>
+            <SkeletonWorkerSearchCard />
+            <SkeletonWorkerSearchCard />
+          </View>
+        )}
+
+        {/* Show More / Load More button */}
+        {hasMoreToShow && !isLoadingMore && (
+          <Pressable
+            onPress={handleShowMore}
+            style={({ pressed }) => [
+              styles.showMoreButton,
+              pressed && styles.showMorePressed,
+            ]}
+          >
+            <Text style={styles.showMoreLabel}>Show more workers</Text>
+          </Pressable>
+        )}
+
+        {/* End of list indicator */}
+        {!hasMoreToShow && !isLoadingMore && workers.length > INITIAL_VISIBLE_COUNT && (
+          <View style={styles.endOfList}>
+            <View style={styles.endLine} />
+            <Text style={styles.endText}>You've seen all workers</Text>
+            <View style={styles.endLine} />
+          </View>
+        )}
+      </Section>
+    </View>
   );
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  sectionSpacer: {
+    marginBottom: 20,
+  },
   listContainer: {
     paddingHorizontal: 16,
     gap: 0, // WorkerSearchCard already has marginBottom: 10
@@ -203,24 +188,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.primary,
     marginLeft: 6,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 24,
-  },
-  emptyTitle: {
-    fontFamily: typography.fontFamily.poppins.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontFamily: typography.fontFamily.jakarta.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'center',
   },
   loadMoreSkeletons: {
     paddingHorizontal: 16,

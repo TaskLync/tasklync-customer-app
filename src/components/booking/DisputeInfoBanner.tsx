@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ShieldAlert } from 'lucide-react-native';
-import { palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { palette, fontFamily, fontSize, radius, spacing, colors } from '../../design';
 
 export interface DisputeInfoBannerProps {
   title?: string;
@@ -42,14 +42,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: '#BFDBFE', // Soft info border
+    borderColor: colors.borderInfoLight, // Soft info border
     marginBottom: spacing.md,
   },
   iconCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: palette.blue100,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm + 4,

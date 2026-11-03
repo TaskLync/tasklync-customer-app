@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { View, ScrollView, StyleSheet, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, ScrollView, StyleSheet, StatusBar, Alert } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 // Design system
 import { palette } from '../../src/design';
+import { validateServiceArea, SERVICE_UNAVAILABLE_MESSAGE } from '../../src/config/serviceArea.config';
 
 // Store & Hooks
 import { useBookingDraftStore, BookingAddress } from '../../src/store/bookingDraft.store';
@@ -18,10 +19,13 @@ import { AddressHeader } from '../../src/components/address/AddressHeader';
 import { AddressList } from '../../src/components/address/AddressList';
 import { AddNewAddressRow } from '../../src/components/address/AddNewAddressRow';
 import { AddAddressBottomSheet, AddAddressBottomSheetRef } from '../../src/components/address/AddAddressBottomSheet';
-import { MiniMapPreview } from '../../src/components/address/MiniMapPreview';
+import { RouteErrorBoundary } from '../../src/components/feedback';
+
+export { RouteErrorBoundary as ErrorBoundary };
 
 export default function AddressScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const addAddressSheetRef = useRef<AddAddressBottomSheetRef>(null);
 
   const { addressId, address, setAddress, hydrate } = useBookingDraftStore();
@@ -39,6 +43,13 @@ export default function AddressScreen() {
   };
 
   const handleContinue = () => {
+    if (address?.latitude && address?.longitude) {
+      const validation = validateServiceArea({ lat: address.latitude, lng: address.longitude });
+      if (!validation.isServiceable) {
+        Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+        return;
+      }
+    }
     router.push('/booking/summary' as any);
   };
 
@@ -70,11 +81,8 @@ export default function AddressScreen() {
           {/* Add New Address Button */}
           <AddNewAddressRow onPress={handleOpenAddSheet} />
 
-          {/* Mini Map Location Thumbnail */}
-          <MiniMapPreview selectedAddress={address} />
-
           {/* Bottom Spacer for Sticky Footer */}
-          <View style={styles.footerSpacer} />
+          <View style={{ height: 112 + insets.bottom }} />
         </ScrollView>
 
         {/* Sticky Continue Footer CTA */}
@@ -98,11 +106,11 @@ export default function AddressScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: palette.zenWhite,
+    backgroundColor: palette.white,
   },
   container: {
     flex: 1,
-    backgroundColor: palette.zenWhite,
+    backgroundColor: palette.white,
   },
   scrollView: {
     flex: 1,

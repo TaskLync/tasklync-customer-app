@@ -21,7 +21,7 @@ import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
 import { springConfig } from '../../design/animations';
 import { fontFamily } from '../../design/typography';
-import { palette } from '../../design/colors';
+import { palette, colors } from '../../design/colors';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     height: BANNER_HEIGHT,
     borderRadius: radius['2xl'],
     ...shadows.md,
-    shadowColor: '#000000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     borderRadius: radius['2xl'],
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: '#0F172A',
+    backgroundColor: palette.slate900,
   },
   heroImage: {
     position: 'absolute',
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.poppins.bold,
     fontSize: 9,
     lineHeight: 12,
-    color: '#4ADE80',
+    color: palette.green400,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   highlightText: {
-    color: '#4ADE80',
+    color: palette.green400,
     fontFamily: fontFamily.poppins.bold,
   },
   supportingText: {
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     ...Platform.select({
       ios: {
-        shadowColor: '#000000',
+        shadowColor: colors.shadow,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.12,
         shadowRadius: 4,

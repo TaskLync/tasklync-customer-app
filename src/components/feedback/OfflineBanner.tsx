@@ -8,7 +8,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WifiOff } from 'lucide-react-native';
 import { fontFamily } from '../../design/typography';
-import { palette } from '../../design/colors';
+import { colors, palette } from '../../design/colors';
 import { NETWORK_CONFIG } from '../../config/networkConfig';
 
 interface OfflineBannerProps {
@@ -91,16 +91,16 @@ const styles = StyleSheet.create({
   banner: {
     width: '100%',
     height: BANNER_HEIGHT,
-    backgroundColor: '#FEF3C7', // palette.warningLight
+    backgroundColor: colors.warningLight, // palette.warningLight
     borderBottomWidth: 1,
-    borderBottomColor: '#FDE68A',
+    borderBottomColor: colors.warningBorder,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: colors.shadow,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   text: {
     fontFamily: fontFamily.jakarta.medium,
     fontSize: 13,
-    color: '#92400E', // palette.warningDark
+    color: colors.textWarning, // palette.warningDark
     letterSpacing: -0.1,
   },
 });
