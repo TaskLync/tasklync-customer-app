@@ -13,7 +13,8 @@ import {
   StyleSheet,
   View,
   Pressable,
-  KeyboardAvoidingView,
+  Keyboard,
+  KeyboardEvent,
   Platform,
   Modal,
   useWindowDimensions,
@@ -28,6 +29,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  Easing,
   runOnJS,
   interpolate,
   Extrapolation,
@@ -59,6 +61,8 @@ const CLOSE_SPRING = {
 export interface BottomSheetContextType {
   scrollOffset: SharedValue<number>;
   isExpanded: boolean;
+  /** True while the soft keyboard overlaps the sheet (sheet has been resized above it). */
+  isKeyboardOpen: boolean;
 }
 
 export const BottomSheetContext = createContext<BottomSheetContextType | null>(null);
@@ -627,6 +631,77 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
       animateToSnapWorklet(0);
     }, [animateToSnapWorklet]);
 
+    // ── Keyboard avoidance (single listener pair, shared by every sheet) ───────
+    // The sheet sits in a Modal. On Android that window is edge-to-edge/translucent, so the OS does
+    // NOT resize it for the keyboard; KeyboardAvoidingView(behavior=undefined) does nothing either.
+    // Instead we measure how far the keyboard actually overlaps the sheet container and reserve
+    // exactly that space at the bottom (animated on the UI thread). If the OS did resize the window,
+    // the measured overlap is 0 and nothing is applied twice.
+    const keyboardContainerRef = useRef<View>(null);
+    const keyboardInset = useSharedValue(0);
+    const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+    const keyboardOpenRef = useRef(false);
+    const snapBeforeKeyboard = useRef<number | null>(null);
+
+    const applyKeyboardOverlap = useCallback(
+      (overlap: number, duration: number) => {
+        keyboardInset.value = withTiming(overlap, {
+          duration,
+          easing: Easing.out(Easing.cubic),
+        });
+
+        const open = overlap > 0;
+        if (open === keyboardOpenRef.current) return;
+        keyboardOpenRef.current = open;
+        setIsKeyboardOpen(open);
+
+        const highest = parsedConfig.snapYValues.length - 1;
+        if (open) {
+          // Use the full available height while typing; remember where to return to.
+          if (activeSnapIndex.value !== highest) {
+            snapBeforeKeyboard.current = activeSnapIndex.value;
+            animateToSnapWorklet(highest);
+          }
+        } else if (snapBeforeKeyboard.current !== null) {
+          const restore = snapBeforeKeyboard.current;
+          snapBeforeKeyboard.current = null;
+          if (!isClosing.value) animateToSnapWorklet(restore);
+        }
+      },
+      [keyboardInset, parsedConfig.snapYValues.length, activeSnapIndex, animateToSnapWorklet, isClosing]
+    );
+
+    useEffect(() => {
+      if (!isVisible) {
+        keyboardInset.value = 0;
+        keyboardOpenRef.current = false;
+        snapBeforeKeyboard.current = null;
+        setIsKeyboardOpen(false);
+        return;
+      }
+      const ios = Platform.OS === 'ios';
+      const onShow = (e: KeyboardEvent) => {
+        const keyboardTop = e.endCoordinates?.screenY;
+        const duration = ios ? e.duration || 250 : 180;
+        keyboardContainerRef.current?.measureInWindow((_x, y, _w, h) => {
+          if (typeof keyboardTop !== 'number') return;
+          applyKeyboardOverlap(Math.max(0, Math.round(y + h - keyboardTop)), duration);
+        });
+      };
+      const onHide = (e?: KeyboardEvent) => {
+        applyKeyboardOverlap(0, ios ? e?.duration || 250 : 180);
+      };
+      const subs = [
+        Keyboard.addListener(ios ? 'keyboardWillChangeFrame' : 'keyboardDidShow', onShow),
+        Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', onHide),
+      ];
+      return () => subs.forEach((s) => s.remove());
+    }, [isVisible, applyKeyboardOverlap, keyboardInset]);
+
+    const keyboardContainerStyle = useAnimatedStyle(() => ({
+      paddingBottom: keyboardInset.value,
+    }));
+
     useImperativeHandle(
       ref,
       () => ({
@@ -683,9 +758,14 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
         statusBarTranslucent={true}
       >
         <GestureHandlerRootView style={styles.modalRoot}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.keyboardContainer}
+          <Animated.View
+            ref={keyboardContainerRef}
+            collapsable={false}
+            style={[
+              styles.keyboardContainer,
+              { paddingTop: Math.max(insets.top, 24) },
+              keyboardContainerStyle,
+            ]}
           >
             {/* Animated Backdrop with Proportional Drag-Fade */}
             <AnimatedPressable
@@ -739,27 +819,30 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
                       : styles.contentContainer,
                     contentPadding && styles.withPadding,
                     {
-                      paddingBottom:
-                        (insets.bottom > 0 ? insets.bottom + 16 : 24) +
-                        (parsedConfig.isAuto
-                          ? 0
-                          : Math.max(
-                              0,
-                              (parsedConfig.maxContainerHeight || 0) -
-                                (parsedConfig.heights[currentSnapIndex] ??
-                                  parsedConfig.maxContainerHeight ??
-                                  0)
-                            )),
+                      // Keyboard open: it already covers the safe area and the sheet is at its
+                      // top snap, so only a small gap is needed above the keyboard.
+                      paddingBottom: isKeyboardOpen
+                        ? 8
+                        : (insets.bottom > 0 ? insets.bottom + 16 : 24) +
+                          (parsedConfig.isAuto
+                            ? 0
+                            : Math.max(
+                                0,
+                                (parsedConfig.maxContainerHeight || 0) -
+                                  (parsedConfig.heights[currentSnapIndex] ??
+                                    parsedConfig.maxContainerHeight ??
+                                    0)
+                              )),
                     },
                   ]}
                 >
-                  <BottomSheetContext.Provider value={{ scrollOffset, isExpanded }}>
+                  <BottomSheetContext.Provider value={{ scrollOffset, isExpanded, isKeyboardOpen }}>
                     {children}
                   </BottomSheetContext.Provider>
                 </View>
               </GestureDetector>
             </Animated.View>
-          </KeyboardAvoidingView>
+          </Animated.View>
         </GestureHandlerRootView>
       </Modal>
     );
@@ -786,6 +869,8 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     width: '100%',
+    // Lets the fixed-height sheet shrink to fit above the keyboard.
+    flexShrink: 1,
     backgroundColor: colors.bgCard,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
