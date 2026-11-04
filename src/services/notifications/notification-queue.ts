@@ -1,46 +1,62 @@
 /**
- * In-memory queue holding cold-start deep links until Expo Router has mounted its navigation tree.
+ * Holds notification-tap destinations until the signed-in app shell (the tabs layout) is mounted.
+ *
+ * Every tap (cold start, background, foreground) goes through enqueue():
+ *  - tabs layout mounted (= navigation tree ready AND user signed in) -> navigates immediately
+ *  - otherwise (cold start, still on splash/auth) -> waits, and is delivered when the consumer attaches
+ * Duplicate deliveries of the same notification (getLastNotificationResponse + response listener) are dropped.
  */
+const MAX_AGE_MS = 15 * 60 * 1000;
+const SEEN_LIMIT = 50;
+
+interface Pending {
+  path: string;
+  at: number;
+}
+
 class NotificationQueue {
-  private queue: string[] = [];
+  private pending: Pending | null = null;
+  private consumer: ((path: string) => void) | null = null;
+  private seen: string[] = [];
 
-  /**
-   * Adds a target path to the cold start queue.
-   */
-  enqueue(path: string): void {
+  /** @param notificationId request identifier of the tapped notification, used to drop duplicate deliveries */
+  enqueue(path: string, notificationId?: string): void {
     if (!path || !path.trim()) return;
-    this.queue.push(path);
-  }
-
-  /**
-   * Drains all queued paths once the navigation container is confirmed ready.
-   */
-  flush(navigateFn: (path: string) => void): void {
-    if (this.queue.length === 0) return;
-    const pathsToNavigate = [...this.queue];
-    this.queue = [];
-
-    // Navigate to the latest actionable path
-    const latestPath = pathsToNavigate[pathsToNavigate.length - 1];
-    if (latestPath) {
-      setTimeout(() => {
-        navigateFn(latestPath);
-      }, 50);
+    if (notificationId) {
+      if (this.seen.includes(notificationId)) return;
+      this.seen.push(notificationId);
+      if (this.seen.length > SEEN_LIMIT) this.seen.shift();
     }
+    // Only the latest tap matters: older taps made while the app was not ready are superseded.
+    this.pending = { path, at: Date.now() };
+    this.deliver();
   }
 
-  /**
-   * Checks if there are pending paths waiting to be flushed.
-   */
+  /** Called by the tabs layout when it mounts. Returns the detach function for the effect cleanup. */
+  attachConsumer(fn: (path: string) => void): () => void {
+    this.consumer = fn;
+    this.deliver();
+    return () => {
+      if (this.consumer === fn) this.consumer = null;
+    };
+  }
+
+  private deliver(): void {
+    if (!this.pending || !this.consumer) return;
+    const { path, at } = this.pending;
+    this.pending = null;
+    if (Date.now() - at > MAX_AGE_MS) return;
+    const fn = this.consumer;
+    // let the tab tree finish its first layout before stacking a screen on top of it
+    setTimeout(() => fn(path), 50);
+  }
+
   hasPending(): boolean {
-    return this.queue.length > 0;
+    return this.pending !== null;
   }
 
-  /**
-   * Clears any pending navigation paths.
-   */
   clear(): void {
-    this.queue = [];
+    this.pending = null;
   }
 }
 

@@ -25,6 +25,9 @@ export function resolveNotificationRoute(payload?: RawNotificationPayload | null
         if (subAction === 'track') {
           return `/booking/${targetId}/track`;
         }
+        if (subAction === 'dispute') {
+          return `/booking/${targetId}`;
+        }
         return `/booking/${targetId}`;
       }
       if (section === 'chat' && targetId) {
@@ -32,6 +35,10 @@ export function resolveNotificationRoute(payload?: RawNotificationPayload | null
       }
       if (section === 'track' && targetId) {
         return `/booking/${targetId}/track`;
+      }
+      if (section === 'dispute' && targetId) {
+        // Dispute status and the professional's response are shown on the booking itself
+        return `/booking/${targetId}`;
       }
       if (section === 'home') {
         return '/(tabs)';
@@ -60,7 +67,7 @@ export function resolveNotificationRoute(payload?: RawNotificationPayload | null
         }
         return '/(tabs)/bookings';
       }
-      if (section === 'worker' && targetId && targetId !== 'profile' && targetId !== 'reviews') {
+      if (section === 'worker' && targetId && !['profile', 'reviews', 'online', 'earnings', 'jobs'].includes(targetId)) {
         return `/worker/${targetId}`;
       }
       return '/notifications';

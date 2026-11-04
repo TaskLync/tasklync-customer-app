@@ -38,6 +38,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     let isMounted = true;
 
     const bootstrapNotifications = async () => {
+      // 1.0 Killed-app cold launch tap: read it FIRST so a permission prompt cannot delay or lose it.
+      // The queue holds it until the signed-in tabs shell mounts, then navigates.
+      try {
+        const response = await pushService.getLastNotificationResponse();
+        if (response) {
+          const rawData = response.notification?.request?.content?.data || {};
+          notificationQueue.enqueue(resolveNotificationRoute(rawData as any), response.notification?.request?.identifier);
+        }
+      } catch {}
+
       // 1.1 Pre-register Android notification channels & iOS categories idempotently
       await pushService.registerNotificationChannels().catch(() => {});
 
@@ -68,39 +78,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           console.warn('[NotificationProvider] Permission bootstrap error:', err);
         }
       }
-
-      // 1.3 Check for killed-app cold launch tap
-      try {
-        const response = await pushService.getLastNotificationResponse();
-        if (response && isMounted) {
-          const rawData = response.notification?.request?.content?.data || {};
-          const targetPath = resolveNotificationRoute(rawData as any);
-          if (targetPath) {
-            notificationQueue.enqueue(targetPath);
-          }
-        }
-      } catch {}
     };
 
     bootstrapNotifications();
 
-    // 1.4 Flush Cold Start Queue once router and navigation tree mount
-    const flushTimer = setTimeout(() => {
-      if (!isMounted) return;
-      notificationQueue.flush((targetPath) => {
-        try {
-          router.push(targetPath as any);
-        } catch {
-          router.push('/notifications' as any);
-        }
-      });
-    }, 400);
-
     return () => {
       isMounted = false;
-      clearTimeout(flushTimer);
     };
-  }, [router, setPermissionStatus, setCanAskAgain, register]);
+  }, [setPermissionStatus, setCanAskAgain, register]);
 
   // 2. Auth State Sync & Push Token Rotation Listener
   useEffect(() => {
@@ -185,14 +170,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       try {
         const rawData = response?.notification?.request?.content?.data || {};
         const targetPath = resolveNotificationRoute(rawData as any);
-
-        if (targetPath) {
-          try {
-            router.push(targetPath as any);
-          } catch {
-            router.push('/notifications' as any);
-          }
-        }
+        // Goes through the queue: navigates now if the signed-in shell is mounted, otherwise waits for it.
+        if (targetPath) notificationQueue.enqueue(targetPath, response?.notification?.request?.identifier);
       } catch (e) {
         if (__DEV__) {
           console.warn('[NotificationProvider] Error handling notification response:', e);
