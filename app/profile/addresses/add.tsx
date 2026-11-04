@@ -27,6 +27,8 @@ import { usePlacesAutocomplete } from '../../../src/hooks/usePlacesAutocomplete'
 import { useCurrentLocation } from '../../../src/hooks/useCurrentLocation';
 import { useLocationStore } from '../../../src/store/location.store';
 import { useBookingDraftStore } from '../../../src/store/bookingDraft.store';
+import { locationService } from '../../../src/services/location/location.service';
+import { createRequestGate } from '../../../src/utils/requestGate';
 
 import { Address, PlacePrediction, MapRegion } from '../../../src/types/address.types';
 import { colors, palette, radius, shadows } from '../../../src/design';
@@ -70,7 +72,9 @@ export default function AddEditAddressScreen() {
     isFetching: isFetchingGPS,
     error: gpsError,
   } = useCurrentLocation();
-  const currentLocation = useLocationStore((s) => s.currentLocation);
+  // LIVE GPS only: the persisted "current_location" is hydrated from a previous session and can be
+  // days old - it must never seed the pin as if it were where the customer is now.
+  const liveLocation = useLocationStore((s) => s.liveLocation);
   const selectedAddress = useLocationStore((s) => s.selectedAddress);
   const setSelectedAddress = useLocationStore((s) => s.setSelectedAddress);
   const setCurrentCity = useLocationStore((s) => s.setCurrentCity);
@@ -111,15 +115,31 @@ export default function AddEditAddressScreen() {
 
   // Track if user has manually interacted with the map or search before auto-GPS arrives
   const userInteractedRef = useRef<boolean>(false);
+  const selectGateRef = useRef(createRequestGate());
+  const isSubmittingRef = useRef(false);
 
-  // Initial region setup (run once on mount)
+  // Programmatic camera moves (initial centering, GPS, search pick) also fire region events;
+  // they must not count as the user having picked a spot.
+  const programmaticUntilRef = useRef<number>(0);
+  const animateTo = useCallback((region: MapRegion, duration: number) => {
+    programmaticUntilRef.current = Date.now() + duration + 1500;
+    mapRef.current?.animateToRegion(region, duration);
+  }, []);
+  const markUserInteraction = useCallback(() => {
+    if (Date.now() > programmaticUntilRef.current) userInteractedRef.current = true;
+  }, []);
+
+  // Initial region setup (run once, as soon as the data it needs is available)
   const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     if (hasInitializedRef.current) return;
-    hasInitializedRef.current = true;
 
-    if (isEditMode && existingAddress) {
+    if (isEditMode) {
+      // Saved addresses may still be loading (cold start / deep link): wait for them instead of
+      // initialising once with an empty state and never again.
+      if (!existingAddress) return;
+      hasInitializedRef.current = true;
       const editRegion: MapRegion = {
         latitude: existingAddress.lat,
         longitude: existingAddress.lng,
@@ -127,7 +147,7 @@ export default function AddEditAddressScreen() {
         longitudeDelta: 0.006,
       };
       setCurrentRegion(editRegion);
-      mapRef.current?.animateToRegion(editRegion, 300);
+      animateTo(editRegion, 300);
       setLastPickedCoords({ lat: existingAddress.lat, lng: existingAddress.lng });
       setGeocodeResult({
         formatted_address: existingAddress.address_line,
@@ -137,37 +157,57 @@ export default function AddEditAddressScreen() {
         lat: existingAddress.lat,
         lng: existingAddress.lng,
       });
-    } else {
-      // For adding a new address:
-      // 1. Center immediately on existing serviceable store GPS or Faisalabad center
-      const hasValidStoreGPS =
-        currentLocation &&
-        typeof currentLocation.lat === 'number' &&
-        !isNaN(currentLocation.lat) &&
-        typeof currentLocation.lng === 'number' &&
-        !isNaN(currentLocation.lng) &&
-        validateServiceArea(currentLocation).isServiceable;
-      const initialLat = hasValidStoreGPS ? currentLocation.lat : DEFAULT_REGION.latitude;
-      const initialLng = hasValidStoreGPS ? currentLocation.lng : DEFAULT_REGION.longitude;
+      return;
+    }
+
+    hasInitializedRef.current = true;
+    // Adding: centre on a GPS fix from THIS session if we have one. Otherwise show the service-area
+    // overview WITHOUT resolving an address for it - the default centre is not the customer's
+    // location, and a fresh GPS fix is requested below.
+    if (liveLocation && validateServiceArea(liveLocation).isServiceable) {
       const initialRegion: MapRegion = {
-        latitude: initialLat,
-        longitude: initialLng,
+        latitude: liveLocation.lat,
+        longitude: liveLocation.lng,
         latitudeDelta: 0.006,
         longitudeDelta: 0.006,
       };
       setCurrentRegion(initialRegion);
-      mapRef.current?.animateToRegion(initialRegion, 300);
-      setLastPickedCoords({ lat: initialLat, lng: initialLng });
-      triggerGeocode(initialLat, initialLng);
+      animateTo(initialRegion, 300);
+      setLastPickedCoords({ lat: liveLocation.lat, lng: liveLocation.lng });
+      triggerGeocode(liveLocation.lat, liveLocation.lng);
     }
-  }, [
-    existingAddress,
-    isEditMode,
-    currentLocation,
-    setGeocodeResult,
-    setLastPickedCoords,
-    triggerGeocode,
-  ]);
+  }, [existingAddress, isEditMode, liveLocation, animateTo, setGeocodeResult, setLastPickedCoords, triggerGeocode]);
+
+  // Adding: silently refresh to a verified GPS fix (never prompts; skipped if permission/GPS is off
+  // or the user has already started picking a spot).
+  useEffect(() => {
+    if (isEditMode) return;
+    let cancelled = false;
+    (async () => {
+      const state = await locationService.checkLocationState();
+      if (cancelled || !state.granted || !state.servicesEnabled) return;
+      const res = await locationService.acquireFreshGPSPosition({ mayShowUserSettingsDialog: false });
+      if (cancelled || !res.success) return;
+      const coords = { lat: res.location.lat, lng: res.location.lng };
+      useLocationStore.getState().setLiveLocation(coords);
+      if (userInteractedRef.current) return;
+      if (!validateServiceArea(coords).isServiceable) return;
+      const region: MapRegion = {
+        latitude: coords.lat,
+        longitude: coords.lng,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      };
+      setCurrentRegion(region);
+      animateTo(region, 400);
+      setLastPickedCoords(coords);
+      fetchImmediately(coords.lat, coords.lng);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode]);
 
   // Clean up transient picked coordinates on unmount
   useEffect(() => {
@@ -177,9 +217,9 @@ export default function AddEditAddressScreen() {
   }, [setLastPickedCoords]);
 
   const handleRegionChange = useCallback(() => {
-    userInteractedRef.current = true;
+    markUserInteraction();
     Keyboard.dismiss();
-  }, []);
+  }, [markUserInteraction]);
 
   const handleRegionChangeComplete = useCallback(
     (region: MapRegion) => {
@@ -193,12 +233,12 @@ export default function AddEditAddressScreen() {
       ) {
         return;
       }
-      userInteractedRef.current = true;
+      markUserInteraction();
       setCurrentRegion(region);
       setLastPickedCoords({ lat: region.latitude, lng: region.longitude });
       triggerGeocode(region.latitude, region.longitude);
     },
-    [setLastPickedCoords, triggerGeocode]
+    [markUserInteraction, setLastPickedCoords, triggerGeocode]
   );
 
   const handleBack = () => {
@@ -214,7 +254,10 @@ export default function AddEditAddressScreen() {
   const handleSelectPrediction = async (prediction: PlacePrediction) => {
     userInteractedRef.current = true;
     Keyboard.dismiss();
+    const ticket = selectGateRef.current.next();
     const details = await selectPlace(prediction);
+    // The user picked something else while this was resolving: drop this one silently
+    if (!selectGateRef.current.isLatest(ticket)) return;
     if (!details) {
       Alert.alert(
         'Location Error',
@@ -238,7 +281,7 @@ export default function AddEditAddressScreen() {
       longitudeDelta: 0.005,
     };
     setCurrentRegion(targetRegion);
-    mapRef.current?.animateToRegion(targetRegion, 400);
+    animateTo(targetRegion, 400);
     setLastPickedCoords({ lat: details.lat, lng: details.lng });
     setGeocodeResult({
       formatted_address: details.formatted_address,
@@ -253,7 +296,7 @@ export default function AddEditAddressScreen() {
 
   // GPS Recenter Button
   const handleGPSLocationFound = (coords: { lat: number; lng: number }) => {
-    userInteractedRef.current = false;
+    userInteractedRef.current = true; // explicit user action: auto-GPS must not move the pin again
     const validation = validateServiceArea(coords);
     if (!validation.isServiceable) {
       Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
@@ -267,7 +310,7 @@ export default function AddEditAddressScreen() {
       longitudeDelta: 0.005,
     };
     setCurrentRegion(gpsRegion);
-    mapRef.current?.animateToRegion(gpsRegion, 500);
+    animateTo(gpsRegion, 500);
     setLastPickedCoords(coords);
     fetchImmediately(coords.lat, coords.lng);
   };
@@ -288,6 +331,11 @@ export default function AddEditAddressScreen() {
       Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
       return;
     }
+
+    // Double-tap guard: isSaving only flips after the next render, so two quick taps could
+    // otherwise POST the same address twice.
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
     try {
       let savedAddressObj: Address;
@@ -317,6 +365,20 @@ export default function AddEditAddressScreen() {
         if (selectedAddress?.id === editingAddressId) {
           setSelectedAddress(savedAddressObj);
           setCurrentCity(payload.city);
+        }
+
+        // The booking draft holds its own COPY of the address: refresh it, otherwise a booking
+        // would still be submitted with the pre-edit coordinates/text.
+        if (useBookingDraftStore.getState().addressId === editingAddressId) {
+          setBookingAddress({
+            id: editingAddressId,
+            label: payload.label,
+            street: payload.address_line,
+            city: payload.city,
+            latitude: payload.lat,
+            longitude: payload.lng,
+            isDefault: savedAddressObj.is_default,
+          });
         }
       } else {
         const created = await addAddress({
@@ -370,6 +432,8 @@ export default function AddEditAddressScreen() {
         'Save Failed',
         "Couldn't save address. Please check your connection and try again."
       );
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 
@@ -379,6 +443,10 @@ export default function AddEditAddressScreen() {
       await deleteAddress(editingAddressId);
       if (selectedAddress?.id === editingAddressId) {
         setSelectedAddress(null);
+      }
+      // Do not leave a deleted address as the booking destination
+      if (useBookingDraftStore.getState().addressId === editingAddressId) {
+        setBookingAddress(null);
       }
       setLastPickedCoords(null);
       if (router.canGoBack()) {

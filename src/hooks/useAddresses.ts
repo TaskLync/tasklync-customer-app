@@ -5,6 +5,7 @@ import { Address, CreateAddressDTO, UpdateAddressDTO } from '../types/address.ty
 import { generateUUID } from '../utils/uuid';
 
 const ADDRESSES_QUERY_KEY = ['user-addresses'];
+const ADDRESS_MUTATION_KEY = ['user-addresses', 'mutation'];
 
 /**
  * Sorts addresses so the default address is strictly at index 0 (Serial Position Effect)
@@ -32,16 +33,20 @@ export function useAddresses() {
       if (!token) return [];
       const raw = await userApi.getAddresses();
       if (!raw || !Array.isArray(raw)) return [];
-      const mapped: Address[] = raw.map((addr) => ({
-        id: addr.id || generateUUID(),
-        label: addr.label || 'Home',
-        address_line: addr.address_line,
-        city: addr.city || '',
-        country: addr.country || 'Pakistan',
-        lat: addr.lat,
-        lng: addr.lng,
-        is_default: Boolean(addr.is_default),
-      }));
+      // The API may serialise DECIMAL columns as strings; coerce, and drop rows with unusable
+      // coordinates rather than letting NaN/0 reach maps, service-area checks or bookings.
+      const mapped: Address[] = raw
+        .map((addr) => ({
+          id: addr.id || generateUUID(),
+          label: addr.label || 'Home',
+          address_line: addr.address_line,
+          city: addr.city || '',
+          country: addr.country || 'Pakistan',
+          lat: Number(addr.lat),
+          lng: Number(addr.lng),
+          is_default: Boolean(addr.is_default),
+        }))
+        .filter((addr) => Number.isFinite(addr.lat) && Number.isFinite(addr.lng));
       return sortAddressesWithDefaultFirst(mapped);
     },
     staleTime: 60_000,
@@ -50,6 +55,7 @@ export function useAddresses() {
 
   // 2. Add Address mutation (Optimistic)
   const addMutation = useMutation({
+    mutationKey: ADDRESS_MUTATION_KEY,
     mutationFn: async (payload: CreateAddressDTO) => {
       const created = await userApi.createAddress({
         label: payload.label,
@@ -99,12 +105,17 @@ export function useAddresses() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      // Refetch only after the LAST in-flight address mutation; an earlier refetch would return
+      // server state that predates the others and make the optimistic UI flicker back.
+      if (queryClient.isMutating({ mutationKey: ADDRESS_MUTATION_KEY }) <= 1) {
+        queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      }
     },
   });
 
   // 3. Update Address mutation (Optimistic)
   const updateMutation = useMutation({
+    mutationKey: ADDRESS_MUTATION_KEY,
     mutationFn: async ({ id, payload }: { id: string; payload: UpdateAddressDTO }) => {
       const updated = await userApi.updateAddress(id, payload);
       return updated;
@@ -141,12 +152,17 @@ export function useAddresses() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      // Refetch only after the LAST in-flight address mutation; an earlier refetch would return
+      // server state that predates the others and make the optimistic UI flicker back.
+      if (queryClient.isMutating({ mutationKey: ADDRESS_MUTATION_KEY }) <= 1) {
+        queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      }
     },
   });
 
   // 4. Delete Address mutation (Optimistic)
   const deleteMutation = useMutation({
+    mutationKey: ADDRESS_MUTATION_KEY,
     mutationFn: async (id: string) => {
       await userApi.deleteAddress(id);
     },
@@ -168,12 +184,17 @@ export function useAddresses() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      // Refetch only after the LAST in-flight address mutation; an earlier refetch would return
+      // server state that predates the others and make the optimistic UI flicker back.
+      if (queryClient.isMutating({ mutationKey: ADDRESS_MUTATION_KEY }) <= 1) {
+        queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      }
     },
   });
 
   // 5. Set Default Address mutation (Optimistic)
   const setDefaultMutation = useMutation({
+    mutationKey: ADDRESS_MUTATION_KEY,
     mutationFn: async (id: string) => {
       const updated = await userApi.setDefaultAddress(id);
       return updated;
@@ -200,7 +221,11 @@ export function useAddresses() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      // Refetch only after the LAST in-flight address mutation; an earlier refetch would return
+      // server state that predates the others and make the optimistic UI flicker back.
+      if (queryClient.isMutating({ mutationKey: ADDRESS_MUTATION_KEY }) <= 1) {
+        queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
+      }
     },
   });
 

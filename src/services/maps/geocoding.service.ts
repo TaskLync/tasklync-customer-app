@@ -1,15 +1,19 @@
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
 import { ReverseGeocodeResult } from '../../types/address.types';
+import { parseGoogleReverseGeocode } from '../../utils/geocodeParse';
+
+const GEOCODE_TIMEOUT_MS = 8000;
 
 /**
- * High-precision reverse geocoding service
- * Combines native platform geocoder (expo-location) with Google Maps Geocoding API.
- * Never hardcodes or defaults to any specific city (e.g. Faisalabad).
+ * Reverse geocoding: Google Geocoding API first, native platform geocoder second.
+ * Never defaults to a specific city and never invents missing components — an unknown city is ''.
+ * If the caller aborts (`signal`), the promise rejects with an AbortError so stale work is dropped.
  */
 export async function reverseGeocode(
   lat: number,
-  lng: number
+  lng: number,
+  signal?: AbortSignal
 ): Promise<ReverseGeocodeResult> {
   const safeLat = typeof lat === 'number' && !isNaN(lat) ? lat : 0;
   const safeLng = typeof lng === 'number' && !isNaN(lng) ? lng : 0;
@@ -21,61 +25,36 @@ export async function reverseGeocode(
     process.env.GOOGLE_MAPS_KEY ||
     '';
 
-  // 1. Try Google Maps Geocoding API when key is configured
+  // 1. Google Maps Geocoding API (bounded by a timeout so a stalled connection can't hang the sheet)
   if (apiKey && apiKey !== 'your_key_here') {
+    const controller = new AbortController();
+    const onAbort = () => controller.abort();
+    signal?.addEventListener('abort', onAbort);
+    const timeout = setTimeout(() => controller.abort(), GEOCODE_TIMEOUT_MS);
     try {
       const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
-      const res = await fetch(url);
-      const json = await res.json();
-      if (json.status === 'OK' && Array.isArray(json.results) && json.results.length > 0) {
-        const first = json.results[0];
-        const formatted = first.formatted_address || fallbackCoords;
-        let city = '';
-        let country = 'Pakistan';
-
-        for (const comp of first.address_components || []) {
-          if (comp.types.includes('locality')) {
-            city = comp.long_name;
-          } else if (!city && comp.types.includes('administrative_area_level_2')) {
-            city = comp.long_name; // e.g. Toba Tek Singh District
-          } else if (!city && comp.types.includes('sublocality')) {
-            city = comp.long_name;
-          }
-          if (comp.types.includes('country')) {
-            country = comp.long_name;
-          }
-        }
-
-        if (!city) {
-          city = 'Current Area';
-        }
-
-        return {
-          formatted_address: formatted,
-          address_line: formatted.split(',')[0] || formatted,
-          city,
-          country,
-          lat,
-          lng,
-        };
-      }
+      const res = await fetch(url, { signal: controller.signal });
+      const parsed = parseGoogleReverseGeocode(await res.json(), lat, lng);
+      if (parsed) return parsed;
     } catch (_e) {
-      // Fall through to native geocoder
+      if (signal?.aborted) throw _e;
+      // timeout / network error → fall through to the native geocoder
+    } finally {
+      clearTimeout(timeout);
+      signal?.removeEventListener('abort', onAbort);
     }
   }
 
+  if (signal?.aborted) throw abortError();
+
   try {
-    // 2. Try native platform geocoder (Apple CLGeocoder on iOS, Android Geocoder on Android)
-    const results = await Location.reverseGeocodeAsync({
-      latitude: lat,
-      longitude: lng,
-    });
+    // 2. Native platform geocoder (Apple CLGeocoder / Android Geocoder)
+    const results = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
 
     if (results && results.length > 0) {
-      const item = results[0];
+      const item = results[0]!;
       const addressParts: string[] = [];
 
-      // Build structured street address
       if (item.name && item.name !== item.street) {
         addressParts.push(item.name);
       }
@@ -92,36 +71,33 @@ export async function reverseGeocode(
         addressParts.push(item.subregion);
       }
 
-      // Extract real city without any Faisalabad fallback
-      const detectedCity =
-        item.city?.trim() ||
-        item.district?.trim() ||
-        item.subregion?.trim() ||
-        'Current Area';
-
-      const country = item.country || 'Pakistan';
+      const detectedCity = item.city?.trim() || item.district?.trim() || item.subregion?.trim() || '';
+      const country = item.country || '';
       const addressLine = addressParts.length > 0 ? addressParts.join(', ') : detectedCity;
-      const formattedAddress = `${addressLine}, ${detectedCity}, ${country}`;
 
-      return {
-        formatted_address: formattedAddress,
-        address_line: addressLine,
-        city: detectedCity,
-        country,
-        lat,
-        lng,
-      };
+      if (addressLine) {
+        return {
+          formatted_address: [addressLine, detectedCity, country].filter(Boolean).join(', '),
+          address_line: addressLine,
+          city: detectedCity,
+          country,
+          lat,
+          lng,
+        };
+      }
     }
   } catch (_e) {
-    // Native geocoding failed or not permitted, proceed to fallback
+    // Native geocoding failed or not permitted, proceed to the coordinates fallback
   }
 
-  // 3. High-reliability coordinates fallback (never hardcode Faisalabad)
+  if (signal?.aborted) throw abortError();
+
+  // 3. Honest coordinates fallback: real coordinates, no invented city.
   return {
     formatted_address: `Pin Location (${fallbackCoords})`,
     address_line: `Location (${fallbackCoords})`,
-    city: 'Current Area',
-    country: 'Pakistan',
+    city: '',
+    country: '',
     lat,
     lng,
   };
@@ -130,3 +106,9 @@ export async function reverseGeocode(
 export const geocodingService = {
   reverseGeocode,
 };
+
+function abortError(): Error {
+  const e = new Error('Aborted');
+  e.name = 'AbortError';
+  return e;
+}

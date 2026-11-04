@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import Constants from 'expo-constants';
 import { PlacePrediction, PlaceDetails } from '../../types/address.types';
 import { generateUUID } from '../../utils/uuid';
+import { FAISALABAD_CENTER } from '../../config/serviceArea.config';
 
 /**
  * Generates a standard UUID session token for Google Places Autocomplete billing optimization
@@ -16,7 +17,8 @@ export function generatePlacesSessionToken(): string {
  */
 export async function autocompletePlaces(
   query: string,
-  sessionToken?: string
+  sessionToken?: string,
+  signal?: AbortSignal
 ): Promise<PlacePrediction[]> {
   const cleanQuery = query.trim();
   if (cleanQuery.length < 2) return [];
@@ -33,18 +35,21 @@ export async function autocompletePlaces(
     try {
       const newPlacesRes = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
         method: 'POST',
+        ...(signal ? { signal } : {}),
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': apiKey,
         },
         body: JSON.stringify({
           input: cleanQuery,
+          // Same session token as the final place-details call so Google bills one session, not one per keystroke
+          ...(sessionToken ? { sessionToken } : {}),
           includedRegionCodes: ['PK'],
           locationBias: {
             circle: {
               center: {
-                latitude: 31.4187,
-                longitude: 73.0791,
+                latitude: FAISALABAD_CENTER.lat,
+                longitude: FAISALABAD_CENTER.lng,
               },
               radius: 35000.0,
             },
@@ -52,18 +57,24 @@ export async function autocompletePlaces(
         }),
       });
       const newPlacesJson = await newPlacesRes.json();
-      if (Array.isArray(newPlacesJson.suggestions) && newPlacesJson.suggestions.length > 0) {
-        return newPlacesJson.suggestions.slice(0, 5).map((s: any) => {
-          const placePred = s.placePrediction;
-          return {
-            place_id: placePred.placeId,
-            description: placePred.text?.text || '',
-            primary_text: placePred.structuredFormat?.mainText?.text || placePred.text?.text || '',
-            secondary_text: placePred.structuredFormat?.secondaryText?.text || '',
-          };
-        });
+      // A 2xx answer is authoritative: an empty body ({}) means "no matches", NOT "try another
+      // provider" — falling through cost two extra API calls per no-result query.
+      if (newPlacesRes.ok) {
+        return (Array.isArray(newPlacesJson.suggestions) ? newPlacesJson.suggestions : [])
+          .filter((s: any) => s?.placePrediction?.placeId)
+          .slice(0, 5)
+          .map((s: any) => {
+            const placePred = s.placePrediction;
+            return {
+              place_id: placePred.placeId,
+              description: placePred.text?.text || '',
+              primary_text: placePred.structuredFormat?.mainText?.text || placePred.text?.text || '',
+              secondary_text: placePred.structuredFormat?.secondaryText?.text || '',
+            };
+          });
       }
     } catch (_e) {
+      if (signal?.aborted) throw _e; // superseded search: stop, don't fall through to other providers
       // Fall through to legacy
     }
 
@@ -71,11 +82,12 @@ export async function autocompletePlaces(
     try {
       const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
         cleanQuery
-      )}&components=country:pk&location=31.4187,73.0791&radius=35000&strictbounds=false&sessiontoken=${sessionToken || generatePlacesSessionToken()}&key=${apiKey}`;
+      )}&components=country:pk&location=${FAISALABAD_CENTER.lat},${FAISALABAD_CENTER.lng}&radius=35000&strictbounds=false&sessiontoken=${sessionToken || generatePlacesSessionToken()}&key=${apiKey}`;
 
-      const res = await fetch(url);
+      const res = await fetch(url, signal ? { signal } : undefined);
       const json = await res.json();
 
+      if (json.status === 'ZERO_RESULTS') return [];
       if (json.status === 'OK' && Array.isArray(json.predictions)) {
         return json.predictions.slice(0, 5).map((p: any) => ({
           place_id: p.place_id,
@@ -85,8 +97,15 @@ export async function autocompletePlaces(
         }));
       }
     } catch (_e) {
+      if (signal?.aborted) throw _e;
       // Fall through to native geocoder
     }
+  }
+
+  if (signal?.aborted) {
+    const e = new Error('Aborted');
+    e.name = 'AbortError';
+    throw e;
   }
 
   // Real native forward geocode with expo-location (No demo/mock landmarks)
@@ -141,7 +160,7 @@ export async function getPlaceDetails(
           first?.city?.trim() ||
           first?.district?.trim() ||
           first?.subregion?.trim() ||
-          'Current Area';
+          '';
         const country = first?.country || 'Pakistan';
         const address = [first?.name || first?.street, first?.district, city].filter(Boolean).join(', ');
 
@@ -161,7 +180,7 @@ export async function getPlaceDetails(
           formatted_address: `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
           lat,
           lng,
-          city: 'Current Area',
+          city: '',
           country: 'Pakistan',
         };
       }
@@ -173,7 +192,9 @@ export async function getPlaceDetails(
     // 1. Try Places API (New) details
     try {
       const newDetailsRes = await fetch(
-        `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?fields=id,displayName,formattedAddress,location,addressComponents`,
+        `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?fields=id,displayName,formattedAddress,location,addressComponents${
+          sessionToken ? `&sessionToken=${encodeURIComponent(sessionToken)}` : ''
+        }`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -183,7 +204,7 @@ export async function getPlaceDetails(
       );
       const newJson = await newDetailsRes.json();
       if (newJson.location && typeof newJson.location.latitude === 'number') {
-        let city = 'Current Area';
+        let city = '';
         let country = 'Pakistan';
         for (const comp of newJson.addressComponents || []) {
           if (comp.types?.includes('locality') || comp.types?.includes('administrative_area_level_2')) {
@@ -216,8 +237,10 @@ export async function getPlaceDetails(
 
       if (json.status === 'OK' && json.result) {
         const result = json.result;
-        const lat = result.geometry?.location?.lat || 0;
-        const lng = result.geometry?.location?.lng || 0;
+        const lat = result.geometry?.location?.lat;
+        const lng = result.geometry?.location?.lng;
+        // Never return (0, 0) for a place without geometry — that would pin the user off West Africa.
+        if (typeof lat !== 'number' || typeof lng !== 'number') return null;
         const cityComp = result.address_components?.find((c: any) =>
           c.types.includes('locality') || c.types.includes('administrative_area_level_2')
         );
@@ -228,7 +251,7 @@ export async function getPlaceDetails(
           formatted_address: result.formatted_address,
           lat,
           lng,
-          city: cityComp?.long_name || 'Current Area',
+          city: cityComp?.long_name || '',
           country: 'Pakistan',
         };
       }

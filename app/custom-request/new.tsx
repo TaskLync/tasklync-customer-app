@@ -125,7 +125,8 @@ export default function NewCustomRequestScreen() {
 
   // Addresses query & location store
   const { addresses } = useAddresses();
-  const currentLocation = useLocationStore((s) => s.currentLocation);
+  // Live GPS only: a hydrated last-session position must not become the job location
+  const currentLocation = useLocationStore((s) => s.liveLocation);
   const currentCity = useLocationStore((s) => s.currentCity);
   const storeSelectedAddress = useLocationStore((s) => s.selectedAddress);
 

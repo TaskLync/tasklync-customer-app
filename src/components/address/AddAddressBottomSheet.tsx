@@ -1,4 +1,5 @@
 import { useState, forwardRef, useImperativeHandle, useRef } from 'react';
+import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -62,7 +63,8 @@ export const AddAddressBottomSheet = forwardRef<
   const token = useAuthStore((s) => s.accessToken);
   const draftAddressId = useBookingDraftStore((s) => s.addressId);
   const setAddressStore = useBookingDraftStore((s) => s.setAddress);
-  const currentLocation = useLocationStore((s) => s.currentLocation);
+  // Live GPS only. The persisted last position is from an earlier session and may be far away.
+  const currentLocation = useLocationStore((s) => s.liveLocation);
   const currentCity = useLocationStore((s) => s.currentCity);
   const selectedStoreAddress = useLocationStore((s) => s.selectedAddress);
 
@@ -88,6 +90,11 @@ export const AddAddressBottomSheet = forwardRef<
   const [isStreetFocused, setIsStreetFocused] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const isSubmittingRef = useRef(false);
+  const router = useRouter();
+  // True only when lat/lng come from a real GPS fix. The Faisalabad centre used as a visual default
+  // is NOT the address the customer typed, so it must never be saved as its coordinates.
+  const [coordsVerified, setCoordsVerified] = useState<boolean>(isCurrentServiceable);
 
   useImperativeHandle(ref, () => ({
     open: () => {
@@ -96,10 +103,12 @@ export const AddAddressBottomSheet = forwardRef<
       if (isCurrentServiceable && currentLocation) {
         setLat(currentLocation.lat);
         setLng(currentLocation.lng);
+        setCoordsVerified(true);
         if (currentCity) setCity(currentCity);
       } else {
         setLat(FAISALABAD_CENTER.lat);
         setLng(FAISALABAD_CENTER.lng);
+        setCoordsVerified(false);
         setCity('Faisalabad');
       }
       bottomSheetRef.current?.open();
@@ -205,7 +214,8 @@ export const AddAddressBottomSheet = forwardRef<
 
         setLat(coords.lat);
         setLng(coords.lng);
-        useLocationStore.getState().setCurrentLocation(coords);
+        setCoordsVerified(true);
+        useLocationStore.getState().setLiveLocation(coords);
 
         const geo = await locationService.reverseGeocode(coords);
         if (geo?.addressLine && geo.addressLine !== 'Current GPS Location') {
@@ -246,6 +256,31 @@ export const AddAddressBottomSheet = forwardRef<
       return;
     }
 
+    // No verified position for this address: saving would attach the city centre / an unrelated
+    // spot to the typed street. Send the customer to the map picker to place the pin instead.
+    if (!coordsVerified) {
+      Alert.alert(
+        'Confirm location on map',
+        'We need the exact spot for this address so your technician can find you. Tap "Use my location" or place the pin on the map.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Pick on map',
+            onPress: () => {
+              bottomSheetRef.current?.close();
+              router.push({
+                pathname: '/profile/addresses/add',
+                params: { returnToBooking: 'true' },
+              } as any);
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    if (isSubmittingRef.current) return; // double-tap guard (state updates are async)
+    isSubmittingRef.current = true;
     setIsSaving(true);
 
     const addressText = street.trim();
@@ -317,6 +352,7 @@ export const AddAddressBottomSheet = forwardRef<
     } catch (err: any) {
       Alert.alert('Error', err?.message || 'Failed to save address. Please try again.');
     } finally {
+      isSubmittingRef.current = false;
       setIsSaving(false);
     }
   };

@@ -262,7 +262,8 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
 
   const handleSave = () => {
     Keyboard.dismiss();
-    if (!isFormValid || !reverseGeocodeResult || !isServiceable || isSaving) return;
+    // Never save while the address for the current pin is still resolving (it would describe the previous spot)
+    if (!isFormValid || !reverseGeocodeResult || !isServiceable || isSaving || isGeocoding) return;
 
     setIsSuccessFeedback(true);
 
@@ -449,7 +450,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
         <View style={styles.ctaContainer}>
           <Pressable
             onPress={handleSave}
-            disabled={!isFormValid || !isServiceable || isSaving}
+            disabled={!isFormValid || !isServiceable || isSaving || isGeocoding}
             style={({ pressed }) => [
               styles.saveButton,
               (!isFormValid || !isServiceable) && (isDark ? styles.saveButtonDisabledDark : styles.saveButtonDisabled),
