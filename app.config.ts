@@ -79,7 +79,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-notifications',
       {
-        icon: './assets/images/icon.png',
+        icon: './assets/images/android-icon-monochrome.png',
         color: '#16A34A',
         defaultChannel: 'tasklync_general_notifications',
         sounds: [
