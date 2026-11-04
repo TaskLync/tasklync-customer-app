@@ -1,4 +1,5 @@
 import { socketService } from './socket.service';
+import type { AckResult } from '../../utils/messageSender';
 
 export interface SendMessageSocketPayload {
   bookingId: string;
@@ -21,6 +22,24 @@ export interface SendMessageSocketPayload {
  *    errors (400) from unexpected event names.
  */
 export const chatSocket = {
+  /**
+   * 3.2.3 (acknowledged) — Send a message and wait for the server to confirm it is STORED. Resolves with the
+   * ack, or `{ ok:false, retryable:true }` when the socket is down or the ack is late. Does not queue and
+   * does not drop silently (unlike `sendMessage`). Used with utils/messageSender.ts, which retries with the
+   * same tempId so the backend can dedupe.
+   */
+  sendMessageWithAck: async (payload: SendMessageSocketPayload): Promise<AckResult> => {
+    try {
+      return await socketService.emitWithAck<AckResult>('send_message', payload);
+    } catch (err) {
+      const offline = (err as Error)?.message === 'OFFLINE';
+      return { ok: false, code: offline ? 'OFFLINE' : 'ACK_TIMEOUT', retryable: true };
+    }
+  },
+
+  isConnected: () => socketService.isConnected(),
+  waitForConnection: (timeoutMs: number) => socketService.waitForConnection(timeoutMs),
+
   /** 3.2.1 — Join the room channel for a booking or persistent room. */
   joinRoom: (bookingId: string, roomId?: string) => {
     socketService.emit('join_room', { bookingId, ...(roomId ? { roomId } : {}) });

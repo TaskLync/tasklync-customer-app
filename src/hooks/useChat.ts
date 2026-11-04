@@ -9,11 +9,24 @@ import { useAuthStore } from '../store/auth.store';
 import { groupMessagesForInvertedList } from '../utils/messageGrouping';
 import { chatSoundService } from '../services/audio/chatSound.service';
 import { useChatUnreadStore } from '../store/chatUnread.store';
+import { sendWithRetry } from '../utils/messageSender';
+import type { SendSignal, SendTransport } from '../utils/messageSender';
+import type { SendMessageSocketPayload } from '../services/socket/chat.socket';
+
+/** Retries run in the background and finish even if the screen is left. */
+const sendTransport: SendTransport<SendMessageSocketPayload> = {
+  emit: (payload) => chatSocket.sendMessageWithAck(payload),
+  isConnected: () => chatSocket.isConnected(),
+  waitForConnection: (ms) => chatSocket.waitForConnection(ms),
+};
 
 export function useChat(bookingId: string) {
-  // Synchronous initial hydration from local MMKV cache (0ms instant render)
+  // Synchronous initial hydration from local MMKV cache (0ms instant render).
+  // A message still "sending" in the cache was interrupted (app closed / killed mid-send). Nothing is sending it
+  // now, so show it as failed: one tap retries it, and the retry reuses its temp_id so it cannot duplicate.
   const [messages, setMessages] = useState<Message[]>(() => {
-    return bookingId ? getCachedChatMessages(bookingId) : [];
+    if (!bookingId) return [];
+    return getCachedChatMessages(bookingId).map((m) => (m.status === 'sending' ? { ...m, status: 'failed' as const } : m));
   });
   const [isLoading, setIsLoading] = useState<boolean>(() => {
     return bookingId ? getCachedChatMessages(bookingId).length === 0 : true;
@@ -32,6 +45,8 @@ export function useChat(bookingId: string) {
   const pendingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const localImageUrisRef = useRef<Map<string, string>>(new Map());
+  /** One per message currently being sent. `settled` is flipped when the echo confirms it, which stops retries. */
+  const sendSignalsRef = useRef<Map<string, SendSignal>>(new Map());
 
   // 1. Initial Load of message history with resilience retry
   useEffect(() => {
@@ -203,14 +218,21 @@ export function useChat(bookingId: string) {
           matchIndex = prev.findIndex((m) => m.temp_id === echoedTempId || m.id === echoedTempId);
         }
 
-        // Tier 2: Fuzzy fallback matching for sender's pending messages
-        if (matchIndex === -1 && (incoming.sender_id === currentUserId || incoming.sender_type === 'user')) {
+        // Tier 2: fuzzy fallback, ONLY for a server that did not echo our tempId (older backends).
+        // It used to be `content === content || type === type`, i.e. any pending message of the same type matched,
+        // so with two messages in flight the echo of one could overwrite the bubble of the other.
+        if (
+          matchIndex === -1 &&
+          !echoedTempId &&
+          (incoming.sender_id === currentUserId || incoming.sender_type === 'user')
+        ) {
           const incomingTime = new Date(incoming.created_at).getTime();
           matchIndex = prev.findIndex((m) => {
             if (m.status !== 'sending' && m.status !== 'failed') return false;
             const msgTime = new Date(m.created_at).getTime();
             return (
-              (m.content === incoming.content || m.type === incoming.type) &&
+              m.type === incoming.type &&
+              m.content === incoming.content &&
               Math.abs(incomingTime - msgTime) < 25000
             );
           });
@@ -218,6 +240,9 @@ export function useChat(bookingId: string) {
 
         if (matchIndex >= 0) {
           const matchedTempId = prev[matchIndex].temp_id || prev[matchIndex].id;
+          // The echo confirms the message: stop any retry still in flight for it
+          const signal = sendSignalsRef.current.get(matchedTempId);
+          if (signal) signal.settled = true;
           const timeout = pendingTimeoutsRef.current.get(matchedTempId);
           if (timeout) {
             clearTimeout(timeout);
@@ -440,6 +465,68 @@ export function useChat(bookingId: string) {
     )
   );
 
+  const clearProgress = useCallback((tempId: string) => {
+    setUploadProgressMap((p) => {
+      if (!(tempId in p)) return p;
+      const next = { ...p };
+      delete next[tempId];
+      return next;
+    });
+  }, []);
+
+  const markFailed = useCallback((tempId: string) => {
+    setMessages((prev) => {
+      const next = prev.map((m) =>
+        (m.id === tempId || m.temp_id === tempId) && m.status === 'sending' ? { ...m, status: 'failed' as const } : m
+      );
+      saveCachedChatMessages(bookingId, next, roomIdRef.current);
+      return next;
+    });
+  }, [bookingId]);
+
+  /**
+   * Sends one message to completion. "sent" means the SERVER stored it (ack with its canonical id) or its echo
+   * arrived; emitting on a socket never counts. Every attempt uses the same tempId, so the backend (one row per
+   * sender + tempId) turns a retry after a lost ack / dropped socket into a no-op that returns the original.
+   */
+  const deliver = useCallback(
+    async (tempId: string, payload: SendMessageSocketPayload) => {
+      const signal: SendSignal = { settled: false, cancelled: false };
+      sendSignalsRef.current.set(tempId, signal);
+      try {
+        const outcome = await sendWithRetry(payload, sendTransport, signal);
+        clearProgress(tempId);
+        if (outcome.status === 'sent' && outcome.message?.id) {
+          const server = outcome.message;
+          setMessages((prev) => {
+            const mapped = prev.map((m) =>
+              m.id === tempId || m.temp_id === tempId
+                ? {
+                    ...m,
+                    id: server.id,
+                    temp_id: tempId,
+                    status: 'sent' as const,
+                    created_at: server.createdAt ?? m.created_at,
+                    room_id: server.roomId ?? m.room_id,
+                  }
+                : m
+            );
+            // The echo may have inserted the same server message already: keep one bubble per id
+            const seen = new Set<string>();
+            const next = mapped.filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)));
+            saveCachedChatMessages(bookingId, next, roomIdRef.current);
+            return next;
+          });
+        } else if (outcome.status === 'failed') {
+          markFailed(tempId);
+        }
+      } finally {
+        sendSignalsRef.current.delete(tempId);
+      }
+    },
+    [bookingId, clearProgress, markFailed]
+  );
+
   // 5. Send Message (Non-blocking Async Upload & Immediate Local Preview)
   const sendMessage = useCallback(
     async (content: string, type: MessageType = 'text', mediaFileUri?: string) => {
@@ -475,22 +562,7 @@ export function useChat(bookingId: string) {
       // Play send sound immediately
       chatSoundService.playSendSound().catch(() => {});
 
-      // 2. Set 20s failure watchdog timeout
-      const timeout = setTimeout(() => {
-        setMessages((prev) =>
-          prev.map((m) => {
-            if ((m.id === tempId || m.temp_id === tempId) && m.status === 'sending') {
-              return { ...m, status: 'failed' };
-            }
-            return m;
-          })
-        );
-        pendingTimeoutsRef.current.delete(tempId);
-      }, 20000);
-
-      pendingTimeoutsRef.current.set(tempId, timeout);
-
-      // 3. Background dispatch (Upload media if needed, then emit socket payload)
+      // 2. Background dispatch: upload media if needed, then send with acknowledgement + retry
       (async () => {
         let cdnMediaUrl: string | undefined = undefined;
         if (type === 'image' && mediaFileUri) {
@@ -507,21 +579,13 @@ export function useChat(bookingId: string) {
             cdnMediaUrl = uploadRes.media_url;
             setUploadProgressMap((p) => ({ ...p, [tempId]: 100 }));
           } catch {
-            clearTimeout(timeout);
-            pendingTimeoutsRef.current.delete(tempId);
-            setUploadProgressMap((p) => {
-              const next = { ...p };
-              delete next[tempId];
-              return next;
-            });
-            setMessages((prev) =>
-              prev.map((m) => (m.id === tempId || m.temp_id === tempId ? { ...m, status: 'failed' } : m))
-            );
+            clearProgress(tempId);
+            markFailed(tempId);
             return;
           }
         }
 
-        chatSocket.sendMessage({
+        await deliver(tempId, {
           bookingId,
           roomId: roomIdRef.current,
           type: type === 'system' ? 'text' : type,
@@ -531,7 +595,7 @@ export function useChat(bookingId: string) {
         });
       })();
     },
-    [bookingId, currentUserId, isRoomClosed]
+    [bookingId, currentUserId, isRoomClosed, deliver, clearProgress, markFailed]
   );
 
   // 6. Retry Failed Message (Reuses cached local compressed URI)
@@ -554,19 +618,8 @@ export function useChat(bookingId: string) {
       const msg = msgToRetry;
       const localUri = localImageUrisRef.current.get(tempId) || msg.media_url;
 
-      const timeout = setTimeout(() => {
-        setMessages((prev) =>
-          prev.map((m) => {
-            if ((m.id === tempId || m.temp_id === tempId) && m.status === 'sending') {
-              return { ...m, status: 'failed' };
-            }
-            return m;
-          })
-        );
-        pendingTimeoutsRef.current.delete(tempId);
-      }, 20000);
-
-      pendingTimeoutsRef.current.set(tempId, timeout);
+      // Already being sent (a double tap on "retry"): do not start a second delivery loop
+      if (sendSignalsRef.current.has(tempId)) return;
 
       (async () => {
         let cdnMediaUrl = msg.media_url;
@@ -585,21 +638,14 @@ export function useChat(bookingId: string) {
             cdnMediaUrl = uploadRes.media_url;
             setUploadProgressMap((p) => ({ ...p, [tempId]: 100 }));
           } catch {
-            clearTimeout(timeout);
-            pendingTimeoutsRef.current.delete(tempId);
-            setUploadProgressMap((p) => {
-              const next = { ...p };
-              delete next[tempId];
-              return next;
-            });
-            setMessages((prev) =>
-              prev.map((m) => (m.id === tempId || m.temp_id === tempId ? { ...m, status: 'failed' } : m))
-            );
+            clearProgress(tempId);
+            markFailed(tempId);
             return;
           }
         }
 
-        chatSocket.sendMessage({
+        // SAME tempId as the first attempt: the backend stores one row per (sender, tempId)
+        await deliver(tempId, {
           bookingId,
           roomId: roomIdRef.current,
           type: msg.type === 'system' ? 'text' : msg.type,
@@ -609,7 +655,7 @@ export function useChat(bookingId: string) {
         });
       })();
     },
-    [bookingId]
+    [bookingId, deliver, clearProgress, markFailed]
   );
 
   // 7. Load more history (Cursor-based Pagination)

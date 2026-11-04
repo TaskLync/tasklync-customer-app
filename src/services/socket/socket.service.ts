@@ -118,6 +118,49 @@ class SocketService {
   }
 
   /**
+   * Emit and wait for the server's acknowledgement. Rejects ('OFFLINE') when the socket is down and on timeout.
+   * Never queues: the caller (utils/messageSender.ts) owns retrying, with the same client id each time.
+   */
+  public emitWithAck<T = unknown>(event: string, data: unknown, timeoutMs = 8000): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const socket = this.socket;
+      if (!socket || !socket.connected) {
+        reject(new Error('OFFLINE'));
+        return;
+      }
+      socket.timeout(timeoutMs).emit(event, data, (err: Error | null, response: T) => {
+        if (err) reject(err);
+        else resolve(response);
+      });
+    });
+  }
+
+  /**
+   * Resolves true once the socket is connected (immediately if it already is), false if `timeoutMs` passes first.
+   * Reconnection itself is scheduled by this service (see scheduleReconnect); this only waits for it.
+   */
+  public waitForConnection(timeoutMs: number): Promise<boolean> {
+    if (this.socket?.connected) return Promise.resolve(true);
+    return new Promise<boolean>((resolve) => {
+      const socket = this.socket;
+      if (!socket) {
+        // No socket instance yet (not signed in / mid-teardown): nothing to wait on
+        setTimeout(() => resolve(false), Math.max(timeoutMs, 0));
+        return;
+      }
+      const live: Socket = socket;
+      const onConnect = () => finish(true);
+      const timer = setTimeout(() => finish(false), Math.max(timeoutMs, 0));
+      function finish(value: boolean) {
+        clearTimeout(timer);
+        live.off('connect', onConnect);
+        resolve(value);
+      }
+      live.once('connect', onConnect);
+    });
+  }
+
+  /**
    * Subscribes to a server event.
    * Returns an unsubscribe function for easy cleanup.
    */
