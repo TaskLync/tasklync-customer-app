@@ -1,9 +1,17 @@
-import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { Platform, AppState } from 'react-native';
+import { ChimeSlot } from './chimeSlot';
 
 // Sound assets required via Metro bundler
 const SEND_SOUND_ASSET = require('../../../assets/sounds/send_message.mp3');
 const RECEIVE_SOUND_ASSET = require('../../../assets/sounds/receive_message.mp3');
+
+const SEND_VOLUME = 0.85;
+const RECEIVE_VOLUME = 0.95;
+
+function warnInDev(message: string, error?: unknown): void {
+  if (__DEV__) console.warn(`[ChatSoundService] ${message}`, error ?? '');
+}
 
 /**
  * Modern, thread-safe, scalable chat sound engine for Expo 57 & React Native 0.86 New Architecture.
@@ -16,8 +24,10 @@ const RECEIVE_SOUND_ASSET = require('../../../assets/sounds/receive_message.mp3'
  * - Total error containment (guarantees 0 unhandled promise rejections or native crashes)
  */
 class ChatSoundService {
-  private sendPlayer: AudioPlayer | null = null;
-  private receivePlayer: AudioPlayer | null = null;
+  // One long-lived player per chime. No native call happens until the first preload / play (lazy), and each slot
+  // seeks back to the start before every play, with a timeout, and replaces its player if it breaks (chimeSlot.ts).
+  private sendSlot = new ChimeSlot('send', () => createAudioPlayer(SEND_SOUND_ASSET), undefined, warnInDev);
+  private receiveSlot = new ChimeSlot('receive', () => createAudioPlayer(RECEIVE_SOUND_ASSET), undefined, warnInDev);
   private isAudioModeConfigured = false;
   private isPreloaded = false;
   private isEnabled = true;
@@ -81,31 +91,9 @@ class ChatSoundService {
 
       await this.configureAudioMode();
 
-      // Preload Send Sound Player
-      if (!this.sendPlayer) {
-        try {
-          const player = createAudioPlayer(SEND_SOUND_ASSET);
-          player.volume = 0.85;
-          this.sendPlayer = player;
-        } catch (e) {
-          if (__DEV__) {
-            console.warn('[ChatSoundService] Send player creation notice:', e);
-          }
-        }
-      }
-
-      // Preload Receive Sound Player
-      if (!this.receivePlayer) {
-        try {
-          const player = createAudioPlayer(RECEIVE_SOUND_ASSET);
-          player.volume = 0.95;
-          this.receivePlayer = player;
-        } catch (e) {
-          if (__DEV__) {
-            console.warn('[ChatSoundService] Receive player creation notice:', e);
-          }
-        }
-      }
+      // Each slot creates its player once; a failure on one does not stop the other, and the next play retries it
+      this.sendSlot.warmUp(SEND_VOLUME);
+      this.receiveSlot.warmUp(RECEIVE_VOLUME);
 
       this.isPreloaded = true;
     } catch (error) {
@@ -138,44 +126,12 @@ class ChatSoundService {
   }
 
   /**
-   * Helper to safely play an AudioPlayer with seek-to-start and auto-recovery.
+   * Plays a chime through its slot (rewind with timeout, serialized, self-checking, self-healing).
+   * The audio session is configured first because a play can be the very first audio call of the session.
    */
-  private async safePlayPlayer(
-    playerType: 'send' | 'receive',
-    asset: any,
-    volume: number
-  ): Promise<void> {
-    const playerKey = playerType === 'send' ? 'sendPlayer' : 'receivePlayer';
-    let player = this[playerKey];
-
-    // 1. If player already exists, rewind and play
-    if (player) {
-      try {
-        await player.seekTo(0);
-        player.volume = volume;
-        player.play();
-        return;
-      } catch {
-        // Player state corrupted or released, recreate
-        try {
-          player.release();
-        } catch {}
-        this[playerKey] = null;
-      }
-    }
-
-    // 2. Create fresh player instance on demand
-    try {
-      await this.configureAudioMode();
-      const newPlayer = createAudioPlayer(asset);
-      newPlayer.volume = volume;
-      newPlayer.play();
-      this[playerKey] = newPlayer;
-    } catch (err) {
-      if (__DEV__) {
-        console.warn(`[ChatSoundService] Error playing ${playerType} sound:`, err);
-      }
-    }
+  private async playChime(type: 'send' | 'receive', volume: number): Promise<void> {
+    await this.configureAudioMode();
+    await (type === 'send' ? this.sendSlot : this.receiveSlot).play(volume);
   }
 
   /**
@@ -216,7 +172,7 @@ class ChatSoundService {
     }
 
     return this.enqueueTask(async () => {
-      await this.safePlayPlayer('send', SEND_SOUND_ASSET, 0.85);
+      await this.playChime('send', SEND_VOLUME);
     }) as Promise<void>;
   }
 
@@ -269,7 +225,7 @@ class ChatSoundService {
     }
 
     return this.enqueueTask(async () => {
-      await this.safePlayPlayer('receive', RECEIVE_SOUND_ASSET, 0.95);
+      await this.playChime('receive', RECEIVE_VOLUME);
     }) as Promise<void>;
   }
 
@@ -294,14 +250,8 @@ class ChatSoundService {
   public async unload(): Promise<void> {
     return this.enqueueTask(async () => {
       try {
-        if (this.sendPlayer) {
-          this.sendPlayer.release();
-          this.sendPlayer = null;
-        }
-        if (this.receivePlayer) {
-          this.receivePlayer.release();
-          this.receivePlayer = null;
-        }
+        this.sendSlot.dispose();
+        this.receiveSlot.dispose();
         this.isPreloaded = false;
         this.isAudioModeConfigured = false;
       } catch {}
