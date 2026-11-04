@@ -1,16 +1,15 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
+import { useQueryClient } from '@tanstack/react-query';
+import Animated from 'react-native-reanimated';
 import { ShieldCheck, Zap } from 'lucide-react-native';
 import { WorkerNearby } from '../../types/worker.types';
 import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
-import { springConfig } from '../../design/animations';
+import { usePressScale } from '../../hooks/usePressScale';
+import { pushOnce } from '../../utils/navigationGuard';
+import { prefetchWorkerProfile } from '../../hooks/useWorkerProfile';
 import { OnlineBadge } from '../ui/Badge/OnlineBadge';
 import { WorkerAvailabilityBadge } from './WorkerAvailabilityBadge';
 import { WorkerAvatar } from './WorkerAvatar';
@@ -28,31 +27,22 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const WorkerSearchCard: React.FC<WorkerSearchCardProps> = ({ worker }) => {
   const router = useRouter();
-  const scale = useSharedValue(1);
+  const queryClient = useQueryClient();
+  const press = usePressScale(0.985);
 
   if (!worker) return null;
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.97, springConfig.stiff);
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1.0, springConfig.default);
-  };
 
   const isCompany = Boolean(worker.isCompany || worker.providerType === 'COMPANY');
 
   const handlePress = () => {
-    if (isCompany) {
-      router.push(`/company/${worker.id}` as any);
-    } else {
-      router.push(`/worker/${worker.id}` as any);
-    }
+    pushOnce(() => {
+      if (isCompany) {
+        router.push(`/company/${worker.id}` as any);
+      } else {
+        router.push(`/worker/${worker.id}` as any);
+      }
+    });
   };
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const categories = worker.categories || [];
   const displayName = isCompany ? (worker.businessName || worker.name) : worker.name;
@@ -125,9 +115,15 @@ export const WorkerSearchCard: React.FC<WorkerSearchCardProps> = ({ worker }) =>
   return (
     <AnimatedPressable
       onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[styles.container, animatedStyle]}
+      onPressIn={() => {
+        press.onPressIn();
+        // Company profiles use a different screen/query; only warm individual worker profiles.
+        if (!(worker.isCompany || worker.providerType === 'COMPANY')) {
+          prefetchWorkerProfile(queryClient, worker.id);
+        }
+      }}
+      onPressOut={press.onPressOut}
+      style={[styles.container, press.animatedStyle]}
     >
       <View style={styles.leftColumn}>
         <WorkerAvatar

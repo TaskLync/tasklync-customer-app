@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type QueryClient } from '@tanstack/react-query';
 import { workerApi } from '../services/api/worker.api';
 import { WorkerPublicProfile, WorkerSkill, WorkerServiceOffering } from '../types/worker.types';
 import { WorkerReview } from '../types/review.types';
@@ -59,25 +59,40 @@ export const useWorkerServiceOfferings = (workerId?: string | null) => {
   };
 };
 
+const fetchWorkerProfile = async (safeWorkerId: string): Promise<WorkerPublicProfile> => {
+  if (!safeWorkerId) throw new Error('Worker profile not found');
+  try {
+    const result = await workerApi.getWorkerProfile(safeWorkerId);
+    if (result) {
+      localStorage.cacheWorkerProfile(safeWorkerId, result);
+      return result;
+    }
+  } catch (err) {
+    const cached = localStorage.getCachedWorkerProfile<WorkerPublicProfile>(safeWorkerId);
+    if (cached?.data) return cached.data;
+    throw err;
+  }
+  throw new Error('Worker profile not found');
+};
+
+/**
+ * Warm the profile cache (same key/fetcher as useWorkerProfile) so the screen opens with data.
+ * Respects staleTime, so a fresh cache entry means no network call. Fire-and-forget.
+ */
+export const prefetchWorkerProfile = (queryClient: QueryClient, workerId?: string | null) => {
+  if (!workerId) return;
+  void queryClient.prefetchQuery({
+    queryKey: ['worker', workerId],
+    queryFn: () => fetchWorkerProfile(workerId),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 export const useWorkerProfile = (workerId?: string | null) => {
   const safeWorkerId = workerId || '';
   const profileQuery = useQuery<WorkerPublicProfile, Error>({
     queryKey: ['worker', safeWorkerId],
-    queryFn: async () => {
-      if (!safeWorkerId) throw new Error('Worker profile not found');
-      try {
-        const result = await workerApi.getWorkerProfile(safeWorkerId);
-        if (result) {
-          localStorage.cacheWorkerProfile(safeWorkerId, result);
-          return result;
-        }
-      } catch (err) {
-        const cached = localStorage.getCachedWorkerProfile<WorkerPublicProfile>(safeWorkerId);
-        if (cached?.data) return cached.data;
-        throw err;
-      }
-      throw new Error('Worker profile not found');
-    },
+    queryFn: () => fetchWorkerProfile(safeWorkerId),
     initialData: () => {
       if (!safeWorkerId) return undefined;
       const cached = localStorage.getCachedWorkerProfile<WorkerPublicProfile>(safeWorkerId);

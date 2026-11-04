@@ -14,6 +14,7 @@ import { EmptyState } from '../feedback/EmptyState';
 import { useNearbyWorkers } from '../../hooks/useNearbyWorkers';
 import { WorkerNearby } from '../../types/worker.types';
 import { colors } from '../../design/colors';
+import { pushOnce } from '../../utils/navigationGuard';
 
 const CARD_GAP = 14;
 
@@ -68,11 +69,11 @@ export const NearbyWorkersList = () => {
   }));
 
   const handleBookNow = useCallback((worker: WorkerNearby) => {
-    router.push(`/worker/${worker.id}` as any);
+    pushOnce(() => router.push(`/worker/${worker.id}` as any));
   }, [router]);
 
   const handleSeeAll = useCallback(() => {
-    router.push('/(tabs)/explore' as any);
+    pushOnce(() => router.push('/(tabs)/explore' as any));
   }, [router]);
 
   const renderWorker = useCallback(

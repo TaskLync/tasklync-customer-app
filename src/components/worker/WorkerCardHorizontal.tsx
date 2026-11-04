@@ -1,11 +1,10 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, Pressable, useWindowDimensions, ViewStyle, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import { Star, ShieldCheck, Heart, MapPin } from 'lucide-react-native';
@@ -13,7 +12,9 @@ import { Star, ShieldCheck, Heart, MapPin } from 'lucide-react-native';
 import { colors, palette } from '../../design/colors';
 import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
-import { springConfig } from '../../design/animations';
+import { usePressScale } from '../../hooks/usePressScale';
+import { pushOnce } from '../../utils/navigationGuard';
+import { prefetchWorkerProfile } from '../../hooks/useWorkerProfile';
 import { WorkerNearby } from '../../types/worker.types';
 import { WorkerAvatar } from './WorkerAvatar';
 import { useFavoritesStore } from '../../store/favorites.store';
@@ -36,6 +37,7 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
   style,
 }) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { width: windowWidth } = useWindowDimensions();
 
   // Reduced card width (~72% of screen width) while keeping full original height
@@ -49,55 +51,29 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
   const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
 
   // Animations
-  const cardScale = useSharedValue(1);
+  const card = usePressScale(0.985);
+  const book = usePressScale(0.97);
+  const prefetch = () => prefetchWorkerProfile(queryClient, worker.id);
   const heartScale = useSharedValue(1);
-  const bookScale = useSharedValue(1);
-
-  const cardAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: cardScale.value }],
-  }));
 
   const heartAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: heartScale.value }],
   }));
 
-  const bookAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: bookScale.value }],
-  }));
-
-  const handleCardPressIn = () => {
-    cardScale.value = withSpring(0.985, springConfig.stiff);
-  };
-
-  const handleCardPressOut = () => {
-    cardScale.value = withSpring(1.0, springConfig.bouncy);
-  };
-
-  const handleCardPress = () => {
-    router.push(`/worker/${worker.id}` as any);
-  };
+  const openProfile = () => pushOnce(() => router.push(`/worker/${worker.id}` as any));
 
   const handleFavoriteToggle = () => {
-    heartScale.value = withSequence(
-      withTiming(1.3, { duration: 110 }),
-      withSpring(1.0, { damping: 7, stiffness: 220 })
-    );
+    // Subtle confirmation: quick dip then settle, no overshoot.
+    heartScale.value = 0.85;
+    heartScale.value = withTiming(1, { duration: 140 });
     toggleFavorite(worker.id);
-  };
-
-  const handleBookPressIn = () => {
-    bookScale.value = withSpring(0.95, springConfig.stiff);
-  };
-
-  const handleBookPressOut = () => {
-    bookScale.value = withSpring(1.0, springConfig.bouncy);
   };
 
   const handleBookPress = () => {
     if (onBookNow) {
       onBookNow(worker);
     } else {
-      router.push(`/worker/${worker.id}` as any);
+      openProfile();
     }
   };
 
@@ -110,13 +86,16 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
 
   return (
     <AnimatedPressable
-      onPress={handleCardPress}
-      onPressIn={handleCardPressIn}
-      onPressOut={handleCardPressOut}
+      onPress={openProfile}
+      onPressIn={() => {
+        card.onPressIn();
+        prefetch();
+      }}
+      onPressOut={card.onPressOut}
       style={[
         styles.container,
         { width: finalWidth },
-        cardAnimatedStyle,
+        card.animatedStyle,
         style,
       ]}
       accessibilityRole="button"
@@ -202,10 +181,13 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
         {/* Right Side — Subtle Mint Pill "Book Now" CTA with Accessible Touch Target */}
         <AnimatedPressable
           onPress={handleBookPress}
-          onPressIn={handleBookPressIn}
-          onPressOut={handleBookPressOut}
+          onPressIn={() => {
+            book.onPressIn();
+            prefetch();
+          }}
+          onPressOut={book.onPressOut}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          style={[styles.bookButton, bookAnimatedStyle]}
+          style={[styles.bookButton, book.animatedStyle]}
           accessibilityRole="button"
           accessibilityLabel={`Book ${worker.name} now`}
         >
