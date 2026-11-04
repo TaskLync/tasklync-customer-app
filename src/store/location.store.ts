@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createMMKV } from 'react-native-mmkv';
 import { Coordinates } from '../types/location.types';
-import { PlacePrediction, Address } from '../types/address.types';
+import { PlacePrediction, Address, ReverseGeocodeResult } from '../types/address.types';
 
 const storage = createMMKV({ id: 'tasklync_location_storage' });
 const MAX_RECENT_SEARCHES = 5;
@@ -31,6 +31,14 @@ export interface LocationStoreState {
 
   currentCity: string | null;
   setCurrentCity: (city: string | null) => void;
+
+  /**
+   * Human-readable address resolved for `currentAddress.lat/lng` (the coordinates it was resolved
+   * from). Display text only — consumers must compare those coordinates with the active position
+   * before showing it, and must never use it as the source of truth for coordinates.
+   */
+  currentAddress: ReverseGeocodeResult | null;
+  setCurrentAddress: (address: ReverseGeocodeResult | null) => void;
 
   locationMode: LocationMode;
   setLocationMode: (mode: LocationMode) => void;
@@ -102,6 +110,16 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
     set({ currentCity: city });
   },
 
+  currentAddress: null,
+  setCurrentAddress: (address) => {
+    if (address) {
+      storage.set('current_address', JSON.stringify(address));
+    } else {
+      storage.remove('current_address');
+    }
+    set({ currentAddress: address });
+  },
+
   locationMode: 'gps',
   setLocationMode: (mode) => {
     if (get().locationMode === mode) return;
@@ -166,6 +184,7 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
     const recentSearchesStr = storage.getString('recent_searches');
     const locationMode = (storage.getString('location_mode') as LocationMode) || 'gps';
     const selectedAddressStr = storage.getString('selected_address');
+    const currentAddressStr = storage.getString('current_address');
 
     let currentLocation: Coordinates | null = null;
     if (locationStr) {
@@ -188,6 +207,13 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
       } catch (e) {}
     }
 
+    let currentAddress: ReverseGeocodeResult | null = null;
+    if (currentAddressStr) {
+      try {
+        currentAddress = JSON.parse(currentAddressStr);
+      } catch (e) {}
+    }
+
     let recentSearches: PlacePrediction[] = [];
     if (recentSearchesStr) {
       try {
@@ -199,6 +225,7 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
       permissionStatus: permissionStatus || 'undetermined',
       currentCity: currentCity || null,
       currentLocation,
+      currentAddress,
       locationMode,
       selectedAddress,
       lastPickedCoords,

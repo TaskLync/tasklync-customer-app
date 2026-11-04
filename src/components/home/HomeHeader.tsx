@@ -24,6 +24,8 @@ export const HomeHeader = () => {
 
   const {
     cityName,
+    displayAddressLine,
+    hasResolvedAddress,
     isLocating,
     locationMode,
     selectedAddress,
@@ -41,33 +43,28 @@ export const HomeHeader = () => {
   const savedAddressLine = defaultAddress?.address_line || defaultAddress?.city;
 
   const displayLocation = (() => {
-    // 1. Explicit address mode with a selected address
+    // 1. Explicit address mode: the readable address of the selected location
     if (locationMode === 'address' && selectedAddress) {
       return (
+        selectedAddress.address_line ||
         selectedAddress.custom_label ||
         selectedAddress.label ||
-        selectedAddress.address_line ||
         selectedAddress.city ||
         'Saved Address'
       );
     }
 
-    // 2. GPS Location successfully resolved: persist and keep showing city name or "Current Location" without flickering
+    // 2. GPS mode: readable address resolved for the current coordinates (Google + OpenStreetMap).
+    //    While it is still resolving / if nothing readable exists, show the city or a neutral label.
     if (currentLocation || location) {
+      if (hasResolvedAddress) return displayAddressLine;
       const validCity =
         cityName &&
-        cityName !== 'Your area' &&
-        cityName !== 'Current Area' &&
         cityName !== 'Locating...' &&
-        cityName !== 'Select location'
+        cityName !== 'Select location' &&
+        cityName !== 'Current Location'
           ? cityName
-          : currentStoreCity &&
-            currentStoreCity !== 'Your area' &&
-            currentStoreCity !== 'Current Area' &&
-            currentStoreCity !== 'Locating...'
-          ? currentStoreCity
           : null;
-
       return validCity || 'Current Location';
     }
 

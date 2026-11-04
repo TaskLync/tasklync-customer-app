@@ -218,12 +218,11 @@ export const AddAddressBottomSheet = forwardRef<
         useLocationStore.getState().setLiveLocation(coords);
 
         const geo = await locationService.reverseGeocode(coords);
-        if (geo?.addressLine && geo.addressLine !== 'Current GPS Location') {
+        // Only real resolved text is filled in; if nothing readable exists the user types it.
+        if (geo.resolved && geo.addressLine) {
           setStreet(geo.addressLine);
-        } else if (!street.trim()) {
-          setStreet('Current GPS Location, Faisalabad');
         }
-        if (geo?.cityName) {
+        if (geo.cityName) {
           setCity(geo.cityName);
         }
       } else {

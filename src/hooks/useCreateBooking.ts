@@ -5,6 +5,7 @@ import { useLocationStore } from '../store/location.store';
 import { useAuthStore } from '../store/auth.store';
 import { bookingApi } from '../services/api/booking.api';
 import { userApi } from '../services/api/user.api';
+import { resolveAddress } from '../services/maps/addressResolver';
 import { BookingDetails, CreateBookingPayload } from '../types/booking.types';
 import { slotToUTCISO } from '../utils/timezone';
 import { isValidUUID, CANONICAL_FALLBACK_UUIDS } from '../utils/uuid';
@@ -81,9 +82,11 @@ export function useCreateBooking() {
       timeStr = '10:00 AM';
     }
 
-    const addrText = address
+    let addrText = address
       ? `${address.street}${address.city ? ', ' + address.city : ''}`
-      : 'Delivery Address';
+      : '';
+    let addrCity = address?.city || '';
+    let addrCountry: string | undefined;
 
     const lat = address?.latitude ?? liveLocation?.lat;
     const lng = address?.longitude ?? liveLocation?.lng;
@@ -92,6 +95,18 @@ export function useCreateBooking() {
       const err = 'Please select a valid delivery address within the service area.';
       setError(err);
       return { booking: null, error: err };
+    }
+
+    // No saved address: describe the actual delivery coordinates (resolved, or an honest coordinates label)
+    if (!address) {
+      try {
+        const resolved = await resolveAddress(lat, lng);
+        addrText = resolved.address_line;
+        addrCity = resolved.city || '';
+        addrCountry = resolved.country || undefined;
+      } catch {
+        addrText = `Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+      }
     }
 
     // Validate that the delivery destination is inside the active service area (Faisalabad)
@@ -115,8 +130,8 @@ export function useCreateBooking() {
         const createdAddr = await userApi.createAddress({
           label: address?.label || 'Home',
           address_line: addrText,
-          city: address?.city || '',
-          country: 'Pakistan',
+          city: addrCity,
+          ...(addrCountry ? { country: addrCountry } : {}),
           lat,
           lng,
           is_default: true,

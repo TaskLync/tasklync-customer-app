@@ -7,7 +7,7 @@ import {
   FreshLocationOptions,
   FreshLocationResult,
 } from '../../types/location.types';
-import { extractCityOrAreaName, extractFullAddressLine } from '../../utils/locationUtils';
+import { resolveAddress, isResolvedAddress } from '../maps/addressResolver';
 import { localStorage } from '../storage/local.storage';
 
 export interface LocationPermissionState {
@@ -22,7 +22,8 @@ export interface GeocodedAddressResult {
   addressLine: string;
   country: string;
   formattedAddress: string;
-  raw?: Location.LocationGeocodedAddress | undefined;
+  /** false when no provider could produce a readable address (fields are then empty) */
+  resolved: boolean;
 }
 
 export interface GetPositionOptions {
@@ -488,34 +489,16 @@ export const locationService = {
    * Reverse geocodes coordinates to a human-readable city & address line.
    */
   async reverseGeocode(coords: Coordinates): Promise<GeocodedAddressResult> {
-    try {
-      const geocode = await Location.reverseGeocodeAsync({
-        latitude: coords.lat,
-        longitude: coords.lng,
-      });
-
-      const place = geocode && geocode.length > 0 ? geocode[0] : undefined;
-      const cityName = extractCityOrAreaName(place);
-      const addressLine = extractFullAddressLine(place);
-      const country = place?.country || 'Pakistan';
-      const formattedAddress = [addressLine, cityName, country].filter(Boolean).join(', ');
-
-      return {
-        cityName,
-        addressLine,
-        country,
-        formattedAddress,
-        ...(place ? { raw: place } : {}),
-      };
-    } catch (err) {
-      console.warn('[LocationService] Reverse geocode error:', err);
-      return {
-        cityName: 'Current Area',
-        addressLine: 'Current GPS Location',
-        country: 'Pakistan',
-        formattedAddress: `Location (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`,
-      };
-    }
+    // Delegates to the shared Google + OpenStreetMap resolver. Unknown parts are '' — never invented.
+    const res = await resolveAddress(coords.lat, coords.lng);
+    const resolved = isResolvedAddress(res);
+    return {
+      cityName: resolved ? res.city || '' : '',
+      addressLine: resolved ? res.address_line : '',
+      country: resolved ? res.country || '' : '',
+      formattedAddress: res.formatted_address,
+      resolved,
+    };
   },
 
   /**

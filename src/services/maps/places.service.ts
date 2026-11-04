@@ -1,6 +1,7 @@
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
 import { PlacePrediction, PlaceDetails } from '../../types/address.types';
+import { resolveAddress } from './addressResolver';
 import { generateUUID } from '../../utils/uuid';
 import { FAISALABAD_CENTER } from '../../config/serviceArea.config';
 
@@ -151,37 +152,26 @@ export async function getPlaceDetails(
     const lng = parseFloat(parts[2]);
     if (!isNaN(lat) && !isNaN(lng)) {
       try {
-        const reverseResults = await Location.reverseGeocodeAsync({
-          latitude: lat,
-          longitude: lng,
-        });
-        const first = reverseResults?.[0];
-        const city =
-          first?.city?.trim() ||
-          first?.district?.trim() ||
-          first?.subregion?.trim() ||
-          '';
-        const country = first?.country || 'Pakistan';
-        const address = [first?.name || first?.street, first?.district, city].filter(Boolean).join(', ');
-
+        const r = await resolveAddress(lat, lng);
         return {
           place_id: placeId,
-          description: address || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
-          formatted_address: address || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+          description: r.address_line,
+          formatted_address: r.address_line,
           lat,
           lng,
-          city,
-          country,
+          city: r.city || '',
+          country: r.country || '',
         };
       } catch {
+        const label = `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
         return {
           place_id: placeId,
-          description: `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
-          formatted_address: `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+          description: label,
+          formatted_address: label,
           lat,
           lng,
           city: '',
-          country: 'Pakistan',
+          country: '',
         };
       }
     }

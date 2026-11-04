@@ -56,7 +56,7 @@ export interface AddressConfirmSheetProps {
     notes?: string | undefined;
     address_line: string;
     city: string;
-    country: string;
+    country?: string | undefined;
     lat: number;
     lng: number;
   }) => void;
@@ -276,7 +276,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
       notes: notes.trim() || undefined,
       address_line: reverseGeocodeResult.address_line || currentAddressText,
       city: reverseGeocodeResult.city || '',
-      country: reverseGeocodeResult.country || 'Pakistan',
+      country: reverseGeocodeResult.country || undefined,
       lat: reverseGeocodeResult.lat,
       lng: reverseGeocodeResult.lng,
     });

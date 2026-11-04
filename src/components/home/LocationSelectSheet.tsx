@@ -172,7 +172,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
 
       selectAddress(addr);
 
-      const targetCity = addr.city || addr.address_line || 'Faisalabad';
+      const targetCity = addr.city || addr.address_line || '';
       if (onLocationSelected) {
         onLocationSelected(targetCity);
       }

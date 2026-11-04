@@ -153,7 +153,7 @@ export default function AddEditAddressScreen() {
         formatted_address: existingAddress.address_line,
         address_line: existingAddress.address_line,
         city: existingAddress.city || '',
-        country: existingAddress.country || 'Pakistan',
+        country: existingAddress.country || '',
         lat: existingAddress.lat,
         lng: existingAddress.lng,
       });
@@ -287,7 +287,7 @@ export default function AddEditAddressScreen() {
       formatted_address: details.formatted_address,
       address_line: details.formatted_address,
       city: details.city || '',
-      country: details.country || 'Pakistan',
+      country: details.country || '',
       lat: details.lat,
       lng: details.lng,
     });
@@ -322,7 +322,7 @@ export default function AddEditAddressScreen() {
     notes?: string | undefined;
     address_line: string;
     city: string;
-    country: string;
+    country?: string | undefined;
     lat: number;
     lng: number;
   }) => {

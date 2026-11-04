@@ -67,6 +67,9 @@ export interface ReverseGeocodeResult {
   address_line: string;
   city?: string | undefined;
   country?: string | undefined;
+  /** The ACTUAL coordinates that were resolved (never altered by the display text). */
   lat: number;
   lng: number;
+  /** Which provider produced the text. 'coordinates' means nothing readable could be resolved. */
+  source?: 'google' | 'osm' | 'native' | 'coordinates' | undefined;
 }

@@ -5,6 +5,7 @@ import { locationService, LocationPermissionState } from '../services/location/l
 import { Coordinates } from '../types/location.types';
 import { Address } from '../types/address.types';
 import { validateServiceArea } from '../config/serviceArea.config';
+import { resolveCurrentAddress, addressMatchesLocation } from '../services/location/currentAddress';
 
 export interface UseLocationOptions {
   autoFetch?: boolean;
@@ -20,6 +21,7 @@ export const useLocation = (options?: UseLocationOptions) => {
   const currentLocation = useLocationStore((s) => s.currentLocation);
   const liveLocation = useLocationStore((s) => s.liveLocation);
   const currentCity = useLocationStore((s) => s.currentCity);
+  const currentAddress = useLocationStore((s) => s.currentAddress);
   const locationMode = useLocationStore((s) => s.locationMode);
   const selectedAddress = useLocationStore((s) => s.selectedAddress);
   const isLocating = useLocationStore((s) => s.isLocating);
@@ -79,22 +81,8 @@ export const useLocation = (options?: UseLocationOptions) => {
             };
             store.setLiveLocation(coords);
 
-            // Reverse geocode in background without blocking position acquisition
-            locationService
-              .reverseGeocode(coords)
-              .then((res) => {
-                const cityName = res?.cityName?.trim();
-                if (cityName && cityName !== 'Current Area' && cityName !== 'Your area') {
-                  useLocationStore.getState().setCurrentCity(cityName);
-                } else if (!useLocationStore.getState().currentCity) {
-                  useLocationStore.getState().setCurrentCity('Current Location');
-                }
-              })
-              .catch(() => {
-                if (!useLocationStore.getState().currentCity) {
-                  useLocationStore.getState().setCurrentCity('Current Location');
-                }
-              });
+            // Resolve the readable address in the background without blocking acquisition
+            void resolveCurrentAddress(coords);
 
             return coords;
           } else {
@@ -112,22 +100,8 @@ export const useLocation = (options?: UseLocationOptions) => {
         if (coords) {
           store.setLiveLocation(coords);
 
-          // Reverse geocode in background without blocking position acquisition
-          locationService
-            .reverseGeocode(coords)
-            .then((res) => {
-              const cityName = res?.cityName?.trim();
-              if (cityName && cityName !== 'Current Area' && cityName !== 'Your area') {
-                useLocationStore.getState().setCurrentCity(cityName);
-              } else if (!useLocationStore.getState().currentCity) {
-                useLocationStore.getState().setCurrentCity('Current Location');
-              }
-            })
-            .catch(() => {
-              if (!useLocationStore.getState().currentCity) {
-                useLocationStore.getState().setCurrentCity('Current Location');
-              }
-            });
+          // Resolve the readable address in the background without blocking acquisition
+          void resolveCurrentAddress(coords);
 
           return coords;
         }
@@ -200,12 +174,16 @@ export const useLocation = (options?: UseLocationOptions) => {
       ? { lat: Number(selectedAddress.lat), lng: Number(selectedAddress.lng) }
       : currentLocation;
 
-  // Derive city and address labels with stable fallbacks to prevent flickering
+  // Readable address for the live/cached GPS position — only if it was resolved for THIS position.
+  const resolvedGpsAddress = addressMatchesLocation(currentAddress, currentLocation) ? currentAddress : null;
+
+  // Labels never invent a place: resolved text, else the stored city, else a neutral state label.
+  const gpsCity = resolvedGpsAddress?.city || currentCity || '';
   const displayCity: string =
     locationMode === 'address' && selectedAddress
       ? selectedAddress.city || selectedAddress.address_line || 'Saved Address'
-      : currentCity && currentCity !== 'Current Area' && currentCity !== 'Your area'
-      ? currentCity
+      : gpsCity
+      ? gpsCity
       : currentLocation
       ? 'Current Location'
       : isLocating
@@ -215,13 +193,23 @@ export const useLocation = (options?: UseLocationOptions) => {
   const displayAddressLine: string =
     locationMode === 'address' && selectedAddress
       ? selectedAddress.address_line || selectedAddress.city || 'Saved Address'
-      : currentCity && currentCity !== 'Current Area' && currentCity !== 'Your area'
-      ? currentCity
+      : resolvedGpsAddress
+      ? resolvedGpsAddress.address_line
       : currentLocation
       ? 'Current Location'
       : isLocating
       ? 'Locating...'
       : 'Select location';
+
+  // Keep the readable address in step with the GPS position (cold start from cache, moved device).
+  // Only instances that own location fetching drive this; lookups are cached/deduplicated anyway.
+  const gpsLat = currentLocation?.lat;
+  const gpsLng = currentLocation?.lng;
+  useEffect(() => {
+    if (!autoFetch || locationMode !== 'gps') return;
+    if (typeof gpsLat !== 'number' || typeof gpsLng !== 'number') return;
+    void resolveCurrentAddress({ lat: gpsLat, lng: gpsLng });
+  }, [autoFetch, locationMode, gpsLat, gpsLng]);
 
   // Mount effect & AppState change listener
   useEffect(() => {
@@ -280,6 +268,8 @@ export const useLocation = (options?: UseLocationOptions) => {
     liveLocation,
     cityName: displayCity,
     displayAddressLine,
+    /** True when displayAddressLine is a resolved street/place address (not a neutral placeholder). */
+    hasResolvedAddress: locationMode === 'address' ? Boolean(selectedAddress?.address_line) : Boolean(resolvedGpsAddress),
     locationMode,
     selectedAddress,
     permissionStatus,
