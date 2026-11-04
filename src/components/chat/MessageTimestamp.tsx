@@ -22,20 +22,18 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 14,
+    marginTop: 14,
+    marginBottom: 6,
   },
   pill: {
     backgroundColor: colors.bgHover,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
   text: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
+    fontSize: 11.5,
     color: colors.textSecondary,
-    letterSpacing: 0.2,
   },
 });

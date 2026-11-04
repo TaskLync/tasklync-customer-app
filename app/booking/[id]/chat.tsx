@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useChat } from '../../../src/hooks/useChat';
 import { useTypingIndicator } from '../../../src/hooks/useTypingIndicator';
-import { useScrollPosition } from '../../../src/hooks/useScrollPosition';
+import { useChatAutoScroll } from '../../../src/hooks/useChatAutoScroll';
 import { bookingApi, getPersistedBookings, isGenericWorkerName } from '../../../src/services/api/booking.api';
 import { workerApi } from '../../../src/services/api/worker.api';
 import { BookingDetails } from '../../../src/types/booking.types';
@@ -25,12 +25,14 @@ import {
   SystemMessage,
   TypingIndicator,
   ChatSkeleton,
+  LoadingOlder,
+  EmptyConversation,
   NewMessagesBanner,
   ArchivedBanner,
   MessageContextMenu,
   MessageContextMenuRef,
 } from '../../../src/components/chat';
-import { colors } from '../../../src/design/colors';
+import { CHAT_CANVAS } from '../../../src/components/chat/chatTheme';
 
 export default function BookingChatScreen() {
   const params = useLocalSearchParams<{
@@ -59,6 +61,7 @@ export default function BookingChatScreen() {
     messages,
     renderItems,
     isLoading,
+    isFetchingMore,
     isWorkerTyping,
     isWorkerOnline,
     isRoomClosed,
@@ -70,41 +73,12 @@ export default function BookingChatScreen() {
   } = useChat(bookingId);
 
   const { notifyTyping, stopTypingImmediately } = useTypingIndicator(bookingId);
-  const { isAtBottom, handleScroll, isAtBottomRef } = useScrollPosition({ bottomThreshold: 45 });
-
-  // Unread messages arrived while user is scrolled up in history
-  const [unreadScrolledCount, setUnreadScrolledCount] = useState<number>(0);
-  const prevMessagesCountRef = useRef<number>(messages.length);
-
-  // Track incoming messages for NewMessagesBanner logic
-  useEffect(() => {
-    const prevCount = prevMessagesCountRef.current;
-    const currentCount = messages.length;
-    prevMessagesCountRef.current = currentCount;
-
-    if (currentCount > prevCount && !isLoading) {
-      const newestMsg = messages[messages.length - 1];
-      const isOutgoing =
-        newestMsg?.sender_type === 'user' || newestMsg?.sender_type === 'customer';
-
-      if (isOutgoing || isAtBottomRef.current) {
-        // User sent message or is already at bottom -> auto scroll
-        setUnreadScrolledCount(0);
-        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-      } else {
-        // User is scrolled up in history reading previous messages -> show banner count
-        const newIncomingCount = currentCount - prevCount;
-        setUnreadScrolledCount((prev) => prev + newIncomingCount);
-      }
-    }
-  }, [messages, isLoading, isAtBottomRef]);
-
-  // When user manually scrolls down to bottom, auto-dismiss new messages banner
-  useEffect(() => {
-    if (isAtBottom && unreadScrolledCount > 0) {
-      setUnreadScrolledCount(0);
-    }
-  }, [isAtBottom, unreadScrolledCount]);
+  const {
+    isAtBottom,
+    handleScroll,
+    unreadCount: unreadScrolledCount,
+    scrollToBottom: handleScrollToBottom,
+  } = useChatAutoScroll({ messages, isLoading, listRef: flatListRef });
 
   // Fetch full booking details for header metadata (worker name, avatar, phone, category)
   useEffect(() => {
@@ -159,11 +133,6 @@ export default function BookingChatScreen() {
     },
     [sendMessage]
   );
-
-  const handleScrollToBottom = useCallback(() => {
-    setUnreadScrolledCount(0);
-    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-  }, []);
 
   const handleLongPressText = useCallback((content: string) => {
     contextMenuRef.current?.showMenu(content);
@@ -303,6 +272,8 @@ export default function BookingChatScreen() {
             contentContainerStyle={styles.listContent}
             onEndReached={loadMore}
             onEndReachedThreshold={0.3}
+            ListFooterComponent={isFetchingMore ? <LoadingOlder /> : null}
+            ListEmptyComponent={<EmptyConversation />}
             showsVerticalScrollIndicator={false}
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             keyboardShouldPersistTaps="handled"
@@ -348,12 +319,14 @@ export default function BookingChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgApp,
+    backgroundColor: CHAT_CANVAS,
   },
   flex: {
     flex: 1,
   },
   listContent: {
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
+    flexGrow: 1,
   },
 });

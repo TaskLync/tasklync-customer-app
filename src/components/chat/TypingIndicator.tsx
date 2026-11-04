@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bgHover,
+    backgroundColor: colors.bgCard,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 18,

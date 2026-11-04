@@ -59,7 +59,9 @@ export default function CustomRequestDetailScreen() {
 
   // Fetch full worker profile to guarantee real avatar and name are always available
   const { worker: workerProfile } = useWorkerProfile(request?.worker_id);
+  // For an agency, provider_name is the BUSINESS name (worker_name is the account owner's own name).
   const resolvedWorkerName =
+    request?.provider_name ||
     request?.worker_name ||
     workerProfile?.name ||
     'Assigned Professional';
@@ -360,6 +362,11 @@ export default function CustomRequestDetailScreen() {
                   <ShieldCheck size={11} color={colors.textGreen} />
                   <Text style={styles.verifiedPillText}>Verified</Text>
                 </View>
+                {request.provider_type === 'COMPANY' ? (
+                  <View style={styles.verifiedPill}>
+                    <Text style={styles.verifiedPillText}>Agency</Text>
+                  </View>
+                ) : null}
               </View>
               <Text style={styles.workerCategoryText}>
                 {request.category_name || request.category_id || 'Home Specialist'}

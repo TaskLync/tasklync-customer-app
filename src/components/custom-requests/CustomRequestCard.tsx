@@ -124,7 +124,8 @@ export function CustomRequestCard({ request }: CustomRequestCardProps) {
       </Text>
 
       <Text style={styles.workerText} numberOfLines={1}>
-        Professional: {request.worker_name || 'Assigned Technician'}
+        {request.provider_type === 'COMPANY' ? 'Agency' : 'Professional'}:{' '}
+        {request.provider_name || request.worker_name || 'Assigned Technician'}
       </Text>
 
       <View style={styles.bottomRow}>

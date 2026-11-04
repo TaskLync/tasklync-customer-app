@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import { CheckCircle2, ChevronRight } from 'lucide-react-native';
 
 import { useChat } from '../../../src/hooks/useChat';
 import { useTypingIndicator } from '../../../src/hooks/useTypingIndicator';
-import { useScrollPosition } from '../../../src/hooks/useScrollPosition';
+import { useChatAutoScroll } from '../../../src/hooks/useChatAutoScroll';
 import { useCustomRequestDetail } from '../../../src/hooks/custom-requests/useCustomRequestDetail';
 import { useWorkerProfile } from '../../../src/hooks/useWorkerProfile';
 import { chatApi } from '../../../src/services/api/chat.api';
@@ -30,11 +30,14 @@ import {
   SystemMessage,
   TypingIndicator,
   ChatSkeleton,
+  LoadingOlder,
+  EmptyConversation,
   NewMessagesBanner,
   MessageContextMenu,
   MessageContextMenuRef,
 } from '../../../src/components/chat';
 import { colors } from '../../../src/design/colors';
+import { CHAT_CANVAS } from '../../../src/components/chat/chatTheme';
 
 export default function RequestClarificationChatScreen() {
   const router = useRouter();
@@ -65,6 +68,7 @@ export default function RequestClarificationChatScreen() {
     messages,
     renderItems,
     isLoading,
+    isFetchingMore,
     isWorkerTyping,
     isWorkerOnline,
     uploadProgressMap,
@@ -77,31 +81,12 @@ export default function RequestClarificationChatScreen() {
   const effectiveWorkerOnline = isWorkerOnline || worker?.availabilityStatus === 'AVAILABLE';
 
   const { notifyTyping, stopTypingImmediately } = useTypingIndicator(requestId);
-  const { isAtBottom, handleScroll, isAtBottomRef } = useScrollPosition({ bottomThreshold: 45 });
-
-  const [unreadScrolledCount, setUnreadScrolledCount] = useState<number>(0);
-  const prevMessagesCountRef = useRef<number>(messages.length);
-
-  // Track incoming messages for NewMessagesBanner logic
-  useEffect(() => {
-    const prevCount = prevMessagesCountRef.current;
-    const currentCount = messages.length;
-    prevMessagesCountRef.current = currentCount;
-
-    if (currentCount > prevCount && !isLoading) {
-      const newestMsg = messages[messages.length - 1];
-      const isOutgoing =
-        newestMsg?.sender_type === 'user' || newestMsg?.sender_type === 'customer';
-
-      if (isOutgoing || isAtBottomRef.current) {
-        setUnreadScrolledCount(0);
-        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-      } else {
-        const newIncomingCount = currentCount - prevCount;
-        setUnreadScrolledCount((prev) => prev + newIncomingCount);
-      }
-    }
-  }, [messages, isLoading, isAtBottomRef]);
+  const {
+    isAtBottom,
+    handleScroll,
+    unreadCount: unreadScrolledCount,
+    scrollToBottom: handleScrollToBottom,
+  } = useChatAutoScroll({ messages, isLoading, listRef: flatListRef });
 
   // Mark all messages as read when screen is focused and app is active
   useFocusEffect(
@@ -115,11 +100,12 @@ export default function RequestClarificationChatScreen() {
   const resolvedWorkerName = useMemo(() => {
     return (
       params.workerName?.trim() ||
+      request?.provider_name?.trim() ||
       request?.worker_name?.trim() ||
       worker?.name?.trim() ||
       'Assigned Professional'
     );
-  }, [params.workerName, request?.worker_name, worker?.name]);
+  }, [params.workerName, request?.provider_name, request?.worker_name, worker?.name]);
 
   const resolvedWorkerAvatar = useMemo(() => {
     return (
@@ -166,11 +152,6 @@ export default function RequestClarificationChatScreen() {
     },
     [sendMessage, stopTypingImmediately]
   );
-
-  const handleScrollToBottom = useCallback(() => {
-    setUnreadScrolledCount(0);
-    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-  }, []);
 
   const handleLongPressText = useCallback((content: string) => {
     contextMenuRef.current?.showMenu(content);
@@ -260,6 +241,8 @@ export default function RequestClarificationChatScreen() {
             contentContainerStyle={styles.listContent}
             onEndReached={loadMore}
             onEndReachedThreshold={0.3}
+            ListFooterComponent={isFetchingMore ? <LoadingOlder /> : null}
+            ListEmptyComponent={<EmptyConversation />}
             showsVerticalScrollIndicator={false}
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             keyboardShouldPersistTaps="handled"
@@ -301,14 +284,15 @@ export default function RequestClarificationChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgApp,
+    backgroundColor: CHAT_CANVAS,
   },
   flex: {
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
+    flexGrow: 1,
   },
   quoteReadyBanner: {
     flexDirection: 'row',

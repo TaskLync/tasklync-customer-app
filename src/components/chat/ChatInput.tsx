@@ -1,5 +1,5 @@
 import { colors, palette } from '../../design';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -10,6 +10,7 @@ import {
   Text,
   Alert,
   Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -21,6 +22,7 @@ import { Paperclip, ArrowUp, Camera, Image as ImageIcon, X } from 'lucide-react-
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { compressImage } from '../../utils/imageCompression';
+import { CHAT_CANVAS } from './chatTheme';
 
 interface ChatInputProps {
   onSend?: (text: string, type?: 'text' | 'image', mediaUrl?: string) => void;
@@ -33,6 +35,9 @@ interface ChatInputProps {
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const MIN_INPUT_HEIGHT = 40;
+const MAX_INPUT_HEIGHT = 110;
 
 /**
  * ChatInput Component
@@ -52,9 +57,12 @@ export const ChatInput = React.memo(function ChatInput({
   disabled = false,
 }: ChatInputProps) {
   const [text, setText] = useState<string>('');
-  const [inputHeight, setInputHeight] = useState<number>(40);
+  const [inputHeight, setInputHeight] = useState<number>(MIN_INPUT_HEIGHT);
   const [isMediaModalVisible, setIsMediaModalVisible] = useState<boolean>(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
+  const [isAttaching, setIsAttaching] = useState<boolean>(false);
+  // Blocks a second submit (double tap / rapid enter) before React has flushed the cleared text
+  const submitLockRef = useRef<boolean>(false);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -84,9 +92,14 @@ export const ChatInput = React.memo(function ChatInput({
   };
 
   const handleSend = useCallback(() => {
-    if (!text.trim() || disabled) return;
-    const toSend = text;
+    const toSend = text.trim();
+    if (!toSend || disabled || submitLockRef.current) return;
+    submitLockRef.current = true;
+    setTimeout(() => {
+      submitLockRef.current = false;
+    }, 350);
     setText('');
+    setInputHeight(MIN_INPUT_HEIGHT);
     sendProgress.value = withTiming(0, { duration: 150 });
     onStopTyping?.();
     if (typeof onSend === 'function') {
@@ -98,11 +111,14 @@ export const ChatInput = React.memo(function ChatInput({
 
   // Image Attachment Picker with Compression
   const handlePickedImage = async (uri: string) => {
+    setIsAttaching(true);
     try {
       const compressed = await compressImage(uri);
       onSend?.('', 'image', compressed.uri);
     } catch {
       onSend?.('', 'image', uri);
+    } finally {
+      setIsAttaching(false);
     }
   };
 
@@ -153,6 +169,7 @@ export const ChatInput = React.memo(function ChatInput({
   };
 
   const handleAttachPress = () => {
+    if (isAttaching || disabled) return;
     Keyboard.dismiss();
     setIsMediaModalVisible(true);
   };
@@ -178,11 +195,7 @@ export const ChatInput = React.memo(function ChatInput({
         style={[
           styles.wrapper,
           {
-            paddingBottom: isKeyboardVisible
-              ? 8
-              : insets.bottom > 0
-              ? insets.bottom + 10
-              : 14,
+            paddingBottom: isKeyboardVisible ? 6 : Math.max(insets.bottom, 10),
           },
         ]}
       >
@@ -193,15 +206,20 @@ export const ChatInput = React.memo(function ChatInput({
             onPress={handleAttachPress}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             accessibilityLabel="Attach photo"
+            accessibilityState={{ disabled: isAttaching || disabled }}
             accessibilityRole="button"
           >
-            <Paperclip size={22} color={colors.textSecondary} />
+            {isAttaching ? (
+              <ActivityIndicator size="small" color={colors.primaryDark} />
+            ) : (
+              <Paperclip size={21} color={colors.textSecondary} />
+            )}
           </Pressable>
 
           {/* Input Text Box (grows 40px to 100px max) */}
           <TextInput
-            style={[styles.input, { height: Math.min(Math.max(40, inputHeight), 100) }]}
-            placeholder="Message..."
+            style={[styles.input, { height: Math.min(Math.max(MIN_INPUT_HEIGHT, inputHeight), MAX_INPUT_HEIGHT) }]}
+            placeholder="Type a message"
             placeholderTextColor={colors.textMuted}
             value={text}
             onChangeText={handleChangeText}
@@ -219,6 +237,7 @@ export const ChatInput = React.memo(function ChatInput({
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityLabel="Send message"
             accessibilityRole="button"
+            accessibilityState={{ disabled: !text.trim() || disabled }}
           >
             <ArrowUp size={18} color={sendIconColor} strokeWidth={2.5} />
           </AnimatedPressable>
@@ -314,29 +333,26 @@ export const ChatInput = React.memo(function ChatInput({
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: colors.bgCard,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-    paddingTop: 8,
-    paddingHorizontal: 12,
+    backgroundColor: CHAT_CANVAS,
+    paddingTop: 6,
+    paddingHorizontal: 10,
   },
   container: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: colors.bgSubtle,
+    backgroundColor: colors.bgCard,
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     paddingVertical: 4,
   },
   attachButton: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 19,
-    marginBottom: 1,
+    borderRadius: 20,
   },
   input: {
     flex: 1,
@@ -346,17 +362,16 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 9 : 8,
     paddingBottom: Platform.OS === 'ios' ? 9 : 8,
     paddingHorizontal: 8,
-    maxHeight: 100,
+    maxHeight: MAX_INPUT_HEIGHT,
     lineHeight: 20,
     textAlignVertical: 'center',
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
     marginLeft: 4,
   },
   buttonPressed: {

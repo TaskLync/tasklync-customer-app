@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
 import {
   ChevronLeft,
+  ChevronRight,
   Share2,
   Star,
   MapPin,
@@ -325,6 +326,26 @@ export default function CompanyDetailScreen() {
           )}
         </View>
 
+        {/* ── Custom service (same entry as an individual worker's profile) ── */}
+        <Pressable
+          style={({ pressed }) => [styles.customQuoteRow, pressed && styles.pressed]}
+          onPress={() =>
+            router.push({
+              pathname: '/custom-request/new' as any,
+              params: {
+                workerId: company.id,
+                categoryId: company.categories?.[0] || '',
+                providerType: 'COMPANY',
+              },
+            })
+          }
+          accessibilityRole="button"
+          accessibilityLabel={`Request a custom quote from ${displayName}`}
+        >
+          <Text style={styles.customQuoteTitle}>Request a custom quote</Text>
+          <ChevronRight size={18} color={colors.textMuted} />
+        </Pressable>
+
         {/* ── Reviews ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
@@ -457,6 +478,22 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 28,
+  },
+  customQuoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 48,
+    paddingVertical: 14,
+    marginTop: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: companyTokens.colors.borderSubtle,
+  },
+  customQuoteTitle: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 14,
+    color: colors.primaryDark,
   },
   sectionLast: {
     marginTop: 28,

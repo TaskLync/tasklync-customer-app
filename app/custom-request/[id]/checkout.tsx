@@ -170,7 +170,7 @@ export default function QuoteCheckoutScreen() {
             <Text style={styles.sectionHeaderTitle}>Select Date & Arrival Window</Text>
           </View>
           <Text style={styles.sectionSubtext}>
-            Choose an arrival slot for {request.worker_name || 'your professional'}.
+            Choose an arrival slot for {request.provider_name || request.worker_name || 'your professional'}.
           </Text>
 
           <CalendarHeader

@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   bubbleIncoming: {
-    backgroundColor: colors.bgHover,
+    backgroundColor: colors.bgCard,
     borderBottomLeftRadius: 4,
   },
   bubbleOutgoing: {

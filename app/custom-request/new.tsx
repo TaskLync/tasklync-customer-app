@@ -38,6 +38,7 @@ import {
 import { colors, palette, fontFamily } from '../../src/design';
 import { WorkerAvatar } from '../../src/components/worker/WorkerAvatar';
 import { useWorkerProfile } from '../../src/hooks/useWorkerProfile';
+import { isAgencyProvider, providerTypeHint } from '../../src/utils/providerHint';
 import { useAddresses } from '../../src/hooks/useAddresses';
 import { useLocationStore } from '../../src/store/location.store';
 import { validateServiceArea, SERVICE_UNAVAILABLE_MESSAGE } from '../../src/config/serviceArea.config';
@@ -88,9 +89,11 @@ const WEEKDAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 export default function NewCustomRequestScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ workerId?: string; categoryId?: string }>();
+  const params = useLocalSearchParams<{ workerId?: string; categoryId?: string; providerType?: string }>();
   const workerId = params.workerId || '';
   const initialCategoryId = params.categoryId || '';
+  // Set by the agency (company) profile. The server still verifies it against the real account.
+  const openedFromAgencyProfile = params.providerType === 'COMPANY';
 
   const addAddressSheetRef = useRef<AddAddressBottomSheetRef>(null);
 
@@ -122,6 +125,11 @@ export default function NewCustomRequestScreen() {
 
   // Worker query
   const { worker, isLoading: isWorkerLoading } = useWorkerProfile(workerId);
+
+  // Agency (company) vs individual worker. The profile mapper defaults to INDIVIDUAL when the endpoint
+  // omits the type, so "agency" is trusted from either signal, but "individual" is never asserted.
+  const isAgency = isAgencyProvider({ openedFromAgencyProfile, profileProviderType: worker?.provider_type });
+  const providerDisplayName = isAgency ? worker?.business_name || worker?.name : worker?.name;
 
   // Addresses query & location store
   const { addresses } = useAddresses();
@@ -349,6 +357,9 @@ export default function NewCustomRequestScreen() {
 
     const payload: CreateCustomRequestDto = {
       worker_id: workerId,
+      ...(providerTypeHint({ openedFromAgencyProfile, profileProviderType: worker?.provider_type })
+        ? { provider_type: 'COMPANY' as const }
+        : {}),
       category_id: categoryId,
       title: title.trim(),
       description: description.trim(),
@@ -527,14 +538,19 @@ export default function NewCustomRequestScreen() {
               <View style={styles.proRow}>
                 <WorkerAvatar
                   uri={worker.avatarUrl || (worker as any)?.avatar || (worker as any)?.avatar_url}
-                  name={worker.name}
+                  name={providerDisplayName || worker.name}
                   size={52}
                 />
                 <View style={styles.proMeta}>
                   <View style={styles.proNameLine}>
                     <Text style={styles.proName} numberOfLines={1}>
-                      {worker.name}
+                      {providerDisplayName || worker.name}
                     </Text>
+                    {isAgency && (
+                      <View style={styles.verifiedTag}>
+                        <Text style={styles.verifiedTagText}>Agency</Text>
+                      </View>
+                    )}
                     {worker.isVerified && (
                       <View style={styles.verifiedTag}>
                         <ShieldCheck size={12} color={palette.green700} />
@@ -556,6 +572,13 @@ export default function NewCustomRequestScreen() {
                   )}
                 </View>
               </View>
+            ) : null}
+
+            {isAgency && worker ? (
+              <Text style={styles.agencyNotice}>
+                This request goes to {providerDisplayName || 'this agency'}. The agency reviews it, sends you a price,
+                and assigns a technician once you accept.
+              </Text>
             ) : null}
 
             {/* 3. Problem Title */}
@@ -1371,6 +1394,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: palette.gray500,
     marginTop: 1,
+  },
+  agencyNotice: {
+    fontFamily: fontFamily.jakarta.regular || 'PlusJakartaSans-Regular',
+    fontSize: 13,
+    lineHeight: 19,
+    color: palette.gray500,
+    marginTop: 12,
   },
   proRatingRow: {
     flexDirection: 'row',

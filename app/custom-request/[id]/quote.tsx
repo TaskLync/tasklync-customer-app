@@ -125,7 +125,9 @@ export default function QuoteReviewScreen() {
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>Review Quote</Text>
           <Text style={styles.headerSubtitle}>
-            {request?.worker_name ? `From ${request.worker_name}` : 'Professional Quote'}
+            {request?.provider_name || request?.worker_name
+              ? `From ${request?.provider_name || request?.worker_name}`
+              : 'Professional Quote'}
           </Text>
         </View>
         <View style={styles.versionBadge}>

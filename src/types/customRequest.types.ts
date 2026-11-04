@@ -90,6 +90,9 @@ export interface CustomServiceRequest {
   worker_name?: string | null;
   worker_phone?: string | null;
   worker_avatar?: string | null;
+  /** Who the request was sent to. For an agency `provider_name` is the BUSINESS name (worker_name is the owner). */
+  provider_type?: 'INDIVIDUAL' | 'COMPANY';
+  provider_name?: string | null;
   category_name?: string | null;
   media_count?: number;
 }
@@ -142,6 +145,12 @@ export interface QuoteRevision {
 
 export interface CreateCustomRequestDto {
   worker_id: string;
+  /**
+   * Set to 'COMPANY' only when the request starts from an agency profile. The server derives the real
+   * provider type itself and rejects a mismatch (PROVIDER_TYPE_MISMATCH). Never send 'INDIVIDUAL' from
+   * profile data: the profile mapper defaults to INDIVIDUAL when the endpoint omits the type.
+   */
+  provider_type?: 'COMPANY';
   category_id: string;
   title: string;
   description: string;

@@ -1,6 +1,6 @@
-import { colors, palette } from '../../design';
+import { colors } from '../../design';
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Phone } from 'lucide-react-native';
 import { WorkerAvatar } from '../worker/WorkerAvatar';
@@ -16,11 +16,15 @@ interface ChatHeaderProps {
   onCallPress?: () => void;
 }
 
+/**
+ * Lightweight chat header: back · avatar (with presence dot) · name over "category · status" · call.
+ * Name carries the hierarchy; category and presence are small and muted.
+ */
 export const ChatHeader = React.memo(function ChatHeader({
   workerName,
   workerAvatarUrl,
   categoryName,
-  isOnline = true,
+  isOnline = false,
   workerPhone,
   isCompany = false,
   onCallPress,
@@ -29,35 +33,42 @@ export const ChatHeader = React.memo(function ChatHeader({
   const insets = useSafeAreaInsets();
 
   const trimmedName = workerName ? workerName.trim() : '';
-  const avatarInitial = trimmedName.length > 0 ? trimmedName.charAt(0).toUpperCase() : (isCompany ? 'A' : 'W');
+  const displayName = trimmedName || (isCompany ? 'Agency Support' : 'Assigned Professional');
+  const secondary = isCompany ? 'Support office' : categoryName?.trim() || '';
+  const statusLabel = isOnline ? 'Online' : 'Offline';
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top > 0 ? insets.top : Platform.OS === 'ios' ? 44 : 12 }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top > 0 ? insets.top : Platform.OS === 'ios' ? 44 : 12 },
+      ]}
+    >
       <View style={styles.content}>
-        {/* Back Button */}
         <Pressable
           style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
           onPress={() => router.back()}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <ChevronLeft size={24} color={colors.textPrimary} />
+          <ChevronLeft size={26} color={colors.textPrimary} strokeWidth={2} />
         </Pressable>
 
-        {/* Profile Info */}
-        <View style={styles.profileSection}>
-          <WorkerAvatar
-            uri={workerAvatarUrl}
-            name={workerName}
-            size={36}
-            isCompany={isCompany}
-          />
+        <View
+          style={styles.profileSection}
+          accessible
+          accessibilityLabel={`${displayName}${secondary ? `, ${secondary}` : ''}, ${statusLabel}`}
+        >
+          <View style={styles.avatarWrap}>
+            <WorkerAvatar uri={workerAvatarUrl} name={workerName} size={38} isCompany={isCompany} />
+            <View style={[styles.presenceDot, isOnline ? styles.dotOnline : styles.dotOffline]} />
+          </View>
 
           <View style={styles.textDetails}>
             <View style={styles.nameRow}>
               <Text style={styles.name} numberOfLines={1}>
-                {trimmedName || (isCompany ? 'Agency Support' : 'Assigned Professional')}
+                {displayName}
               </Text>
               {isCompany && (
                 <View style={styles.agencyBadge}>
@@ -65,35 +76,24 @@ export const ChatHeader = React.memo(function ChatHeader({
                 </View>
               )}
             </View>
-            <View style={styles.statusRow}>
-              <View style={[styles.statusDot, isOnline ? styles.dotOnline : styles.dotOffline]} />
-              <Text style={styles.statusText} numberOfLines={1}>
-                {isCompany
-                  ? `Support Office • ${isOnline ? 'Online' : 'Active'}`
-                  : categoryName
-                  ? `${categoryName} • ${isOnline ? 'Online' : 'Offline'}`
-                  : isOnline
-                  ? 'Online'
-                  : 'Offline'}
-              </Text>
-            </View>
+            <Text style={styles.subline} numberOfLines={1}>
+              {secondary ? `${secondary} · ` : ''}
+              <Text style={isOnline ? styles.statusOnline : undefined}>{statusLabel}</Text>
+            </Text>
           </View>
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actions}>
-          {workerPhone && (
-            <Pressable
-              style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
-              onPress={onCallPress}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel="Call worker"
-              accessibilityRole="button"
-            >
-              <Phone size={20} color={colors.primaryDark} />
-            </Pressable>
-          )}
-        </View>
+        {workerPhone ? (
+          <Pressable
+            style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+            onPress={onCallPress}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            accessibilityLabel="Call worker"
+            accessibilityRole="button"
+          >
+            <Phone size={19} color={colors.primaryDark} />
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -102,21 +102,15 @@ export const ChatHeader = React.memo(function ChatHeader({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.bgCard,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
     zIndex: 10,
-    elevation: 2,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
   },
   content: {
-    height: 56,
+    height: 54,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    justifyContent: 'space-between',
+    paddingHorizontal: 6,
   },
   iconButton: {
     width: 40,
@@ -129,88 +123,71 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 4,
+    marginLeft: 2,
     marginRight: 8,
   },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.borderLight,
+  avatarWrap: {
+    width: 38,
+    height: 38,
   },
-  avatarPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primaryBorderSubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitial: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 15,
-    color: colors.primaryDark,
-  },
-  textDetails: {
-    marginLeft: 10,
-    flex: 1,
-  },
-  name: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 15,
-    color: colors.textPrimary,
-    lineHeight: 20,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 1,
-  },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    marginRight: 5,
+  presenceDot: {
+    position: 'absolute',
+    right: -1,
+    bottom: -1,
+    width: 11,
+    height: 11,
+    borderRadius: 5.5,
+    borderWidth: 2,
+    borderColor: colors.bgCard,
   },
   dotOnline: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.primary,
   },
   dotOffline: {
     backgroundColor: colors.textMuted,
   },
-  statusText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionButton: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 19,
-    backgroundColor: colors.primaryTint,
-    marginLeft: 6,
-  },
-  pressed: {
-    opacity: 0.7,
+  textDetails: {
+    marginLeft: 10,
+    flex: 1,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
+  name: {
+    flexShrink: 1,
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 16,
+    lineHeight: 21,
+    color: colors.textPrimary,
+  },
+  subline: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.textMuted,
+  },
+  statusOnline: {
+    color: colors.primaryDark,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: colors.primaryTint,
+    marginRight: 8,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
   agencyBadge: {
     backgroundColor: colors.infoLight,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.borderInfoLight,
   },
   agencyBadgeText: {
     fontFamily: 'PlusJakartaSans-Bold',
