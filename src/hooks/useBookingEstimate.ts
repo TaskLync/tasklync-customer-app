@@ -5,6 +5,7 @@ import { useLocationStore } from '../store/location.store';
 import { bookingApi } from '../services/api/booking.api';
 import { PriceEstimateData } from '../types/booking.types';
 import { slotToUTCISO } from '../utils/timezone';
+import { FAISALABAD_CENTER } from '../config/serviceArea.config';
 
 const PLATFORM_FEE_RATE = 0.05; // 5% customer platform fee
 
@@ -19,7 +20,8 @@ export function useBookingEstimate() {
   const draftWorkerId = useBookingDraftStore((s) => s.workerId);
   const workerId = cartWorker?.id || draftWorkerId || 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
-  const currentLocation = useLocationStore((s) => s.currentLocation);
+  // Live GPS only — a hydrated (possibly days-old) cached position must not drive pricing.
+  const liveLocation = useLocationStore((s) => s.liveLocation);
 
   // Single Source of Truth for Subtotal: Dynamic sum of cart items (Σ service.price * service.quantity)
   const cartSubtotal = useMemo(() => {
@@ -39,8 +41,8 @@ export function useBookingEstimate() {
     const categoryId = cartWorker?.category || 'electrician';
     const serviceId = firstService?.serviceId;
 
-    const lat = address?.latitude || currentLocation?.lat || 33.7182;
-    const lng = address?.longitude || currentLocation?.lng || 73.0605;
+    const lat = address?.latitude ?? liveLocation?.lat ?? FAISALABAD_CENTER.lat;
+    const lng = address?.longitude ?? liveLocation?.lng ?? FAISALABAD_CENTER.lng;
 
     setIsLoading(true);
     try {
@@ -66,7 +68,7 @@ export function useBookingEstimate() {
     } finally {
       setIsLoading(false);
     }
-  }, [cartItems, cartWorker, workerId, selectedDate, selectedTimeSlot, isUrgent, address, currentLocation]);
+  }, [cartItems, cartWorker, workerId, selectedDate, selectedTimeSlot, isUrgent, address, liveLocation]);
 
   useEffect(() => {
     fetchEstimate();

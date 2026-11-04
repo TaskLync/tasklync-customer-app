@@ -20,7 +20,7 @@ export function useCreateBooking() {
 
   const cartItems = useCartStore((s) => s.items);
   const cartWorker = useCartStore((s) => s.worker);
-  const currentLocation = useLocationStore((s) => s.currentLocation);
+  const liveLocation = useLocationStore((s) => s.liveLocation);
   const token = useAuthStore((s) => s.accessToken);
 
   const {
@@ -85,8 +85,8 @@ export function useCreateBooking() {
       ? `${address.street}${address.city ? ', ' + address.city : ''}`
       : 'Delivery Address';
 
-    const lat = address?.latitude ?? currentLocation?.lat;
-    const lng = address?.longitude ?? currentLocation?.lng;
+    const lat = address?.latitude ?? liveLocation?.lat;
+    const lng = address?.longitude ?? liveLocation?.lng;
 
     if (typeof lat !== 'number' || typeof lng !== 'number') {
       const err = 'Please select a valid delivery address within the service area.';
@@ -201,7 +201,7 @@ export function useCreateBooking() {
     addressId,
     address,
     note,
-    currentLocation,
+    liveLocation,
     token,
     setAddress,
   ]);

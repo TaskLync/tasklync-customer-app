@@ -178,3 +178,11 @@ export function extractFullAddressLine(place?: any): string {
 
   return parts.length > 0 ? parts.join(', ') : 'Current GPS Location';
 }
+
+/**
+ * Rounds a coordinate to 3 decimals (~110 m) for use in query keys / discovery requests, so that
+ * sub-100 m GPS jitter does not trigger a new network request. Never use for booking/address data.
+ */
+export function roundCoordForQuery(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}

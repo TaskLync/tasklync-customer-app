@@ -4,12 +4,16 @@ import { useLocationStore } from '../store/location.store';
 import { workerApi } from '../services/api/worker.api';
 import { searchApi } from '../services/api/search.api';
 import { FAISALABAD_CENTER } from '../config/serviceArea.config';
-import { resolveWorkerDistance } from '../utils/locationUtils';
+import { resolveWorkerDistance, roundCoordForQuery } from '../utils/locationUtils';
 
 const MAX_ALLOWED_RADIUS = 20000; // Backend constraint: Radius cannot exceed 20,000 meters
 
 export const useNearbyWorkers = (params?: Partial<NearbyWorkersParams>) => {
-  const { locationMode, selectedAddress, currentLocation } = useLocationStore();
+  // Individual selectors: subscribing to the whole store re-rendered every consumer on unrelated
+  // changes (isLocating, permission, recent searches...).
+  const locationMode = useLocationStore((s) => s.locationMode);
+  const selectedAddress = useLocationStore((s) => s.selectedAddress);
+  const currentLocation = useLocationStore((s) => s.currentLocation);
 
   const activeCoords =
     locationMode === 'address' &&
@@ -26,8 +30,9 @@ export const useNearbyWorkers = (params?: Partial<NearbyWorkersParams>) => {
   const hasCoordinates = typeof lat === 'number' && typeof lng === 'number';
 
   const queryParams = {
-    lat,
-    lng,
+    // Rounded (~110 m) so GPS jitter does not mint a new query key / network request each fix.
+    lat: typeof lat === 'number' ? roundCoordForQuery(lat) : lat,
+    lng: typeof lng === 'number' ? roundCoordForQuery(lng) : lng,
     radius,
     limit: params?.limit || 8,
     category: params?.category,
@@ -49,8 +54,8 @@ export const useNearbyWorkers = (params?: Partial<NearbyWorkersParams>) => {
       if (hasCoordinates) {
         try {
           const res = await workerApi.getNearbyWorkers({
-            lat: lat!,
-            lng: lng!,
+            lat: queryParams.lat!,
+            lng: queryParams.lng!,
             radius,
             limit: queryParams.limit,
             provider_type: 'INDIVIDUAL',

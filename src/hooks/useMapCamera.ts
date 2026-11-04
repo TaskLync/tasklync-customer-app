@@ -33,10 +33,13 @@ export interface UseMapCameraReturn {
 
 export const useMapCamera = (initialRegion?: Region): UseMapCameraReturn => {
   const mapRef = useRef<MapView | null>(null);
-  const [currentRegion, setCurrentRegion] = useState<Region | null>(initialRegion || null);
+  // Region lives in a ref: updating React state on every pan end re-rendered the whole map screen
+  // (worker list, panel, controls) for a value only the camera callbacks need.
+  const regionRef = useRef<Region | null>(initialRegion || null);
   const [hasPannedAway, setHasPannedAway] = useState<boolean>(false);
 
   const flyTo = useCallback((coords: Coordinates, shouldZoom = true, duration = 450) => {
+    const currentRegion = regionRef.current;
     if (!mapRef.current) return;
     mapRef.current.animateToRegion(
       {
@@ -53,7 +56,7 @@ export const useMapCamera = (initialRegion?: Region): UseMapCameraReturn => {
       },
       duration
     );
-  }, [currentRegion]);
+  }, []);
 
   const recenter = useCallback(
     (
@@ -77,6 +80,7 @@ export const useMapCamera = (initialRegion?: Region): UseMapCameraReturn => {
   );
 
   const zoomIn = useCallback(() => {
+    const currentRegion = regionRef.current;
     if (!mapRef.current || !currentRegion) return;
     const newRegion: Region = {
       ...currentRegion,
@@ -84,9 +88,10 @@ export const useMapCamera = (initialRegion?: Region): UseMapCameraReturn => {
       longitudeDelta: Math.max(0.002, currentRegion.longitudeDelta / 1.8),
     };
     mapRef.current.animateToRegion(newRegion, 250);
-  }, [currentRegion]);
+  }, []);
 
   const zoomOut = useCallback(() => {
+    const currentRegion = regionRef.current;
     if (!mapRef.current || !currentRegion) return;
     const newRegion: Region = {
       ...currentRegion,
@@ -94,10 +99,10 @@ export const useMapCamera = (initialRegion?: Region): UseMapCameraReturn => {
       longitudeDelta: Math.min(0.2, currentRegion.longitudeDelta * 1.8),
     };
     mapRef.current.animateToRegion(newRegion, 250);
-  }, [currentRegion]);
+  }, []);
 
   const onRegionChangeComplete = useCallback((region: Region, userCoords: Coordinates | null) => {
-    setCurrentRegion(region);
+    regionRef.current = region;
 
     if (userCoords) {
       const latDiff = Math.abs(region.latitude - userCoords.lat);
@@ -113,7 +118,7 @@ export const useMapCamera = (initialRegion?: Region): UseMapCameraReturn => {
 
   return {
     mapRef,
-    currentRegion,
+    currentRegion: regionRef.current,
     hasPannedAway,
     flyTo,
     recenter,

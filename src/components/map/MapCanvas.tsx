@@ -28,7 +28,10 @@ const LIGHT_MAP_STYLE = [
 
 interface MapCanvasProps {
   mapRef: RefObject<MapView | null>;
+  /** Verified live GPS fix (blue "you are here" dot). Null when no fresh fix exists. */
   userLocation: Coordinates | null;
+  /** Where nearby workers are being searched (live GPS or the selected saved address). */
+  searchCenter?: Coordinates | null;
   workers: WorkerNearby[];
   selectedId: string | null;
   onSelectWorker: (worker: WorkerNearby) => void;
@@ -40,6 +43,7 @@ interface MapCanvasProps {
 export const MapCanvas: FC<MapCanvasProps> = memo(({
   mapRef,
   userLocation,
+  searchCenter,
   workers,
   selectedId,
   onSelectWorker,
@@ -47,12 +51,13 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
   initialRegion,
   radiusMeters = 5000,
 }) => {
+  const center = searchCenter ?? userLocation;
   const isUserLocationServiceable = Boolean(
-    userLocation && validateServiceArea(userLocation).isServiceable
+    center && validateServiceArea(center).isServiceable
   );
   const defaultRegion: Region = initialRegion || {
-    latitude: isUserLocationServiceable && userLocation ? userLocation.lat : FAISALABAD_CENTER.lat,
-    longitude: isUserLocationServiceable && userLocation ? userLocation.lng : FAISALABAD_CENTER.lng,
+    latitude: isUserLocationServiceable && center ? center.lat : FAISALABAD_CENTER.lat,
+    longitude: isUserLocationServiceable && center ? center.lng : FAISALABAD_CENTER.lng,
     latitudeDelta: 0.04,
     longitudeDelta: 0.04,
   };
@@ -80,7 +85,7 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
         loadingEnabled={true}
       >
         {/* Search radius overlay */}
-        <RadiusCircle center={userLocation} radiusMeters={radiusMeters} />
+        <RadiusCircle center={center} radiusMeters={radiusMeters} />
 
         {/* Current user location dot */}
         <UserMarker location={userLocation} />

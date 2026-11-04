@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, memo, useEffect, useState } from 'react';
 import { StyleSheet, View, Image, Text, Platform } from 'react-native';
 import { Marker } from 'react-native-maps';
 import { WorkerNearby } from '../../types/worker.types';
@@ -12,11 +12,21 @@ interface WorkerMarkerProps {
   index?: number;
 }
 
-export const WorkerMarker: FC<WorkerMarkerProps> = ({
+export const WorkerMarker: FC<WorkerMarkerProps> = memo(({
   worker,
   isSelected,
   onSelect,
 }) => {
+  // Markers are rasterised once when tracksViewChanges is false (Android), so a remote avatar that
+  // finishes loading later, or the selected-state restyle, would never show. Track changes only
+  // briefly after mount / selection change / avatar load, then freeze to keep the map cheap.
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
+  useEffect(() => {
+    setTracksViewChanges(true);
+    const t = setTimeout(() => setTracksViewChanges(false), worker.avatarUrl ? 2000 : 250);
+    return () => clearTimeout(t);
+  }, [isSelected, worker.avatarUrl]);
+
   const lat = (worker as any).lat || (worker as any).latitude;
   const lng = (worker as any).lng || (worker as any).longitude;
 
@@ -40,7 +50,7 @@ export const WorkerMarker: FC<WorkerMarkerProps> = ({
         longitude: Number(lng),
       }}
       onPress={handlePress}
-      tracksViewChanges={false}
+      tracksViewChanges={tracksViewChanges}
       anchor={{ x: 0.5, y: 0.5 }}
       zIndex={isSelected ? 99 : 1}
     >
@@ -52,6 +62,7 @@ export const WorkerMarker: FC<WorkerMarkerProps> = ({
                 source={{ uri: worker.avatarUrl }}
                 style={styles.avatarImage}
                 resizeMode="cover"
+                onLoadEnd={() => setTracksViewChanges(false)}
               />
             ) : (
               <View style={styles.avatarFallback}>
@@ -70,7 +81,7 @@ export const WorkerMarker: FC<WorkerMarkerProps> = ({
       </View>
     </Marker>
   );
-};
+});
 
 const styles = StyleSheet.create({
   markerContainer: {

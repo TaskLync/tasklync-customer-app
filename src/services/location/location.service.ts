@@ -471,14 +471,8 @@ export const locationService = {
         };
       }
 
-      // If user strictly requested cached fallback ONLY when cache-first is enabled
-      if (useCacheFirst) {
-        const cached = localStorage.getCachedLastLocation();
-        if (cached && typeof cached.latitude === 'number' && typeof cached.longitude === 'number') {
-          return { lat: cached.latitude, lng: cached.longitude };
-        }
-      }
-
+      // Deliberately NO fallback to the persisted last-location cache: it can be days old and
+      // callers treat this method's result as a live GPS fix.
       return null;
     })();
 

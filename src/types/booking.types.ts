@@ -297,6 +297,8 @@ export interface BookingTrackData {
   worker_phone?: string | undefined;
   worker_latitude?: number | undefined;
   worker_longitude?: number | undefined;
+  /** ISO timestamp of the worker position (spec 9.7 `last_updated_at`); absent when unknown. */
+  last_updated_at?: string | undefined;
 }
 
 /**

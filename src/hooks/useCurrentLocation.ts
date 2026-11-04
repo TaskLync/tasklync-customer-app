@@ -45,7 +45,7 @@ export function useCurrentLocation(): UseCurrentLocationReturn {
   const setPermissionStatus = useLocationStore((s) => s.setPermissionStatus);
   const setIsServicesEnabled = useLocationStore((s) => s.setIsServicesEnabled);
   const currentLocation = useLocationStore((s) => s.currentLocation);
-  const setCurrentLocation = useLocationStore((s) => s.setCurrentLocation);
+  const setLiveLocation = useLocationStore((s) => s.setLiveLocation);
 
   const checkPermission = useCallback(async (): Promise<LocationPermissionState> => {
     try {
@@ -150,7 +150,7 @@ export function useCurrentLocation(): UseCurrentLocationReturn {
 
         if (freshResult.success) {
           setVerifiedLocation(freshResult.location);
-          setCurrentLocation({
+          setLiveLocation({
             lat: freshResult.location.lat,
             lng: freshResult.location.lng,
           });
@@ -176,7 +176,7 @@ export function useCurrentLocation(): UseCurrentLocationReturn {
         }
       }
     },
-    [requestPermission, setCurrentLocation, setIsServicesEnabled, setPermissionStatus]
+    [requestPermission, setLiveLocation, setIsServicesEnabled, setPermissionStatus]
   );
 
   /**

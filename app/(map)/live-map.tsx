@@ -29,6 +29,7 @@ export default function LiveMapScreen() {
   const router = useRouter();
   const {
     location: activeLocation,
+    liveLocation,
     isPermissionGranted,
     isServicesEnabled,
     requestLocation,
@@ -183,7 +184,8 @@ export default function LiveMapScreen() {
       {/* 1. Full-screen map canvas */}
       <MapCanvas
         mapRef={mapRef}
-        userLocation={activeLocation}
+        userLocation={liveLocation}
+        searchCenter={activeLocation}
         workers={workers}
         selectedId={selectedId}
         onSelectWorker={handleSelectMarker}

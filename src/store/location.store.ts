@@ -15,8 +15,19 @@ export interface LocationStoreState {
   isServicesEnabled: boolean;
   setIsServicesEnabled: (enabled: boolean) => void;
 
+  /**
+   * Last known device coordinates. After a cold start this is HYDRATED from disk and may be
+   * arbitrarily old — only good for instant previews (e.g. nearby-worker queries).
+   * Use `liveLocation` for anything presented as "you are here".
+   */
   currentLocation: Coordinates | null;
   setCurrentLocation: (loc: Coordinates | null) => void;
+
+  /** Coordinates from a verified GPS fix obtained during THIS app session (never persisted). */
+  liveLocation: Coordinates | null;
+  liveLocationAt: number | null;
+  /** Records a fresh GPS fix: updates `currentLocation` and marks it live. */
+  setLiveLocation: (loc: Coordinates) => void;
 
   currentCity: string | null;
   setCurrentCity: (city: string | null) => void;
@@ -70,7 +81,14 @@ export const useLocationStore = create<LocationStoreState>((set, get) => ({
     } else {
       storage.remove('current_location');
     }
-    set({ currentLocation: loc });
+    set(loc ? { currentLocation: loc } : { currentLocation: null, liveLocation: null, liveLocationAt: null });
+  },
+
+  liveLocation: null,
+  liveLocationAt: null,
+  setLiveLocation: (loc) => {
+    get().setCurrentLocation(loc);
+    set({ liveLocation: loc, liveLocationAt: Date.now() });
   },
 
   currentCity: null,

@@ -18,6 +18,7 @@ export const useLocation = (options?: UseLocationOptions) => {
   const permissionStatus = useLocationStore((s) => s.permissionStatus);
   const isServicesEnabled = useLocationStore((s) => s.isServicesEnabled);
   const currentLocation = useLocationStore((s) => s.currentLocation);
+  const liveLocation = useLocationStore((s) => s.liveLocation);
   const currentCity = useLocationStore((s) => s.currentCity);
   const locationMode = useLocationStore((s) => s.locationMode);
   const selectedAddress = useLocationStore((s) => s.selectedAddress);
@@ -76,7 +77,7 @@ export const useLocation = (options?: UseLocationOptions) => {
               lat: freshResult.location.lat,
               lng: freshResult.location.lng,
             };
-            store.setCurrentLocation(coords);
+            store.setLiveLocation(coords);
 
             // Reverse geocode in background without blocking position acquisition
             locationService
@@ -109,7 +110,7 @@ export const useLocation = (options?: UseLocationOptions) => {
         });
 
         if (coords) {
-          store.setCurrentLocation(coords);
+          store.setLiveLocation(coords);
 
           // Reverse geocode in background without blocking position acquisition
           locationService
@@ -275,6 +276,8 @@ export const useLocation = (options?: UseLocationOptions) => {
   return {
     location: activeCoordinates,
     gpsLocation: currentLocation,
+    /** Verified GPS fix from this session, or null. Safe to show as "you are here". */
+    liveLocation,
     cityName: displayCity,
     displayAddressLine,
     locationMode,

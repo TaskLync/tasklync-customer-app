@@ -866,22 +866,19 @@ export const bookingApi = {
    * GET /api/v1/bookings/:id/track
    */
   trackBooking: async (id: string): Promise<BookingTrackData> => {
-    const local = getPersistedBookings().find((b) => b.id === id);
-
-    const fallbackTrack: BookingTrackData = {
-      booking_id: id,
-      status: local?.status || 'IN_PROGRESS',
-      scheduled_at: local?.scheduled_at || new Date().toISOString(),
-      started_at: local?.started_at || new Date().toISOString(),
-      worker_id: local?.worker_id || 'w-worker',
-      worker_name: local?.worker_name || 'Assigned Worker',
-      worker_phone: '+92 300 1234567',
-      worker_latitude: local?.job_site_location?.lat || 33.719,
-      worker_longitude: local?.job_site_location?.lng || 73.061,
-    };
-
-    // Temporarily disabled remote network call to prevent 429 Too Many Requests
-    return fallbackTrack;
+    // Real backend data only. Worker coordinates/phone are never synthesised: if the backend omits
+    // them they stay undefined so the UI can show "location unavailable" instead of a fake position.
+    const response = await apiClient.get<any>(`/bookings/${id}/track`);
+    const raw = response.data?.data || response.data || {};
+    const lat = raw.worker_latitude ?? raw.latitude;
+    const lng = raw.worker_longitude ?? raw.longitude;
+    return {
+      ...raw,
+      booking_id: raw.booking_id ?? id,
+      worker_latitude: typeof lat === 'number' ? lat : undefined,
+      worker_longitude: typeof lng === 'number' ? lng : undefined,
+      last_updated_at: raw.last_updated_at ?? undefined,
+    } as BookingTrackData;
   },
 
   /**

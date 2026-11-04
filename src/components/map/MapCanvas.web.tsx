@@ -9,7 +9,10 @@ import { FAISALABAD_CENTER, validateServiceArea } from '../../config/serviceArea
 
 interface MapCanvasProps {
   mapRef: RefObject<any>;
+  /** Verified live GPS fix (blue "you are here" dot). Null when no fresh fix exists. */
   userLocation: Coordinates | null;
+  /** Where nearby workers are being searched (live GPS or the selected saved address). */
+  searchCenter?: Coordinates | null;
   workers: WorkerNearby[];
   selectedId: string | null;
   onSelectWorker: (worker: WorkerNearby) => void;
