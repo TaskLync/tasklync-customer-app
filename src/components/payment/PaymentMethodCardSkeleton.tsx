@@ -1,85 +1,70 @@
-import { useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
-import { colors, palette, radius, spacing, shadows } from '../../design';
+import { Skeleton, SkeletonCircle, SkeletonGroup, SkeletonText, SKELETON } from '../ui/Skeleton/Skeleton';
+import { colors } from '../../design/colors';
+import { radius } from '../../design/radius';
+import { spacing } from '../../design/spacing';
 
-export const PaymentMethodCardSkeleton: React.FC = () => {
-  const opacity = useSharedValue(0.3);
+/**
+ * Mirrors PaymentMethodCard: 70px bordered card (static shell) with the 36×24 brand icon,
+ * 15/20 + 13/18 text lines and the trailing default chip / action.
+ */
+interface PaymentMethodCardSkeletonProps {
+  /** 'card' = PaymentMethodCard (70px, default chip); 'picker' = PaymentMethodPicker row (72px, radio). */
+  variant?: 'card' | 'picker';
+}
 
-  useEffect(() => {
-    opacity.value = withRepeat(
-      withTiming(0.8, { duration: 800 }),
-      -1,
-      true
-    );
-  }, [opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
-  return (
-    <View style={styles.container}>
-      {/* Icon Placeholder */}
-      <Animated.View style={[styles.iconPlaceholder, animatedStyle]} />
-
-      {/* Text Lines */}
-      <View style={styles.textContainer}>
-        <Animated.View style={[styles.titlePlaceholder, animatedStyle]} />
-        <Animated.View style={[styles.subtitlePlaceholder, animatedStyle]} />
+export const PaymentMethodCardSkeleton: React.FC<PaymentMethodCardSkeletonProps> = ({
+  variant = 'card',
+}) => (
+  <View style={[styles.card, variant === 'picker' && styles.picker]}>
+    <SkeletonGroup style={styles.row} accessibilityLabel="Loading payment method">
+      <Skeleton width={36} height={24} borderRadius={5} style={styles.icon} />
+      <View style={styles.text}>
+        <SkeletonText fontSize={15} lineHeight={20} width="52%" />
+        <SkeletonText
+          fontSize={variant === 'picker' ? 12 : 13}
+          lineHeight={variant === 'picker' ? 16 : 18}
+          width="34%"
+          style={styles.subtitle}
+        />
       </View>
-
-      {/* Trailing Chip */}
-      <Animated.View style={[styles.chipPlaceholder, animatedStyle]} />
-    </View>
-  );
-};
+      {variant === 'picker' ? (
+        <SkeletonCircle size={22} />
+      ) : (
+        <Skeleton width={56} height={21} borderRadius={SKELETON.radius.pill} />
+      )}
+    </SkeletonGroup>
+  </View>
+);
 
 const styles = StyleSheet.create({
-  container: {
-    height: 72,
-    flexDirection: 'row',
-    alignItems: 'center',
+  card: {
+    height: 70,
+    justifyContent: 'center',
     backgroundColor: colors.bgCard,
     borderRadius: radius.lg,
-    paddingHorizontal: spacing.base,
     borderWidth: 1,
     borderColor: colors.border,
+    paddingHorizontal: spacing.base,
     marginBottom: spacing.sm + 2,
-    ...shadows.xs,
   },
-  iconPlaceholder: {
-    width: 36,
-    height: 24,
-    borderRadius: 5,
-    backgroundColor: palette.gray200,
+  picker: {
+    height: 72,
+    marginBottom: 0,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  icon: {
     marginRight: spacing.md,
   },
-  textContainer: {
+  text: {
     flex: 1,
-    gap: 8,
+    marginRight: spacing.sm,
   },
-  titlePlaceholder: {
-    width: '55%',
-    height: 14,
-    borderRadius: 4,
-    backgroundColor: palette.gray200,
-  },
-  subtitlePlaceholder: {
-    width: '35%',
-    height: 11,
-    borderRadius: 4,
-    backgroundColor: palette.gray200,
-  },
-  chipPlaceholder: {
-    width: 50,
-    height: 22,
-    borderRadius: radius.pill,
-    backgroundColor: palette.gray200,
+  subtitle: {
+    marginTop: 2,
   },
 });

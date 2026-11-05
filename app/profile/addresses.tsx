@@ -26,6 +26,7 @@ import { useAddresses } from '../../src/hooks/useAddresses';
 import { AddressCard } from '../../src/components/address/AddressCard';
 import { AddressSwipeActions } from '../../src/components/address/AddressSwipeActions';
 import { AddressCardSkeleton } from '../../src/components/address/AddressCardSkeleton';
+import { SkeletonGroup } from '../../src/components/ui/Skeleton';
 import { AddressEmptyState } from '../../src/components/address/AddressEmptyState';
 import { Address } from '../../src/types/address.types';
 import { colors, palette, fontFamily, fontSize, radius, shadows } from '../../src/design';
@@ -179,13 +180,13 @@ export default function SavedAddressesScreen() {
             </View>
           )}
 
-          {/* Loading Skeleton (Delayed 300ms to avoid flicker) */}
+          {/* Loading skeleton (SkeletonGroup applies the shared anti-flash delay) */}
           {isLoading && !isError && (
-            <View style={styles.skeletonContainer}>
-              <AddressCardSkeleton delayMs={300} />
-              <AddressCardSkeleton delayMs={300} />
-              <AddressCardSkeleton delayMs={300} />
-            </View>
+            <SkeletonGroup style={styles.skeletonContainer} accessibilityLabel="Loading addresses">
+              <AddressCardSkeleton />
+              <AddressCardSkeleton />
+              <AddressCardSkeleton />
+            </SkeletonGroup>
           )}
 
           {/* Empty State */}

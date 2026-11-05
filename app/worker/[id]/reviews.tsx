@@ -17,7 +17,7 @@ import { useWorkerReviewSummary } from '../../../src/hooks/useReview';
 import { useWorkerReviews } from '../../../src/hooks/useWorkerReviews';
 import { ReviewRatingOverview } from '../../../src/components/review/ReviewRatingOverview';
 import { ReviewCard, REVIEW_CARD_GAP } from '../../../src/components/review/ReviewCard';
-import { SkeletonReviewCard } from '../../../src/components/ui/Skeleton';
+import { SkeletonGroup, SkeletonReviewCard } from '../../../src/components/ui/Skeleton';
 import { EmptyState } from '../../../src/components/feedback/EmptyState';
 import { colors, palette } from '../../../src/design/colors';
 import { fontFamily as fonts } from '../../../src/design/typography';
@@ -154,11 +154,11 @@ export default function WorkerReviewsScreen() {
   const renderEmpty = () => {
     if (isReviewsLoading) {
       return (
-        <View style={styles.skeletonList}>
+        <SkeletonGroup style={styles.skeletonList} accessibilityLabel="Loading reviews">
           <SkeletonReviewCard />
           <SkeletonReviewCard />
           <SkeletonReviewCard />
-        </View>
+        </SkeletonGroup>
       );
     }
     return (

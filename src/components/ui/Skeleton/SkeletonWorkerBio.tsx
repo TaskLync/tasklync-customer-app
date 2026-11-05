@@ -1,27 +1,16 @@
-import { StyleSheet, View } from 'react-native';
-import { Skeleton } from './Skeleton';
-import { radius } from '../../../design/radius';
+import { StyleSheet } from 'react-native';
+import { SkeletonGroup, SkeletonText } from './Skeleton';
 
-export const SkeletonWorkerBio = () => {
-  return (
-    <View style={styles.container}>
-      <Skeleton width={80} height={20} borderRadius={radius.sm} style={styles.header} />
-      <Skeleton width="100%" height={14} borderRadius={radius.sm} style={styles.line} />
-      <Skeleton width="95%" height={14} borderRadius={radius.sm} style={styles.line} />
-      <Skeleton width="98%" height={14} borderRadius={radius.sm} style={styles.line} />
-      <Skeleton width="40%" height={14} borderRadius={radius.sm} />
-    </View>
-  );
-};
+/** "About" section: 17/22 title, then the bio clamped to 4 lines of 14/22. */
+export const SkeletonWorkerBio = () => (
+  <SkeletonGroup accessibilityLabel="Loading about">
+    <SkeletonText fontSize={17} lineHeight={22} width={64} style={styles.title} />
+    <SkeletonText fontSize={14} lineHeight={22} width="96%" lines={4} lastLineWidth="48%" />
+  </SkeletonGroup>
+);
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  header: {
+  title: {
     marginBottom: 12,
-  },
-  line: {
-    marginBottom: 8,
   },
 });

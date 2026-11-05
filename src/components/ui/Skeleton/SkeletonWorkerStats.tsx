@@ -1,61 +1,45 @@
 import { StyleSheet, View } from 'react-native';
-import { Skeleton } from './Skeleton';
-import { radius } from '../../../design/radius';
+import { SkeletonCircle, SkeletonGroup, SkeletonText } from './Skeleton';
+import { colors } from '../../../design/colors';
 
-export const SkeletonWorkerStats = () => {
-  return (
-    <View style={styles.container}>
-      <View style={styles.cell}>
-        <Skeleton width={18} height={18} borderRadius={9} style={styles.shimmer} />
-        <Skeleton width="65%" height={14} borderRadius={radius.sm} style={styles.shimmer} />
-        <Skeleton width="50%" height={10} borderRadius={radius.sm} />
-      </View>
-      <View style={styles.divider} />
-      <View style={styles.cell}>
-        <Skeleton width={18} height={18} borderRadius={9} style={styles.shimmer} />
-        <Skeleton width="65%" height={14} borderRadius={radius.sm} style={styles.shimmer} />
-        <Skeleton width="50%" height={10} borderRadius={radius.sm} />
-      </View>
-      <View style={styles.divider} />
-      <View style={styles.cell}>
-        <Skeleton width={18} height={18} borderRadius={9} style={styles.shimmer} />
-        <Skeleton width="65%" height={14} borderRadius={radius.sm} style={styles.shimmer} />
-        <Skeleton width="50%" height={10} borderRadius={radius.sm} />
-      </View>
-      <View style={styles.divider} />
-      <View style={styles.cell}>
-        <Skeleton width={18} height={18} borderRadius={9} style={styles.shimmer} />
-        <Skeleton width="65%" height={14} borderRadius={radius.sm} style={styles.shimmer} />
-        <Skeleton width="50%" height={10} borderRadius={radius.sm} />
-      </View>
+/** Availability line + the 3-column stats strip (WorkerAvailabilityCard + WorkerStats). */
+export const SkeletonWorkerStats = () => (
+  <SkeletonGroup accessibilityLabel="Loading availability">
+    <View style={styles.availability}>
+      <SkeletonCircle size={14} />
+      <SkeletonText fontSize={13.5} lineHeight={18} width={110} style={styles.availabilityText} />
     </View>
-  );
-};
+    <View style={styles.strip}>
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={styles.col}>
+          <SkeletonText fontSize={16} lineHeight={21} width={44} />
+          <SkeletonText fontSize={11.5} lineHeight={15} width={58} style={styles.label} />
+        </View>
+      ))}
+    </View>
+  </SkeletonGroup>
+);
 
 const styles = StyleSheet.create({
-  container: {
+  availability: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    width: '100%',
-    paddingVertical: 14,
-    paddingHorizontal: 6,
   },
-  cell: {
+  availabilityText: {
+    marginLeft: 8,
+  },
+  strip: {
+    flexDirection: 'row',
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: colors.bgSection,
+  },
+  col: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 2,
   },
-  divider: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#E2E8F0',
-  },
-  shimmer: {
-    marginBottom: 4,
+  label: {
+    marginTop: 2,
   },
 });

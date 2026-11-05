@@ -1,114 +1,50 @@
-import { useEffect, useState } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
-import { palette } from '../../design';
+import { SkeletonCircle, SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
+import { colors } from '../../design';
 
 interface AddressCardSkeletonProps {
-  delayMs?: number | undefined;
+  /** 'select' adds the radio placeholder used by AddressCard in selection mode. */
+  variant?: 'manage' | 'select';
 }
 
-export const AddressCardSkeleton: React.FC<AddressCardSkeletonProps> = ({
-  delayMs = 300,
-}) => {
-  const [shouldRender, setShouldRender] = useState(delayMs === 0);
-  const opacity = useSharedValue(0.4);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    if (delayMs > 0) {
-      timer = setTimeout(() => {
-        setShouldRender(true);
-      }, delayMs);
-    }
-
-    opacity.value = withRepeat(
-      withTiming(0.85, { duration: 600, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [delayMs, opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
-  if (!shouldRender) {
-    return null;
-  }
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.contentRow}>
-        {/* Skeleton 40px Icon */}
-        <Animated.View style={[styles.iconCircle, animatedStyle]} />
-
-        {/* Skeleton Text Container */}
-        <View style={styles.textContainer}>
-          <Animated.View style={[styles.titleLine, animatedStyle]} />
-          <Animated.View style={[styles.streetLine, animatedStyle]} />
-        </View>
-
-        {/* Skeleton Badge Area */}
-        <Animated.View style={[styles.badgeSkeleton, animatedStyle]} />
+/**
+ * Mirrors AddressCard: flat 68px row (14px vertical padding, hairline divider), 38px icon,
+ * 15/20 label and 14/18 address line. Wrap several in one <SkeletonGroup> for a list.
+ */
+export const AddressCardSkeleton: React.FC<AddressCardSkeletonProps> = ({ variant = 'manage' }) => (
+  <SkeletonGroup style={styles.card} accessibilityLabel="Loading address">
+    <View style={styles.row}>
+      <SkeletonCircle size={38} style={styles.icon} />
+      <View style={styles.text}>
+        <SkeletonText fontSize={15} lineHeight={20} width={96} />
+        <SkeletonText fontSize={14} lineHeight={18} width="82%" style={styles.subtitle} />
       </View>
+      {variant === 'select' && <SkeletonCircle size={22} />}
     </View>
-  );
-};
+  </SkeletonGroup>
+);
 
 const styles = StyleSheet.create({
   card: {
-    height: 76,
-    paddingHorizontal: 16,
+    minHeight: 68,
     paddingVertical: 14,
-    borderRadius: 16,
-    backgroundColor: palette.white,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: palette.gray200,
     justifyContent: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  contentRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: palette.mintHaze,
+  icon: {
     marginRight: 12,
   },
-  textContainer: {
+  text: {
     flex: 1,
     marginRight: 10,
   },
-  titleLine: {
-    width: 100,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: palette.mintHaze,
-    marginBottom: 8,
-  },
-  streetLine: {
-    width: '80%',
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: palette.mintHaze,
-  },
-  badgeSkeleton: {
-    width: 50,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: palette.mintHaze,
+  subtitle: {
+    marginTop: 2,
   },
 });

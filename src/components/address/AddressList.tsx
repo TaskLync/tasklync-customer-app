@@ -6,6 +6,7 @@ import { Address } from '../../types/address.types';
 import { useAddresses } from '../../hooks/useAddresses';
 import { AddressCard } from './AddressCard';
 import { AddressCardSkeleton } from './AddressCardSkeleton';
+import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
 import { colors, palette, fontFamily } from '../../design';
 
 export interface AddressListProps {
@@ -40,11 +41,10 @@ export const AddressList: React.FC<AddressListProps> = ({
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        {Array.from({ length: 2 }).map((_, idx) => (
-          <AddressCardSkeleton key={`addr-skel-${idx}`} delayMs={0} />
-        ))}
-      </View>
+      <SkeletonGroup style={styles.container} accessibilityLabel="Loading addresses">
+        <AddressCardSkeleton variant="select" />
+        <AddressCardSkeleton variant="select" />
+      </SkeletonGroup>
     );
   }
 

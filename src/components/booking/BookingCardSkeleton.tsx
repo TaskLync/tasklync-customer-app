@@ -1,126 +1,81 @@
-import { colors, palette } from '../../design';
-import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import {
+  Skeleton,
+  SkeletonCircle,
+  SkeletonGroup,
+  SkeletonText,
+  SKELETON,
+} from '../ui/Skeleton/Skeleton';
+import { colors } from '../../design';
 
+/**
+ * Mirrors BookingCard (flat row, 18px vertical padding, hairline divider):
+ *   status pill ······················ price
+ *   [48 avatar]  worker name / category
+ *   date · time
+ *   [ action ] [ action ]   (38px, r10)
+ */
 export function BookingCardSkeleton() {
-  const opacity = useSharedValue(0.5);
-
-  useEffect(() => {
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(0.8, { duration: 800 }),
-        withTiming(0.5, { duration: 800 })
-      ),
-      -1,
-      true
-    );
-  }, [opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
   return (
-    <Animated.View style={[styles.card, animatedStyle]}>
+    <SkeletonGroup style={styles.card} accessibilityLabel="Loading booking">
       <View style={styles.header}>
-        <View style={styles.badgePlaceholder} />
-        <View style={styles.pricePlaceholder} />
+        <Skeleton width={84} height={24} borderRadius={SKELETON.radius.pill} />
+        <SkeletonText fontSize={16} lineHeight={21} width={64} />
       </View>
 
       <View style={styles.workerRow}>
-        <View style={styles.avatarPlaceholder} />
-        <View style={styles.textColumn}>
-          <View style={styles.namePlaceholder} />
-          <View style={styles.categoryPlaceholder} />
+        <SkeletonCircle size={48} style={styles.avatar} />
+        <View style={styles.workerText}>
+          <SkeletonText fontSize={16} lineHeight={21} width="52%" />
+          <SkeletonText fontSize={12.5} lineHeight={17} width="34%" style={styles.category} />
         </View>
       </View>
 
-      <View style={styles.datePlaceholder} />
-      
-      <View style={styles.actionsPlaceholder}>
-        <View style={styles.buttonPlaceholder} />
-        <View style={styles.buttonPlaceholder} />
+      <SkeletonText fontSize={12.5} lineHeight={17} width={150} style={styles.meta} />
+
+      <View style={styles.actions}>
+        <Skeleton height={38} borderRadius={10} style={styles.action} />
+        <Skeleton height={38} borderRadius={10} style={styles.action} />
       </View>
-    </Animated.View>
+    </SkeletonGroup>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
+    paddingVertical: 18,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
-  },
-  badgePlaceholder: {
-    width: 80,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.bgHover,
-  },
-  pricePlaceholder: {
-    width: 60,
-    height: 20,
-    borderRadius: 4,
-    backgroundColor: colors.bgHover,
+    marginBottom: 8,
   },
   workerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 12,
+    marginVertical: 8,
   },
-  avatarPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.bgHover,
+  avatar: {
     marginRight: 12,
   },
-  textColumn: {
-    justifyContent: 'center',
-  },
-  namePlaceholder: {
-    width: 120,
-    height: 16,
-    borderRadius: 4,
-    backgroundColor: colors.bgHover,
-    marginBottom: 8,
-  },
-  categoryPlaceholder: {
-    width: 80,
-    height: 14,
-    borderRadius: 4,
-    backgroundColor: colors.bgHover,
-  },
-  datePlaceholder: {
-    width: 140,
-    height: 16,
-    borderRadius: 4,
-    backgroundColor: colors.bgHover,
-    marginBottom: 12,
-  },
-  actionsPlaceholder: {
-    flexDirection: 'row',
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    justifyContent: 'space-between',
-  },
-  buttonPlaceholder: {
+  workerText: {
     flex: 1,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: colors.bgHover,
-    marginHorizontal: 6,
+  },
+  category: {
+    marginTop: 2,
+  },
+  meta: {
+    marginTop: 2,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  action: {
+    flex: 1,
   },
 });

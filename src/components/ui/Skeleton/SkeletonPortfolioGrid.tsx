@@ -1,52 +1,71 @@
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import { Skeleton } from './Skeleton';
-import { radius } from '@design/radius';
+import React from 'react';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Skeleton, SkeletonGroup, SkeletonText, SKELETON } from './Skeleton';
 
-export const SkeletonPortfolioGrid = () => {
+interface SkeletonPortfolioGridProps {
+  /**
+   * 'section': WorkerPortfolioGrid on the profile (header + 6 cells, full-bleed grid).
+   * 'screen':  the full portfolio page's 3-column FlashList (4px padding, 2px cell padding).
+   */
+  variant?: 'section' | 'screen';
+  /** Section variant only: the grid's side gutter. */
+  horizontalPadding?: number;
+}
+
+export const SkeletonPortfolioGrid: React.FC<SkeletonPortfolioGridProps> = ({
+  variant = 'section',
+  horizontalPadding = 20,
+}) => {
   const { width } = useWindowDimensions();
-  const padding = 32; // 16px horizontal padding
+
+  if (variant === 'screen') {
+    return (
+      <SkeletonGroup style={styles.screenGrid} accessibilityLabel="Loading photos">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <View key={i} style={styles.screenCell}>
+            <Skeleton width="100%" height="100%" borderRadius={SKELETON.radius.block} />
+          </View>
+        ))}
+      </SkeletonGroup>
+    );
+  }
+
   const gap = 4;
-  const numColumns = 3;
-  const totalGapWidth = gap * (numColumns - 1);
-  const cellSize = Math.floor((width - padding - totalGapWidth) / numColumns);
+  const cellSize = Math.floor((width - horizontalPadding * 2 - gap * 2) / 3);
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.headerRow}>
-        <Skeleton width={80} height={20} />
-        <Skeleton width={120} height={16} />
+    <SkeletonGroup accessibilityLabel="Loading portfolio">
+      <View style={[styles.headerRow, { paddingHorizontal: horizontalPadding }]}>
+        <SkeletonText fontSize={17} lineHeight={22} width={84} />
+        <SkeletonText fontSize={13} lineHeight={18} width={52} />
       </View>
-
-      {/* Grid */}
-      <View style={[styles.grid, { gap }]}>
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <Skeleton
-            key={i}
-            width={cellSize}
-            height={cellSize}
-            borderRadius={radius.sm}
-          />
+      <View style={[styles.grid, { gap, paddingHorizontal: horizontalPadding }]}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} width={cellSize} height={cellSize} borderRadius={6} />
         ))}
       </View>
-    </View>
+    </SkeletonGroup>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 16,
-  },
   headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 16,
+  },
+  screenGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  screenCell: {
+    width: '33.3333%',
+    aspectRatio: 1,
+    padding: 2,
   },
 });

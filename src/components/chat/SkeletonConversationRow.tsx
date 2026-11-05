@@ -1,61 +1,45 @@
-import { colors, palette } from '../../design';
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Skeleton } from '../ui/Skeleton/Skeleton';
+import { StyleSheet, View } from 'react-native';
+import { SkeletonCircle, SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
 
-export const SkeletonConversationRow: React.FC = () => {
-  return (
-    <View style={styles.container}>
-      {/* Avatar skeleton */}
-      <Skeleton width={50} height={50} borderRadius={25} style={styles.avatar} />
-
-      {/* Content lines skeleton */}
-      <View style={styles.content}>
-        <View style={styles.topRow}>
-          <Skeleton width={130} height={15} borderRadius={4} />
-          <Skeleton width={48} height={11} borderRadius={4} />
-        </View>
-
-        <View style={styles.metaRow}>
-          <Skeleton width={90} height={12} borderRadius={4} />
-        </View>
-
-        <View style={styles.bottomRow}>
-          <Skeleton width="82%" height={13} borderRadius={4} />
-        </View>
+/**
+ * Mirrors ConversationRow: 20px gutters, 14px vertical padding, 50px avatar, then
+ * name (16/22) + timestamp, category line (13/17) and the last-message preview (14/19).
+ */
+export const SkeletonConversationRow: React.FC = () => (
+  <SkeletonGroup style={styles.row} accessibilityLabel="Loading conversation">
+    <SkeletonCircle size={50} style={styles.avatar} />
+    <View style={styles.content}>
+      <View style={styles.topRow}>
+        <SkeletonText fontSize={16} lineHeight={22} width={128} />
+        <SkeletonText fontSize={12} lineHeight={16} width={40} />
       </View>
+      <SkeletonText fontSize={13} lineHeight={17} width={92} style={styles.meta} />
+      <SkeletonText fontSize={14} lineHeight={19} width="84%" />
     </View>
-  );
-};
+  </SkeletonGroup>
+);
 
 const styles = StyleSheet.create({
-  container: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
     paddingHorizontal: 20,
-    backgroundColor: colors.bgCard,
+    paddingVertical: 14,
   },
   avatar: {
     marginRight: 14,
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 2,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  meta: {
+    marginBottom: 4,
   },
 });

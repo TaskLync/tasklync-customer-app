@@ -7,6 +7,7 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { BookingDetails } from '../../types/booking.types';
 import { BookingCard } from './BookingCard';
 import { BookingCardSkeleton } from './BookingCardSkeleton';
+import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
 import { EmptyBookingsActive } from '../feedback/EmptyState/EmptyBookingsActive';
 import { EmptyBookingsPast } from '../feedback/EmptyState/EmptyBookingsPast';
 import { EmptyBookingsCancelled } from '../feedback/EmptyState/EmptyBookingsCancelled';
@@ -16,12 +17,21 @@ import { TabType } from '../../hooks/useBookingsList';
 interface BookingListProps {
   bookings: BookingDetails[];
   isLoading: boolean;
+  /** Pull-to-refresh / background refetch: keep the list visible, show only the spinner. */
+  isRefreshing?: boolean;
   isError?: boolean;
   activeTab: TabType;
   onRefresh: () => void;
 }
 
-export function BookingList({ bookings, isLoading, isError = false, activeTab, onRefresh }: BookingListProps) {
+export function BookingList({
+  bookings,
+  isLoading,
+  isRefreshing = false,
+  isError = false,
+  activeTab,
+  onRefresh,
+}: BookingListProps) {
   const insets = useSafeAreaInsets();
   const isFirstMount = useRef(true);
 
@@ -49,11 +59,11 @@ export function BookingList({ bookings, isLoading, isError = false, activeTab, o
   const renderEmptyComponent = () => {
     if (isLoading) {
       return (
-        <View style={styles.skeletonContainer}>
+        <SkeletonGroup accessibilityLabel="Loading bookings">
           <BookingCardSkeleton />
           <BookingCardSkeleton />
           <BookingCardSkeleton />
-        </View>
+        </SkeletonGroup>
       );
     }
 
@@ -89,7 +99,7 @@ export function BookingList({ bookings, isLoading, isError = false, activeTab, o
         ListEmptyComponent={renderEmptyComponent}
         refreshControl={
           <RefreshControl 
-            refreshing={isLoading && !isFirstMount.current} 
+            refreshing={isRefreshing}
             onRefresh={onRefresh}
             tintColor={colors.primaryDark}
             colors={[colors.primaryDark]}
@@ -108,9 +118,6 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 20,
     paddingVertical: 4,
-  },
-  skeletonContainer: {
-    paddingTop: 8,
   },
   errorStateContainer: {
     paddingVertical: 40,

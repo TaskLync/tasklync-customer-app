@@ -1,9 +1,10 @@
 import { FC, useCallback } from 'react';
-import { StyleSheet, View, FlatList } from 'react-native';
+import { StyleSheet, FlatList } from 'react-native';
 import { CartItem as CartItemType } from '../../store/cart.store';
 import { CartItem } from './CartItem';
 import { SwipeToDeleteRow } from './SwipeToDeleteRow';
 import { CartSkeletonItem } from './CartSkeletonItem';
+import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
 
 interface CartItemListProps {
   items: CartItemType[];
@@ -35,10 +36,10 @@ export const CartItemList: FC<CartItemListProps> = ({
 
   if (isLoading) {
     return (
-      <View style={styles.listContainer}>
+      <SkeletonGroup style={styles.listContainer} accessibilityLabel="Loading cart">
         <CartSkeletonItem />
         <CartSkeletonItem />
-      </View>
+      </SkeletonGroup>
     );
   }
 

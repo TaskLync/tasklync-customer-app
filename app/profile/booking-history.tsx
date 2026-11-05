@@ -20,6 +20,7 @@ import {
   BookingHistoryItem,
 } from '../../src/components/booking/BookingHistoryCard';
 import { BookingHistoryCardSkeleton } from '../../src/components/booking/BookingHistoryCardSkeleton';
+import { SkeletonGroup } from '../../src/components/ui/Skeleton';
 import { YearCategoryFilterBar } from '../../src/components/ui/YearCategoryFilterBar';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
 import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../src/design';
@@ -111,11 +112,11 @@ export default function BookingHistoryScreen() {
       {/* Main List Area */}
       <View style={styles.content}>
         {isLoading ? (
-          <View style={styles.skeletonList}>
+          <SkeletonGroup style={styles.skeletonList} accessibilityLabel="Loading booking history">
             {Array.from({ length: 6 }).map((_, index) => (
               <BookingHistoryCardSkeleton key={`hist-skel-${index}`} />
             ))}
-          </View>
+          </SkeletonGroup>
         ) : allBookings.length === 0 ? (
           <View style={styles.emptyContainer}>
             <EmptyState

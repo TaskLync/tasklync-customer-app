@@ -1,61 +1,48 @@
-import { View, StyleSheet } from 'react-native';
-import { Skeleton } from './Skeleton';
-import { radius } from '@design/radius';
-import { shadows } from '@design/shadows';
-import { colors } from '@design/colors';
+import { StyleSheet, View } from 'react-native';
+import { SkeletonCircle, SkeletonGroup, SkeletonText } from './Skeleton';
+import { colors } from '../../../design/colors';
 
-/**
- * Mirrors <ReviewCard /> (16px padding, lg radius, border, sm shadow) so loading
- * state matches the real list. Spacing between cards is owned by the parent (`gap`).
- */
-export const SkeletonReviewCard = () => {
-  return (
-    <View style={styles.container}>
+/** Mirrors ReviewCard: 36px avatar + name/meta (ReviewMetaRow "md"), then a 3-line comment. */
+export const SkeletonReviewCard = () => (
+  <View style={styles.card}>
+    <SkeletonGroup accessibilityLabel="Loading review">
       <View style={styles.metaRow}>
-        <Skeleton width={40} height={40} borderRadius={20} />
+        <SkeletonCircle size={36} />
         <View style={styles.metaText}>
-          <Skeleton width={120} height={13} style={{ marginBottom: 4 }} />
-          <Skeleton width={50} height={11} />
+          <SkeletonText fontSize={13.5} lineHeight={18} width={112} />
+          <SkeletonText fontSize={11.5} lineHeight={16} width={132} style={styles.metaLine} />
         </View>
       </View>
-
-      <View style={styles.starsRow}>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} width={16} height={16} borderRadius={8} style={{ marginRight: 2 }} />
-        ))}
-      </View>
-
-      <View style={styles.commentBlock}>
-        <Skeleton width="100%" height={13} style={{ marginBottom: 6 }} />
-        <Skeleton width="92%" height={13} style={{ marginBottom: 6 }} />
-        <Skeleton width="62%" height={13} />
-      </View>
-    </View>
-  );
-};
+      <SkeletonText
+        fontSize={14}
+        lineHeight={20}
+        width="96%"
+        lines={3}
+        lastLineWidth="58%"
+        style={styles.comment}
+      />
+    </SkeletonGroup>
+  </View>
+);
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radius.lg,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
+  card: {
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   metaText: {
+    flex: 1,
     marginLeft: 10,
-    justifyContent: 'center',
   },
-  starsRow: {
-    flexDirection: 'row',
-    marginTop: 12,
+  metaLine: {
+    marginTop: 2,
   },
-  commentBlock: {
-    marginTop: 12,
+  comment: {
+    marginTop: 8,
   },
 });

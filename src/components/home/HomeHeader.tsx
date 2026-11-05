@@ -11,7 +11,7 @@ import { useCurrentUser } from '../../hooks/useProfile';
 import { useLocation } from '../../hooks/useLocation';
 import { useLocationStore } from '../../store/location.store';
 import { useAddresses } from '../../hooks/useAddresses';
-import { SkeletonHomeHeader } from '../ui/Skeleton';
+import { SkeletonGroup, SkeletonText } from '../ui/Skeleton';
 import { colors, palette } from '../../design/colors';
 import { fontFamily } from '../../design/typography';
 
@@ -99,9 +99,10 @@ export const HomeHeader = () => {
     return name.slice(0, 2).toUpperCase();
   };
 
-  if (isLocating && !currentLocation && !location && !cityName && !currentStoreCity && !savedAddressLine) {
-    return <SkeletonHomeHeader />;
-  }
+  // First GPS fix with nothing to fall back on: only the address line is unknown, so only it
+  // shows a placeholder — the bell and avatar render normally.
+  const isResolvingLocation =
+    isLocating && !currentLocation && !location && !cityName && !currentStoreCity && !savedAddressLine;
 
   return (
     <View style={styles.container}>
@@ -123,9 +124,15 @@ export const HomeHeader = () => {
             color="#16A05D"
             strokeWidth={2.2}
           />
-          <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
-            {displayLocation}
-          </Text>
+          {isResolvingLocation ? (
+            <SkeletonGroup style={styles.locationSkeleton} accessibilityLabel="Finding your location">
+              <SkeletonText fontSize={15} lineHeight={20} width={140} />
+            </SkeletonGroup>
+          ) : (
+            <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+              {displayLocation}
+            </Text>
+          )}
           <ChevronDown size={14} color={palette.gray400} strokeWidth={2.2} style={styles.chevron} />
         </Pressable>
       </View>
@@ -204,6 +211,10 @@ const styles = StyleSheet.create({
     marginRight: 4,
     letterSpacing: -0.2,
     flexShrink: 1,
+  },
+  locationSkeleton: {
+    marginLeft: 6,
+    marginRight: 4,
   },
   chevron: {
     flexShrink: 0,

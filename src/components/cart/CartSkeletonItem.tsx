@@ -1,82 +1,36 @@
-import { FC, useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import { FC } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Skeleton, SkeletonGroup, SkeletonText, SKELETON } from '../ui/Skeleton/Skeleton';
 import { colors } from '../../design/colors';
 
-export const CartSkeletonItem: FC = () => {
-  const opacity = useSharedValue(0.4);
-
-  useEffect(() => {
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(0.9, { duration: 800, easing: Easing.ease }),
-        withTiming(0.4, { duration: 800, easing: Easing.ease })
-      ),
-      -1,
-      true
-    );
-  }, [opacity]);
-
-  const shimmerStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
-  return (
-    <View style={styles.skeletonRow}>
-      <View style={styles.textContainer}>
-        {/* Service name line */}
-        <Animated.View style={[styles.nameLine, shimmerStyle]} />
-        {/* Price line */}
-        <Animated.View style={[styles.priceLine, shimmerStyle]} />
-      </View>
-
-      {/* Stepper shape block */}
-      <Animated.View style={[styles.stepperBlock, shimmerStyle]} />
+/**
+ * Mirrors CartItem: flat row (16px vertical padding, hairline divider) with the service name
+ * (14/20), price below, and the QuantityStepper pill (≈92×36) on the right.
+ */
+export const CartSkeletonItem: FC = () => (
+  <SkeletonGroup style={styles.row} accessibilityLabel="Loading cart item">
+    <View style={styles.info}>
+      <SkeletonText fontSize={14} lineHeight={20} width="62%" style={styles.name} />
+      <SkeletonText fontSize={14} lineHeight={19} width={70} />
     </View>
-  );
-};
+    <Skeleton width={92} height={36} borderRadius={SKELETON.radius.pill} />
+  </SkeletonGroup>
+);
 
 const styles = StyleSheet.create({
-  skeletonRow: {
-    height: 74, // Pixel-matched height to CartItem
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  textContainer: {
+  info: {
     flex: 1,
-    gap: 8,
+    paddingRight: 12,
   },
-  nameLine: {
-    width: '65%',
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.bgSkeleton,
-  },
-  priceLine: {
-    width: '35%',
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.bgSkeleton,
-  },
-  stepperBlock: {
-    width: 90,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.bgSkeleton,
+  name: {
+    marginBottom: 4,
   },
 });

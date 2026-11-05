@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { BookingDetails, BookingStatus } from '../types/booking.types';
 import { bookingApi, isGenericWorkerName } from '../services/api/booking.api';
 import { workerApi } from '../services/api/worker.api';
@@ -16,10 +16,18 @@ const workerProfileCache = new Map<string, { name: string; avatarUrl?: string | 
 export function useBookingsList(activeTab: TabType) {
   const [allBookings, setAllBookings] = useState<BookingDetails[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
+  // After the first successful load, refetches keep the current list on screen (pull-to-refresh
+  // spinner only) instead of swapping it for skeletons.
+  const hasLoadedRef = useRef(false);
 
   const fetchBookings = useCallback(async () => {
-    setIsLoading(true);
+    if (hasLoadedRef.current) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
     setIsError(false);
 
     try {
@@ -45,6 +53,7 @@ export function useBookingsList(activeTab: TabType) {
       });
 
       setAllBookings(normalizedBookings);
+      hasLoadedRef.current = true;
 
       // Secondary pass: Asynchronously enrich any missing or generic worker names from worker service
       const missingWorkers = normalizedBookings.filter(
@@ -92,10 +101,14 @@ export function useBookingsList(activeTab: TabType) {
         });
       }
     } catch (_err) {
-      setIsError(true);
-      setAllBookings([]);
+      // A failed refresh keeps the bookings already shown; only a failed first load is an error.
+      if (!hasLoadedRef.current) {
+        setIsError(true);
+        setAllBookings([]);
+      }
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -120,6 +133,7 @@ export function useBookingsList(activeTab: TabType) {
   return {
     bookings: filteredBookings,
     isLoading,
+    isRefreshing,
     isError,
     refetch: fetchBookings,
   };

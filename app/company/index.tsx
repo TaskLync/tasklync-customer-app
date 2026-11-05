@@ -27,6 +27,7 @@ import { CustomRefreshControl } from '../../src/components/feedback/CustomRefres
 import { EmptyState } from '../../src/components/feedback/EmptyState';
 import { colors } from '../../src/design/colors';
 import { companyTokens } from '../../src/theme/companyTokens';
+import { SkeletonCompanyCard } from '../../src/components/company/SkeletonCompanyCard';
 
 export default function AllCompaniesScreen() {
   const router = useRouter();
@@ -272,14 +273,7 @@ export default function AllCompaniesScreen() {
         {isLoading && !refreshing ? (
           <View style={styles.loadingContainer}>
             {Array.from({ length: 4 }).map((_, i) => (
-              <View key={`skel-card-${i}`} style={styles.skeletonCard}>
-                <View style={styles.skeletonLogo} />
-                <View style={styles.skeletonInfo}>
-                  <View style={styles.skeletonBarLong} />
-                  <View style={styles.skeletonBarShort} />
-                  <View style={styles.skeletonBarMedium} />
-                </View>
-              </View>
+              <SkeletonCompanyCard key={`skel-card-${i}`} />
             ))}
           </View>
         ) : isError && filteredCompanies.length === 0 ? (
@@ -550,44 +544,6 @@ const styles = StyleSheet.create({
   loadingContainer: {
     paddingHorizontal: 16,
     gap: 12,
-  },
-  skeletonCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: companyTokens.colors.borderSubtle,
-    gap: 12,
-  },
-  skeletonLogo: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: colors.bgSkeleton,
-  },
-  skeletonInfo: {
-    flex: 1,
-    gap: 8,
-    justifyContent: 'center',
-  },
-  skeletonBarLong: {
-    width: '70%',
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.bgSkeleton,
-  },
-  skeletonBarShort: {
-    width: '40%',
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.bgSkeleton,
-  },
-  skeletonBarMedium: {
-    width: '55%',
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.bgSkeleton,
   },
   emptyContainer: {
     flex: 1,

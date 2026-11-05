@@ -1,27 +1,22 @@
 import { StyleSheet, View } from 'react-native';
-import { Skeleton } from './Skeleton';
-import { radius } from '../../../design/radius';
+import { Skeleton, SkeletonGroup, SkeletonText, SKELETON } from './Skeleton';
 
-export const SkeletonWorkerSkillList = () => {
-  return (
-    <View style={styles.container}>
-      <Skeleton width={120} height={20} borderRadius={radius.sm} style={styles.header} />
-      <View style={styles.grid}>
-        <Skeleton width={90} height={30} borderRadius={radius.pill} />
-        <Skeleton width={110} height={30} borderRadius={radius.pill} />
-        <Skeleton width={80} height={30} borderRadius={radius.pill} />
-        <Skeleton width={100} height={30} borderRadius={radius.pill} />
-        <Skeleton width={85} height={30} borderRadius={radius.pill} />
-      </View>
+const CHIP_WIDTHS = [92, 116, 80, 104, 72];
+
+/** "Skills & Expertise": title, then 30px chips wrapping with an 8px gap. */
+export const SkeletonWorkerSkillList = () => (
+  <SkeletonGroup accessibilityLabel="Loading skills">
+    <SkeletonText fontSize={17} lineHeight={22} width={140} style={styles.title} />
+    <View style={styles.grid}>
+      {CHIP_WIDTHS.map((w) => (
+        <Skeleton key={w} width={w} height={30} borderRadius={SKELETON.radius.pill} />
+      ))}
     </View>
-  );
-};
+  </SkeletonGroup>
+);
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  header: {
+  title: {
     marginBottom: 12,
   },
   grid: {

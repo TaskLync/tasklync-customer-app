@@ -15,6 +15,7 @@ import {
   SkeletonConversationRow,
   ConversationEmptyState,
 } from '../../src/components/chat';
+import { SkeletonGroup } from '../../src/components/ui/Skeleton';
 import { SearchInput } from '../../src/components/ui/Input/SearchInput';
 import { useConversations } from '../../src/hooks/useConversations';
 import { ConversationItem } from '../../src/types/chat.types';
@@ -81,12 +82,12 @@ export default function MessagesScreen() {
   const renderEmptyComponent = () => {
     if (isLoading) {
       return (
-        <View style={styles.skeletonContainer}>
+        <SkeletonGroup accessibilityLabel="Loading conversations">
           <SkeletonConversationRow />
           <SkeletonConversationRow />
           <SkeletonConversationRow />
           <SkeletonConversationRow />
-        </View>
+        </SkeletonGroup>
       );
     }
 
@@ -182,8 +183,5 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingTop: 0,
-  },
-  skeletonContainer: {
-    paddingTop: 6,
   },
 });

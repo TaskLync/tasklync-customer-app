@@ -34,9 +34,9 @@ export const PaymentMethodList: React.FC<PaymentMethodListProps> = ({
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <PaymentMethodCardSkeleton />
-        <PaymentMethodCardSkeleton />
+      <View style={[styles.container, styles.skeletonList]}>
+        <PaymentMethodCardSkeleton variant="picker" />
+        <PaymentMethodCardSkeleton variant="picker" />
       </View>
     );
   }
@@ -55,5 +55,9 @@ export const PaymentMethodList: React.FC<PaymentMethodListProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
+  },
+  // Same 10px rhythm as PaymentMethodPicker.
+  skeletonList: {
+    gap: 10,
   },
 });

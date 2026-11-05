@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SlotInfo } from '../../../hooks/useWorkerSlots';
 import { TimeSlotChip } from './TimeSlotChip';
 import { TimeSlotSkeleton } from './TimeSlotSkeleton';
+import { SkeletonGroup } from '../../ui/Skeleton/Skeleton';
 import { colors, palette, fontFamily, radius } from '../../../design';
 
 export interface TimeSlotGridProps {
@@ -35,9 +36,11 @@ export const TimeSlotGrid: React.FC<TimeSlotGridProps> = ({
 
       <View style={styles.grid}>
         {isLoading ? (
-          Array.from({ length: 6 }).map((_, idx) => (
-            <TimeSlotSkeleton key={`slot-skel-${idx}`} />
-          ))
+          <SkeletonGroup style={[styles.grid, styles.skeletonGrid]} accessibilityLabel="Loading time slots">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <TimeSlotSkeleton key={`slot-skel-${idx}`} />
+            ))}
+          </SkeletonGroup>
         ) : isError ? (
           <View style={styles.emptySlotBox}>
             <Text style={styles.emptySlotText}>Couldn't load available slots</Text>
@@ -111,6 +114,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+  },
+  skeletonGrid: {
+    width: '100%',
   },
   emptySlotBox: {
     width: '100%',

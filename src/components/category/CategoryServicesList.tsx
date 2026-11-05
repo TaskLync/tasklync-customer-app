@@ -8,6 +8,7 @@ import { FlashList } from '@shopify/flash-list';
 import { Service } from '../../types/category.types';
 import { ServiceListItem } from '../service/ServiceListItem';
 import { SkeletonServiceListItem } from '../ui/Skeleton/SkeletonServiceListItem';
+import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
 import { EmptyState } from '../feedback/EmptyState/EmptyState';
 import { StickyListHeader } from '../ui/List/StickyListHeader';
 
@@ -53,7 +54,7 @@ export const CategoryServicesList: React.FC<CategoryServicesListProps> = ({
           title="Services"
           count={null}
         />
-        <View style={styles.skeletonsContainer}>
+        <SkeletonGroup style={styles.skeletonsContainer} accessibilityLabel="Loading services">
           <View style={styles.rowWrapper}>
             <SkeletonServiceListItem />
             <SkeletonServiceListItem />
@@ -62,7 +63,7 @@ export const CategoryServicesList: React.FC<CategoryServicesListProps> = ({
             <SkeletonServiceListItem />
             <SkeletonServiceListItem />
           </View>
-        </View>
+        </SkeletonGroup>
       </View>
     );
   }

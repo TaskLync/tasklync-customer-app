@@ -7,6 +7,7 @@ import { useCompanies } from '../../hooks/useCompanies';
 import { WorkerNearby } from '../../types/worker.types';
 import { colors } from '../../design/colors';
 import { companyTokens } from '../../theme/companyTokens';
+import { Skeleton, SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
 
 const ITEM_GAP = 14;
 
@@ -57,14 +58,26 @@ export const CompanyRow: React.FC = () => {
 
   // Skeleton placeholder when loading
   const renderSkeletons = () => (
-    <View style={styles.skeletonRow}>
+    <SkeletonGroup style={styles.skeletonRow} accessibilityLabel="Loading companies">
       {Array.from({ length: 5 }).map((_, index) => (
         <View key={`skel-comp-${index}`} style={styles.skeletonItem}>
-          <View style={styles.skeletonCircle} />
-          <View style={styles.skeletonText} />
+          <Skeleton
+            width={companyTokens.dimensions.homeLogoSize}
+            height={companyTokens.dimensions.homeLogoSize}
+            borderRadius={companyTokens.dimensions.homeLogoRadius}
+          />
+          {/* Same 2-line (31px) name box as CompanyCircleItem, so the row height never changes. */}
+          <SkeletonText
+            fontSize={12}
+            lineHeight={15.5}
+            lines={2}
+            width={56}
+            lastLineWidth={36}
+            style={styles.skeletonName}
+          />
         </View>
       ))}
-    </View>
+    </SkeletonGroup>
   );
 
   const isEmpty = !isLoading && verifiedCompanies.length === 0;
@@ -239,24 +252,18 @@ const styles = StyleSheet.create({
   skeletonRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
+    paddingTop: 2,
+    paddingBottom: 6,
     gap: ITEM_GAP,
+    overflow: 'hidden',
   },
   skeletonItem: {
     alignItems: 'center',
     width: companyTokens.dimensions.homeItemWidth,
   },
-  skeletonCircle: {
-    width: companyTokens.dimensions.homeLogoSize,
-    height: companyTokens.dimensions.homeLogoSize,
-    borderRadius: companyTokens.dimensions.homeLogoRadius,
-    backgroundColor: colors.bgSkeleton,
-  },
-  skeletonText: {
-    width: 50,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.bgSkeleton,
+  skeletonName: {
     marginTop: 8,
+    alignItems: 'center',
   },
   retryBadge: {
     paddingHorizontal: 10,

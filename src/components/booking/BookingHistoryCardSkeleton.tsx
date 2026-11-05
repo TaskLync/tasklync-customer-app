@@ -1,99 +1,55 @@
-import { useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
-import { colors, palette, radius, spacing, shadows } from '../../design';
+import { SkeletonCircle, SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
+import { colors } from '../../design/colors';
+import { spacing } from '../../design/spacing';
 
-export const BookingHistoryCardSkeleton: React.FC = () => {
-  const opacity = useSharedValue(0.3);
-
-  useEffect(() => {
-    opacity.value = withRepeat(
-      withTiming(0.75, { duration: 750 }),
-      -1,
-      true
-    );
-  }, [opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
-  return (
-    <View style={styles.card}>
-      {/* Left Icon Placeholder */}
-      <Animated.View style={[styles.iconPlaceholder, animatedStyle]} />
-
-      {/* Middle Text Placeholders */}
-      <View style={styles.middleContainer}>
-        <Animated.View style={[styles.titlePlaceholder, animatedStyle]} />
-        <Animated.View style={[styles.subtitlePlaceholder, animatedStyle]} />
-      </View>
-
-      {/* Right Amount/Date Placeholders */}
-      <View style={styles.rightContainer}>
-        <Animated.View style={[styles.amountPlaceholder, animatedStyle]} />
-        <Animated.View style={[styles.datePlaceholder, animatedStyle]} />
-      </View>
+/**
+ * Mirrors BookingHistoryCard: flat 76px row — 42px service icon, worker name (15/20),
+ * service line (12/16), status (11), and amount (15/20) over date (12/16) on the right.
+ */
+export const BookingHistoryCardSkeleton: React.FC = () => (
+  <SkeletonGroup style={styles.card} accessibilityLabel="Loading booking">
+    <SkeletonCircle size={42} style={styles.icon} />
+    <View style={styles.middle}>
+      <SkeletonText fontSize={15} lineHeight={20} width="58%" />
+      <SkeletonText fontSize={12} lineHeight={16} width="42%" style={styles.subtitle} />
+      <SkeletonText fontSize={11} lineHeight={15} width={64} style={styles.status} />
     </View>
-  );
-};
+    <View style={styles.right}>
+      <SkeletonText fontSize={15} lineHeight={20} width={62} />
+      <SkeletonText fontSize={12} lineHeight={16} width={44} style={styles.date} />
+    </View>
+  </SkeletonGroup>
+);
 
 const styles = StyleSheet.create({
   card: {
-    height: 84,
+    minHeight: 76,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.base,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.xs,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  iconPlaceholder: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: palette.gray200,
+  icon: {
     marginRight: spacing.md,
   },
-  middleContainer: {
+  middle: {
     flex: 1,
-    gap: 6,
     marginRight: spacing.sm,
   },
-  titlePlaceholder: {
-    width: '65%',
-    height: 14,
-    borderRadius: 4,
-    backgroundColor: palette.gray200,
+  subtitle: {
+    marginTop: 1,
   },
-  subtitlePlaceholder: {
-    width: '45%',
-    height: 11,
-    borderRadius: 4,
-    backgroundColor: palette.gray200,
+  status: {
+    marginTop: 2,
   },
-  rightContainer: {
+  right: {
     alignItems: 'flex-end',
-    gap: 6,
   },
-  amountPlaceholder: {
-    width: 60,
-    height: 14,
-    borderRadius: 4,
-    backgroundColor: palette.gray200,
-  },
-  datePlaceholder: {
-    width: 45,
-    height: 11,
-    borderRadius: 4,
-    backgroundColor: palette.gray200,
+  date: {
+    marginTop: 3,
+    alignItems: 'flex-end',
   },
 });

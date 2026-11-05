@@ -49,6 +49,7 @@ export function useConversations() {
     getReadOverrides()
   );
 
+  const hasLoadedRef = useRef<boolean>(false);
   const isMountedRef = useRef<boolean>(true);
   useEffect(() => {
     isMountedRef.current = true;
@@ -59,9 +60,11 @@ export function useConversations() {
 
   const fetchAllConversations = useCallback(
     async (isPullToRefresh = false) => {
+      // Skeletons only before the first result. Later reloads (e.g. the callback re-running when
+      // a conversation is marked read) refresh in place instead of blanking the list.
       if (isPullToRefresh) {
         setIsRefreshing(true);
-      } else {
+      } else if (!hasLoadedRef.current) {
         setIsLoading(true);
       }
 
@@ -167,9 +170,11 @@ export function useConversations() {
 
         if (isMountedRef.current) {
           setConversations(items);
+          hasLoadedRef.current = true;
         }
       } catch {
-        if (isMountedRef.current) {
+        // Keep what is already on screen if a reload fails.
+        if (isMountedRef.current && !hasLoadedRef.current) {
           setConversations([]);
         }
       } finally {

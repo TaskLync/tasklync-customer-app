@@ -30,7 +30,7 @@ export default function BookingsScreen() {
   const [requestFilter, setRequestFilter] = useState<'ALL' | 'QUOTE_READY' | 'ACTIVE' | 'RESOLVED'>('ALL');
 
   // Confirmed bookings list query
-  const { bookings, isLoading, isError, refetch } = useBookingsList(activeTab);
+  const { bookings, isLoading, isRefreshing, isError, refetch } = useBookingsList(activeTab);
 
   // Custom requests list query
   const {
@@ -131,7 +131,8 @@ export default function BookingsScreen() {
           >
             <BookingList 
               bookings={bookings} 
-              isLoading={isLoading} 
+              isLoading={isLoading}
+              isRefreshing={isRefreshing}
               isError={isError}
               activeTab={activeTab}
               onRefresh={refetch}

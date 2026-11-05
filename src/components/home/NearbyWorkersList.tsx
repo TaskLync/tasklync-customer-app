@@ -1,12 +1,7 @@
-import { useEffect, useMemo, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { View, StyleSheet, Text, Pressable, FlatList, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
-} from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { WorkerCardHorizontal } from '../worker/WorkerCardHorizontal';
 import { SkeletonWorkerCardHorizontal } from '../ui/Skeleton/SkeletonWorkerCardHorizontal';
@@ -42,32 +37,6 @@ export const NearbyWorkersList = () => {
     return [];
   }, [workers]);
 
-  const opacityList = useSharedValue(0);
-  const opacitySkeleton = useSharedValue(1);
-
-  useEffect(() => {
-    if (!isLoading) {
-      opacitySkeleton.value = withTiming(0, { duration: 180 });
-      opacityList.value = withDelay(80, withTiming(1, { duration: 220 }));
-    } else {
-      opacitySkeleton.value = withTiming(1, { duration: 150 });
-      opacityList.value = withTiming(0, { duration: 150 });
-    }
-  }, [isLoading]);
-
-  const animatedListStyle = useAnimatedStyle(() => ({
-    opacity: opacityList.value,
-  }));
-
-  const animatedSkeletonStyle = useAnimatedStyle(() => ({
-    opacity: opacitySkeleton.value,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: isLoading ? 1 : -1,
-  }));
-
   const handleBookNow = useCallback((worker: WorkerNearby) => {
     pushOnce(() => router.push(`/worker/${worker.id}` as any));
   }, [router]);
@@ -91,11 +60,12 @@ export const NearbyWorkersList = () => {
     <View style={{ width: CARD_GAP }} />
   ), []);
 
+  // Mounted only while loading, so its animation stops the moment real cards arrive.
   const renderSkeleton = () => (
-    <Animated.View style={[styles.skeletonContainer, animatedSkeletonStyle]}>
-      <View style={{ marginRight: CARD_GAP }}><SkeletonWorkerCardHorizontal /></View>
-      <View><SkeletonWorkerCardHorizontal /></View>
-    </Animated.View>
+    <View style={styles.skeletonContainer}>
+      <SkeletonWorkerCardHorizontal cardWidth={cardWidth} />
+      <SkeletonWorkerCardHorizontal cardWidth={cardWidth} />
+    </View>
   );
 
   const hasEmptyState = !isLoading && (!workers || workers.length === 0) && displayWorkers.length === 0;
@@ -144,9 +114,8 @@ export const NearbyWorkersList = () => {
         </View>
       ) : (
         <View style={styles.listContainer}>
-          {renderSkeleton()}
-
-          <Animated.View style={[styles.listWrapper, animatedListStyle]}>
+          {isLoading ? renderSkeleton() : (
+          <Animated.View style={styles.listWrapper} entering={FadeIn.duration(200)}>
             <FlatList
               data={displayWorkers}
               renderItem={renderWorker}
@@ -169,6 +138,7 @@ export const NearbyWorkersList = () => {
               removeClippedSubviews={false}
             />
           </Animated.View>
+          )}
         </View>
       )}
     </View>
@@ -215,6 +185,7 @@ const styles = StyleSheet.create({
   },
   skeletonContainer: {
     flexDirection: 'row',
+    gap: CARD_GAP,
     paddingHorizontal: 16,
     paddingTop: 6,
     paddingBottom: 10,

@@ -49,7 +49,7 @@ export default function WorkerPortfolioScreen() {
 
   const renderEmpty = () => {
     if (isLoading) {
-      return <SkeletonPortfolioGrid />;
+      return <SkeletonPortfolioGrid variant="screen" />;
     }
     return (
       <View style={styles.emptyContainer}>

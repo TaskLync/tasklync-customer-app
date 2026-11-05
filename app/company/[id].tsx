@@ -31,7 +31,7 @@ import { CompanyTrustGuaranteeCard } from '../../src/components/company/CompanyT
 import { CompanyServiceRow } from '../../src/components/company/CompanyServiceRow';
 import { ReviewCard } from '../../src/components/review/ReviewCard';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
-import { SkeletonWorkerProfileHero, SkeletonWorkerServiceRow } from '../../src/components/ui/Skeleton';
+import { SkeletonCompanyProfile } from '../../src/components/company/SkeletonCompanyProfile';
 import { colors } from '../../src/design/colors';
 import { companyTokens } from '../../src/theme/companyTokens';
 import { getPersistedBookings } from '../../src/services/api/booking.api';
@@ -170,12 +170,7 @@ export default function CompanyDetailScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <StatusBar style="dark" />
         {renderTopBar()}
-        <View style={styles.skeletonBody}>
-          <SkeletonWorkerProfileHero />
-          <SkeletonWorkerServiceRow />
-          <SkeletonWorkerServiceRow />
-          <SkeletonWorkerServiceRow />
-        </View>
+        <SkeletonCompanyProfile />
       </SafeAreaView>
     );
   }
@@ -538,10 +533,6 @@ const styles = StyleSheet.create({
   reviewDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: companyTokens.colors.borderSubtle,
-  },
-  skeletonBody: {
-    paddingHorizontal: PAGE_PADDING,
-    gap: 14,
   },
   centered: {
     flex: 1,

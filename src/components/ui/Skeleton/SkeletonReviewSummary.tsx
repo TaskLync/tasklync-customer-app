@@ -1,39 +1,37 @@
-import { View, StyleSheet } from 'react-native';
-import { Skeleton } from './Skeleton';
+import { StyleSheet, View } from 'react-native';
+import { SkeletonGroup, SkeletonText } from './Skeleton';
 
-export const SkeletonReviewSummary = () => {
-  return (
-    <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <View style={styles.leftCol}>
-          <Skeleton width={130} height={18} style={{ marginBottom: 6 }} />
-          <View style={styles.ratingMetaRow}>
-            <Skeleton width={26} height={18} style={{ marginRight: 6 }} />
-            <Skeleton width={88} height={14} style={{ marginRight: 6 }} />
-            <Skeleton width={68} height={14} />
-          </View>
-        </View>
-        <Skeleton width={52} height={16} />
+/** ReviewSummary header: "Reviews" title, score · stars · count line, "See all" on the right. */
+export const SkeletonReviewSummary = () => (
+  <SkeletonGroup style={styles.row} accessibilityLabel="Loading reviews">
+    <View style={styles.left}>
+      <SkeletonText fontSize={17} lineHeight={22} width={76} style={styles.title} />
+      <View style={styles.meta}>
+        <SkeletonText fontSize={16} lineHeight={20} width={26} />
+        <SkeletonText fontSize={14} lineHeight={20} width={78} />
+        <SkeletonText fontSize={13} lineHeight={20} width={64} />
       </View>
     </View>
-  );
-};
+    <SkeletonText fontSize={13} lineHeight={18} width={48} />
+  </SkeletonGroup>
+);
 
 const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 6,
-    marginBottom: 6,
-  },
-  headerRow: {
+  row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+    marginBottom: 4,
   },
-  leftCol: {
+  left: {
     flex: 1,
   },
-  ratingMetaRow: {
+  title: {
+    marginBottom: 2,
+  },
+  meta: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 6,
   },
 });

@@ -37,6 +37,7 @@ import {
 
 import { colors, palette, fontFamily } from '../../src/design';
 import { WorkerAvatar } from '../../src/components/worker/WorkerAvatar';
+import { SkeletonCircle, SkeletonGroup, SkeletonText } from '../../src/components/ui/Skeleton';
 import { useWorkerProfile } from '../../src/hooks/useWorkerProfile';
 import { isAgencyProvider, providerTypeHint } from '../../src/utils/providerHint';
 import { useAddresses } from '../../src/hooks/useAddresses';
@@ -530,9 +531,14 @@ export default function NewCustomRequestScreen() {
           >
             {/* 2. Professional Summary (Compact horizontal row) */}
             {isWorkerLoading ? (
-              <View style={styles.proRowSkeleton}>
-                <ActivityIndicator size="small" color={palette.green600} />
-                <Text style={styles.proSkeletonText}>Loading professional...</Text>
+              <View style={styles.proRow}>
+                <SkeletonGroup style={styles.proSkeleton} accessibilityLabel="Loading professional">
+                  <SkeletonCircle size={52} />
+                  <View style={styles.proMeta}>
+                    <SkeletonText fontSize={14} lineHeight={20} width="55%" />
+                    <SkeletonText fontSize={12} lineHeight={16} width="42%" style={styles.proSkeletonSub} />
+                  </View>
+                </SkeletonGroup>
               </View>
             ) : worker ? (
               <View style={styles.proRow}>
@@ -1342,17 +1348,13 @@ const styles = StyleSheet.create({
     borderColor: palette.gray200,
     marginBottom: 20,
   },
-  proRowSkeleton: {
+  proSkeleton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    marginBottom: 20,
   },
-  proSkeletonText: {
-    fontFamily: fontFamily.jakarta.regular || 'PlusJakartaSans-Regular',
-    fontSize: 13,
-    color: palette.gray500,
-    marginLeft: 10,
+  proSkeletonSub: {
+    marginTop: 1,
   },
   proAvatar: {
     width: 44,

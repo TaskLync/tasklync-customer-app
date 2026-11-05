@@ -1,11 +1,8 @@
 export * from './Skeleton';
 export * from './SkeletonCategoryCard';
 export * from './SkeletonCategoryGrid';
-export * from './SkeletonHomeHeader';
 export * from './SkeletonWorkerCardHorizontal';
-export * from './SkeletonWorkerCard';
 export * from './SkeletonServiceListItem';
-export * from './SkeletonWorkerSearchCard';
 export * from './SkeletonWorkerProfileHero';
 export * from './SkeletonWorkerStats';
 export * from './SkeletonWorkerBio';
@@ -14,4 +11,3 @@ export * from './SkeletonWorkerServiceRow';
 export * from './SkeletonReviewSummary';
 export * from './SkeletonReviewCard';
 export * from './SkeletonPortfolioGrid';
-export * from './SkeletonWorkerProfile';
