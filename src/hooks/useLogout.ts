@@ -6,6 +6,7 @@ import { useCartStore } from '../store/cart.store';
 import { useLocationStore } from '../store/location.store';
 import { usePushRegistration } from './usePushRegistration';
 import { socketService } from '../services/socket/socket.service';
+import { authApi } from '../services/api/auth.api';
 import { createMMKV } from 'react-native-mmkv';
 
 const userStorage = createMMKV({ id: 'tasklync_user_profile_storage' });
@@ -42,6 +43,15 @@ export function useLogout() {
 
       try {
         await unregister();
+      } catch (_e) {}
+
+      // 1b. End the session on the server (refresh token revoked), while we still hold the token.
+      //     Bounded so an offline logout is never blocked.
+      try {
+        await Promise.race([
+          authApi.logout(),
+          new Promise((resolve) => setTimeout(resolve, 5000)),
+        ]);
       } catch (_e) {}
 
       // 2. Clear TanStack Query Cache completely

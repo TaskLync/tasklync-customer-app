@@ -165,8 +165,13 @@ export const useLogout = () => {
   const logoutStore = useAuthStore((state) => state.logout);
   const showToast = useUIStore((state) => state.showToast);
 
-  const logout = () => {
-    authApi.logout().catch(() => {}); // Fire and forget
+  const logout = async () => {
+    // The request interceptor is async: clearing the store first sent the logout call with NO
+    // token (401, server session left alive). Revoke first, bounded so offline never blocks.
+    await Promise.race([
+      authApi.logout().catch(() => undefined),
+      new Promise((resolve) => setTimeout(resolve, 5000)),
+    ]);
     logoutStore();
     showToast({ type: 'info', title: 'Logged out' });
   };

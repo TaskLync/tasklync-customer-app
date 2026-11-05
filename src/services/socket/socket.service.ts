@@ -10,8 +10,16 @@ class SocketService {
   private currentToken: string | null = null;
   /** Persisted event listeners to survive socket creation and reconnection */
   private listeners = new Map<string, Set<(payload: any) => void>>();
+  /** Asks the API layer for a fresh access token (single-flight). Set by api/client.ts. */
+  private authFailureHandler: ((failedToken: string) => void) | null = null;
+  /** One recovery attempt per token: a token that still fails after refresh does not loop. */
+  private authRecoveryAttemptedFor: string | null = null;
 
   // ─── Public API ────────────────────────────────────────────────────────────
+
+  public setAuthFailureHandler(handler: ((failedToken: string) => void) | null): void {
+    this.authFailureHandler = handler;
+  }
 
   /**
    * Connects to the Socket.IO chat gateway.
@@ -228,6 +236,18 @@ class SocketService {
         msg.includes('token');
       if (!isAuthError) {
         this.scheduleReconnect();
+      } else if (
+        this.currentToken &&
+        this.authFailureHandler &&
+        this.authRecoveryAttemptedFor !== this.currentToken
+      ) {
+        // Expired handshake token (app resumed after 15+ min): refresh once; updateToken() reconnects.
+        this.authRecoveryAttemptedFor = this.currentToken;
+        try {
+          this.authFailureHandler(this.currentToken);
+        } catch {
+          /* the HTTP layer owns session decisions */
+        }
       }
     });
   }

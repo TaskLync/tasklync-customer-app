@@ -32,7 +32,10 @@ export const queryClient = new QueryClient({
       // Default fallback: 5 minutes stale time, 30 minutes gc time
       staleTime: 5 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
-      retry: 2,
+      // 401/403 already went through the single refresh + retry in api/client.ts; retrying here
+      // only repeats it. Everything else (network, 5xx, 429) keeps 2 retries.
+      retry: (failureCount, error: any) =>
+        error?.status === 401 || error?.status === 403 ? false : failureCount < 2,
       retryDelay: (attemptIndex) =>
         Math.min(1000 * 2 ** attemptIndex, NETWORK_CONFIG.MAX_RETRY_DELAY_MS),
       networkMode: 'offlineFirst',

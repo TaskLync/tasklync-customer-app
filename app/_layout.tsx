@@ -12,6 +12,7 @@ import { AppProviders } from '../src/providers/AppProviders';
 import { FloatingCartBar } from '../src/components/cart/FloatingCartBar';
 import { colors } from '../src/design/colors';
 import { RouteErrorBoundary } from '../src/components/feedback';
+import { useAuthStore } from '../src/store/auth.store';
 
 export { RouteErrorBoundary as ErrorBoundary };
 
@@ -19,14 +20,18 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts(fontAssets);
+  // Keep the splash up until the stored session is restored from the secure store. No screen
+  // mounts (so no query fires) before the app knows whether it has a token. Bounded: the store
+  // gives up after 5s.
+  const sessionRestored = useAuthStore((s) => s.authState !== 'INITIALIZING');
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded && sessionRestored) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, sessionRestored]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || !sessionRestored) {
     return null;
   }
 

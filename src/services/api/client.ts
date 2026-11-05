@@ -1,8 +1,16 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
-import { useAuthStore } from '../../store/auth.store';
+import { useAuthStore, whenAuthReady } from '../../store/auth.store';
 import { socketService } from '../socket/socket.service';
 import { classifyError, isCancelledError } from './errorClassifier';
+import {
+  createRefreshCoordinator,
+  decideOnUnauthorized,
+  RefreshError,
+  sessionCorrelationId,
+  shouldRefreshProactively,
+} from '../auth/sessionCore';
+import { recordAuthEvent } from '../auth/authEvents';
 
 declare const process: any;
 
@@ -34,26 +42,155 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
-// Request interceptor: Attach Bearer token & x-request-id trace header reliably
-apiClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
-  const authState = useAuthStore.getState().authState;
+// Login / refresh calls: never wait for session restore, never refresh (no recursion).
+const SESSIONLESS_ROUTES = ['/auth/token/refresh', '/auth/otp/'];
+// Calls whose 401 must not trigger a refresh.
+const NO_REFRESH_ROUTES = [...SESSIONLESS_ROUTES, '/auth/user/logout', '/auth/logout'];
+const matches = (url: string, list: string[]) => list.some((p) => url.includes(p));
+const endpointOf = (url: string) => url.split('?')[0];
 
-  if (token && config.headers) {
-    if (typeof config.headers.set === 'function') {
-      config.headers.set('Authorization', `Bearer ${token}`);
-    } else {
-      (config.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+type AuthAwareConfig = {
+  headers?: any;
+  url?: string;
+  _retry?: boolean;
+  /** access token the request was sent with (null = none) */
+  _authToken?: string | null;
+  /** public route retried without credentials: do not attach a token again */
+  _anonymous?: boolean;
+};
+
+function setHeader(config: AuthAwareConfig, name: string, value: string) {
+  if (!config.headers) return;
+  if (typeof config.headers.set === 'function') config.headers.set(name, value);
+  else config.headers[name] = value;
+}
+
+function deleteHeader(config: AuthAwareConfig, name: string) {
+  if (!config.headers) return;
+  if (typeof config.headers.delete === 'function') config.headers.delete(name);
+  else delete config.headers[name];
+}
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+// ---------------------------------------------------------------------------
+// Single-flight token refresh (rules + tests: services/auth/sessionCore.ts)
+// ---------------------------------------------------------------------------
+
+const refreshCoordinator = createRefreshCoordinator({
+  getRefreshToken: () => useAuthStore.getState().refreshToken,
+  getEpoch: () => useAuthStore.getState().sessionEpoch,
+
+  async post(refreshToken) {
+    useAuthStore.getState().setRefreshingToken();
+    // plain axios, not apiClient: the refresh call must never pass through these interceptors
+    const res = await axios.post(
+      `${API_URL}/auth/token/refresh`,
+      { refreshToken },
+      {
+        headers: { 'Content-Type': 'application/json', 'x-request-id': generateRequestId() },
+        // generous: aborting while the server already rotated is what strands a session
+        timeout: 20000,
+      }
+    );
+    const accessToken = res.data?.data?.accessToken || res.data?.accessToken;
+    const newRefreshToken = res.data?.data?.refreshToken || res.data?.refreshToken;
+    if (!accessToken || !newRefreshToken) {
+      // malformed 200: keep the session, the retry gets the grace replay
+      throw { response: { status: 502, data: { reason: 'EMPTY_TOKEN_RESPONSE' } } };
     }
+    return { accessToken, refreshToken: newRefreshToken };
+  },
+
+  toFailure(error: any) {
+    if (!error?.response) return { noResponse: true };
+    const data = error.response.data || {};
+    return { status: error.response.status, reason: data.error?.reason || data.reason };
+  },
+
+  async persist(tokens) {
+    // memory is updated synchronously inside setTokens; do not hold requests hostage to a slow keystore
+    await Promise.race([useAuthStore.getState().setTokens(tokens.accessToken, tokens.refreshToken), sleep(3000)]);
+    try {
+      socketService.updateToken(tokens.accessToken);
+    } catch {
+      /* socket reconnect is best effort */
+    }
+  },
+
+  onTerminal(reason) {
+    useAuthStore.getState().expireSession(reason);
+  },
+
+  onTransient() {
+    useAuthStore.getState().setTemporarilyUnavailable();
+  },
+
+  onEvent(event, fields) {
+    recordAuthEvent(event, { ...fields, sid: sessionCorrelationId(useAuthStore.getState().accessToken) });
+  },
+
+  sleep,
+});
+
+/** Fresh access token via the shared single-flight refresh. Rejects with RefreshError. */
+export function refreshAccessToken(trigger = 'manual'): Promise<string> {
+  return refreshCoordinator.refresh(trigger);
+}
+
+/**
+ * Before a protected request: wait for a refresh already in flight, and refresh ahead of expiry
+ * so the request does not go out with a token that dies on the way. Never throws.
+ */
+export async function ensureFreshAccessToken(): Promise<void> {
+  const inFlight = refreshCoordinator.inFlight();
+  if (inFlight) {
+    await inFlight.catch(() => undefined);
+    return;
+  }
+  const s = useAuthStore.getState();
+  if (!s.accessToken || !s.refreshToken) return;
+  if (!shouldRefreshProactively(s.accessExpiresAt, Date.now())) return;
+  // offline: do not make every request wait on another refresh attempt
+  if (Date.now() - refreshCoordinator.lastTransientFailureAt() < 15000) return;
+  await refreshCoordinator.refresh('proactive').catch(() => undefined);
+}
+
+// Chat socket handshake rejected (expired token): refresh once, updateToken() reconnects.
+socketService.setAuthFailureHandler((failedToken) => {
+  const s = useAuthStore.getState();
+  if (s.accessToken && s.accessToken !== failedToken) {
+    socketService.updateToken(s.accessToken);
+    return;
+  }
+  if (!s.refreshToken) return;
+  refreshCoordinator.refresh('socket').catch(() => undefined);
+});
+
+// ---------------------------------------------------------------------------
+// Request interceptor: wait for session restore, attach the CURRENT token
+// ---------------------------------------------------------------------------
+
+apiClient.interceptors.request.use(async (config) => {
+  const url = config.url || '';
+  const cfg = config as unknown as AuthAwareConfig;
+
+  if (!matches(url, SESSIONLESS_ROUTES)) {
+    // A request fired during cold start used to leave with no header -> 401 "Authentication required".
+    await whenAuthReady();
+    await ensureFreshAccessToken();
   }
 
+  const token = cfg._anonymous ? null : useAuthStore.getState().accessToken;
+  if (token) {
+    setHeader(cfg, 'Authorization', `Bearer ${token}`);
+  }
+  cfg._authToken = token;
+
   if (config.headers) {
-    const requestId = generateRequestId();
-    if (typeof config.headers.set === 'function' && !config.headers.has('x-request-id')) {
-      config.headers.set('x-request-id', requestId);
-    } else if (!config.headers['x-request-id']) {
-      (config.headers as Record<string, string>)['x-request-id'] = requestId;
-    }
+    const hasId =
+      typeof config.headers.has === 'function' ? config.headers.has('x-request-id') : Boolean(config.headers['x-request-id']);
+    if (!hasId) setHeader(cfg, 'x-request-id', generateRequestId());
   }
 
   // Handle FormData across all platforms (Web, iOS, Android):
@@ -64,110 +201,31 @@ apiClient.interceptors.request.use((config) => {
       (typeof window !== 'undefined' && (window as any).FormData && config.data instanceof (window as any).FormData) ||
       typeof config.data?.append === 'function');
 
-  if (isFormData && config.headers) {
-    if (typeof config.headers.delete === 'function') {
-      config.headers.delete('Content-Type');
-    } else {
-      delete (config.headers as Record<string, string>)['Content-Type'];
-    }
+  if (isFormData) {
+    deleteHeader(cfg, 'Content-Type');
   }
 
   // Non-sensitive request logging for authentication diagnostics
   if (__DEV__) {
-    const hasAuth = Boolean(token);
-    const authSummary = hasAuth ? `Bearer [TOKEN_PRESENT: len=${token?.length}]` : '[NO_TOKEN]';
-    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url} | AuthState: ${authState} | Authorization: ${authSummary}`);
+    const authSummary = token ? `Bearer [TOKEN_PRESENT: len=${token.length}]` : '[NO_TOKEN]';
+    console.log(
+      `[API Request] ${config.method?.toUpperCase()} ${url} | AuthState: ${useAuthStore.getState().authState} | Authorization: ${authSummary}`
+    );
   }
 
   return config;
 });
 
-let refreshPromise: Promise<string> | null = null;
+// ---------------------------------------------------------------------------
+// Response interceptor: 401 handling + centralized error classification
+// ---------------------------------------------------------------------------
 
-async function executeTokenRefresh(): Promise<string> {
-  const refreshToken = useAuthStore.getState().refreshToken;
-  if (!refreshToken) {
-    throw new Error('NO_REFRESH_TOKEN');
-  }
-
-  useAuthStore.getState().setRefreshingToken();
-
-  try {
-    const refreshResponse = await axios.post(
-      `${API_URL}/auth/token/refresh`,
-      { refreshToken },
-      {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 10000,
-      }
-    );
-
-    const newAccessToken =
-      refreshResponse.data?.data?.accessToken || refreshResponse.data?.accessToken;
-    const newRefreshToken =
-      refreshResponse.data?.data?.refreshToken ||
-      refreshResponse.data?.refreshToken ||
-      refreshToken;
-
-    if (!newAccessToken) {
-      throw new Error('EMPTY_ACCESS_TOKEN_IN_RESPONSE');
-    }
-
-    useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
-    useAuthStore.getState().setAuthState('AUTHENTICATED');
-
-    try {
-      socketService.updateToken(newAccessToken);
-    } catch {}
-
-    return newAccessToken;
-  } catch (error: any) {
-    const status = error.response?.status;
-    const errorData = error.response?.data?.error || error.response?.data;
-    const errorCode = String(errorData?.code || errorData?.reason || '').toUpperCase();
-    const errorMessage = String(errorData?.message || error.message || '').toLowerCase();
-
-    // STRICT: Only revoke the session if the refresh endpoint explicitly returned 401
-    // with confirmed session invalidation/expiry/revocation/reuse from backend.
-    const isConfirmedInvalidSession =
-      status === 401 &&
-      (errorCode === 'UNAUTHORIZED' ||
-        errorCode === 'TOKEN_REUSE_DETECTED' ||
-        errorCode === 'SESSION_EXPIRED' ||
-        errorCode === 'ACCOUNT_NOT_FOUND' ||
-        errorMessage.includes('expired') ||
-        errorMessage.includes('invalid') ||
-        errorMessage.includes('revoked'));
-
-    if (isConfirmedInvalidSession) {
-      if (__DEV__) {
-        console.warn('[API Auth] Refresh token permanently rejected (401). Invalidating session.');
-      }
-      useAuthStore.getState().logout();
-      throw error;
-    }
-
-    // Temporary failure (offline, timeout, 500, 502, 503, 504, 429) -> NEVER LOGOUT!
-    if (__DEV__) {
-      console.warn('[API Auth] Temporary network/server failure during refresh. Preserving session.');
-    }
-    useAuthStore.getState().setTemporarilyUnavailable();
-    throw error;
-  } finally {
-    refreshPromise = null;
-  }
-}
-
-// Response interceptor: Single-flight Token refresh & Centralized Error Classification
 apiClient.interceptors.response.use(
   (response) => {
     // If we were previously temporarily unavailable and a request succeeds, restore AUTHENTICATED
-    const currentAuthState = useAuthStore.getState().authState;
-    if (
-      currentAuthState === 'TEMPORARILY_UNAVAILABLE' &&
-      useAuthStore.getState().accessToken
-    ) {
-      useAuthStore.getState().setAuthState('AUTHENTICATED');
+    const s = useAuthStore.getState();
+    if (s.authState === 'TEMPORARILY_UNAVAILABLE' && s.accessToken) {
+      s.setAuthState('AUTHENTICATED');
     }
     return response;
   },
@@ -177,72 +235,72 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const originalRequest = error.config;
+    const originalRequest = error.config as (AuthAwareConfig & Record<string, any>) | undefined;
     const url = originalRequest?.url || '';
-    const isAuthRoute = Boolean(
-      url.includes('/auth/token/refresh') ||
-        url.includes('/auth/otp/') ||
-        url.includes('/auth/user/logout') ||
-        url.includes('/auth/logout')
-    );
-    const isPublicSearchRoute = Boolean(url.includes('/search/'));
+    const isPublicSearchRoute = url.includes('/search/');
 
-    // 1. Handle HTTP 401 Unauthorized
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthRoute) {
-      originalRequest._retry = true;
-      const refreshToken = useAuthStore.getState().refreshToken;
+    if (error.response?.status === 401 && originalRequest) {
+      const body = error.response.data || {};
+      const reason: string | undefined = body.reason || body.error?.reason;
+      const s = useAuthStore.getState();
+      const action = decideOnUnauthorized({
+        isAuthEndpoint: matches(url, NO_REFRESH_ROUTES),
+        alreadyRetried: Boolean(originalRequest._retry),
+        tokenSent: originalRequest._authToken,
+        currentAccessToken: s.accessToken,
+        hasRefreshToken: Boolean(s.refreshToken),
+        reason,
+      });
 
-      if (refreshToken) {
-        if (__DEV__) {
-          console.warn(`[API Auth] 401 Unauthorized on ${url}. Awaiting single-flight refresh...`);
-        }
+      recordAuthEvent(reason === 'TOKEN_EXPIRED' ? 'ACCESS_TOKEN_EXPIRED' : 'AUTHENTICATION_FAILED', {
+        endpoint: endpointOf(url),
+        status: 401,
+        reason,
+        action,
+        request_id: body.request_id,
+        sid: sessionCorrelationId(s.accessToken),
+      });
 
-        if (!refreshPromise) {
-          refreshPromise = executeTokenRefresh();
-        }
+      if (action === 'RETRY_WITH_CURRENT') {
+        originalRequest._retry = true;
+        return apiClient(originalRequest);
+      }
 
+      if (action === 'REFRESH') {
+        originalRequest._retry = true;
         try {
-          const newAccessToken = await refreshPromise;
-
-          if (typeof originalRequest.headers?.set === 'function') {
-            originalRequest.headers.set('Authorization', `Bearer ${newAccessToken}`);
-          } else if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-          }
-
+          await refreshCoordinator.refresh('401');
+          // the request interceptor attaches the token that was just stored
           return apiClient(originalRequest);
         } catch (refreshErr: any) {
-          // If public search route, retry anonymously without throwing error
-          if (isPublicSearchRoute && originalRequest.headers) {
-            if (typeof originalRequest.headers.delete === 'function') {
-              originalRequest.headers.delete('Authorization');
-            } else {
-              delete originalRequest.headers.Authorization;
-            }
+          if (isPublicSearchRoute) {
+            originalRequest._anonymous = true;
+            deleteHeader(originalRequest, 'Authorization');
             return apiClient(originalRequest);
           }
-
-          // Otherwise return classified error without logging out (unless confirmed invalid)
-          const classified = classifyError(refreshErr);
+          // Session is only ended inside the coordinator (refresh endpoint said 401).
+          const cause =
+            refreshErr instanceof RefreshError && refreshErr.original ? refreshErr.original : error;
+          const classified = classifyError(cause);
           return Promise.reject({
             ...classified,
-            details: refreshErr.response?.data?.details,
+            details: (cause as any)?.response?.data?.details,
             isNetworkError: classified.category === 'NETWORK_ERROR',
             isTimeout: classified.category === 'REQUEST_TIMEOUT',
           });
         }
-      } else if (isPublicSearchRoute && originalRequest.headers) {
-        // No refresh token but public search: retry anonymously
-        if (typeof originalRequest.headers.delete === 'function') {
-          originalRequest.headers.delete('Authorization');
-        } else {
-          delete originalRequest.headers.Authorization;
-        }
+      }
+
+      if (isPublicSearchRoute && !originalRequest._anonymous && !s.accessToken) {
+        // No session at all on a public search: retry anonymously
+        originalRequest._anonymous = true;
+        originalRequest._retry = true;
+        deleteHeader(originalRequest, 'Authorization');
         return apiClient(originalRequest);
       }
     }
 
-    // 2. Centralized Error Classification
+    // Centralized Error Classification
     const classified = classifyError(error);
     const rawError = error.response?.data?.error || error.response?.data;
 
