@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  StyleProp,
+  ViewStyle,
+  LayoutChangeEvent,
+} from 'react-native';
 import { MessageCircle } from 'lucide-react-native';
 import { colors } from '../../design';
 
@@ -12,10 +20,25 @@ export const LoadingOlder = React.memo(function LoadingOlder() {
   );
 });
 
-/** Genuinely empty conversation (loaded, zero messages). */
-export const EmptyConversation = React.memo(function EmptyConversation() {
+interface EmptyConversationProps {
+  style?: StyleProp<ViewStyle>;
+  onLayout?: (event: LayoutChangeEvent) => void;
+}
+
+/**
+ * Genuinely empty conversation (loaded, zero messages).
+ *
+ * Used as ListEmptyComponent of the chats' *inverted* FlatList. The list flips its content
+ * (scaleY -1 on iOS, scale -1 on Android) and un-flips the empty component by cloning it with
+ * `style` = inversion transform (+ an `onLayout` it relies on). Both props MUST reach the root
+ * View — dropping them is what rendered this state upside down.
+ */
+export const EmptyConversation = React.memo(function EmptyConversation({
+  style,
+  onLayout,
+}: EmptyConversationProps) {
   return (
-    <View style={styles.empty}>
+    <View style={[styles.empty, style]} onLayout={onLayout}>
       <View style={styles.emptyIcon}>
         <MessageCircle size={22} color={colors.primaryDark} strokeWidth={2} />
       </View>
