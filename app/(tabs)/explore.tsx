@@ -9,8 +9,8 @@ import { FilterSheetContent } from '../../src/components/search/FilterSheetConte
 import { RecentSearchesSection } from '../../src/components/search/RecentSearchesSection';
 import { TrendingSearchChips } from '../../src/components/search/TrendingSearchChips';
 import { AutocompleteDropdown } from '../../src/components/search/AutocompleteDropdown';
-import { WorkerSearchCard } from '../../src/components/worker/WorkerSearchCard';
-import { SkeletonWorkerSearchCard } from '../../src/components/ui/Skeleton';
+import { WorkerListRow, WorkerListRowSkeleton } from '../../src/components/worker/WorkerListRow';
+import { SkeletonGroup } from '../../src/components/ui/Skeleton';
 import { ChipGroup, Chip } from '../../src/components/ui/Chip';
 import { ProviderTypeFilterChips } from '../../src/components/search/ProviderTypeFilterChips';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
@@ -332,10 +332,12 @@ export default function ExploreScreen() {
         <View style={styles.listContainer}>
           <FlashList
             data={workers}
-            renderItem={({ item }) => <WorkerSearchCard worker={item} />}
+            renderItem={({ item, index }) => (
+              <WorkerListRow worker={item} isLast={index === workers.length - 1 && !isLoadingMore} />
+            )}
             keyExtractor={(item) => item.id}
             // @ts-ignore
-            estimatedItemSize={104}
+            estimatedItemSize={88}
             contentContainerStyle={styles.flashListContent}
             onScroll={(e) => {
               scrollY.value = e.nativeEvent.contentOffset.y;
@@ -376,11 +378,11 @@ export default function ExploreScreen() {
             }
             ListEmptyComponent={
               isLoading ? (
-                <View style={styles.skeletonContainer}>
+                <SkeletonGroup style={styles.skeletonContainer} accessibilityLabel="Loading results">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <SkeletonWorkerSearchCard key={i} />
+                    <WorkerListRowSkeleton key={i} />
                   ))}
-                </View>
+                </SkeletonGroup>
               ) : isError ? (
                 <EmptyState
                   type={isOffline ? 'no-internet' : 'server-error'}
@@ -400,11 +402,11 @@ export default function ExploreScreen() {
             }
             ListFooterComponent={
               isLoadingMore ? (
-                <View style={styles.skeletonContainer}>
+                <SkeletonGroup style={styles.skeletonContainer} accessibilityLabel="Loading results">
                   {[1, 2].map((i) => (
-                    <SkeletonWorkerSearchCard key={i} />
+                    <WorkerListRowSkeleton key={i} />
                   ))}
-                </View>
+                </SkeletonGroup>
               ) : null
             }
           />
@@ -463,12 +465,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   flashListContent: {
-    paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 40,
   },
   resultsHeader: {
-    marginBottom: 14,
+    marginBottom: 6,
+    paddingHorizontal: 16,
   },
   resultsCount: {
     fontFamily: typography.fontFamily.inter.medium,
@@ -480,7 +482,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   skeletonContainer: {
-    gap: 10,
   },
   emptyResultsContainer: {
     alignItems: 'center',

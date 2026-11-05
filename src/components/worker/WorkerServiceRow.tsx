@@ -1,17 +1,16 @@
 import React from 'react';
 import { StyleSheet, View, Text, Pressable, ViewStyle, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { Clock } from 'lucide-react-native';
 import { ServicePriceTag } from '../service/ServicePriceTag';
 import { AddToCartButton } from '../cart/AddToCartButton';
 import { Button } from '../ui/Button/Button';
+import { useCartStore } from '../../store/cart.store';
 import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
-import { springConfig } from '../../design/animations';
 import { WorkerServiceOffering } from '../../types/worker.types';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+/** Horizontal inset of the row surface; the parent cancels it so text aligns with section titles. */
+export const SERVICE_ROW_INSET = 12;
 
 interface WorkerServiceRowProps {
   service: WorkerServiceOffering;
@@ -24,6 +23,14 @@ interface WorkerServiceRowProps {
   style?: ViewStyle | undefined;
 }
 
+const formatDuration = (mins?: number | null): string | null => {
+  if (!mins || mins <= 0) return null;
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h} hr ${m} min` : `${h} ${h === 1 ? 'hr' : 'hrs'}`;
+};
+
 export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
   service,
   workerId,
@@ -35,15 +42,9 @@ export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
   style,
 }) => {
   const router = useRouter();
-  const scale = useSharedValue(1);
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.985, springConfig.stiff);
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1.0, springConfig.default);
-  };
+  const cartServiceId = service.serviceId || service.id;
+  // Same key AddToCartButton uses, so the row tint always matches the stepper state.
+  const isAdded = useCartStore((s) => s.items.some((i) => i.serviceId === cartServiceId));
 
   const handleRowPress = () => {
     router.push({
@@ -63,132 +64,114 @@ export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
     );
   };
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   const isQuote = service.priceType === 'quote';
+  const meta = [formatDuration(service.durationMins), service.notes?.trim() || null]
+    .filter(Boolean)
+    .join('  ·  ');
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={handleRowPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[styles.container, animatedStyle, style]}
+      style={({ pressed }) => [
+        styles.container,
+        isAdded && styles.containerAdded,
+        pressed && styles.pressed,
+        style,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={`${service.serviceName}${isAdded ? ', added' : ''}`}
     >
       <View style={styles.leftGroup}>
         <Text style={styles.nameText} numberOfLines={2}>
           {service.serviceName}
         </Text>
 
-        <View style={styles.metaRow}>
-          <Clock size={13} color={colors.textMuted} style={styles.clockIcon} />
-          <Text style={styles.durationText}>
-            45–60 min
+        {meta ? (
+          <Text style={styles.metaText} numberOfLines={1}>
+            {meta}
           </Text>
-          {service.notes ? (
-            <>
-              <Text style={styles.dotSeparator}> · </Text>
-              <Text style={styles.notesText} numberOfLines={1}>
-                {service.notes}
-              </Text>
-            </>
-          ) : null}
-        </View>
-      </View>
-
-      <View style={styles.rightGroup}>
-        <ServicePriceTag
-          amount={service.customPrice}
-          priceType={service.priceType as any}
-          size="sm"
-          style={styles.priceTag}
-        />
+        ) : null}
 
         {isQuote ? (
-          <Button
-            variant="secondary"
-            size="sm"
-            label="Quote"
-            onPress={handleQuotePress}
-            style={styles.quoteButton}
-          />
+          <Text style={styles.quoteText}>Price on quote</Text>
         ) : (
-          <AddToCartButton
-            serviceId={service.serviceId || service.id}
-            serviceName={service.serviceName}
-            price={service.customPrice}
-            workerId={workerId}
-            workerName={workerName}
-            workerAvatar={workerAvatar}
-            workerRating={workerRating}
-            workerCategory={workerCategory}
-            isVerified={workerVerified}
-            size="sm"
+          <ServicePriceTag
+            amount={service.customPrice}
+            priceType={service.priceType}
+            size="md"
+            style={styles.priceTag}
           />
         )}
       </View>
-    </AnimatedPressable>
+
+      {isQuote ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          label="Quote"
+          onPress={handleQuotePress}
+          style={styles.quoteButton}
+        />
+      ) : (
+        <AddToCartButton
+          serviceId={cartServiceId}
+          serviceName={service.serviceName}
+          price={service.customPrice}
+          workerId={workerId}
+          workerName={workerName}
+          workerAvatar={workerAvatar}
+          workerRating={workerRating}
+          workerCategory={workerCategory}
+          isVerified={workerVerified}
+          size="sm"
+        />
+      )}
+    </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    backgroundColor: colors.bgCard,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: SERVICE_ROW_INSET,
+    borderRadius: 14,
+  },
+  containerAdded: {
+    backgroundColor: colors.primaryTint,
+  },
+  pressed: {
+    backgroundColor: colors.bgHover,
   },
   leftGroup: {
     flex: 1,
+    minWidth: 0,
     paddingRight: 12,
-    justifyContent: 'center',
   },
   nameText: {
     fontFamily: typography.fontFamily.jakarta.semiBold,
-    fontSize: 14,
+    fontSize: 15,
+    lineHeight: 20,
     color: colors.textPrimary,
-    lineHeight: 19,
-    marginBottom: 4,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  clockIcon: {
-    marginRight: 4,
-  },
-  durationText: {
-    fontFamily: typography.fontFamily.inter.regular,
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  dotSeparator: {
+  metaText: {
     fontFamily: typography.fontFamily.jakarta.regular,
-    fontSize: 12,
+    fontSize: 12.5,
     color: colors.textMuted,
-  },
-  notesText: {
-    fontFamily: typography.fontFamily.jakarta.regular,
-    fontSize: 12,
-    color: colors.textMuted,
-    flex: 1,
-  },
-  rightGroup: {
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: 6,
-    flexShrink: 0,
+    marginTop: 2,
   },
   priceTag: {
-    // Top right aligned
+    marginTop: 6,
+  },
+  quoteText: {
+    fontFamily: typography.fontFamily.jakarta.semiBold,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 6,
   },
   quoteButton: {
     height: 32,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
 });

@@ -30,6 +30,8 @@ export interface WorkerNearby {
   isVerified?: boolean | undefined;
   isAvailable?: boolean | undefined;
   isBusy?: boolean | undefined;
+  /** availabilityStatus came from a real-time backend field (not inferred from account state). */
+  hasLiveAvailability?: boolean | undefined;
   badges?: string[] | undefined;
   isFeatured?: boolean | undefined;
   companyVerified?: boolean | undefined;
@@ -65,6 +67,8 @@ export interface WorkerServiceOffering {
   notes: string | null;
   description?: string | null;
   imageUrl?: string | null;
+  /** Estimated duration in minutes — only set when the backend provides one. */
+  durationMins?: number | null;
 }
 
 export interface WorkerPublicProfile extends WorkerNearby {

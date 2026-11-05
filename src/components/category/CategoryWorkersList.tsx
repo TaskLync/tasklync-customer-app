@@ -12,8 +12,8 @@ import { useInfiniteWorkers } from '../../hooks/useInfiniteWorkers';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { useLocation } from '../../hooks/useLocation';
 import { FAISALABAD_CENTER } from '../../config/serviceArea.config';
-import { WorkerSearchCard } from '../worker/WorkerSearchCard';
-import { SkeletonWorkerSearchCard } from '../ui/Skeleton/SkeletonWorkerSearchCard';
+import { WorkerListRow, WorkerListRowSkeleton } from '../worker/WorkerListRow';
+import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
 import { EmptyState } from '../feedback/EmptyState/EmptyState';
 import { ErrorState } from '../feedback/ErrorState/ErrorState';
 import { StickyListHeader } from '../ui/List/StickyListHeader';
@@ -68,17 +68,17 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
     limit: 10,
   });
 
-  const renderItem = ({ item }: { item: WorkerNearby }) => {
-    return <WorkerSearchCard worker={item} />;
+  const renderItem = ({ item, index }: { item: WorkerNearby; index: number }) => {
+    return <WorkerListRow worker={item} isLast={index === workers.length - 1 && !isLoadingMore} />;
   };
 
   const renderFooter = () => {
     if (isLoadingMore) {
       return (
-        <View style={styles.footerLoader}>
-          <SkeletonWorkerSearchCard />
-          <SkeletonWorkerSearchCard />
-        </View>
+        <SkeletonGroup style={styles.footerLoader} accessibilityLabel="Loading more workers">
+          <WorkerListRowSkeleton />
+          <WorkerListRowSkeleton isLast />
+        </SkeletonGroup>
       );
     }
 
@@ -106,12 +106,12 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
             />
           }
         />
-        <View style={styles.skeletons}>
-          <SkeletonWorkerSearchCard />
-          <SkeletonWorkerSearchCard />
-          <SkeletonWorkerSearchCard />
-          <SkeletonWorkerSearchCard />
-        </View>
+        <SkeletonGroup style={styles.skeletons} accessibilityLabel="Loading workers">
+          <WorkerListRowSkeleton />
+          <WorkerListRowSkeleton />
+          <WorkerListRowSkeleton />
+          <WorkerListRowSkeleton />
+        </SkeletonGroup>
       </View>
     );
   }
@@ -174,7 +174,7 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
         data={workers}
         renderItem={renderItem}
         keyExtractor={(item: WorkerNearby) => item.id}
-        estimatedItemSize={110}
+        estimatedItemSize={88}
         onEndReachedThreshold={0.6}
         onEndReached={loadMore}
         contentContainerStyle={styles.listContent}
@@ -203,14 +203,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: 16,
     paddingBottom: 24,
   },
   headerWrapper: {
-    marginHorizontal: -16,
+    marginBottom: 4,
   },
   skeletons: {
-    paddingHorizontal: 16,
+    marginTop: 4,
   },
   loadingContainer: {
     flex: 1,

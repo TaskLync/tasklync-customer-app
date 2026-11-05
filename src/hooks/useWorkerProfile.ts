@@ -123,6 +123,9 @@ export const useWorkerProfile = (workerId?: string | null) => {
     dataUpdatedAt: profileQuery.dataUpdatedAt,
     skills: skillsQuery.skills.length > 0 ? skillsQuery.skills : (profileQuery.data?.skills || []),
     services,
+    // True only while nothing can be shown yet (no sub-query result and no profile fallback),
+    // so the Services section can hold its space with a skeleton instead of popping in.
+    isServicesLoading: servicesQuery.isLoading && services.length === 0,
     isLoading: profileQuery.isLoading,
     isError: profileQuery.isError,
     error: profileQuery.error,

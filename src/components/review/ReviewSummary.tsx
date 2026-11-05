@@ -104,7 +104,7 @@ export const ReviewSummary = ({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 4,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   headerRow: {
     flexDirection: 'row',
@@ -116,10 +116,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.poppins.semiBold,
-    fontSize: 16,
+    fontSize: 17,
+    letterSpacing: -0.2,
     color: colors.textPrimary,
     lineHeight: 22,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   ratingMetaRow: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, Alert, Share, Pressable } from 'react-native';
+import { StyleSheet, View, Text, Alert, Share, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import Animated, {
@@ -18,17 +18,19 @@ import { WorkerStats } from '@components/worker/WorkerStats';
 import { WorkerBio } from '@components/worker/WorkerBio';
 import { WorkerSkillList } from '@components/worker/WorkerSkillList';
 import { WorkerServicesSection } from '@components/worker/WorkerServicesSection';
-import { WorkerProfileStickyFooter } from '@components/worker/WorkerProfileStickyFooter';
+import {
+  WorkerProfileStickyFooter,
+  getWorkerProfileFooterHeight,
+} from '@components/worker/WorkerProfileStickyFooter';
 import { MoreOptionsMenu } from '@components/worker/MoreOptionsMenu';
 import { WorkerPortfolioGrid } from '@components/worker/WorkerPortfolioGrid';
 import { ReviewSummary } from '@components/review/ReviewSummary';
-import { ReviewCard, REVIEW_CARD_GAP } from '@components/review/ReviewCard';
-import { SectionDivider } from '@components/ui/Divider';
+import { ReviewCard } from '@components/review/ReviewCard';
 import { ImageViewer } from '@components/common/ImageViewer';
 import { BlockWorkerSheet } from '../../src/components/worker/BlockWorkerSheet';
 import { useBlockWorker } from '../../src/hooks/useBlockWorker';
 import { getPersistedBookings } from '../../src/services/api/booking.api';
-import { ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, ChevronRight, FilePen } from 'lucide-react-native';
 
 import {
   SkeletonWorkerProfileHero,
@@ -36,35 +38,33 @@ import {
   SkeletonWorkerBio,
   SkeletonWorkerSkillList,
   SkeletonWorkerServiceRow,
-  SkeletonReviewSummary,
-  SkeletonPortfolioGrid,
   SkeletonReviewCard,
+  SkeletonGroup,
+  SkeletonText,
 } from '@components/ui/Skeleton';
 
 import { colors } from '@design/colors';
 import { typography } from '@design/typography';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
 
-// Spacing system: 20 screen gutter · 16 within a group · 24 between sections.
+// Spacing system — sections are separated by whitespace, not divider lines.
+//   20  screen gutter
+//   12  between closely related items (identity → availability → stats)
+//   32  between sections
 const SCREEN_PADDING = 20;
-const GROUP_GAP = 16;
-const SECTION_GAP = 24;
-// Header already has its own bottom padding; this adds the visible gap below it.
-const HEADER_CONTENT_GAP = 12;
-// Clearance for the floating footer (Chat / Book Now).
-const FOOTER_CLEARANCE = 112;
+const GROUP_GAP = 12;
+const SECTION_GAP = 32;
+// Extra room under the last section so it never sits flush against the sticky CTA.
+const FOOTER_BREATHING_ROOM = 24;
 
 export default function WorkerProfileScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
-  // Dynamic clearance for the floating footer (Chat / Book Now) accounting for Android edge-to-edge system navigation
-  const dynamicFooterClearance = Math.max(
-    FOOTER_CLEARANCE,
-    72 + (insets.bottom > 0 ? insets.bottom + 14 : 20) + 16
-  );
-  
+  // Derived from the footer's real height (incl. safe-area inset) so content is never hidden behind it.
+  const footerClearance = getWorkerProfileFooterHeight(insets.bottom) + FOOTER_BREATHING_ROOM;
+
   const scrollY = useSharedValue(0);
   const [optionsVisible, setOptionsVisible] = useState(false);
   const [blockSheetVisible, setBlockSheetVisible] = useState(false);
@@ -74,8 +74,13 @@ export default function WorkerProfileScreen() {
 
   const blockWorkerMutation = useBlockWorker();
 
-  const { worker, skills, services, isLoading, isError, refetch } = useWorkerProfile(id || '');
-  const { reviews: previewReviews, summary } = useWorkerReviews(id || '');
+  const { worker, skills, services, isServicesLoading, isLoading, isError, refetch } =
+    useWorkerProfile(id || '');
+  const {
+    reviews: previewReviews,
+    summary,
+    isLoading: isReviewsLoading,
+  } = useWorkerReviews(id || '');
   const { images: portfolioImages } = useWorkerPortfolio(id || '');
 
   const hasActiveBooking = Boolean(
@@ -160,30 +165,38 @@ export default function WorkerProfileScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
-        <ScrollView showsVerticalScrollIndicator={false}>
+      <SafeAreaView style={styles.loadingContainer} edges={['top', 'left', 'right']}>
+        <StatusBar style="dark" />
+        {/* Real back button: the user can always leave while the profile loads. */}
+        <View style={styles.loadingNav}>
+          <Pressable
+            onPress={handleBack}
+            style={styles.loadingBack}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+          </Pressable>
+        </View>
+        {/* One SkeletonGroup = one animated node for the whole page. */}
+        <SkeletonGroup accessibilityLabel="Loading worker profile">
           <SkeletonWorkerProfileHero />
           <View style={styles.contentCard}>
             <SkeletonWorkerStats />
-            <View style={styles.sectionSpacer} />
-            <SkeletonWorkerBio />
-            <View style={styles.sectionSpacer} />
-            <SkeletonWorkerSkillList />
-            <View style={styles.sectionSpacer} />
-            <View style={styles.servicesHeaderSkeleton}>
-              <SkeletonWorkerServiceRow />
-              <SkeletonWorkerServiceRow />
+            <View style={styles.section}>
+              <SkeletonWorkerBio />
             </View>
-            <View style={styles.sectionSpacer} />
-            <SkeletonPortfolioGrid />
-            <View style={styles.sectionSpacer} />
-            <SkeletonReviewSummary />
-            <View style={styles.reviewList}>
-              <SkeletonReviewCard />
-              <SkeletonReviewCard />
+            <View style={styles.section}>
+              <SkeletonWorkerSkillList />
+            </View>
+            <View style={styles.section}>
+              <SkeletonText fontSize={17} lineHeight={22} width={80} style={styles.skeletonTitle} />
+              <SkeletonWorkerServiceRow />
+              <SkeletonWorkerServiceRow />
             </View>
           </View>
-        </ScrollView>
+        </SkeletonGroup>
       </SafeAreaView>
     );
   }
@@ -204,6 +217,12 @@ export default function WorkerProfileScreen() {
 
   const isAvailable = worker.availabilityStatus === 'AVAILABLE';
 
+  // Prefer the review-service summary; fall back to the profile's own counters (both are backend data).
+  const summaryTotal = summary ? summary.totalReviews ?? (summary as any).total ?? 0 : undefined;
+  const reviewCount = summaryTotal ?? worker.totalReviews ?? 0;
+  const reviewSummary =
+    summary ?? ({ avgRating: worker.avgRating, totalReviews: worker.totalReviews } as any);
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar style="dark" />
@@ -222,49 +241,35 @@ export default function WorkerProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Parallax Hero Header */}
+        {/* Identity: avatar, name, verification, category · city, rating */}
         <WorkerProfileHeader
           worker={worker}
           scrollY={scrollY}
           onBack={handleBack}
           onShare={handleShare}
           onMore={handleMore}
+          onRatingPress={reviewCount > 0 ? handleRatingPress : undefined}
         />
 
-        {/* Content Card Overlapping Hero */}
-        <View style={[styles.contentCard, { paddingBottom: dynamicFooterClearance }]}>
-          {/* Trust Row: Availability card */}
-          <View style={styles.trustRow}>
-            <WorkerAvailabilityCard
-              status={worker.availabilityStatus}
-              availableUntil={worker.availableUntil}
-              avgResponseMins={worker.responseTimeMins}
-            />
-          </View>
-
-          {/* Stats Grid */}
+        <View style={[styles.contentCard, { paddingBottom: footerClearance }]}>
+          {/* Availability + performance — one tight group directly under the identity */}
+          <WorkerAvailabilityCard
+            status={worker.availabilityStatus}
+            availableUntil={worker.availableUntil}
+          />
           <WorkerStats
-            rating={worker.avgRating}
-            totalReviews={worker.totalReviews}
+            yearsExperience={worker.yearsExperience}
             totalJobs={worker.totalBookings}
             avgResponseMins={worker.responseTimeMins}
-            onRatingPress={handleRatingPress}
             style={styles.statsCard}
           />
-          
-          <View style={styles.divider} />
 
-          {/* About Bio */}
-          <WorkerBio bio={worker.bio} style={styles.bioSection} />
+          {/* Each section owns its top spacing and renders nothing when empty,
+              so missing data never leaves an orphaned gap. */}
+          <WorkerBio bio={worker.bio} style={styles.section} />
 
-          <View style={styles.divider} />
+          <WorkerSkillList skills={skills} style={styles.section} />
 
-          {/* Skills Tag Cloud */}
-          <WorkerSkillList skills={skills} style={styles.skillsSection} />
-
-          <View style={styles.divider} />
-
-          {/* Services Rows list */}
           <WorkerServicesSection
             services={services}
             workerId={worker.id}
@@ -274,71 +279,82 @@ export default function WorkerProfileScreen() {
             workerCategory={worker.categories?.[0]}
             workerVerified={worker.isVerified}
             startingPrice={worker.startingPrice}
-            style={styles.servicesSection}
-          />
-
-          <Pressable
-            style={styles.customQuoteRow}
-            onPress={() =>
-              router.push({
-                pathname: '/custom-request/new' as any,
-                params: {
-                  workerId: worker.id,
-                  categoryId: worker.categories?.[0] || '',
-                },
-              })
+            isLoading={isServicesLoading}
+            style={styles.section}
+            footer={
+              <Pressable
+                style={({ pressed }) => [styles.customQuoteRow, pressed && styles.pressed]}
+                onPress={() =>
+                  router.push({
+                    pathname: '/custom-request/new' as any,
+                    params: {
+                      workerId: worker.id,
+                      categoryId: worker.categories?.[0] || '',
+                    },
+                  })
+                }
+                accessibilityRole="button"
+              >
+                <View style={styles.customQuoteIcon}>
+                  <FilePen size={16} color={colors.primaryDark} strokeWidth={2.2} />
+                </View>
+                <View style={styles.customQuoteTextCol}>
+                  <Text style={styles.customQuoteTitle}>Need something else?</Text>
+                  <Text style={styles.customQuoteSubtitle}>Request a custom quote</Text>
+                </View>
+                <ChevronRight size={18} color={colors.textMuted} />
+              </Pressable>
             }
-            accessibilityRole="button"
-          >
-            <Text style={styles.customQuoteTitle}>Request a custom quote</Text>
-            <ChevronRight size={18} color={colors.textMuted} />
-          </Pressable>
-
-          <SectionDivider marginV={8} />
-
-          <WorkerPortfolioGrid
-            images={portfolioImages.slice(0, 6)}
-            workerId={worker.id}
-            maxVisible={6}
-            onViewAll={() => router.push(`/worker/${id}/portfolio`)}
-            onImagePress={(images, index) => {
-              setViewerStartIndex(index);
-              setViewerVisible(true);
-            }}
-            showHeader={true}
           />
 
-          <SectionDivider marginV={8} />
-
-          <ReviewSummary
-            summary={summary}
-            onViewAll={() => router.push(`/worker/${id}/reviews`)}
-          />
-
-          {previewReviews.length > 0 && (
-            <View style={styles.reviewList}>
-              {previewReviews.slice(0, 3).map((review) => (
-                <ReviewCard
-                  key={review.id}
-                  review={review}
-                  showReply={true}
-                  maxCommentLines={3}
-                />
-              ))}
-
-              {summary && (summary.totalReviews ?? (summary as any).total ?? 0) > 3 && (
-                <Pressable
-                  onPress={() => router.push(`/worker/${id}/reviews`)}
-                  hitSlop={12}
-                  style={styles.seeAllLink}
-                >
-                  <Text style={styles.seeAllText}>
-                    See all {summary.totalReviews ?? (summary as any).total} reviews →
-                  </Text>
-                </Pressable>
-              )}
+          {portfolioImages.length > 0 && (
+            <View style={[styles.section, styles.fullBleed]}>
+              <WorkerPortfolioGrid
+                images={portfolioImages.slice(0, 6)}
+                workerId={worker.id}
+                maxVisible={6}
+                horizontalPadding={SCREEN_PADDING}
+                onViewAll={() => router.push(`/worker/${id}/portfolio`)}
+                onImagePress={(_images, index) => {
+                  setViewerStartIndex(index);
+                  setViewerVisible(true);
+                }}
+                showHeader={true}
+              />
             </View>
           )}
+
+          {/* Reviews — real summary only; no stars or score when there are no reviews */}
+          <View style={styles.section}>
+            {reviewCount > 0 ? (
+              <>
+                <ReviewSummary summary={reviewSummary} onViewAll={handleRatingPress} />
+                {isReviewsLoading && previewReviews.length === 0 ? (
+                  <View style={styles.reviewList}>
+                    <SkeletonReviewCard />
+                  </View>
+                ) : previewReviews.length > 0 && (
+                  <View style={styles.reviewList}>
+                    {previewReviews.slice(0, 3).map((review) => (
+                      <ReviewCard
+                        key={review.id}
+                        review={review}
+                        showReply={true}
+                        maxCommentLines={3}
+                      />
+                    ))}
+                  </View>
+                )}
+              </>
+            ) : (
+              <>
+                <Text style={styles.sectionTitle}>Reviews</Text>
+                <Text style={styles.emptyText}>
+                  No reviews yet. Reviews appear here after customers complete a booking.
+                </Text>
+              </>
+            )}
+          </View>
         </View>
       </Animated.ScrollView>
 
@@ -391,79 +407,96 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     backgroundColor: colors.bgCard,
-    overflow: 'hidden',
   },
   loadingContainer: {
     flex: 1,
     width: '100%',
     backgroundColor: colors.bgCard,
-    overflow: 'hidden',
   },
   scrollContent: {
     flexGrow: 1,
   },
+  loadingNav: {
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    marginBottom: 12,
+  },
+  loadingBack: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  skeletonTitle: {
+    marginBottom: 6,
+  },
   contentCard: {
     backgroundColor: colors.bgCard,
     paddingHorizontal: SCREEN_PADDING,
-    // Clear breathing room between the worker header and the first content block.
-    paddingTop: HEADER_CONTENT_GAP,
-    // Keeps the last section clear of the floating footer without a fixed spacer view.
-    paddingBottom: FOOTER_CLEARANCE,
-  },
-  trustRow: {
-    marginBottom: GROUP_GAP,
-    width: '100%',
+    paddingTop: 16,
   },
   statsCard: {
-    marginBottom: GROUP_GAP,
+    marginTop: GROUP_GAP,
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: SECTION_GAP,
-    width: '100%',
+  section: {
+    marginTop: SECTION_GAP,
   },
-  bioSection: {
-    width: '100%',
+  // Lets the portfolio grid span edge to edge; it re-applies the gutter internally.
+  fullBleed: {
+    marginHorizontal: -SCREEN_PADDING,
   },
-  skillsSection: {
-    width: '100%',
+  sectionTitle: {
+    fontFamily: typography.fontFamily.poppins.semiBold,
+    fontSize: 17,
+    letterSpacing: -0.2,
+    lineHeight: 22,
+    color: colors.textPrimary,
   },
-  servicesSection: {
-    width: '100%',
-  },
-  reviewList: {
-    marginTop: 8,
-    gap: REVIEW_CARD_GAP,
-  },
-  seeAllLink: {
-    alignSelf: 'center',
-    paddingVertical: 8,
+  emptyText: {
+    fontFamily: typography.fontFamily.jakarta.regular,
+    fontSize: 13.5,
+    lineHeight: 20,
+    color: colors.textMuted,
     marginTop: 4,
   },
-  seeAllText: {
-    fontFamily: typography.fontFamily.jakarta.semiBold,
-    fontSize: 13,
-    color: colors.primaryDark,
-  },
-  sectionSpacer: {
-    height: SECTION_GAP,
+  reviewList: {
+    marginTop: 4,
   },
   customQuoteRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    marginTop: 8,
+    gap: 12,
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: colors.bgSection,
+  },
+  pressed: {
+    backgroundColor: colors.bgHover,
+  },
+  customQuoteIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryTint,
+  },
+  customQuoteTextCol: {
+    flex: 1,
   },
   customQuoteTitle: {
     fontFamily: typography.fontFamily.jakarta.semiBold,
     fontSize: 14,
-    color: colors.primaryDark,
+    color: colors.textPrimary,
   },
-
-  servicesHeaderSkeleton: {
-    marginTop: 12,
+  customQuoteSubtitle: {
+    fontFamily: typography.fontFamily.jakarta.regular,
+    fontSize: 12.5,
+    color: colors.textSecondary,
+    marginTop: 1,
   },
   errorContainer: {
     flex: 1,
@@ -471,17 +504,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.bgCard,
     padding: 20,
-  },
-  errorText: {
-    fontFamily: typography.fontFamily.poppins.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  errorSubtext: {
-    fontFamily: typography.fontFamily.jakarta.medium,
-    fontSize: 14,
-    color: colors.primary,
-    marginTop: 8,
-    textDecorationLine: 'underline',
   },
 });

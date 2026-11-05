@@ -448,9 +448,13 @@ export const mapRawWorkerNearby = (raw: any): WorkerNearby => {
     distanceLabel,
     categories,
     availabilityStatus: rawStatus,
+    // True only when the backend sent a real-time status. Search results carry `is_available`
+    // (= account active, always true), which must not be presented as "online now".
+    hasLiveAvailability: Boolean(raw.availability_status || raw.availabilityStatus),
     availableUntil: raw.available_until || raw.availableUntil || null,
     isOnJob: isBusy,
-    responseTimeMins: raw.response_time_mins || raw.responseTimeMins || 15,
+    // 0 = unknown; UI hides response time rather than showing an invented value.
+    responseTimeMins: raw.response_time_mins || raw.responseTimeMins || 0,
     startingPrice,
     lat,
     lng,
@@ -551,7 +555,18 @@ export const mapRawWorkerServiceOffering = (raw: any): WorkerServiceOffering => 
     notes: raw.notes || null,
     description,
     imageUrl,
+    durationMins: parseDurationMins(raw),
   };
+};
+
+/** Reads an estimated duration (minutes) if the backend sent one; never invents a value. */
+const parseDurationMins = (raw: any): number | null => {
+  const mins = raw.duration_mins ?? raw.durationMins ?? raw.estimated_duration_mins ?? raw.service?.duration_mins;
+  if (typeof mins === 'number' && mins > 0) return Math.round(mins);
+  const hours =
+    raw.estimated_duration_hours ?? raw.duration_hours ?? raw.service?.estimated_duration_hours;
+  if (typeof hours === 'number' && hours > 0) return Math.round(hours * 60);
+  return null;
 };
 
 export const mapRawWorkerSkill = (raw: any): WorkerSkill => {

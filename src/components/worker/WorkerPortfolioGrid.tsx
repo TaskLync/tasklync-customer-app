@@ -1,9 +1,8 @@
-import React from 'react';
 import { View, StyleSheet, Text, ViewStyle, useWindowDimensions, Pressable } from 'react-native';
 import { WorkerPortfolioImage } from '../../types/review.types';
 import { PortfolioCell } from './PortfolioCell';
 
-import { colors, palette } from '@design/colors';
+import { colors } from '@design/colors';
 import { fontFamily as fonts } from '@design/typography';
 
 interface WorkerPortfolioGridProps {
@@ -13,6 +12,8 @@ interface WorkerPortfolioGridProps {
   onViewAll?: () => void;
   onImagePress: (images: WorkerPortfolioImage[], startIndex: number) => void;
   showHeader?: boolean;
+  /** Horizontal padding of header + grid; the grid is assumed to span the full window width. */
+  horizontalPadding?: number;
   style?: ViewStyle;
   onLayout?: (e: any) => void;
 }
@@ -23,6 +24,7 @@ export const WorkerPortfolioGrid = ({
   onViewAll,
   onImagePress,
   showHeader = true,
+  horizontalPadding = 16,
   style,
   onLayout,
 }: WorkerPortfolioGridProps) => {
@@ -30,7 +32,7 @@ export const WorkerPortfolioGrid = ({
 
   if (!images || images.length === 0) return null;
 
-  const padding = 32; // 16px horizontal padding
+  const padding = horizontalPadding * 2;
   const gap = 4;
   const numColumns = 3;
   const totalGapWidth = gap * (numColumns - 1);
@@ -64,7 +66,7 @@ export const WorkerPortfolioGrid = ({
   };
 
   const gridContent = (
-    <View style={[styles.grid, { gap }]} onLayout={onLayout}>
+    <View style={[styles.grid, { gap, paddingHorizontal: horizontalPadding }]} onLayout={onLayout}>
       {visibleImages.map((img, idx) => renderCell(img, idx))}
     </View>
   );
@@ -72,11 +74,11 @@ export const WorkerPortfolioGrid = ({
   if (showHeader) {
     return (
       <View style={[styles.container, style]}>
-        <View style={styles.headerRow}>
+        <View style={[styles.headerRow, { paddingHorizontal: horizontalPadding }]}>
           <Text style={styles.headerTitle}>Portfolio</Text>
           {onViewAll && remainingCount > 0 && (
             <Pressable onPress={onViewAll} hitSlop={12}>
-              <Text style={styles.viewAllText}>View all {images.length} photos →</Text>
+              <Text style={styles.viewAllText}>See all {images.length}</Text>
             </Pressable>
           )}
         </View>
@@ -90,29 +92,28 @@ export const WorkerPortfolioGrid = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 16,
+    width: '100%',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   headerTitle: {
     fontFamily: fonts.poppins.semiBold,
-    fontSize: 16,
+    fontSize: 17,
+    letterSpacing: -0.2,
     color: colors.textPrimary,
   },
   viewAllText: {
     fontFamily: fonts.jakarta.semiBold,
-    fontSize: 14,
-    color: colors.primary,
+    fontSize: 13,
+    color: colors.primaryDark,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 16,
   },
   lastCellContainer: {
     position: 'relative',

@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, View, Text, ViewStyle } from 'react-native';
-import { WorkerServiceRow } from './WorkerServiceRow';
+import { WorkerServiceRow, SERVICE_ROW_INSET } from './WorkerServiceRow';
 import { SkeletonWorkerServiceRow } from '../ui/Skeleton/SkeletonWorkerServiceRow';
+import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
 import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { WorkerServiceOffering } from '../../types/worker.types';
@@ -16,6 +17,8 @@ interface WorkerServicesSectionProps {
   workerVerified?: boolean;
   startingPrice?: number | null;
   isLoading?: boolean;
+  /** Rendered directly under the list (e.g. "Request a custom quote"). */
+  footer?: React.ReactNode;
   style?: ViewStyle;
 }
 
@@ -27,87 +30,78 @@ export const WorkerServicesSection: React.FC<WorkerServicesSectionProps> = ({
   workerRating,
   workerCategory,
   workerVerified,
-  startingPrice,
   isLoading = false,
+  footer,
   style,
 }) => {
   if (isLoading) {
     return (
-      <View style={[styles.container, style]}>
-        <View style={styles.headerRow}>
-          <Text style={styles.sectionHeader}>Services</Text>
-        </View>
-        <SkeletonWorkerServiceRow />
-        <SkeletonWorkerServiceRow />
-        <SkeletonWorkerServiceRow />
+      <View style={style}>
+        <Text style={[styles.sectionHeader, styles.loadingHeader]}>Services</Text>
+        <SkeletonGroup accessibilityLabel="Loading services">
+          <SkeletonWorkerServiceRow />
+          <SkeletonWorkerServiceRow />
+        </SkeletonGroup>
       </View>
     );
   }
 
+  // Services are rendered exactly as returned by the API — no filtering or re-ordering.
   if (!services || services.length === 0) {
-    return null;
+    return footer ? <View style={style}>{footer}</View> : null;
   }
 
-  const displayServices = services;
-
   return (
-    <View style={[styles.container, style]}>
+    <View style={style}>
       <View style={styles.headerRow}>
         <Text style={styles.sectionHeader}>Services</Text>
-        <View style={styles.countBadge}>
-          <Text style={styles.countText}>{displayServices.length}</Text>
-        </View>
+        <Text style={styles.countText}>{services.length}</Text>
       </View>
 
-      <View style={styles.listContainer}>
-        {displayServices.map((service) => (
-          <View key={service.id} style={styles.rowWrapper}>
-            <WorkerServiceRow
-              service={service}
-              workerId={workerId}
-              workerName={workerName}
-              workerAvatar={workerAvatar}
-              workerRating={workerRating}
-              workerCategory={workerCategory}
-              workerVerified={workerVerified}
-            />
-          </View>
+      <View style={styles.list}>
+        {services.map((service) => (
+          <WorkerServiceRow
+            key={service.id}
+            service={service}
+            workerId={workerId}
+            workerName={workerName}
+            workerAvatar={workerAvatar}
+            workerRating={workerRating}
+            workerCategory={workerCategory}
+            workerVerified={workerVerified}
+          />
         ))}
       </View>
+
+      {footer}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'baseline',
+    gap: 8,
+    marginBottom: 6,
   },
   sectionHeader: {
     fontFamily: typography.fontFamily.poppins.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary || '#0F172A',
+    fontSize: 17,
+    letterSpacing: -0.2,
+    color: colors.textPrimary,
   },
-  countBadge: {
-    backgroundColor: colors.primaryTint || '#E6F4EA',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginLeft: 8,
+  loadingHeader: {
+    marginBottom: 6,
   },
   countText: {
-    fontFamily: typography.fontFamily.inter.semiBold,
-    fontSize: 12,
-    color: colors.primary || '#16A34A',
+    fontFamily: typography.fontFamily.inter.medium,
+    fontSize: 14,
+    color: colors.textMuted,
   },
-  listContainer: {
-    width: '100%',
-  },
-  rowWrapper: {
-    width: '100%',
+  list: {
+    // Row surfaces bleed into the gutter so their text lines up with the section title.
+    marginHorizontal: -SERVICE_ROW_INSET,
+    gap: 2,
   },
 });

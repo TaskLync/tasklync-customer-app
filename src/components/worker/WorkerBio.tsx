@@ -86,7 +86,8 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontFamily: typography.fontFamily.poppins.semiBold,
-    fontSize: 16,
+    fontSize: 17,
+    letterSpacing: -0.2,
     color: colors.textPrimary || '#0F172A',
     marginBottom: 12,
   },

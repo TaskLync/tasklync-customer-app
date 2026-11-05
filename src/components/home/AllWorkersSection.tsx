@@ -1,234 +1,212 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ChevronRight, ChevronDown } from 'lucide-react-native';
 
-import { Section } from '../layout/Section';
-import { WorkerSearchCard } from '../worker/WorkerSearchCard';
-import { SkeletonWorkerSearchCard } from '../ui/Skeleton';
+import { WorkerListRow, WorkerListRowSkeleton } from '../worker/WorkerListRow';
+import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
 import { useInfiniteWorkers } from '../../hooks/useInfiniteWorkers';
 import { WorkerNearby } from '../../types/worker.types';
 import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
-import { radius } from '../../design/radius';
+import { layout } from '../../design/spacing';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const INITIAL_VISIBLE_COUNT = 6;
 const PAGE_LIMIT = 20;
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
 interface AllWorkersSectionProps {
   /** Optional category filter to scope the list */
   category?: string;
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────────
-export const AllWorkersSection: React.FC<AllWorkersSectionProps> = ({
-  category,
-}) => {
+export const AllWorkersSection: React.FC<AllWorkersSectionProps> = ({ category }) => {
   const router = useRouter();
 
   const workerParams = useMemo(() => {
-    const p: Parameters<typeof useInfiniteWorkers>[0] = {
-      limit: PAGE_LIMIT,
-    };
+    const p: Parameters<typeof useInfiniteWorkers>[0] = { limit: PAGE_LIMIT };
     if (category) p.category = category;
     return p;
   }, [category]);
 
-  const {
-    workers,
-    total,
-    isLoading,
-    isLoadingMore,
-    hasNextPage,
-    loadMore,
-    isError,
-  } = useInfiniteWorkers(workerParams);
+  const { workers, total, isLoading, isLoadingMore, hasNextPage, loadMore, isError } =
+    useInfiniteWorkers(workerParams);
 
-  // Track how many workers are currently rendered (for "Show More" within
-  // the outer ScrollView — avoids nested scroll issues).
+  // Rendered inline inside the home ScrollView ("Show more" instead of a nested list).
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
+
+  const individualWorkers = useMemo(
+    () => (workers || []).filter((w) => w && w.providerType !== 'COMPANY' && !w.isCompany),
+    [workers]
+  );
 
   const handleShowMore = useCallback(() => {
     const nextVisible = visibleCount + PAGE_LIMIT;
     setVisibleCount(nextVisible);
-
-    // If we've shown all locally fetched workers, fetch the next page
-    if (nextVisible >= workers.length && hasNextPage && !isLoadingMore) {
+    if (nextVisible >= individualWorkers.length && hasNextPage && !isLoadingMore) {
       loadMore();
     }
-  }, [visibleCount, workers.length, hasNextPage, isLoadingMore, loadMore]);
+  }, [visibleCount, individualWorkers.length, hasNextPage, isLoadingMore, loadMore]);
 
   const handleSeeAll = useCallback(() => {
     router.push('/(tabs)/explore' as any);
   }, [router]);
 
-  // The visible slice of workers to render (defensively ensuring only individual workers)
-  // Must be called unconditionally before any early returns to satisfy Rules of Hooks
-  const individualWorkers = useMemo(
-    () => (workers || []).filter((w) => w && w.providerType !== 'COMPANY' && !w.isCompany),
-    [workers]
-  );
   const visibleWorkers: WorkerNearby[] = individualWorkers.slice(0, visibleCount);
-  const hasMoreToShow =
-    visibleCount < individualWorkers.length || (hasNextPage && !isLoadingMore);
+  const hasMoreToShow = visibleCount < individualWorkers.length || (hasNextPage && !isLoadingMore);
+  // `total` is the backend count; never show fewer than what is already on screen.
+  const workerCount = Math.max(total || 0, individualWorkers.length);
 
-  // ── Render: skeletons while loading ──────────────────────────────────────
+  const header = (
+    <View style={styles.header}>
+      <View style={styles.headerText}>
+        <Text style={styles.title}>All Workers</Text>
+        {!isLoading && workerCount > 0 && (
+          <Text style={styles.subtitle}>
+            {workerCount.toLocaleString()} {workerCount === 1 ? 'worker' : 'workers'} available
+          </Text>
+        )}
+      </View>
+      <Pressable
+        onPress={handleSeeAll}
+        hitSlop={12}
+        style={({ pressed }) => [styles.seeAll, pressed && styles.pressedText]}
+        accessibilityRole="link"
+        accessibilityLabel="See all workers"
+      >
+        <Text style={styles.seeAllText}>See all</Text>
+        <ChevronRight size={15} color={colors.primaryDark} strokeWidth={2.4} />
+      </Pressable>
+    </View>
+  );
+
   if (isLoading) {
     return (
-      <View style={styles.sectionSpacer}>
-        <Section
-          title="All Workers"
-          actionLabel="See all →"
-          onAction={handleSeeAll}
-        >
-          <View style={styles.listContainer}>
-            {Array.from({ length: INITIAL_VISIBLE_COUNT }).map((_, i) => (
-              <SkeletonWorkerSearchCard key={`skel-${i}`} />
-            ))}
-          </View>
-        </Section>
+      <View style={styles.section}>
+        {header}
+        <SkeletonGroup style={styles.list} accessibilityLabel="Loading workers">
+          {Array.from({ length: INITIAL_VISIBLE_COUNT }).map((_, i) => (
+            <WorkerListRowSkeleton key={`skel-${i}`} isLast={i === INITIAL_VISIBLE_COUNT - 1} />
+          ))}
+        </SkeletonGroup>
       </View>
     );
   }
 
-  // ── Render: API error or empty state ───────────────────────────────────────
-  // Suppress duplicate empty/error state on the Home Screen.
-  // NearbyWorkersList already displays the primary authoritative empty state with CTA.
+  // NearbyWorkersList owns the home screen's empty/error state; don't duplicate it.
   if (isError || individualWorkers.length === 0) {
     return null;
   }
 
-  // ── Render: worker list ───────────────────────────────────────────────────
   return (
-    <View style={styles.sectionSpacer}>
-      <Section
-        title="All Workers"
-        actionLabel="See all →"
-        onAction={handleSeeAll}
-      >
-        {/* Results count */}
-        <View style={styles.resultsHeader}>
-          <Text style={styles.resultsCount}>{total} workers available</Text>
-        </View>
+    <View style={styles.section}>
+      {header}
 
-        {/* Worker cards rendered inline (no nested scroll) */}
-        <View style={styles.listContainer}>
-          {visibleWorkers.map((worker) => (
-            <WorkerSearchCard key={worker.id} worker={worker} />
-          ))}
-        </View>
-
-        {/* Loading more skeletons */}
+      <View style={styles.list}>
+        {visibleWorkers.map((worker, i) => (
+          <WorkerListRow
+            key={worker.id}
+            worker={worker}
+            isLast={i === visibleWorkers.length - 1 && !isLoadingMore}
+          />
+        ))}
         {isLoadingMore && (
-          <View style={styles.loadMoreSkeletons}>
-            <SkeletonWorkerSearchCard />
-            <SkeletonWorkerSearchCard />
-          </View>
+          <SkeletonGroup accessibilityLabel="Loading more workers">
+            <WorkerListRowSkeleton />
+            <WorkerListRowSkeleton isLast />
+          </SkeletonGroup>
         )}
+      </View>
 
-        {/* Show More / Load More button */}
-        {hasMoreToShow && !isLoadingMore && (
-          <Pressable
-            onPress={handleShowMore}
-            style={({ pressed }) => [
-              styles.showMoreButton,
-              pressed && styles.showMorePressed,
-            ]}
-          >
-            <Text style={styles.showMoreLabel}>Show more workers</Text>
-          </Pressable>
-        )}
+      {hasMoreToShow && !isLoadingMore && (
+        <Pressable
+          onPress={handleShowMore}
+          style={({ pressed }) => [styles.showMore, pressed && styles.showMorePressed]}
+          accessibilityRole="button"
+        >
+          <Text style={styles.showMoreLabel}>Show more workers</Text>
+          <ChevronDown size={16} color={colors.textPrimary} strokeWidth={2.2} />
+        </Pressable>
+      )}
 
-        {/* End of list indicator */}
-        {!hasMoreToShow && !isLoadingMore && workers.length > INITIAL_VISIBLE_COUNT && (
-          <View style={styles.endOfList}>
-            <View style={styles.endLine} />
-            <Text style={styles.endText}>You've seen all workers</Text>
-            <View style={styles.endLine} />
-          </View>
-        )}
-      </Section>
+      {!hasMoreToShow && !isLoadingMore && individualWorkers.length > INITIAL_VISIBLE_COUNT && (
+        <Text style={styles.endText}>You've seen all workers</Text>
+      )}
     </View>
   );
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  sectionSpacer: {
-    marginBottom: 20,
+  section: {
+    marginBottom: 24,
   },
-  listContainer: {
-    paddingHorizontal: 16,
-    gap: 0, // WorkerSearchCard already has marginBottom: 10
-  },
-  resultsHeader: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  resultsCount: {
-    fontFamily: typography.fontFamily.inter.medium,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  errorContainer: {
+  header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: layout.screenPaddingH,
+    marginBottom: 4,
   },
-  errorText: {
+  headerText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  title: {
+    fontFamily: typography.fontFamily.poppins.bold,
+    fontSize: 18,
+    lineHeight: 24,
+    letterSpacing: -0.3,
+    color: colors.textPrimary,
+  },
+  subtitle: {
     fontFamily: typography.fontFamily.jakarta.regular,
     fontSize: 13,
     color: colors.textMuted,
+    marginTop: 1,
   },
-  retryText: {
-    fontFamily: typography.fontFamily.jakarta.medium,
-    fontSize: 13,
-    color: colors.primary,
-    marginLeft: 6,
-  },
-  loadMoreSkeletons: {
-    paddingHorizontal: 16,
-    gap: 10,
-    marginTop: 4,
-  },
-  showMoreButton: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    paddingVertical: 12,
-    borderRadius: radius.lg,
-    backgroundColor: colors.bgCard,
+  seeAll: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
+    height: 24,
+    marginLeft: 12,
+  },
+  seeAllText: {
+    fontFamily: typography.fontFamily.jakarta.semiBold,
+    fontSize: 13.5,
+    color: colors.primaryDark,
+  },
+  pressedText: {
+    opacity: 0.6,
+  },
+  list: {
+    backgroundColor: colors.bgCard,
+  },
+  showMore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginHorizontal: layout.screenPaddingH,
+    marginTop: 8,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: colors.bgSection,
   },
   showMorePressed: {
-    opacity: 0.7,
-    backgroundColor: colors.bgInput,
+    backgroundColor: colors.bgHover,
   },
   showMoreLabel: {
     fontFamily: typography.fontFamily.jakarta.semiBold,
     fontSize: 14,
-    color: colors.primary,
-  },
-  endOfList: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 4,
-    gap: 10,
-  },
-  endLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
+    color: colors.textPrimary,
   },
   endText: {
     fontFamily: typography.fontFamily.jakarta.regular,
     fontSize: 12,
     color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 16,
   },
 });

@@ -14,50 +14,48 @@ export interface WorkerStatsProps {
   style?: ViewStyle | undefined;
 }
 
+/**
+ * Compact stats strip. Only renders values the backend actually provided —
+ * unknown experience / response time are omitted instead of shown as placeholders.
+ */
 export const WorkerStats: React.FC<WorkerStatsProps> = ({
   yearsExperience,
-  totalJobs = 0,
+  totalJobs,
   avgResponseMins,
   style,
 }) => {
-  const expDisplay = typeof yearsExperience === 'number' && yearsExperience > 0
-    ? `${yearsExperience}+ ${yearsExperience === 1 ? 'yr' : 'yrs'}`
-    : '< 1 yr';
+  const stats: { label: string; value: string }[] = [];
 
-  const responseDisplay = typeof avgResponseMins === 'number' && avgResponseMins > 0
-    ? `~${avgResponseMins} min`
-    : 'Quick';
+  if (typeof totalJobs === 'number' && totalJobs >= 0) {
+    stats.push({ label: totalJobs === 1 ? 'Job done' : 'Jobs done', value: totalJobs.toLocaleString() });
+  }
+  if (typeof yearsExperience === 'number' && yearsExperience > 0) {
+    stats.push({
+      label: 'Experience',
+      value: `${yearsExperience} ${yearsExperience === 1 ? 'yr' : 'yrs'}`,
+    });
+  }
+  if (typeof avgResponseMins === 'number' && avgResponseMins > 0) {
+    stats.push({ label: 'Response', value: `~${avgResponseMins} min` });
+  }
 
+  if (stats.length === 0) return null;
 
   return (
     <View style={[styles.container, style]}>
-      {/* Col 1: Experience */}
-      <View style={styles.col}>
-        <Text style={styles.valueText}>
-          {expDisplay}
-        </Text>
-        <Text style={styles.labelText}>Experience</Text>
-      </View>
-
-      <View style={styles.divider} />
-
-      {/* Col 2: Jobs Done */}
-      <View style={styles.col}>
-        <Text style={styles.valueText}>
-          {totalJobs}
-        </Text>
-        <Text style={styles.labelText}>Jobs Done</Text>
-      </View>
-
-      <View style={styles.divider} />
-
-      {/* Col 3: Response Time */}
-      <View style={styles.col}>
-        <Text style={styles.valueText}>
-          {responseDisplay}
-        </Text>
-        <Text style={styles.labelText}>Response Time</Text>
-      </View>
+      {stats.map((s, i) => (
+        <React.Fragment key={s.label}>
+          {i > 0 && <View style={styles.separator} />}
+          <View style={styles.col} accessible accessibilityLabel={`${s.label}: ${s.value}`}>
+            <Text style={styles.valueText} numberOfLines={1}>
+              {s.value}
+            </Text>
+            <Text style={styles.labelText} numberOfLines={1}>
+              {s.label}
+            </Text>
+          </View>
+        </React.Fragment>
+      ))}
     </View>
   );
 };
@@ -67,36 +65,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bgSection,
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 12,
     width: '100%',
   },
   col: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 2,
+    paddingHorizontal: 4,
   },
-  divider: {
+  separator: {
     width: StyleSheet.hairlineWidth,
-    height: 32,
+    height: 24,
     backgroundColor: colors.border,
-  },
-  icon: {
-    marginBottom: 4,
   },
   valueText: {
     fontFamily: fontFamily.inter.bold,
-    fontSize: 17,
+    fontSize: 16,
     letterSpacing: -0.3,
     color: colors.textPrimary,
-    textAlign: 'center',
   },
   labelText: {
     fontFamily: fontFamily.jakarta.medium,
-    fontSize: 11,
-    color: colors.textSecondary,
+    fontSize: 11.5,
+    color: colors.textMuted,
     marginTop: 2,
-    textAlign: 'center',
   },
 });

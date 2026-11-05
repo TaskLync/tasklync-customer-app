@@ -1,9 +1,19 @@
 import React from 'react';
 import { StyleSheet, View, Text, Pressable, ViewStyle, useColorScheme } from 'react-native';
-import { MessageCircle, Calendar, ArrowRight } from 'lucide-react-native';
+import { MessageCircle } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fontFamily } from '../../design/typography';
 import { colors, palette } from '../../design/colors';
+
+const BUTTON_HEIGHT = 52;
+const PADDING_TOP = 12;
+
+/** Bottom padding above the system bar / home indicator. */
+const getBottomPadding = (insetBottom: number) => (insetBottom > 0 ? insetBottom + 8 : 16);
+
+/** Total rendered height of the footer — use it to pad scroll content so nothing hides behind it. */
+export const getWorkerProfileFooterHeight = (insetBottom: number) =>
+  PADDING_TOP + BUTTON_HEIGHT + getBottomPadding(insetBottom);
 
 interface WorkerProfileStickyFooterProps {
   workerId: string;
@@ -22,62 +32,48 @@ export const WorkerProfileStickyFooter: React.FC<WorkerProfileStickyFooterProps>
   style,
 }) => {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
-  // Standardized edge-to-edge system navigation clearance (Uber/Careem/Foodpanda UX spec):
-  // When insets.bottom > 0 (Android 3-button nav, gesture navigation bar, or iOS home indicator),
-  // we add 14px of ergonomic breathing room above the system bar so buttons never collide with system UI.
-  // When insets.bottom is 0 (hardware navigation keys or older devices), we use a safe 20px baseline.
-  const bottomPadding = insets.bottom > 0 ? insets.bottom + 14 : 20;
-
-  const handleChatPress = () => {
-    onChat();
-  };
-
-  const handleBookPress = () => {
-    onBookNow();
-  };
+  const isDark = useColorScheme() === 'dark';
 
   return (
     <View
       style={[
         styles.container,
         isDark && styles.containerDark,
-        { paddingBottom: bottomPadding },
+        { paddingBottom: getBottomPadding(insets.bottom) },
         style,
       ]}
     >
-      {/* Chat Pill Button */}
+      {/* Secondary: Chat */}
       <Pressable
-        onPress={handleChatPress}
+        onPress={onChat}
         style={({ pressed }) => [
+          styles.button,
           styles.chatButton,
           isDark && styles.chatButtonDark,
-          pressed && styles.buttonPressed,
+          pressed && styles.chatPressed,
         ]}
         accessibilityRole="button"
         accessibilityLabel={workerName ? `Chat with ${workerName}` : 'Chat with worker'}
       >
-        <MessageCircle size={18} color={isDark ? palette.green400 : colors.primaryDark} strokeWidth={2.2} />
+        <MessageCircle size={18} color={isDark ? palette.green400 : colors.textPrimary} strokeWidth={2.2} />
         <Text style={[styles.chatText, isDark && styles.chatTextDark]}>Chat</Text>
       </Pressable>
 
-      {/* Book Now Pill Button */}
+      {/* Primary: Book Now */}
       <Pressable
-        onPress={handleBookPress}
+        onPress={onBookNow}
         disabled={!isWorkerAvailable}
         style={({ pressed }) => [
+          styles.button,
           styles.bookButton,
           !isWorkerAvailable && (isDark ? styles.bookButtonDisabledDark : styles.bookButtonDisabled),
-          pressed && styles.buttonPressed,
+          pressed && styles.bookPressed,
         ]}
         accessibilityRole="button"
+        accessibilityState={{ disabled: !isWorkerAvailable }}
         accessibilityLabel={workerName ? `Book Now with ${workerName}` : 'Book Now'}
       >
-        <Calendar size={18} color={colors.white} strokeWidth={2.2} />
         <Text style={styles.bookText}>Book Now</Text>
-        <ArrowRight size={16} color={colors.white} strokeWidth={2.4} style={styles.arrowIcon} />
       </Pressable>
     </View>
   );
@@ -89,83 +85,71 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.bgCard,
-    borderTopWidth: 1,
-    borderColor: colors.borderLight,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
     gap: 12,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 8,
+    paddingHorizontal: 20,
+    paddingTop: PADDING_TOP,
+    backgroundColor: colors.bgCard,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 12,
     zIndex: 100,
   },
   containerDark: {
-    backgroundColor: palette.slate800,
-    borderColor: palette.slate700,
-    shadowOpacity: 0.25,
+    backgroundColor: palette.gray800,
+    borderTopColor: palette.gray700,
   },
-  chatButton: {
-    flex: 1,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: colors.primaryTint,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
+  button: {
+    height: BUTTON_HEIGHT,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+  },
+  chatButton: {
+    flex: 1,
+    gap: 8,
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   chatButtonDark: {
-    backgroundColor: palette.slate900,
-    borderColor: colors.primary,
+    backgroundColor: palette.gray900,
+    borderColor: palette.gray700,
+  },
+  chatPressed: {
+    backgroundColor: colors.bgHover,
   },
   chatText: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 15,
-    color: colors.primaryDark,
+    color: colors.textPrimary,
   },
   chatTextDark: {
     color: palette.green400,
   },
   bookButton: {
-    flex: 1.8,
-    height: 50,
-    borderRadius: 12,
+    flex: 2,
     backgroundColor: colors.primaryDark,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+  },
+  bookPressed: {
+    opacity: 0.88,
   },
   bookButtonDisabled: {
-    backgroundColor: colors.textMuted,
-    shadowOpacity: 0,
+    backgroundColor: colors.textDisabled,
   },
   bookButtonDisabledDark: {
-    backgroundColor: palette.slate600,
-    shadowOpacity: 0,
+    backgroundColor: palette.gray600,
   },
   bookText: {
     fontFamily: fontFamily.jakarta.bold,
-    fontSize: 15,
+    fontSize: 15.5,
+    letterSpacing: -0.1,
     color: colors.white,
-  },
-  arrowIcon: {
-    marginLeft: 2,
-  },
-  buttonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
   },
 });

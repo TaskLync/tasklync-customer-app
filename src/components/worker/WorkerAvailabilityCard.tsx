@@ -8,37 +8,40 @@ interface WorkerAvailabilityCardProps {
   status: WorkerAvailabilityStatus;
   availableUntil?: string | null;
   nextAvailable?: string | null;
-  avgResponseMins: number;
+  /** Optional: shown as "Replies in ~N min" only when > 0. */
+  avgResponseMins?: number;
   style?: ViewStyle;
 }
 
-/** Tinted availability strip: soft semantic surface, pulsing dot, and response time. */
+/** Subtle inline availability indicator: status dot + label, optional detail. No card surface. */
 export const WorkerAvailabilityCard: React.FC<WorkerAvailabilityCardProps> = ({
   status,
   nextAvailable = null,
-  avgResponseMins = 30,
+  avgResponseMins = 0,
   style,
 }) => {
   const isAvailable = status === 'AVAILABLE';
   const isBusy = status === 'BUSY';
 
-  const bg = isAvailable ? colors.primaryTint : isBusy ? palette.amber50 : colors.bgSection;
   const dotColor = isAvailable ? colors.primary : isBusy ? palette.amber500 : colors.textMuted;
-  const titleColor = isAvailable ? colors.textGreenDark : isBusy ? palette.amber800 : colors.textSecondary;
+  const haloColor = isAvailable ? colors.primaryBorderSubtle : isBusy ? palette.amber100 : colors.bgHover;
+  const titleColor = isAvailable ? colors.textGreen : isBusy ? palette.amber700 : colors.textSecondary;
   const title = isAvailable ? 'Available now' : isBusy ? 'Currently on a job' : 'Offline';
   const detail = isAvailable
     ? avgResponseMins > 0
-      ? `Replies within ${avgResponseMins} min`
+      ? `Replies in ~${avgResponseMins} min`
       : null
     : !isBusy && nextAvailable
     ? `Available ${nextAvailable}`
     : null;
 
   return (
-    <View style={[styles.container, { backgroundColor: bg }, style]}>
-      <View style={[styles.dot, { backgroundColor: dotColor }]} />
+    <View style={[styles.container, style]} accessibilityRole="text">
+      <View style={[styles.halo, { backgroundColor: haloColor }]}>
+        <View style={[styles.dot, { backgroundColor: dotColor }]} />
+      </View>
       <Text style={[styles.title, { color: titleColor }]}>{title}</Text>
-      {detail ? <Text style={styles.detail}>{`  \u00B7  ${detail}`}</Text> : null}
+      {detail ? <Text style={styles.detail}>{`  ·  ${detail}`}</Text> : null}
     </View>
   );
 };
@@ -47,16 +50,19 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    width: '100%',
+  },
+  halo: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
   },
   dot: {
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    marginRight: 8,
   },
   title: {
     fontFamily: fontFamily.jakarta.semiBold,
