@@ -8,6 +8,7 @@ import {
   DetailedNotificationPermission,
 } from '../../types/notification.types';
 import { setupNotificationChannelsAndCategories } from './notification-categories';
+import { chimeHandlesChatPush } from './chatPush';
 
 const storage = createMMKV();
 const HAS_REQUESTED_NOTIFICATIONS_KEY = 'has_requested_notification_permission';
@@ -18,10 +19,13 @@ const HAS_REQUESTED_NOTIFICATIONS_KEY = 'has_requested_notification_permission';
  */
 try {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
+    handleNotification: async (notification) => ({
       shouldShowBanner: true,
       shouldShowList: true,
-      shouldPlaySound: true,
+      // A foreground chat push with a message id gets the in-app chime instead (see chatPush.ts): one sound, not two
+      shouldPlaySound: !chimeHandlesChatPush(
+        notification?.request?.content?.data as Record<string, unknown> | undefined
+      ),
       shouldSetBadge: true,
       shouldShowAlert: true,
     }),
@@ -181,8 +185,7 @@ export const pushService = {
         const projectId =
           Constants?.expoConfig?.extra?.eas?.projectId ||
           Constants?.easConfig?.projectId ||
-          process.env.EAS_PROJECT_ID ||
-          '90b1f7d5-14e1-4cf6-9035-b1beb8832a36';
+          process.env.EAS_PROJECT_ID;
 
         const tokenData = await Notifications.getExpoPushTokenAsync(
           projectId ? { projectId } : undefined

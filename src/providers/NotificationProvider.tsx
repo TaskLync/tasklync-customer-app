@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/auth.store';
 import { useNotificationStore } from '../store/notification.store';
 import { pushService } from '../services/notifications/push.service';
 import { notificationQueue } from '../services/notifications/notification-queue';
+import { chimeHandlesChatPush, getChatPushMessageId } from '../services/notifications/chatPush';
 import { resolveNotificationRoute } from '../utils/deepLink';
 import { usePushRegistration } from '../hooks/usePushRegistration';
 import { useInAppBanner } from '../components/feedback/InAppBannerProvider';
@@ -103,7 +104,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           }
         })
         .catch(() => {});
-    } else if (authState === 'unauthenticated' || authState === 'UNAUTHENTICATED') {
+    } else if (authState === 'unauthenticated' || authState === 'UNAUTHENTICATED' || authState === 'SESSION_EXPIRED') {
       unregister().catch(() => {});
     }
 
@@ -137,16 +138,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         queryClient.invalidateQueries({ queryKey: ['notifications'] });
         queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
 
-        // Play receive sound if incoming event is a chat message
-        if (category.includes('chat') || category.includes('message')) {
+        // Incoming chime for a chat push, only when it carries the message id: the same id dedups it against
+        // the socket event if that chat is open. Id-less chat pushes keep the OS sound instead (chatPush.ts).
+        if (chimeHandlesChatPush(data)) {
           const senderId = data.sender_id || data.senderId ? String(data.sender_id || data.senderId) : undefined;
-          const messageId = String(data.message_id || data.messageId || data.id || notification.request.identifier || '');
           chatSoundService
-            .playReceiveSound(
-              messageId,
-              senderId,
-              currentUserId
-            )
+            .playReceiveSound(getChatPushMessageId(data), senderId, currentUserId)
             .catch(() => {});
         }
 

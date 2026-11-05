@@ -203,6 +203,21 @@ describe('ChimeSlot: self-check and recovery', () => {
     await assert.doesNotReject(s.play(1));
   });
 
+  test('Android: a finished player (isLoaded=false in STATE_ENDED) is rewound and replayed, without rebuilding', async () => {
+    // expo-audio Android reports isLoaded as `playbackState == STATE_READY`; after a clip ends ExoPlayer is in
+    // STATE_ENDED, so isLoaded reads false although the media is loaded and the player sits at the end.
+    const s = slot();
+    s.warmUp(1);
+    const p = FakePlayer.all[0]!;
+    for (let i = 0; i < 6; i++) {
+      await s.play(1);
+      await clipFinished();
+      p.isLoaded = false; // what Android reports after every clip
+    }
+    assert.strictEqual(p.audible, 6);
+    assert.strictEqual(FakePlayer.all.length, 1); // every chime played by the same player, no recovery churn
+  });
+
   test('a player that is still loading is played instead of skipped', async () => {
     const s = slot();
     s.warmUp(1);

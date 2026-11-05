@@ -56,6 +56,16 @@ async function settleWithin(promise: Promise<unknown>, ms: number): Promise<void
   }
 }
 
+/** Duration in seconds, or 0 when unknown / the native player is gone (reading a released player throws). */
+function readDuration(player: ChimePlayer): number {
+  try {
+    const d = player.duration;
+    return typeof d === 'number' && Number.isFinite(d) ? d : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export class ChimeSlot {
   private player: ChimePlayer | null = null;
   private playing = false; // a play is between "requested" and "play() called"
@@ -169,8 +179,12 @@ export class ChimeSlot {
 
   private async restartAndPlay(player: ChimePlayer, volume: number): Promise<void> {
     // A finished player rests at the end: wait until the rewind has really happened before play().
-    // (A player that is still loading has nothing to rewind; play() starts it once it is ready.)
-    if (player.isLoaded) {
+    // `isLoaded` alone is NOT a usable test: on Android expo-audio reports it as `playbackState == STATE_READY`,
+    // and a clip that has finished is in STATE_ENDED, so a loaded player at the end reads isLoaded=false. Gating
+    // the rewind on it skipped the seek after every chime, play() was a no-op and each chime fell through to the
+    // rebuild path. A player that has ever loaded knows its duration (also in STATE_ENDED), so that is the test.
+    // (A player still loading has duration 0 and nothing to rewind; play() starts it once it is ready.)
+    if (player.isLoaded || readDuration(player) > 0) {
       await settleWithin(player.seekTo(0), SEEK_TIMEOUT_MS);
     }
     // dispose() or a rebuild may have run while we waited: do not touch a player that is no longer ours

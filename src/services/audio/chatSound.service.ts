@@ -40,10 +40,11 @@ class ChatSoundService {
   // Execution Queue (Async Mutex) to serialize playback and prevent JNI collisions
   private playbackQueue: Promise<void> = Promise.resolve();
 
-  // Deduplication & Throttling
-  private playedMessageIds = new Map<string, number>(); // messageId -> timestamp
-  private lastPlayedTime = 0;
-  private readonly THROTTLE_MS = 200;
+  // Deduplication: one chime per message, per direction. Keys are recorded only when the chime is actually
+  // going to play, so a call that is skipped (backgrounded, disabled) never silences that message later.
+  // Bursts need no throttle: each ChimeSlot collapses overlapping plays into one restart.
+  private chimedSend = new Map<string, number>(); // tempId / message id -> timestamp
+  private chimedReceive = new Map<string, number>(); // server message id -> timestamp
   private readonly DEDUP_TTL_MS = 1000 * 60 * 5; // 5 minutes TTL
   private readonly MAX_DEDUP_CACHE = 200;
 
@@ -146,10 +147,12 @@ class ChatSoundService {
   }
 
   /**
-   * Plays send sound immediately when current user sends a message.
+   * Plays the outgoing chime once the server has CONFIRMED a message the current user sent.
+   * `messageKey` (the message's tempId) makes it fire once per message even when both the ack and the
+   * echo confirm it, or a retry confirms it later.
    * Completely fail-safe: never throws or crashes caller.
    */
-  public playSendSound(): Promise<void> {
+  public playSendSound(messageKey?: string): Promise<void> {
     if (!this.isEnabled) return Promise.resolve();
 
     // App state check: do not play sound if app is backgrounded
@@ -157,9 +160,7 @@ class ChatSoundService {
       return Promise.resolve();
     }
 
-    const now = Date.now();
-    if (now - this.lastPlayedTime < this.THROTTLE_MS) return Promise.resolve();
-    this.lastPlayedTime = now;
+    if (messageKey && !this.claimOnce(this.chimedSend, messageKey)) return Promise.resolve();
 
     if (Platform.OS === 'web') {
       try {
@@ -198,21 +199,8 @@ class ChatSoundService {
       return Promise.resolve();
     }
 
-    const now = Date.now();
-
-    // 3. Deduplication check: prevent playing twice for same message across socket/REST events
-    if (messageId) {
-      const cleanId = String(messageId).trim();
-      const previousTimestamp = this.playedMessageIds.get(cleanId);
-      if (previousTimestamp && now - previousTimestamp < this.DEDUP_TTL_MS) {
-        return Promise.resolve();
-      }
-      this.recordPlayedMessageId(cleanId, now);
-    }
-
-    // 4. Throttle rapid concurrent sound bursts
-    if (now - this.lastPlayedTime < this.THROTTLE_MS) return Promise.resolve();
-    this.lastPlayedTime = now;
+    // 3. Deduplication: the same message can arrive through the socket, a reconnect replay and a push
+    if (messageId && !this.claimOnce(this.chimedReceive, messageId)) return Promise.resolve();
 
     if (Platform.OS === 'web') {
       try {
@@ -230,18 +218,29 @@ class ChatSoundService {
   }
 
   /**
-   * Manages deduplication cache size and cleans up stale items.
+   * Returns true the first time `key` is seen within the TTL (and records it), false for a repeat.
+   * Bounded: expired keys go first, then the oldest (Map keeps insertion order).
    */
-  private recordPlayedMessageId(id: string, timestamp: number): void {
-    if (this.playedMessageIds.size >= this.MAX_DEDUP_CACHE) {
-      const cutoff = timestamp - this.DEDUP_TTL_MS;
-      for (const [key, time] of this.playedMessageIds.entries()) {
-        if (time < cutoff || this.playedMessageIds.size >= this.MAX_DEDUP_CACHE) {
-          this.playedMessageIds.delete(key);
-        }
+  private claimOnce(cache: Map<string, number>, key: string): boolean {
+    const id = String(key).trim();
+    if (!id) return true;
+    const now = Date.now();
+    const previous = cache.get(id);
+    if (previous !== undefined && now - previous < this.DEDUP_TTL_MS) return false;
+
+    if (cache.size >= this.MAX_DEDUP_CACHE) {
+      const cutoff = now - this.DEDUP_TTL_MS;
+      for (const [k, t] of cache) {
+        if (t < cutoff) cache.delete(k);
+      }
+      while (cache.size >= this.MAX_DEDUP_CACHE) {
+        const oldest = cache.keys().next().value;
+        if (oldest === undefined) break;
+        cache.delete(oldest);
       }
     }
-    this.playedMessageIds.set(id, timestamp);
+    cache.set(id, now);
+    return true;
   }
 
   /**

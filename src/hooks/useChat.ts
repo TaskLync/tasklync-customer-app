@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { AppState } from 'react-native';
+import { SOCKET_CONFIG } from '../config/socket.config';
 import { Message, MessageType, MessageRenderItem } from '../types/chat.types';
 import { chatApi, saveCachedChatMessages, getCachedChatMessages } from '../services/api/chat.api';
 import { chatSocket } from '../services/socket/chat.socket';
@@ -10,6 +11,7 @@ import { groupMessagesForInvertedList } from '../utils/messageGrouping';
 import { chatSoundService } from '../services/audio/chatSound.service';
 import { useChatUnreadStore } from '../store/chatUnread.store';
 import { sendWithRetry } from '../utils/messageSender';
+import { classifyIncomingSender } from '../utils/chatSenderRules';
 import type { SendSignal, SendTransport } from '../utils/messageSender';
 import type { SendMessageSocketPayload } from '../services/socket/chat.socket';
 
@@ -48,6 +50,33 @@ export function useChat(bookingId: string) {
   /** One per message currently being sent. `settled` is flipped when the echo confirms it, which stops retries. */
   const sendSignalsRef = useRef<Map<string, SendSignal>>(new Map());
 
+  /**
+   * Server message ids this chat already knows (cache, history, earlier socket events). The incoming chime fires
+   * only for an id that is NOT here, so history loads, reconnect replays and duplicate events stay silent.
+   * Kept in a ref (not derived from state) so the decision is synchronous and immune to re-renders.
+   */
+  const knownMessageIdsRef = useRef<Set<string> | null>(null);
+  if (knownMessageIdsRef.current === null) {
+    knownMessageIdsRef.current = new Set(
+      (bookingId ? getCachedChatMessages(bookingId) : []).map((m) => m.id).filter(Boolean)
+    );
+  }
+
+  /** tempIds created on this device (incl. ones restored from cache), to recognise our own echoes. */
+  const ownTempIdsRef = useRef<Set<string> | null>(null);
+  if (ownTempIdsRef.current === null) {
+    ownTempIdsRef.current = new Set(
+      (bookingId ? getCachedChatMessages(bookingId) : [])
+        .map((m) => m.temp_id)
+        .filter((t): t is string => Boolean(t))
+    );
+  }
+
+  /** Outgoing chime: only once the server confirmed the message; keyed by tempId so ack + echo chime once. */
+  const chimeSent = useCallback((tempId: string) => {
+    chatSoundService.playSendSound(tempId).catch(() => {});
+  }, []);
+
   // 1. Initial Load of message history with resilience retry
   useEffect(() => {
     chatSoundService.ensurePreloaded().catch(() => {});
@@ -58,6 +87,9 @@ export function useChat(bookingId: string) {
     try {
       const res = await chatApi.getMessages(bookingId, null, 50);
       const serverMessages = res.messages || [];
+
+      // History is never "new": remember these ids so a socket replay of them stays silent
+      serverMessages.forEach((m) => m.id && knownMessageIdsRef.current?.add(m.id));
 
       const foundRoomId = serverMessages.find((m) => m.room_id)?.room_id;
       if (foundRoomId) {
@@ -149,6 +181,8 @@ export function useChat(bookingId: string) {
     markRead();
 
     const unsubscribeConnect = socketService.on('connect', () => {
+      // a reconnect while backgrounded must not re-announce presence (it would suppress the push)
+      if (AppState.currentState !== 'active') return;
       chatSocket.joinRoom(bookingId);
       if (roomIdRef.current && roomIdRef.current !== bookingId) {
         chatSocket.joinRoom(roomIdRef.current);
@@ -157,11 +191,29 @@ export function useChat(bookingId: string) {
     });
 
     const heartbeatTimer = setInterval(() => {
-      chatSocket.sendHeartbeat();
-    }, 25000);
+      if (AppState.currentState === 'active') chatSocket.sendHeartbeat();
+    }, SOCKET_CONFIG.HEARTBEAT_INTERVAL_MS);
+
+    // Presence must mean "the user is looking at this chat". A backgrounded app keeps its socket and room
+    // membership, so without this the server would treat the user as present and suppress the push.
+    const leaveAll = () => {
+      chatSocket.leaveRoom(bookingId);
+      if (roomIdRef.current && roomIdRef.current !== bookingId) chatSocket.leaveRoom(roomIdRef.current);
+    };
+    const appStateSub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') {
+        chatSocket.joinRoom(bookingId);
+        if (roomIdRef.current && roomIdRef.current !== bookingId) chatSocket.joinRoom(roomIdRef.current);
+        markRead();
+        loadHistory();
+      } else {
+        leaveAll();
+      }
+    });
 
     return () => {
       clearInterval(heartbeatTimer);
+      appStateSub.remove();
       unsubscribeConnect();
       chatSocket.leaveRoom(bookingId);
       if (roomIdRef.current && roomIdRef.current !== bookingId) {
@@ -210,6 +262,24 @@ export function useChat(bookingId: string) {
         temp_id: echoedTempId,
       };
 
+      // ── Who sent it ── decided once, from the payload (never from rendered state). See chatSenderRules.ts.
+      const rawSenderId: string | undefined = data.sender_id || data.senderId;
+      const knownUserId = currentUserId && currentUserId !== 'current-user' ? currentUserId : undefined;
+      const { isCounterparty: isFromCounterparty } = classifyIncomingSender({
+        senderType: data.sender_type || data.senderType,
+        senderId: rawSenderId,
+        messageType: incoming.type,
+        echoedTempId,
+        currentUserId,
+        ownTempIds: ownTempIdsRef.current!,
+      });
+
+      // ── Is it new ── a real server id this chat has not seen (history, cache, earlier event). Recorded before
+      // the state update so a duplicate event arriving in the same tick is already recognised.
+      const serverId: string | undefined = data.id || data._id;
+      const isNewMessage = Boolean(serverId) && !knownMessageIdsRef.current!.has(serverId!);
+      if (serverId) knownMessageIdsRef.current!.add(serverId);
+
       setMessages((prev) => {
         let matchIndex = -1;
 
@@ -243,6 +313,8 @@ export function useChat(bookingId: string) {
           // The echo confirms the message: stop any retry still in flight for it
           const signal = sendSignalsRef.current.get(matchedTempId);
           if (signal) signal.settled = true;
+          // The echo is a server confirmation too (it may beat the ack): outgoing chime, once per tempId
+          if (prev[matchIndex].status !== 'sent') chimeSent(matchedTempId);
           const timeout = pendingTimeoutsRef.current.get(matchedTempId);
           if (timeout) {
             clearTimeout(timeout);
@@ -279,23 +351,19 @@ export function useChat(bookingId: string) {
         return updated;
       });
 
-      // Auto-mark as read and set worker presence online if message is from the worker/counterparty
-      const isFromWorker =
-        incoming.sender_type === 'worker' ||
-        incoming.sender_id !== currentUserId;
-
-      if (isFromWorker) {
+      if (isFromCounterparty) {
         setIsWorkerOnline(true);
-        // Play receive sound for incoming messages from the counterparty
-        chatSoundService
-          .playReceiveSound(incoming.id, incoming.sender_id, currentUserId)
-          .catch(() => {});
+        // Incoming chime: only for a genuinely new message from the worker / agency. The service also dedups by
+        // id, which covers the same message arriving through a push while this chat is open.
+        if (isNewMessage) {
+          chatSoundService.playReceiveSound(serverId, rawSenderId, knownUserId).catch(() => {});
+        }
         if (AppState.currentState === 'active') {
           markRead();
         }
       }
     },
-    [bookingId, currentUserId, markRead]
+    [bookingId, currentUserId, markRead, chimeSent]
   );
 
   useSocketEvent<any>('message_received', handleIncomingMessage);
@@ -496,8 +564,13 @@ export function useChat(bookingId: string) {
       try {
         const outcome = await sendWithRetry(payload, sendTransport, signal);
         clearProgress(tempId);
+        if (outcome.status === 'sent') {
+          // Server acknowledged it as stored: outgoing chime (no-op if the echo already chimed for this tempId)
+          chimeSent(tempId);
+        }
         if (outcome.status === 'sent' && outcome.message?.id) {
           const server = outcome.message;
+          knownMessageIdsRef.current?.add(server.id);
           setMessages((prev) => {
             const mapped = prev.map((m) =>
               m.id === tempId || m.temp_id === tempId
@@ -524,7 +597,7 @@ export function useChat(bookingId: string) {
         sendSignalsRef.current.delete(tempId);
       }
     },
-    [bookingId, clearProgress, markFailed]
+    [bookingId, clearProgress, markFailed, chimeSent]
   );
 
   // 5. Send Message (Non-blocking Async Upload & Immediate Local Preview)
@@ -534,6 +607,7 @@ export function useChat(bookingId: string) {
       if (isRoomClosed) return;
 
       const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      ownTempIdsRef.current!.add(tempId);
       if (mediaFileUri) {
         localImageUrisRef.current.set(tempId, mediaFileUri);
       }
@@ -559,8 +633,8 @@ export function useChat(bookingId: string) {
         return next;
       });
 
-      // Play send sound immediately
-      chatSoundService.playSendSound().catch(() => {});
+      // No chime here: the outgoing sound plays when the server confirms the message (deliver / echo),
+      // so a message that ends up failed never chimes.
 
       // 2. Background dispatch: upload media if needed, then send with acknowledgement + retry
       (async () => {
