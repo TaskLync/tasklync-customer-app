@@ -1,9 +1,9 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View, Text, Pressable, ViewStyle, LayoutAnimation } from 'react-native';
 import { Chip } from '../ui/Chip/Chip';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { WorkerSkill } from '../../types/worker.types';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 /** Chips shown before the "Show more" toggle appears. */
 const INITIAL_VISIBLE = 6;
@@ -18,6 +18,7 @@ interface WorkerSkillListProps {
  * rows — 2 skills = one compact row, many skills = as many rows as needed. No fixed heights.
  */
 export const WorkerSkillList: React.FC<WorkerSkillListProps> = ({ skills, style }) => {
+  const styles = useThemedStyles(createStyles);
   const [expanded, setExpanded] = useState(false);
 
   // Verified skills first (stable for equal verification state).
@@ -75,7 +76,7 @@ export const WorkerSkillList: React.FC<WorkerSkillListProps> = ({ skills, style 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
   },

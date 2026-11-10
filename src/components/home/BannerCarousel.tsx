@@ -21,7 +21,7 @@ import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
 import { springConfig } from '../../design/animations';
 import { fontFamily } from '../../design/typography';
-import { palette, colors } from '../../design/colors';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -29,6 +29,8 @@ const HERO_IMAGE = require('../../../assets/images/hero-images/hero-image.jpeg')
 const BANNER_HEIGHT = 156;
 
 export const BannerCarousel = () => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
 
@@ -132,7 +134,7 @@ export const BannerCarousel = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
@@ -141,7 +143,7 @@ const styles = StyleSheet.create({
     height: BANNER_HEIGHT,
     borderRadius: radius['2xl'],
     ...shadows.md,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -213,7 +215,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.poppins.bold,
     fontSize: 16,
     lineHeight: 21,
-    color: palette.white,
+    color: palette.pureWhite,
     letterSpacing: -0.2,
   },
   highlightText: {
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     ...Platform.select({
       ios: {
-        shadowColor: colors.shadow,
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.12,
         shadowRadius: 4,

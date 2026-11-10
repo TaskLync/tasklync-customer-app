@@ -125,6 +125,11 @@ export interface RefreshFailure {
   reason?: string | undefined;
   /** no HTTP response at all: offline, DNS, TLS, timeout */
   noResponse?: boolean | undefined;
+  /**
+   * The body is our API's error envelope (`success:false` + `error.code`). A 401 that is NOT in that
+   * shape came from a proxy / WAF / CDN in front of the API, not from the auth service.
+   */
+  appEnvelope?: boolean | undefined;
 }
 
 export type RefreshFailureKind = 'TERMINAL' | 'TRANSIENT';
@@ -133,16 +138,23 @@ export function classifyRefreshFailure(f: RefreshFailure): RefreshFailureKind {
   if (f.noResponse || f.status === undefined) return 'TRANSIENT';
   // The refresh route is public. TOKEN_MISSING there means a proxy/gateway misconfiguration,
   // not a dead session: never log everyone out because of it.
-  if (f.status === 401) return f.reason === 'TOKEN_MISSING' ? 'TRANSIENT' : 'TERMINAL';
-  if (f.status === 400) return 'TERMINAL'; // malformed token in storage, cannot recover
-  return 'TRANSIENT'; // 408, 429, 5xx, anything unexpected
+  if (f.status === 401) {
+    if (f.reason === 'TOKEN_MISSING') return 'TRANSIENT';
+    // The auth service always names why it ended the session. A bare 401 (no reason, not our
+    // envelope) is an intermediary failing during an outage: never sign everyone out for it.
+    if (f.reason === undefined && f.appEnvelope !== true) return 'TRANSIENT';
+    return 'TERMINAL';
+  }
+  // 400 from the refresh route only means the request body never arrived intact (client or proxy
+  // problem). A corrupt stored token is answered 401 REFRESH_TOKEN_INVALID, not 400.
+  return 'TRANSIENT'; // 400, 408, 429, 5xx, anything unexpected
 }
 
 /** What the customer is told after a terminal refresh failure. */
 export function sessionEndMessage(reason: string | undefined): string {
   switch (reason) {
     case 'SESSION_REPLACED':
-      return 'You signed in on another device, so you were signed out here.';
+      return 'You were signed out here because your account is signed in on too many devices.';
     case 'ACCOUNT_BANNED':
     case 'ACCOUNT_SUSPENDED':
     case 'ACCOUNT_DELETED':

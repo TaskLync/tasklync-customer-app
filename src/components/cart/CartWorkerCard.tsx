@@ -4,8 +4,8 @@ import { Star } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { WorkerInfo } from '../../store/cart.store';
 import { VerifiedBadge } from '../worker/VerifiedBadge';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface CartWorkerCardProps {
   worker: WorkerInfo | null;
@@ -16,6 +16,7 @@ export const CartWorkerCard: FC<CartWorkerCardProps> = ({
   worker,
   onChangeWorker,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   if (!worker) return null;
@@ -79,7 +80,7 @@ export const CartWorkerCard: FC<CartWorkerCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',

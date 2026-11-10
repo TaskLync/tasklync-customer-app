@@ -1,9 +1,9 @@
 import React from 'react';
-import { StyleSheet, View, Text, Pressable, ViewStyle, useColorScheme } from 'react-native';
+import { StyleSheet, View, Text, Pressable, ActivityIndicator, ViewStyle } from 'react-native';
 import { MessageCircle } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fontFamily } from '../../design/typography';
-import { colors, palette } from '../../design/colors';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const BUTTON_HEIGHT = 52;
 const PADDING_TOP = 12;
@@ -21,6 +21,10 @@ interface WorkerProfileStickyFooterProps {
   onChat: () => void;
   onBookNow: () => void;
   isWorkerAvailable: boolean;
+  /** Book Now was tapped and is being processed: blocks repeat taps and shows progress. */
+  isStarting?: boolean;
+  /** Inline, dismissible-by-next-tap explanation (unavailable worker, no bookable services, ...). */
+  notice?: { text: string; actionLabel?: string | undefined; onAction?: (() => void) | undefined } | null;
   style?: ViewStyle;
 }
 
@@ -29,57 +33,64 @@ export const WorkerProfileStickyFooter: React.FC<WorkerProfileStickyFooterProps>
   onChat,
   onBookNow,
   isWorkerAvailable,
+  isStarting = false,
+  notice = null,
   style,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
-  const isDark = useColorScheme() === 'dark';
 
   return (
     <View
-      style={[
-        styles.container,
-        isDark && styles.containerDark,
-        { paddingBottom: getBottomPadding(insets.bottom) },
-        style,
-      ]}
+      style={[styles.container, { paddingBottom: getBottomPadding(insets.bottom) }, style]}
     >
+      {notice ? (
+        <View style={styles.notice} accessibilityLiveRegion="polite" accessible accessibilityLabel={notice.text}>
+          <Text style={styles.noticeText}>{notice.text}</Text>
+          {notice.actionLabel && notice.onAction ? (
+            <Pressable onPress={notice.onAction} hitSlop={8} accessibilityRole="button">
+              <Text style={styles.noticeAction}>{notice.actionLabel}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
       {/* Secondary: Chat */}
       <Pressable
         onPress={onChat}
-        style={({ pressed }) => [
-          styles.button,
-          styles.chatButton,
-          isDark && styles.chatButtonDark,
-          pressed && styles.chatPressed,
-        ]}
+        style={({ pressed }) => [styles.button, styles.chatButton, pressed && styles.chatPressed]}
         accessibilityRole="button"
         accessibilityLabel={workerName ? `Chat with ${workerName}` : 'Chat with worker'}
       >
-        <MessageCircle size={18} color={isDark ? palette.green400 : colors.textPrimary} strokeWidth={2.2} />
-        <Text style={[styles.chatText, isDark && styles.chatTextDark]}>Chat</Text>
+        <MessageCircle size={18} color={colors.textPrimary} strokeWidth={2.2} />
+        <Text style={[styles.chatText]}>Chat</Text>
       </Pressable>
 
       {/* Primary: Book Now */}
       <Pressable
         onPress={onBookNow}
-        disabled={!isWorkerAvailable}
+        disabled={isStarting}
         style={({ pressed }) => [
           styles.button,
           styles.bookButton,
-          !isWorkerAvailable && (isDark ? styles.bookButtonDisabledDark : styles.bookButtonDisabled),
+          !isWorkerAvailable && (styles.bookButtonDisabled),
           pressed && styles.bookPressed,
         ]}
         accessibilityRole="button"
-        accessibilityState={{ disabled: !isWorkerAvailable }}
+        accessibilityState={{ disabled: isStarting, busy: isStarting }}
         accessibilityLabel={workerName ? `Book Now with ${workerName}` : 'Book Now'}
       >
-        <Text style={styles.bookText}>Book Now</Text>
+        {isStarting ? (
+          <ActivityIndicator size="small" color={colors.pureWhite} />
+        ) : (
+          <Text style={styles.bookText}>{isWorkerAvailable ? 'Book Now' : 'Unavailable'}</Text>
+        )}
       </Pressable>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: 0,
@@ -100,10 +111,6 @@ const styles = StyleSheet.create({
     elevation: 12,
     zIndex: 100,
   },
-  containerDark: {
-    backgroundColor: palette.gray800,
-    borderTopColor: palette.gray700,
-  },
   button: {
     height: BUTTON_HEIGHT,
     borderRadius: 14,
@@ -118,10 +125,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  chatButtonDark: {
-    backgroundColor: palette.gray900,
-    borderColor: palette.gray700,
-  },
   chatPressed: {
     backgroundColor: colors.bgHover,
   },
@@ -130,9 +133,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textPrimary,
   },
-  chatTextDark: {
-    color: palette.green400,
-  },
   bookButton: {
     flex: 2,
     backgroundColor: colors.primaryDark,
@@ -140,16 +140,41 @@ const styles = StyleSheet.create({
   bookPressed: {
     opacity: 0.88,
   },
+  notice: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: '100%',
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  noticeText: {
+    flex: 1,
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textPrimary,
+  },
+  noticeAction: {
+    fontFamily: fontFamily.jakarta.bold,
+    fontSize: 13,
+    color: colors.primaryDark,
+  },
   bookButtonDisabled: {
     backgroundColor: colors.textDisabled,
-  },
-  bookButtonDisabledDark: {
-    backgroundColor: palette.gray600,
   },
   bookText: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 15.5,
     letterSpacing: -0.1,
-    color: colors.white,
+    color: colors.pureWhite,
   },
 });

@@ -1,7 +1,9 @@
-import { View, Text, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { MessageCircle, Mail, Phone, ChevronRight } from 'lucide-react-native';
-import { colors, palette, fontFamily, spacing } from '../../design';
+import { fontFamily, spacing } from '../../design';
 import { useAuthStore } from '../../store/auth.store';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 export type ContactChannel = 'whatsapp' | 'email' | 'call';
 
@@ -20,6 +22,8 @@ export const ContactOptionRow: React.FC<ContactOptionRowProps> = ({
   phoneNumber = '+923001234567',
   emailAddress = 'support@tasklync.pk',
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const user = useAuthStore((s) => s.user);
 
   const handlePress = async () => {
@@ -44,7 +48,7 @@ export const ContactOptionRow: React.FC<ContactOptionRowProps> = ({
         await Linking.openURL(telUrl);
       }
     } catch (_err) {
-      Alert.alert(
+      showAlert(
         'Unable to Open Channel',
         `Please reach out directly at ${channel === 'email' ? emailAddress : phoneNumber}.`
       );
@@ -97,7 +101,7 @@ export const ContactOptionRow: React.FC<ContactOptionRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   rowContainer: {
     minHeight: 64,
     flexDirection: 'row',

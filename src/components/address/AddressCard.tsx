@@ -3,7 +3,8 @@ import { Check } from 'lucide-react-native';
 import { Address } from '../../types/address.types';
 import { labelToIcon } from '../../utils/address';
 import { DefaultAddressBadge } from './DefaultAddressBadge';
-import { colors, palette, fontFamily, fontSize } from '../../design';
+import { fontFamily, fontSize } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddressCardProps {
   address: Address;
@@ -20,6 +21,8 @@ export const AddressCard: React.FC<AddressCardProps> = ({
   isSelected,
   onSelect,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const { label, custom_label, address_line, city, is_default } = address as any;
   const displayLabel = custom_label || label || 'Address';
   const IconComponent = labelToIcon(label);
@@ -107,7 +110,7 @@ export const AddressCard: React.FC<AddressCardProps> = ({
               isSelected ? styles.radioOuterSelected : styles.radioOuterUnselected,
             ]}
           >
-            {isSelected && <Check size={12} color={palette.white} strokeWidth={3} />}
+            {isSelected && <Check size={12} color={palette.pureWhite} strokeWidth={3} />}
           </View>
         ) : (
           <View style={styles.rightContainer}>
@@ -119,7 +122,7 @@ export const AddressCard: React.FC<AddressCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     minHeight: 68,
     paddingVertical: 14,

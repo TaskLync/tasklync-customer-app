@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Alert } from 'react-native';
+
 import { customRequestApi } from '../../services/api/customRequest.api';
 import { CreateCustomRequestDto, CustomServiceRequest } from '../../types/customRequest.types';
+import { showAlert } from '../../components/feedback/AppAlert';
 
 export function useCreateCustomRequest() {
   const queryClient = useQueryClient();
@@ -38,7 +39,7 @@ export function useCreateCustomRequest() {
       router.replace(`/custom-request/${request.id}` as any);
     },
     onError: (error) => {
-      Alert.alert('Request Failed', error.message || 'Unable to submit request. Please try again.');
+      showAlert('Request Failed', error.message || 'Unable to submit request. Please try again.');
     },
   });
 }

@@ -8,7 +8,6 @@ import {
   Modal,
   Platform,
   Linking,
-  Alert,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -18,9 +17,11 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { Crosshair, MapPinOff, X } from 'lucide-react-native';
-import { colors, palette, fontFamily, radius, shadows, fontSize } from '../../design';
+import { fontFamily, radius, shadows, fontSize } from '../../design';
 import { FreshLocationResult, LocationError } from '../../types/location.types';
 import { locationService } from '../../services/location/location.service';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 export interface UseMyLocationButtonProps {
   onLocationFound: (coords: { lat: number; lng: number }) => void;
@@ -39,6 +40,8 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
   error = null,
   onError,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const isMountedRef = useRef<boolean>(true);
   const shakeOffset = useSharedValue(0);
@@ -137,7 +140,7 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
       ) {
         setShowPermissionModal(true);
       } else if (locationError?.code === 'SERVICES_DISABLED') {
-        Alert.alert(
+        showAlert(
           'Location Services Off',
           locationError.userMessage ||
             'Please enable GPS in your device settings to detect your current location.',
@@ -147,12 +150,12 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
           ]
         );
       } else if (locationError?.code === 'MOCK_DETECTED') {
-        Alert.alert(
+        showAlert(
           'Mock Location Detected',
           'Mock/spoofed GPS coordinates were detected. Please disable GPS mocking in developer options.'
         );
       } else {
-        Alert.alert(
+        showAlert(
           'GPS Signal Weak',
           locationError?.userMessage ||
             'Unable to acquire a high-confidence GPS position. Please check your signal and try again.'
@@ -241,9 +244,9 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   wrapper: {
-    shadowColor: palette.gray900,
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -277,7 +280,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 340,
-    backgroundColor: palette.white,
+    backgroundColor: colors.modalBackground,
     borderRadius: 20,
     padding: 20,
     ...shadows.lg,
@@ -341,6 +344,6 @@ const styles = StyleSheet.create({
   settingsBtnText: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 14,
-    color: palette.white,
+    color: palette.pureWhite,
   },
 });

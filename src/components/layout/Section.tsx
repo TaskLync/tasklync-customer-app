@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { colors } from '../../design/colors';
 import { fontFamily } from '../../design/typography';
 import { layout } from '../../design/spacing';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface SectionProps {
   title: string;
@@ -21,6 +21,7 @@ export const Section: React.FC<SectionProps> = ({
   paddingTop = 0,
   showDivider = false,
 }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       {showDivider && <View style={styles.divider} />}
@@ -49,7 +50,7 @@ export const Section: React.FC<SectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
   },

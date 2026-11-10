@@ -12,7 +12,7 @@ import Animated, {
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { Trash2 } from 'lucide-react-native';
 import { springConfig } from '../../design/animations';
-import { colors } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const SWIPE_THRESHOLD = -80; // Distance in px required to commit delete
 
@@ -25,6 +25,7 @@ export const SwipeToDeleteRow: FC<SwipeToDeleteRowProps> = ({
   children,
   onDelete,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const { width: screenWidth } = useWindowDimensions();
   const [isDeleting, setIsDeleting] = useState(false);
   const translateX = useSharedValue(0);
@@ -128,7 +129,7 @@ export const SwipeToDeleteRow: FC<SwipeToDeleteRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     position: 'relative',
     overflow: 'hidden',

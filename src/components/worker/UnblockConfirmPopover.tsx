@@ -7,7 +7,8 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface UnblockConfirmPopoverProps {
   visible: boolean;
@@ -24,6 +25,8 @@ export const UnblockConfirmPopover: React.FC<UnblockConfirmPopoverProps> = ({
   onCancel,
   isLoading = false,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handleConfirm = () => {
     onConfirm();
   };
@@ -71,7 +74,7 @@ export const UnblockConfirmPopover: React.FC<UnblockConfirmPopoverProps> = ({
               accessibilityLabel={`Confirm unblocking ${workerName}`}
             >
               {isLoading ? (
-                <ActivityIndicator size="small" color={palette.white} />
+                <ActivityIndicator size="small" color={palette.pureWhite} />
               ) : (
                 <Text style={styles.unblockText}>Unblock</Text>
               )}
@@ -83,7 +86,7 @@ export const UnblockConfirmPopover: React.FC<UnblockConfirmPopoverProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.4)',
@@ -94,7 +97,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 320,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.modalBackground,
     borderRadius: radius.xl,
     padding: spacing.lg,
     ...shadows.md,
@@ -142,6 +145,6 @@ const styles = StyleSheet.create({
   unblockText: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 13,
-    color: palette.white,
+    color: palette.pureWhite,
   },
 });

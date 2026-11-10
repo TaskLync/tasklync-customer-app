@@ -9,9 +9,9 @@ import { Star, MapPin, Clock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { WorkerNearby } from '../../types/worker.types';
 import { WorkerMarkerBadge } from './WorkerMarkerBadge';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface MapWorkerCardProps {
   worker: WorkerNearby;
@@ -28,6 +28,8 @@ export const MapWorkerCard: FC<MapWorkerCardProps> = ({
   onPressCard,
   onPressBook,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const scale = useSharedValue(1);
   const borderWidth = useSharedValue(isSelected ? 2 : 1);
@@ -161,7 +163,7 @@ export const MapWorkerCard: FC<MapWorkerCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     width: 270,
     height: 146,
@@ -178,7 +180,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   selectedShadow: {
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
@@ -270,7 +272,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 6,
     elevation: 2,
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,

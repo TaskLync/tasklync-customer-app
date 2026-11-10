@@ -1,4 +1,3 @@
-import { colors, palette } from '../../design';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
@@ -8,7 +7,6 @@ import {
   Platform,
   Modal,
   Text,
-  Alert,
   Keyboard,
   ActivityIndicator,
 } from 'react-native';
@@ -22,7 +20,8 @@ import { Paperclip, ArrowUp, Camera, Image as ImageIcon, X } from 'lucide-react-
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { compressImage } from '../../utils/imageCompression';
-import { CHAT_CANVAS } from './chatTheme';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 interface ChatInputProps {
   onSend?: (text: string, type?: 'text' | 'image', mediaUrl?: string) => void;
@@ -56,6 +55,8 @@ export const ChatInput = React.memo(function ChatInput({
   onStopTyping,
   disabled = false,
 }: ChatInputProps) {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [text, setText] = useState<string>('');
   const [inputHeight, setInputHeight] = useState<number>(MIN_INPUT_HEIGHT);
   const [isMediaModalVisible, setIsMediaModalVisible] = useState<boolean>(false);
@@ -127,7 +128,7 @@ export const ChatInput = React.memo(function ChatInput({
     try {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Camera Permission Required', 'Please allow camera access in your device settings to capture photos for chat.');
+        showAlert('Camera Permission Required', 'Please allow camera access in your device settings to capture photos for chat.');
         return;
       }
 
@@ -150,7 +151,7 @@ export const ChatInput = React.memo(function ChatInput({
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Photo Library Permission Required', 'Please allow photo library access in your device settings to attach photos.');
+        showAlert('Photo Library Permission Required', 'Please allow photo library access in your device settings to attach photos.');
         return;
       }
 
@@ -220,7 +221,7 @@ export const ChatInput = React.memo(function ChatInput({
           <TextInput
             style={[styles.input, { height: Math.min(Math.max(MIN_INPUT_HEIGHT, inputHeight), MAX_INPUT_HEIGHT) }]}
             placeholder="Type a message"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholder}
             value={text}
             onChangeText={handleChangeText}
             multiline
@@ -331,9 +332,9 @@ export const ChatInput = React.memo(function ChatInput({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   wrapper: {
-    backgroundColor: CHAT_CANVAS,
+    backgroundColor: palette.gray100,
     paddingTop: 6,
     paddingHorizontal: 10,
   },
@@ -383,12 +384,12 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bottomSheetBackground,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 18,
     paddingHorizontal: 18,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,

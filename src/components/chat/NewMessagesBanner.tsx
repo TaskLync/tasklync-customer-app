@@ -1,4 +1,3 @@
-import { colors, palette } from '../../design';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, Pressable } from 'react-native';
 import Animated, {
@@ -8,6 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { ArrowDown } from 'lucide-react-native';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface NewMessagesBannerProps {
   count: number;
@@ -32,6 +32,8 @@ export const NewMessagesBanner = React.memo(function NewMessagesBanner({
   visible,
   onPress,
 }: NewMessagesBannerProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
 
@@ -65,13 +67,13 @@ export const NewMessagesBanner = React.memo(function NewMessagesBanner({
       accessibilityRole="button"
       accessibilityLabel={`Scroll down, ${label}`}
     >
-      <ArrowDown size={15} color={colors.white} strokeWidth={2.5} style={styles.icon} />
+      <ArrowDown size={15} color={colors.pureWhite} strokeWidth={2.5} style={styles.icon} />
       <Text style={styles.text}>{label}</Text>
     </AnimatedPressable>
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: 12,
@@ -79,12 +81,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.textPrimary,
+    backgroundColor: colors.inverseSurface,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 22,
     zIndex: 99,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.16,
     shadowRadius: 8,
@@ -96,7 +98,7 @@ const styles = StyleSheet.create({
   text: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 13,
-    color: colors.white,
+    color: colors.textInverse,
     letterSpacing: -0.1,
   },
 });

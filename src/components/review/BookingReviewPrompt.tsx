@@ -2,7 +2,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Star, Clock, CheckCircle2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useReviewEligibility } from '../../hooks/useReview';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface BookingReviewPromptProps {
   bookingId: string;
@@ -10,6 +11,8 @@ export interface BookingReviewPromptProps {
 }
 
 export function BookingReviewPrompt({ bookingId, workerId }: BookingReviewPromptProps) {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { data: eligibility, isLoading } = useReviewEligibility(bookingId);
 
@@ -97,7 +100,7 @@ export function BookingReviewPrompt({ bookingId, workerId }: BookingReviewPrompt
   return null;
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   bannerEligible: {
     backgroundColor: colors.warningLight,
     borderRadius: radius.lg,
@@ -141,7 +144,7 @@ const styles = StyleSheet.create({
   },
   rateBtnText: {
     fontFamily: fontFamily.jakarta.semiBold,
-    color: colors.white,
+    color: colors.pureWhite,
     fontSize: fontSize.dataSM,
   },
 

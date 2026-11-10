@@ -8,7 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { CheckCircle2 } from 'lucide-react-native';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ReviewSuccessStateProps {
   onDismiss: () => void;
@@ -28,6 +29,8 @@ export const ReviewSuccessState: React.FC<ReviewSuccessStateProps> = ({
   onDismiss,
   autoNavigateDelayMs = 2000,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(0.4);
   const opacity = useSharedValue(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -103,7 +106,7 @@ export const ReviewSuccessState: React.FC<ReviewSuccessStateProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -129,7 +132,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,

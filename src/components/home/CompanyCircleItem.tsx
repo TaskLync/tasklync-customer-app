@@ -8,9 +8,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Building2 } from 'lucide-react-native';
 import { WorkerNearby } from '../../types/worker.types';
-import { companyTokens } from '../../theme/companyTokens';
 import { springConfig } from '../../design/animations';
-import { colors } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 interface CompanyCircleItemProps {
   company: WorkerNearby;
@@ -23,6 +23,8 @@ export const CompanyCircleItem: React.FC<CompanyCircleItemProps> = ({
   company,
   onPress,
 }) => {
+  const { companyTokens } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [imageError, setImageError] = useState(false);
   const scale = useSharedValue(1);
 
@@ -91,7 +93,7 @@ export const CompanyCircleItem: React.FC<CompanyCircleItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create({
   container: {
     alignItems: 'center',
     width: companyTokens.dimensions.homeItemWidth,
@@ -101,7 +103,7 @@ const styles = StyleSheet.create({
     width: companyTokens.dimensions.homeLogoSize,
     height: companyTokens.dimensions.homeLogoSize,
     borderRadius: companyTokens.dimensions.homeLogoRadius,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     borderWidth: 1.5,
     borderColor: companyTokens.colors.borderSubtle,
     overflow: 'hidden',

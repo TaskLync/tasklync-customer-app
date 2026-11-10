@@ -5,11 +5,11 @@ import { RadioGroup } from '../ui/Radio';
 import { ChipGroup } from '../ui/Chip';
 import { StarRatingFilter } from '../ui/Rating/StarRatingFilter';
 import { Button } from '../ui/Button/Button';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { RangeSlider } from '../ui/Slider/RangeSlider';
 import { BottomSheetScrollView } from '../layout/BottomSheet';
 import { useCategories } from '../../hooks/useCategories';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface FilterSheetContentProps {
   filters: FilterState;
@@ -57,6 +57,7 @@ export const FilterSheetContent: React.FC<FilterSheetContentProps> = ({
   showProviderType = true,
   showCity = true,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const [localFilters, setLocalFilters] = React.useState<FilterState>(() => getSafeFilters(filters));
   const { categories: fetchedCategories } = useCategories();
 
@@ -299,7 +300,7 @@ export const FilterSheetContent: React.FC<FilterSheetContentProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgCard,

@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { colors, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddressHeaderProps {
   title?: string;
@@ -15,6 +16,8 @@ export const AddressHeader: React.FC<AddressHeaderProps> = ({
   subtitle,
   onBack,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   const handleBack = () => {
@@ -45,7 +48,7 @@ export const AddressHeader: React.FC<AddressHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

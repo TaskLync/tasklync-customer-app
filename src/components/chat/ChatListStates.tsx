@@ -9,10 +9,12 @@ import {
   LayoutChangeEvent,
 } from 'react-native';
 import { MessageCircle } from 'lucide-react-native';
-import { colors } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 /** Shown at the top of the history while an older page is being fetched. */
 export const LoadingOlder = React.memo(function LoadingOlder() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.loadingOlder} accessibilityLabel="Loading earlier messages">
       <ActivityIndicator size="small" color={colors.textMuted} />
@@ -37,6 +39,8 @@ export const EmptyConversation = React.memo(function EmptyConversation({
   style,
   onLayout,
 }: EmptyConversationProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.empty, style]} onLayout={onLayout}>
       <View style={styles.emptyIcon}>
@@ -48,7 +52,7 @@ export const EmptyConversation = React.memo(function EmptyConversation({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   loadingOlder: {
     paddingVertical: 12,
     alignItems: 'center',

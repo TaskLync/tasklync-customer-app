@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { ReviewTag, REVIEW_TAGS } from '../../types/review.types';
-import { colors, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ReviewTagSelectorProps {
   selectedTags: ReviewTag[];
@@ -23,6 +24,7 @@ export const ReviewTagSelector: React.FC<ReviewTagSelectorProps> = ({
   onToggleTag,
   disabled = false,
 }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.title}>What stood out?</Text>
@@ -62,7 +64,7 @@ export const ReviewTagSelector: React.FC<ReviewTagSelectorProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,

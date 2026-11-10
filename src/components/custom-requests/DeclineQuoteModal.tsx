@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
-import { palette, colors } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface DeclineQuoteModalProps {
   visible: boolean;
@@ -37,6 +37,8 @@ export function DeclineQuoteModal({
   onConfirm,
   isLoading,
 }: DeclineQuoteModalProps) {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [selectedReason, setSelectedReason] = useState(PRESET_REASONS[0]);
   const [customText, setCustomText] = useState('');
@@ -134,7 +136,7 @@ export function DeclineQuoteModal({
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color={colors.white} />
+                  <ActivityIndicator size="small" color={colors.pureWhite} />
                 ) : (
                   <Text style={styles.declineButtonText}>Confirm Decline</Text>
                 )}
@@ -147,7 +149,7 @@ export function DeclineQuoteModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   keyboardContainer: {
     flex: 1,
   },
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bottomSheetBackground,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -269,6 +271,6 @@ const styles = StyleSheet.create({
   declineButtonText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 14,
-    color: colors.white,
+    color: colors.pureWhite,
   },
 });

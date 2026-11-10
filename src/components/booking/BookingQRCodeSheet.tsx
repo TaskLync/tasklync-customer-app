@@ -10,9 +10,10 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { X, RefreshCw, Clock, AlertCircle, ShieldCheck } from 'lucide-react-native';
 import { BottomSheet } from '../layout/BottomSheet';
-import { colors, palette, radius, spacing } from '../../design';
+import { radius, spacing } from '../../design';
 import { formatRemainingTime } from '../../utils/verificationState.util';
 import { useBookingVerificationQr } from '../../hooks/useBookingVerification';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingQRCodeSheetProps {
   bookingId: string;
@@ -27,6 +28,8 @@ export const BookingQRCodeSheet: React.FC<BookingQRCodeSheetProps> = ({
   isEligible,
   onClose,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     svgData,
     remainingSeconds,
@@ -113,10 +116,10 @@ export const BookingQRCodeSheet: React.FC<BookingQRCodeSheetProps> = ({
                   accessibilityLabel="Generate a new QR code"
                 >
                   {isRefetching ? (
-                    <ActivityIndicator size="small" color={colors.white} />
+                    <ActivityIndicator size="small" color={colors.pureWhite} />
                   ) : (
                     <>
-                      <RefreshCw size={15} color={colors.white} />
+                      <RefreshCw size={15} color={colors.pureWhite} />
                       <Text style={styles.refreshPrimaryBtnText}>Generate New QR</Text>
                     </>
                   )}
@@ -190,7 +193,7 @@ export const BookingQRCodeSheet: React.FC<BookingQRCodeSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   sheetContent: {
     paddingTop: spacing.xs,
     paddingBottom: spacing.lg,
@@ -329,7 +332,7 @@ const styles = StyleSheet.create({
   refreshPrimaryBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.white,
+    color: colors.pureWhite,
   },
   timerRow: {
     flexDirection: 'row',

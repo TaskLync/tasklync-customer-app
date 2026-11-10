@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, Pressable, TextInput, useColorScheme, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, Platform, Keyboard } from 'react-native';
 import { Home, Building2, MapPin } from 'lucide-react-native';
-import { colors, palette, fontFamily, radius } from '../../design';
+import { fontFamily, radius } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddressLabelChipsProps {
   selectedLabel: string;
@@ -29,8 +30,8 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
   onFocusCustomLabel,
   onBlurCustomLabel,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
 
   const isOtherSelected =
     selectedLabel === 'Other' ||
@@ -42,7 +43,7 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.sectionHeading, isDark && styles.sectionHeadingDark]} maxFontSizeMultiplier={1.3}>
+      <Text style={[styles.sectionHeading]} maxFontSizeMultiplier={1.3}>
         Save address as
       </Text>
 
@@ -62,8 +63,8 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
               style={[
                 styles.chip,
                 isSelected
-                  ? [styles.chipSelected, isDark && styles.chipSelectedDark]
-                  : [styles.chipUnselected, isDark && styles.chipUnselectedDark],
+                  ? [styles.chipSelected]
+                  : [styles.chipUnselected],
               ]}
               accessibilityRole="radio"
               accessibilityState={{ selected: isSelected }}
@@ -73,8 +74,8 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
                 size={16}
                 color={
                   isSelected
-                    ? (isDark ? palette.green400 : colors.primaryDark)
-                    : (isDark ? palette.slate400 : palette.gray500)
+                    ? (colors.primaryDark)
+                    : (palette.gray500)
                 }
                 strokeWidth={2.2}
               />
@@ -82,8 +83,8 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
                 style={[
                   styles.chipText,
                   isSelected
-                    ? [styles.chipTextSelected, isDark && styles.chipTextSelectedDark]
-                    : [styles.chipTextUnselected, isDark && styles.chipTextUnselectedDark],
+                    ? [styles.chipTextSelected]
+                    : [styles.chipTextUnselected],
                 ]}
                 maxFontSizeMultiplier={1.3}
               >
@@ -98,13 +99,13 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
       {isOtherSelected && (
         <View style={styles.customInputContainer}>
           <TextInput
-            style={[styles.customInput, isDark && styles.customInputDark]}
+            style={[styles.customInput]}
             value={customLabel}
             onChangeText={onChangeCustomLabel}
             onFocus={onFocusCustomLabel}
             onBlur={onBlurCustomLabel}
             placeholder="e.g. Mom's House, Gym, Warehouse"
-            placeholderTextColor={isDark ? palette.slate500 : palette.gray400}
+            placeholderTextColor={palette.gray400}
             maxLength={30}
             autoCapitalize="words"
             returnKeyType="done"
@@ -118,7 +119,7 @@ export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     marginVertical: 12,
   },
@@ -179,27 +180,5 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     borderWidth: 1,
     borderColor: palette.gray200,
-  },
-  sectionHeadingDark: {
-    color: colors.textMuted,
-  },
-  chipUnselectedDark: {
-    backgroundColor: palette.gray700,
-    borderColor: palette.gray600,
-  },
-  chipSelectedDark: {
-    backgroundColor: 'rgba(74, 222, 128, 0.15)',
-    borderColor: palette.green400,
-  },
-  chipTextUnselectedDark: {
-    color: colors.textDisabled,
-  },
-  chipTextSelectedDark: {
-    color: palette.green400,
-  },
-  customInputDark: {
-    backgroundColor: palette.gray900,
-    borderColor: palette.gray700,
-    color: palette.gray50,
   },
 });

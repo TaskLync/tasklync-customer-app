@@ -11,10 +11,12 @@ import { PortfolioCell } from '../../../src/components/worker/PortfolioCell';
 import { ImageViewer } from '../../../src/components/common/ImageViewer';
 import { SkeletonPortfolioGrid } from '../../../src/components/ui/Skeleton';
 
-import { colors } from '@design/colors';
 import { fontFamily as fonts } from '@design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
 
 export default function WorkerPortfolioScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -106,7 +108,7 @@ export default function WorkerPortfolioScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',

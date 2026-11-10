@@ -2,9 +2,11 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../src/store/auth.store';
-import { colors } from '../src/design/colors';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../src/theme/useAppTheme';
 
 export default function IndexScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const authState = useAuthStore((s) => s.authState);
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -37,7 +39,7 @@ export default function IndexScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',

@@ -4,6 +4,8 @@
  * Extended with Day 34 Invoice, Dispute, and Refund Policy models
  */
 
+import type { BookingDiscountFields } from './offers.types';
+
 export type BookingStatus =
   | 'PENDING'
   | 'ACCEPTED'
@@ -137,41 +139,11 @@ export interface PdfInvoiceData {
 export type InvoiceData = StructuredInvoiceData | PdfInvoiceData;
 
 /**
- * 6.1 Price Estimate Query Parameters (GET /api/v1/bookings/estimate)
- */
-export interface PriceEstimateParams {
-  worker_id: string;
-  category_id: string;
-  service_id?: string | undefined;
-  scheduled_at: string; // ISO-8601 UTC
-  duration_hours: number; // 0.5 to 12.0
-  latitude: number;
-  longitude: number;
-  is_urgent: boolean;
-  custom_base_price?: number | undefined;
-}
-
-/**
- * 6.1 Price Estimate Response Data
- */
-export interface PriceEstimateData {
-  base_price: number;
-  urgency_multiplier: number;
-  demand_multiplier: number;
-  time_of_day_multiplier: number;
-  estimated_total: number;
-  platform_fee: number;
-  worker_commission?: number | undefined;
-  worker_amount: number;
-  platform_revenue?: number | undefined;
-  currency: string;
-  price_type: PriceType;
-}
-
-/**
  * 6.2 Create Booking Request Payload (POST /api/v1/bookings)
  */
 export interface CreateBookingPayload {
+  /** Client id of this confirm attempt, stable across its retries (support / log correlation). */
+  attempt_id?: string | undefined;
   worker_id: string;
   category_id: string;
   service_id?: string | undefined;
@@ -184,13 +156,17 @@ export interface CreateBookingPayload {
   longitude: number;
   is_urgent: boolean;
   description?: string | undefined;
-  custom_base_price?: number | undefined;
+  /** Which services and how many; the server resolves every price. */
+  items: Array<{ service_id: string; quantity: number }>;
+  /** Promo code the customer applied; omitted when none (an automatic offer may still apply server-side). */
+  coupon_code?: string | undefined;
 }
 
 /**
  * 6.2 & 6.4 Booking Details Model
+ * `estimated_total` is already the DISCOUNTED payable total; discount fields come from BookingDiscountFields.
  */
-export interface BookingDetails {
+export interface BookingDetails extends BookingDiscountFields {
   id: string;
   user_id: string;
   worker_id: string;

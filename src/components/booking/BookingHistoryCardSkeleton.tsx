@@ -1,14 +1,16 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SkeletonCircle, SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
-import { colors } from '../../design/colors';
 import { spacing } from '../../design/spacing';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 /**
  * Mirrors BookingHistoryCard: flat 76px row — 42px service icon, worker name (15/20),
  * service line (12/16), status (11), and amount (15/20) over date (12/16) on the right.
  */
-export const BookingHistoryCardSkeleton: React.FC = () => (
+export const BookingHistoryCardSkeleton: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
+  return (
   <SkeletonGroup style={styles.card} accessibilityLabel="Loading booking">
     <SkeletonCircle size={42} style={styles.icon} />
     <View style={styles.middle}>
@@ -22,8 +24,9 @@ export const BookingHistoryCardSkeleton: React.FC = () => (
     </View>
   </SkeletonGroup>
 );
+};
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     minHeight: 76,
     flexDirection: 'row',

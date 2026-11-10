@@ -1,11 +1,12 @@
 import React from 'react';
 import { ViewStyle, StatusBar } from 'react-native';
 import { SafeAreaView, Edge } from 'react-native-safe-area-context';
-import { colors } from '@design/colors';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 export interface ScreenProps {
   children: React.ReactNode;
   bg?: string;
+  /** Force a status bar style (e.g. light icons over a photo). Omit to follow the theme. */
   statusBarStyle?: 'light-content' | 'dark-content' | 'default';
   edges?: Edge[];
   style?: ViewStyle;
@@ -13,20 +14,22 @@ export interface ScreenProps {
 
 export const Screen = ({
   children,
-  bg = colors.bgApp,
-  statusBarStyle = 'dark-content',
+  bg: bgProp,
+  statusBarStyle,
   edges = ['top', 'bottom', 'left', 'right'],
   style,
 }: ScreenProps) => {
+  const { colors, isDark } = useAppTheme();
+  const bg = bgProp ?? colors.bgApp;
   return (
-    <SafeAreaView 
-      style={[{ flex: 1, backgroundColor: bg }, style]} 
+    <SafeAreaView
+      style={[{ flex: 1, backgroundColor: bg }, style]}
       edges={edges}
     >
-      <StatusBar 
-        barStyle={statusBarStyle} 
-        backgroundColor="transparent" 
-        translucent 
+      <StatusBar
+        barStyle={statusBarStyle ?? (isDark ? 'light-content' : 'dark-content')}
+        backgroundColor="transparent"
+        translucent
       />
       {children}
     </SafeAreaView>

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle, ImageStyle } from 'react-native';
 import { Image, ImageContentFit } from 'expo-image';
 import { User, Building2 } from 'lucide-react-native';
-import { palette, colors } from '../../design';
 import { fontFamily } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const BLURHASH = 'L5H2EC=PM+yV0g-mq.wG9c010J}I';
 
@@ -89,8 +89,11 @@ export const WorkerAvatar: React.FC<WorkerAvatarProps> = React.memo(({
   isOnline = false,
   badgeSize = 10,
   borderWidth = 1,
-  borderColor = palette.gray200,
+  borderColor: borderColorProp,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+  const borderColor = borderColorProp ?? palette.gray200;
   const [hasError, setHasError] = useState(false);
 
   // Sanitize and validate image URI
@@ -199,7 +202,7 @@ export const WorkerAvatar: React.FC<WorkerAvatarProps> = React.memo(({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   container: {
     position: 'relative',
     alignItems: 'center',

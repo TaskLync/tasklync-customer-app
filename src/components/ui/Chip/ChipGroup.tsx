@@ -17,6 +17,7 @@ interface ChipGroupProps {
   scrollable?: boolean;
   chipSize?: ChipProps['size'];
   chipVariant?: ChipProps['variant'];
+  chipTone?: ChipProps['tone'];
   paddingH?: number;
   showCheckmark?: boolean;
   onTrailingPress?: (value: string) => void;
@@ -30,6 +31,7 @@ export const ChipGroup: React.FC<ChipGroupProps> = ({
   scrollable = true,
   chipSize = 'md',
   chipVariant = 'filter',
+  chipTone = 'brand',
   paddingH = 16,
   showCheckmark = false, // Changed default to false to prevent layout shifts
   onTrailingPress,
@@ -85,6 +87,7 @@ export const ChipGroup: React.FC<ChipGroupProps> = ({
               onTrailingPress={() => onTrailingPress?.(option.value)}
               size={chipSize}
               variant={chipVariant}
+              tone={chipTone}
               showCheckmark={showCheckmark}
             />
           </View>
@@ -106,6 +109,7 @@ export const ChipGroup: React.FC<ChipGroupProps> = ({
           onTrailingPress={() => onTrailingPress?.(option.value)}
           size={chipSize}
           variant={chipVariant}
+              tone={chipTone}
           showCheckmark={showCheckmark}
         />
       ))}

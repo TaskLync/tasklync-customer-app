@@ -105,7 +105,11 @@ const refreshCoordinator = createRefreshCoordinator({
   toFailure(error: any) {
     if (!error?.response) return { noResponse: true };
     const data = error.response.data || {};
-    return { status: error.response.status, reason: data.error?.reason || data.reason };
+    return {
+      status: error.response.status,
+      reason: data.error?.reason || data.reason,
+      appEnvelope: data.success === false && typeof data.error?.code === 'string',
+    };
   },
 
   async persist(tokens) {

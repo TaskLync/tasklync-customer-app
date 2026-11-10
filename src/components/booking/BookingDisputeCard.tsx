@@ -9,8 +9,9 @@ import {
   MessageSquare,
 } from 'lucide-react-native';
 import { DisputeDetails, DisputeStatus } from '../../types/booking.types';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
 import { DISPUTE_REASONS } from './DisputeReasonRadioGroup';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface BookingDisputeCardProps {
   dispute?: DisputeDetails | null;
@@ -79,6 +80,8 @@ export const BookingDisputeCard: React.FC<BookingDisputeCardProps> = ({
   onContactSupport,
   style,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   // Rule 1: Never render if no genuine dispute record exists
   if (!dispute || !dispute.id || !dispute.status) {
     return null;
@@ -227,7 +230,7 @@ export const BookingDisputeCard: React.FC<BookingDisputeCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: palette.white,
     padding: spacing.base,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Text, TextStyle, ViewStyle } from 'react-native';
-import { colors } from '@design/colors';
 import { fontFamily as fonts } from '@design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 interface SectionDividerProps {
   label?: string | null;
@@ -16,10 +16,13 @@ export const SectionDivider = ({
   label = null,
   thickness = 1,
   marginV = 24,
-  color = colors.border,
+  color: colorProp,
   labelStyle,
   style,
 }: SectionDividerProps) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+  const color = colorProp ?? colors.border;
   if (!label) {
     return (
       <View
@@ -41,7 +44,7 @@ export const SectionDivider = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

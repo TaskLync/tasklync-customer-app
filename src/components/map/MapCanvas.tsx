@@ -6,25 +6,9 @@ import { WorkerNearby } from '../../types/worker.types';
 import { UserMarker } from './UserMarker';
 import { WorkerMarker } from './WorkerMarker';
 import { RadiusCircle } from './RadiusCircle';
-import { colors } from '../../design/colors';
 import { FAISALABAD_CENTER, validateServiceArea } from '../../config/serviceArea.config';
-
-const LIGHT_MAP_STYLE = [
-  {
-    featureType: 'poi',
-    elementType: 'labels',
-    stylers: [{ visibility: 'off' }],
-  },
-  {
-    featureType: 'poi.business',
-    stylers: [{ visibility: 'off' }],
-  },
-  {
-    featureType: 'transit',
-    elementType: 'labels.icon',
-    stylers: [{ visibility: 'off' }],
-  },
-];
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { DARK_MAP_STYLE, LIGHT_MAP_STYLE } from '../../design/mapStyles';
 
 interface MapCanvasProps {
   mapRef: RefObject<MapView | null>;
@@ -51,6 +35,8 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
   initialRegion,
   radiusMeters = 5000,
 }) => {
+  const { isDark } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const center = searchCenter ?? userLocation;
   const isUserLocationServiceable = Boolean(
     center && validateServiceArea(center).isServiceable
@@ -68,7 +54,8 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
         ref={mapRef as any}
         style={styles.mapView}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
-        customMapStyle={LIGHT_MAP_STYLE}
+        customMapStyle={isDark ? DARK_MAP_STYLE : LIGHT_MAP_STYLE}
+        userInterfaceStyle={isDark ? 'dark' : 'light'}
         initialRegion={defaultRegion}
         onRegionChangeComplete={(r) => onRegionChangeComplete(r)}
         showsUserLocation={false} // Custom UserMarker handles live dot
@@ -111,7 +98,7 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,

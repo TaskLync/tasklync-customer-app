@@ -14,3 +14,4 @@ export * from './settings.types';
 export * from './moderation.types';
 export * from './network.types';
 export * from './customRequest.types';
+export * from './offers.types';

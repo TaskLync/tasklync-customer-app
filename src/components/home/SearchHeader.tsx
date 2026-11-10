@@ -9,9 +9,9 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SearchInput } from '../ui/Input/SearchInput';
 import { IconButton } from '../ui/Button/IconButton';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { timingConfig } from '../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface SearchHeaderProps {
   value: string;
@@ -40,6 +40,8 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
   onBackPress,
   scrollY,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   
   // Shadow appears after scrollY > 10
@@ -78,6 +80,8 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
           onClear={onClear}
           {...(placeholder !== undefined && { placeholder })}
           autoFocus={false} // Don't auto-focus in header generally unless specified
+          tone="neutral"
+          height={48}
         />
 
         {showFilterButton && (
@@ -107,7 +111,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgCard,
     paddingBottom: 10,

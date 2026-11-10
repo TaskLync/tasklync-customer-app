@@ -6,7 +6,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { CurrencyCode } from '../../types/settings.types';
-import { colors, palette, fontFamily, radius } from '../../design';
+import { fontFamily, radius } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface CurrencyToggleProps {
   value: CurrencyCode;
@@ -19,6 +20,7 @@ const PADDING = 2;
 const PILL_WIDTH = (TOGGLE_WIDTH - PADDING * 2) / 2; // 67px
 
 export const CurrencyToggle: React.FC<CurrencyToggleProps> = ({ value, onChange }) => {
+  const styles = useThemedStyles(createStyles);
   const isPkr = value === 'PKR';
   const translateX = useSharedValue(isPkr ? 0 : PILL_WIDTH);
 
@@ -88,7 +90,7 @@ export const CurrencyToggle: React.FC<CurrencyToggleProps> = ({ value, onChange 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     width: TOGGLE_WIDTH,
     height: TOGGLE_HEIGHT,
@@ -109,7 +111,7 @@ const styles = StyleSheet.create({
     width: PILL_WIDTH,
     backgroundColor: colors.primaryDark,
     borderRadius: radius.pill,
-    shadowColor: colors.primaryDark,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
@@ -129,6 +131,6 @@ const styles = StyleSheet.create({
   },
   optionTextActive: {
     fontFamily: fontFamily.jakarta.semiBold,
-    color: palette.white,
+    color: palette.pureWhite,
   },
 });

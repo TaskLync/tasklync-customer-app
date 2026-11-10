@@ -1,16 +1,5 @@
 import { useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  ActivityIndicator,
-  Share,
-  Platform,
-  StatusBar,
-  Linking,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Share, Platform, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Share2, FileText, Download, ExternalLink, ShieldCheck } from 'lucide-react-native';
@@ -20,14 +9,9 @@ import { InvoiceHeader } from '../../../src/components/booking/InvoiceHeader';
 import { InvoiceLineItem } from '../../../src/components/booking/InvoiceLineItem';
 import { InvoiceFeeBreakdown } from '../../../src/components/booking/InvoiceFeeBreakdown';
 import { PaymentMethodRow } from '../../../src/components/booking/PaymentMethodRow';
-import {
-  colors,
-  palette,
-  fontFamily,
-  fontSize,
-  radius,
-  spacing,
-} from '../../../src/design';
+import { fontFamily, fontSize, radius, spacing } from '../../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../../src/theme/ThemedStatusBar';
 
 /**
  * InvoiceScreen (Day 34 Post-Booking Financial Receipt)
@@ -39,6 +23,8 @@ import {
  * - Serial Position preservation for itemized service charges
  */
 export default function InvoiceScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id: bookingId } = useLocalSearchParams<{ id: string }>();
@@ -87,7 +73,7 @@ export default function InvoiceScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+      <ThemedStatusBar />
 
       {/* Screen Navigation Header */}
       <View style={styles.header}>
@@ -253,7 +239,7 @@ export default function InvoiceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,
@@ -454,7 +440,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: radius.pill,
     gap: 8,
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,

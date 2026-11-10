@@ -12,9 +12,9 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RefreshCw, Check } from 'lucide-react-native';
 import { fontFamily } from '../../design/typography';
-import { colors, palette } from '../../design/colors';
 import { NETWORK_CONFIG } from '../../config/networkConfig';
 import { SyncState } from '../../types/network.types';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface SyncIndicatorProps {
   syncState: SyncState;
@@ -34,6 +34,8 @@ const PILL_HEIGHT = NETWORK_CONFIG.SYNC_PILL_HEIGHT; // 28px
  */
 export const SyncIndicator: React.FC<SyncIndicatorProps> = React.memo(
   ({ syncState, isOffline }) => {
+    const { palette } = useAppTheme();
+    const styles = useThemedStyles(createStyles);
     const insets = useSafeAreaInsets();
     const [visible, setVisible] = useState<boolean>(false);
     const [isCompleted, setIsCompleted] = useState<boolean>(false);
@@ -156,7 +158,7 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = React.memo(
   }
 );
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     left: 0,
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     ...Platform.select({
       ios: {
-        shadowColor: colors.shadow,
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 4,

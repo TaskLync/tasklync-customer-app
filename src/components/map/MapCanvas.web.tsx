@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, Pressable, Image } from 'react-native';
 import { WorkerNearby } from '../../types/worker.types';
 import { Coordinates } from '../../types/location.types';
 import { WorkerMarkerBadge } from './WorkerMarkerBadge';
-import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { FAISALABAD_CENTER, validateServiceArea } from '../../config/serviceArea.config';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface MapCanvasProps {
   mapRef: RefObject<any>;
@@ -27,6 +27,8 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
   selectedId,
   onSelectWorker,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const isUserLocationServiceable = Boolean(
     userLocation && validateServiceArea(userLocation).isServiceable
   );
@@ -122,7 +124,7 @@ export const MapCanvas: FC<MapCanvasProps> = memo(({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,
@@ -249,7 +251,7 @@ const styles = StyleSheet.create({
   userLabelText: {
     fontFamily: typography.fontFamily.jakarta.semiBold,
     fontSize: 10,
-    color: colors.white,
+    color: colors.pureWhite,
   },
   webMarkerWrapper: {
     position: 'absolute',
@@ -285,7 +287,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     borderWidth: 2,
     transform: [{ scale: 1.25 }],
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 7,
@@ -342,7 +344,7 @@ const styles = StyleSheet.create({
   tooltipName: {
     fontFamily: typography.fontFamily.poppins.semiBold,
     fontSize: 11,
-    color: colors.white,
+    color: colors.pureWhite,
   },
   tooltipMeta: {
     fontFamily: typography.fontFamily.inter.medium,

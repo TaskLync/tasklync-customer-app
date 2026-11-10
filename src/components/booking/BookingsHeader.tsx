@@ -1,10 +1,11 @@
-import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NotificationBell } from '../home/NotificationBell';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export function BookingsHeader() {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -15,7 +16,7 @@ export function BookingsHeader() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -27,6 +28,6 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Poppins-SemiBold',
     fontSize: 24,
-    color: '#111827',
+    color: colors.textPrimary,
   },
 });

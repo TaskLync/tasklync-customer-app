@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -22,7 +21,7 @@ import {
   Check,
 } from 'lucide-react-native';
 
-import { colors, palette, typography } from '../../../src/design';
+import { typography } from '../../../src/design';
 import { useCustomRequestDetail } from '../../../src/hooks/custom-requests/useCustomRequestDetail';
 import { useQuoteDetail } from '../../../src/hooks/custom-requests/useQuoteDetail';
 import { useQuoteCheckout } from '../../../src/hooks/custom-requests/useQuoteCheckout';
@@ -34,8 +33,12 @@ import { CalendarGrid } from '../../../src/components/booking/schedule/CalendarG
 import { TimeSlotGrid } from '../../../src/components/booking/schedule/TimeSlotGrid';
 import { AddAddressBottomSheet, AddAddressBottomSheetRef } from '../../../src/components/address/AddAddressBottomSheet';
 import { normalizeDateToYYYYMMDD } from '../../../src/utils/timezone';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
+import { showAlert } from '../../../src/components/feedback/AppAlert';
 
 export default function QuoteCheckoutScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -60,20 +63,20 @@ export default function QuoteCheckoutScreen() {
 
     if (!checkout.selectedDate) {
       checkout.setValidationError('Please select an appointment date from the calendar.');
-      Alert.alert('Date Required', 'Please select an appointment date from the calendar.');
+      showAlert('Date Required', 'Please select an appointment date from the calendar.');
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
 
     if (!checkout.selectedSlot) {
       checkout.setValidationError('Please choose an arrival time slot above.');
-      Alert.alert('Time Slot Required', 'Please choose an available arrival time slot above.');
+      showAlert('Time Slot Required', 'Please choose an available arrival time slot above.');
       return;
     }
 
     if (!checkout.selectedAddress) {
       checkout.setValidationError('Please select or add a service delivery address.');
-      Alert.alert('Address Required', 'Please select or add a service delivery address.');
+      showAlert('Address Required', 'Please select or add a service delivery address.');
       addAddressSheetRef.current?.open();
       return;
     }
@@ -265,7 +268,7 @@ export default function QuoteCheckoutScreen() {
               </Text>
             </View>
             <View style={styles.checkedCircle}>
-              <Check size={14} color={colors.white} />
+              <Check size={14} color={colors.pureWhite} />
             </View>
           </View>
         </View>
@@ -318,7 +321,7 @@ export default function QuoteCheckoutScreen() {
           activeOpacity={0.8}
         >
           {checkout.isSubmitting ? (
-            <ActivityIndicator size="small" color={colors.white} />
+            <ActivityIndicator size="small" color={colors.pureWhite} />
           ) : (
             <Text style={styles.confirmBtnText}>
               Confirm & Book with COD • PKR {activeQuote.total_price.toLocaleString()}
@@ -349,7 +352,7 @@ export default function QuoteCheckoutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: palette.canvasGray,
@@ -604,6 +607,6 @@ const styles = StyleSheet.create({
   confirmBtnText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 14,
-    color: colors.white,
+    color: colors.pureWhite,
   },
 });

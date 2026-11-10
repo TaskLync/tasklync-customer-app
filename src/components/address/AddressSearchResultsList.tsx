@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { MapPin, History, Trash2, MapPinOff, AlertCircle } from 'lucide-react-native';
 import { PlacePrediction } from '../../types/address.types';
-import { colors, palette, fontFamily, radius, fontSize, shadows } from '../../design';
+import { fontFamily, radius, fontSize, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddressSearchResultsListProps {
   predictions: PlacePrediction[];
@@ -30,6 +31,8 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
   isLoading = false,
   isError = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const cleanQuery = query.trim();
   const isShowingRecents = cleanQuery.length === 0 && recentSearches.length > 0;
   const isQueryActive = cleanQuery.length >= 2;
@@ -160,7 +163,7 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     backgroundColor: palette.white,
     borderRadius: radius.lg,

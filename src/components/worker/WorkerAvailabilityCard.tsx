@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, View, Text, ViewStyle } from 'react-native';
 import { fontFamily } from '../../design/typography';
-import { colors, palette } from '../../design/colors';
 import { WorkerAvailabilityStatus } from '../../types/worker.types';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface WorkerAvailabilityCardProps {
   status: WorkerAvailabilityStatus;
@@ -20,6 +20,8 @@ export const WorkerAvailabilityCard: React.FC<WorkerAvailabilityCardProps> = ({
   avgResponseMins = 0,
   style,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const isAvailable = status === 'AVAILABLE';
   const isBusy = status === 'BUSY';
 
@@ -46,7 +48,7 @@ export const WorkerAvailabilityCard: React.FC<WorkerAvailabilityCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

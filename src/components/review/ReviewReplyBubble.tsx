@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { format, parseISO } from 'date-fns';
-import { colors, palette } from '../../design/colors';
 import { fontFamily as fonts } from '../../design/typography';
 import { radius } from '../../design/radius';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ReviewReplyBubbleProps {
   reply: string;
@@ -23,6 +23,7 @@ export const ReviewReplyBubble: React.FC<ReviewReplyBubbleProps> = ({
   repliedAt,
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   if (!reply || !reply.trim()) {
     return null;
   }
@@ -53,9 +54,9 @@ export const ReviewReplyBubble: React.FC<ReviewReplyBubbleProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.bgSubtle,
     borderRadius: radius.sm, // 8
     paddingHorizontal: 12,
     paddingVertical: 9,

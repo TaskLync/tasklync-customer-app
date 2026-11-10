@@ -1,17 +1,5 @@
 import { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  StatusBar,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Lock, Camera, Image as ImageIcon, X } from 'lucide-react-native';
@@ -22,7 +10,10 @@ import { useCurrentUser, useUpdateProfile, useUploadAvatar, useUpdatePreferences
 import { useEditProfileForm } from '../../src/hooks/useEditProfileForm';
 import { AvatarUploadRing } from '../../src/components/profile/AvatarUploadRing';
 import { PreferenceToggleRow } from '../../src/components/profile/PreferenceToggleRow';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../src/design';
+import { fontFamily, fontSize, radius, spacing } from '../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+import { showAlert } from '../../src/components/feedback/AppAlert';
 
 /**
  * EditProfileScreen (Day 35 Edit Profile Flow)
@@ -34,6 +25,8 @@ import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../sr
  * - Immediate auto-persisting segmented preference toggles
  */
 export default function EditProfileScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -59,7 +52,7 @@ export default function EditProfileScreen() {
   // Unsaved Changes Guard
   const handleBackPress = useCallback(() => {
     if (isDirty) {
-      Alert.alert(
+      showAlert(
         'Discard Changes?',
         'You have unsaved edits. Are you sure you want to leave without saving?',
         [
@@ -88,7 +81,7 @@ export default function EditProfileScreen() {
 
       router.back();
     } catch (err: any) {
-      Alert.alert('Update Failed', err?.message || 'Unable to update profile. Please try again.');
+      showAlert('Update Failed', err?.message || 'Unable to update profile. Please try again.');
     }
   };
 
@@ -102,7 +95,7 @@ export default function EditProfileScreen() {
       if (source === 'camera') {
         const { granted } = await ImagePicker.requestCameraPermissionsAsync();
         if (!granted) {
-          Alert.alert('Permission Denied', 'Camera permission is required to take a profile photo.');
+          showAlert('Permission Denied', 'Camera permission is required to take a profile photo.');
           return;
         }
         result = await ImagePicker.launchCameraAsync({
@@ -114,7 +107,7 @@ export default function EditProfileScreen() {
       } else {
         const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!granted) {
-          Alert.alert('Permission Denied', 'Gallery permission is required to select a photo.');
+          showAlert('Permission Denied', 'Gallery permission is required to select a photo.');
           return;
         }
         result = await ImagePicker.launchImageLibraryAsync({
@@ -146,7 +139,7 @@ export default function EditProfileScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+        <ThemedStatusBar />
 
         {/* Navigation Header */}
         <View style={styles.header}>
@@ -226,7 +219,7 @@ export default function EditProfileScreen() {
                   nameFocused && styles.textInputFocused,
                 ]}
                 placeholder="Enter your full name"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholder}
                 value={name}
                 onChangeText={setName}
                 onFocus={() => setNameFocused(true)}
@@ -259,7 +252,7 @@ export default function EditProfileScreen() {
                   emailFocused && styles.textInputFocused,
                 ]}
                 placeholder="name@example.com"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholder}
                 value={email}
                 onChangeText={setEmail}
                 onFocus={() => setEmailFocused(true)}
@@ -354,7 +347,7 @@ export default function EditProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   flexOne: {
     flex: 1,
   },
@@ -395,7 +388,7 @@ const styles = StyleSheet.create({
   },
   saveButtonActive: {
     backgroundColor: colors.primary,
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,

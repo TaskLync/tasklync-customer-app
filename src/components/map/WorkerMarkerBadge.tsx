@@ -11,14 +11,15 @@ import {
   Scissors,
   HelpCircle,
 } from 'lucide-react-native';
-import { colors, palette } from '../../design/colors';
+import { useAppTheme, type AppTheme } from '../../theme/useAppTheme';
+import { useThemedStyles } from '../../theme/useAppTheme';
 
 interface WorkerMarkerBadgeProps {
   category?: string;
   size?: number;
 }
 
-export const getCategoryMeta = (category?: string) => {
+export const getCategoryMeta = (category: string | undefined, { colors, palette }: AppTheme) => {
   const normalized = (category || '').toLowerCase();
 
   if (normalized.includes('electr')) {
@@ -53,7 +54,10 @@ export const WorkerMarkerBadge: FC<WorkerMarkerBadgeProps> = ({
   category,
   size = 18,
 }) => {
-  const meta = getCategoryMeta(category);
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+  const theme = useAppTheme();
+  const meta = getCategoryMeta(category, theme);
   const IconComponent = meta.icon;
   const iconSize = Math.max(10, Math.floor(size * 0.6));
 
@@ -75,7 +79,7 @@ export const WorkerMarkerBadge: FC<WorkerMarkerBadgeProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   badge: {
     alignItems: 'center',
     justifyContent: 'center',

@@ -3,13 +3,14 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NotificationBell } from '../home/NotificationBell';
 import { fontFamily } from '../../design/typography';
-import { colors, palette } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface MessagesHeaderProps {
   totalUnreadCount?: number;
 }
 
 export const MessagesHeader: React.FC<MessagesHeaderProps> = ({ totalUnreadCount = 0 }) => {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -33,7 +34,7 @@ export const MessagesHeader: React.FC<MessagesHeaderProps> = ({ totalUnreadCount
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',

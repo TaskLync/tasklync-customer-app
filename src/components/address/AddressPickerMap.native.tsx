@@ -21,8 +21,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MapPin } from 'lucide-react-native';
 import { MapRegion } from '../../types/address.types';
-import { colors, palette } from '../../design';
 import { FAISALABAD_DEFAULT_REGION } from '../../config/serviceArea.config';
+import { DARK_MAP_STYLE, LIGHT_MAP_STYLE } from '../../design/mapStyles';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddressPickerMapRef {
   animateToRegion: (region: MapRegion, duration?: number) => void;
@@ -39,6 +40,8 @@ const DEFAULT_REGION: MapRegion = FAISALABAD_DEFAULT_REGION;
 
 export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMapProps>(
   ({ initialRegion = DEFAULT_REGION, onRegionChange, onRegionChangeComplete }, ref) => {
+    const { colors, isDark } = useAppTheme();
+    const styles = useThemedStyles(createStyles);
     const mapRef = useRef<MapView | null>(null);
     const isMapReadyRef = useRef<boolean>(false);
     const pendingAnimateRegionRef = useRef<{ region: MapRegion; duration: number } | null>(null);
@@ -182,6 +185,8 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
           ref={mapRef}
           style={styles.map}
           provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
+          customMapStyle={isDark ? DARK_MAP_STYLE : LIGHT_MAP_STYLE}
+          userInterfaceStyle={isDark ? 'dark' : 'light'}
           initialRegion={initialRegion}
           onMapReady={handleMapReady}
           onRegionChange={handleRegionChange}
@@ -217,7 +222,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
 
 AddressPickerMap.displayName = 'AddressPickerMap';
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative',
@@ -263,6 +268,6 @@ const styles = StyleSheet.create({
     width: 14,
     height: 6,
     borderRadius: 3,
-    backgroundColor: palette.gray900,
+    backgroundColor: palette.black,
   },
 });

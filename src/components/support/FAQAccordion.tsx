@@ -1,7 +1,8 @@
 import { useState, Fragment } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { FAQAccordionItem, FAQItemData } from './FAQAccordionItem';
-import { colors, palette, radius, spacing, shadows } from '../../design';
+import { radius, spacing, shadows } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const FAQ_DATA: FAQItemData[] = [
   {
@@ -37,6 +38,7 @@ export const FAQ_DATA: FAQItemData[] = [
 ];
 
 export const FAQAccordion: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
   const [expandedId, setExpandedId] = useState<string | null>('faq-1'); // Default expand top question
 
   const handleToggle = (id: string) => {
@@ -64,7 +66,7 @@ export const FAQAccordion: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   cardContainer: {
     backgroundColor: colors.bgCard,
     overflow: 'hidden',

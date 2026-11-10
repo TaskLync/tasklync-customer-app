@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, Pressable } from 'react-native';
 import { ArrowLeft, Share2, Ellipsis, Star, BadgeCheck } from 'lucide-react-native';
 import { SharedValue } from 'react-native-reanimated';
 import { fontFamily } from '../../design/typography';
-import { colors } from '../../design/colors';
 import { WorkerPublicProfile } from '../../types/worker.types';
 import { WorkerAvatar } from './WorkerAvatar';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const AVATAR_SIZE = 76;
 
@@ -36,6 +36,8 @@ export const WorkerProfileHeader: React.FC<WorkerProfileHeaderProps> = ({
   onMore,
   onRatingPress,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const reviewCount = worker?.totalReviews ?? 0;
   const hasRealRating =
     typeof worker?.avgRating === 'number' && worker.avgRating > 0 && reviewCount > 0;
@@ -90,7 +92,7 @@ export const WorkerProfileHeader: React.FC<WorkerProfileHeaderProps> = ({
             {worker?.isVerified ? (
               <BadgeCheck
                 size={18}
-                color={colors.white}
+                color={colors.pureWhite}
                 fill={colors.primaryDark}
                 strokeWidth={2.2}
                 accessibilityLabel="Verified"
@@ -128,7 +130,7 @@ export const WorkerProfileHeader: React.FC<WorkerProfileHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
     backgroundColor: colors.bgCard,

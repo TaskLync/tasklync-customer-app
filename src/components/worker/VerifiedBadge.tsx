@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, View, Text, ViewStyle } from 'react-native';
 import { ShieldCheck } from 'lucide-react-native';
-import { colors } from '../../design/colors';
 import { radius } from '../../design/radius';
 import { typography } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface VerifiedBadgeProps {
   size?: 'xs' | 'sm' | 'md';
@@ -16,6 +16,8 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
   showLabel = true,
   style,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const isXs = size === 'xs';
   const isMd = size === 'md';
 
@@ -45,7 +47,7 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   compactContainer: {
     justifyContent: 'center',
     alignItems: 'center',

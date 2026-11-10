@@ -6,9 +6,9 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface CartNoteInputProps {
   value: string;
@@ -19,6 +19,8 @@ export const CartNoteInput: FC<CartNoteInputProps> = ({
   value,
   onChangeText,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [isExpanded, setIsExpanded] = useState(!!value);
   const opacity = useSharedValue(isExpanded ? 1 : 0);
 
@@ -60,7 +62,7 @@ export const CartNoteInput: FC<CartNoteInputProps> = ({
           <TextInput
             style={styles.input}
             placeholder="E.g., Please bring a long ladder, ring the doorbell twice..."
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholder}
             value={value}
             onChangeText={onChangeText}
             multiline
@@ -73,7 +75,7 @@ export const CartNoteInput: FC<CartNoteInputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     backgroundColor: colors.bgCard,
     marginHorizontal: 20,

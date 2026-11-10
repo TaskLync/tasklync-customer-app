@@ -16,11 +16,13 @@ import { Screen } from '@components/layout/Screen';
 import { Text } from '@components/ui/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@components/ui/Button';
-import { colors, palette, fontFamily, layout, radius } from '@design/index';
+import { fontFamily, layout, radius } from '@design/index';
+import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { useAppTheme } from '../../src/theme/useAppTheme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const SLIDES = [
+const createSlides = ({ colors, palette }: AppTheme) => [
   {
     id: '1',
     title: 'Verified Workers You Can Trust',
@@ -45,7 +47,10 @@ const SLIDES = [
 ];
 
 export default function WelcomeScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
+  const SLIDES = useThemedStyles(createSlides);
   const insets = useSafeAreaInsets();
   const scrollX = useSharedValue(0);
   const flatListRef = useRef<Animated.FlatList<any>>(null);
@@ -113,7 +118,7 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <Screen bg={colors.bgCard} statusBarStyle="dark-content" edges={['left', 'right']}>
+    <Screen bg={colors.bgCard} edges={['left', 'right']}>
       {/* Skip Button */}
       {currentIndex < 2 && (
         <Pressable 
@@ -206,7 +211,7 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   mainContent: {
     flex: 1,
   },
@@ -272,7 +277,7 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.04,
     shadowRadius: 16,

@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { ScrollView, Text, StyleSheet, Pressable } from 'react-native';
 import { Building2, User, Sparkles } from 'lucide-react-native';
-import { colors } from '../../design/colors';
-import { companyTokens } from '../../theme/companyTokens';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export type ProviderTypeFilter = 'ALL' | 'INDIVIDUAL' | 'COMPANY';
 
@@ -15,8 +14,14 @@ export const ProviderTypeFilterChips: React.FC<ProviderTypeFilterChipsProps> = (
   selected,
   onSelect,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
-    <View style={styles.container}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.container}
+    >
       {/* Option 1: All */}
       <Pressable
         style={[
@@ -29,7 +34,7 @@ export const ProviderTypeFilterChips: React.FC<ProviderTypeFilterChipsProps> = (
       >
         <Sparkles
           size={13}
-          color={selected === 'ALL' ? colors.white : colors.textSecondary}
+          color={selected === 'ALL' ? colors.textPrimary : colors.textSecondary}
         />
         <Text
           style={[
@@ -53,7 +58,7 @@ export const ProviderTypeFilterChips: React.FC<ProviderTypeFilterChipsProps> = (
       >
         <User
           size={13}
-          color={selected === 'INDIVIDUAL' ? colors.white : colors.textSecondary}
+          color={selected === 'INDIVIDUAL' ? colors.textPrimary : colors.textSecondary}
         />
         <Text
           style={[
@@ -69,7 +74,7 @@ export const ProviderTypeFilterChips: React.FC<ProviderTypeFilterChipsProps> = (
       <Pressable
         style={[
           styles.chip,
-          selected === 'COMPANY' && styles.chipCompanySelected,
+          selected === 'COMPANY' && styles.chipSelected,
         ]}
         onPress={() => onSelect('COMPANY')}
         accessibilityRole="button"
@@ -77,7 +82,7 @@ export const ProviderTypeFilterChips: React.FC<ProviderTypeFilterChipsProps> = (
       >
         <Building2
           size={13}
-          color={selected === 'COMPANY' ? colors.white : companyTokens.colors.verifiedBlue}
+          color={selected === 'COMPANY' ? colors.textPrimary : colors.textSecondary}
         />
         <Text
           style={[
@@ -88,17 +93,17 @@ export const ProviderTypeFilterChips: React.FC<ProviderTypeFilterChipsProps> = (
           Verified Agencies
         </Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 16,
     paddingVertical: 6,
+    paddingRight: 16,
   },
   chip: {
     flexDirection: 'row',
@@ -107,17 +112,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: companyTokens.colors.borderSubtle,
+    // grey fill; the border matches it until selected, so selecting never shifts the layout
+    backgroundColor: colors.bgInput,
+    borderWidth: 1.25,
+    borderColor: colors.bgInput,
   },
   chipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipCompanySelected: {
-    backgroundColor: companyTokens.colors.corporatePrimary,
-    borderColor: companyTokens.colors.corporatePrimary,
+    backgroundColor: colors.bgCard,
+    borderColor: colors.textPrimary,
   },
   chipText: {
     fontFamily: 'PlusJakartaSans-Medium',
@@ -126,6 +128,6 @@ const styles = StyleSheet.create({
   },
   chipTextSelected: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    color: colors.white,
+    color: colors.textPrimary,
   },
 });

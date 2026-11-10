@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
-import { colors, palette, fontFamily, spacing } from '../../design';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { fontFamily, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 export interface AppVersionRowProps {
   version?: string;
@@ -13,6 +15,7 @@ export const AppVersionRow: React.FC<AppVersionRowProps> = ({
   buildNumber = 'Build 37',
   icon,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const [tapCount, setTapCount] = useState<number>(0);
 
   const handleTap = () => {
@@ -21,7 +24,7 @@ export const AppVersionRow: React.FC<AppVersionRowProps> = ({
 
     if (nextCount >= 5) {
       setTapCount(0);
-      Alert.alert(
+      showAlert(
         'Developer Diagnostics',
         `Tasklync Customer App\nVersion: ${version}\nBuild: ${buildNumber}\nPlatform: ${Platform.OS} (${Platform.Version})\nAPI Target: production (https://api.tasklync.pk/api/v1)\nEnvironment: Production Release`,
         [{ text: 'Dismiss', style: 'default' }]
@@ -53,7 +56,7 @@ export const AppVersionRow: React.FC<AppVersionRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     minHeight: 52,
     flexDirection: 'row',

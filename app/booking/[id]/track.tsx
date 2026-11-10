@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { colors } from '../../../src/design/colors';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
 
 export default function BookingTrackScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -24,7 +26,7 @@ export default function BookingTrackScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

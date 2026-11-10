@@ -1,7 +1,8 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { StepState } from './StepDot';
-import { colors, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface StepLabelProps {
   label: string;
@@ -9,6 +10,7 @@ export interface StepLabelProps {
 }
 
 export const StepLabel: React.FC<StepLabelProps> = ({ label, state }) => {
+  const styles = useThemedStyles(createStyles);
   const isHighlight = state === 'active' || state === 'complete';
 
   return (
@@ -24,7 +26,7 @@ export const StepLabel: React.FC<StepLabelProps> = ({ label, state }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   text: {
     fontSize: 11,
     lineHeight: 15,

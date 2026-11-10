@@ -14,9 +14,9 @@ import Animated, {
   interpolateColor,
 } from 'react-native-reanimated';
 import { Search, X } from 'lucide-react-native';
-import { colors } from '../../../design/colors';
 import { typography } from '../../../design/typography';
 import { springConfig, timingConfig } from '../../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface SearchInputProps {
   value: string;
@@ -28,6 +28,8 @@ export interface SearchInputProps {
   editable?: boolean;
   style?: ViewStyle;
   height?: number;
+  /** 'neutral': grey focus ring and charcoal icon instead of brand green. */
+  tone?: 'brand' | 'neutral';
 }
 
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -43,7 +45,10 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   editable = true,
   style,
   height = 56,
+  tone = 'brand',
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const inputRef = useRef<RNTextInput>(null);
   const [isFocused, setIsFocused] = useState(autoFocus);
   
@@ -78,7 +83,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       borderColor: interpolateColor(
         focusProgress.value,
         [0, 1],
-        [colors.border, colors.primaryDark]
+        [colors.border, tone === 'neutral' ? colors.textMuted : colors.primaryDark]
       ),
       borderWidth: 1,
     };
@@ -103,7 +108,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       <Animated.View style={[styles.iconContainer]}>
         <Search
           size={height >= 52 ? 20 : 18}
-          color={isFocused ? colors.primary : colors.textMuted}
+          color={isFocused ? (tone === 'neutral' ? colors.textPrimary : colors.primary) : colors.textMuted}
         />
       </Animated.View>
 
@@ -112,14 +117,14 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.placeholder}
         autoFocus={autoFocus}
         editable={editable}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onSubmitEditing={onSubmitEditing}
         style={[styles.input, { height: '100%' }]}
-        selectionColor={colors.primary}
+        selectionColor={tone === 'neutral' ? colors.textPrimary : colors.primary}
         returnKeyType="search"
         keyboardType="default"
         autoCorrect={false}
@@ -139,7 +144,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     height: 56,
     flex: 1,

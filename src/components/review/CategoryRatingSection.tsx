@@ -3,7 +3,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 import { ReviewCategoryKey } from '../../types/review.types';
 import { CategoryRatingRow } from './CategoryRatingRow';
-import { colors, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface CategoryRatingSectionProps {
   visible: boolean;
@@ -33,6 +34,7 @@ export const CategoryRatingSection: React.FC<CategoryRatingSectionProps> = ({
   onCategoryRatingChange,
   disabled = false,
 }) => {
+  const styles = useThemedStyles(createStyles);
   if (!visible) {
     return null;
   }
@@ -69,7 +71,7 @@ export const CategoryRatingSection: React.FC<CategoryRatingSectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgSection,
     borderRadius: radius.lg,

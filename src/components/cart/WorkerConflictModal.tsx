@@ -1,15 +1,15 @@
 import { FC } from 'react';
 import { StyleSheet, View, Text, Modal, Pressable, Platform } from 'react-native';
 import { AlertTriangle } from 'lucide-react-native';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface WorkerConflictModalProps {
   visible: boolean;
   onCancel: () => void;
   onReplace: () => void;
-  currentWorkerName?: string;
-  incomingWorkerName?: string;
+  currentWorkerName?: string | undefined;
+  incomingWorkerName?: string | undefined;
 }
 
 export const WorkerConflictModal: FC<WorkerConflictModalProps> = ({
@@ -19,6 +19,8 @@ export const WorkerConflictModal: FC<WorkerConflictModalProps> = ({
   currentWorkerName = 'your current worker',
   incomingWorkerName = 'another worker',
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handleCancel = () => {
     onCancel();
   };
@@ -73,7 +75,7 @@ export const WorkerConflictModal: FC<WorkerConflictModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.6)',
@@ -84,11 +86,11 @@ const styles = StyleSheet.create({
   dialogCard: {
     width: '100%',
     maxWidth: 340,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.modalBackground,
     borderRadius: 20,
     padding: 20,
     alignItems: 'center',
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 16,

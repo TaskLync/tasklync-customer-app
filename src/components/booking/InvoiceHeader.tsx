@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ShieldCheck } from 'lucide-react-native';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface InvoiceHeaderProps {
   invoiceNumber: string;
@@ -23,6 +24,8 @@ export const InvoiceHeader: React.FC<InvoiceHeaderProps> = ({
   issuedAt,
   status = 'PAID',
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const formattedDate = React.useMemo(() => {
     try {
       const d = new Date(issuedAt);
@@ -91,7 +94,7 @@ export const InvoiceHeader: React.FC<InvoiceHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,

@@ -2,8 +2,8 @@ import { View, StyleSheet, Text, ViewStyle, useWindowDimensions, Pressable } fro
 import { WorkerPortfolioImage } from '../../types/review.types';
 import { PortfolioCell } from './PortfolioCell';
 
-import { colors } from '@design/colors';
 import { fontFamily as fonts } from '@design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface WorkerPortfolioGridProps {
   images: WorkerPortfolioImage[];
@@ -28,6 +28,7 @@ export const WorkerPortfolioGrid = ({
   style,
   onLayout,
 }: WorkerPortfolioGridProps) => {
+  const styles = useThemedStyles(createStyles);
   const { width: screenWidth } = useWindowDimensions();
 
   if (!images || images.length === 0) return null;
@@ -90,7 +91,7 @@ export const WorkerPortfolioGrid = ({
   return <View style={[styles.container, style]}>{gridContent}</View>;
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
   },
@@ -130,6 +131,6 @@ const styles = StyleSheet.create({
   remainingText: {
     fontFamily: fonts.inter.bold,
     fontSize: 20,
-    color: colors.white,
+    color: colors.pureWhite,
   },
 });

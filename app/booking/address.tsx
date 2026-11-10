@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { View, ScrollView, StyleSheet, StatusBar, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 // Design system
-import { palette } from '../../src/design';
 import { validateServiceArea, SERVICE_UNAVAILABLE_MESSAGE } from '../../src/config/serviceArea.config';
 
 // Store & Hooks
@@ -20,10 +19,14 @@ import { AddressList } from '../../src/components/address/AddressList';
 import { AddNewAddressRow } from '../../src/components/address/AddNewAddressRow';
 import { AddAddressBottomSheet, AddAddressBottomSheetRef } from '../../src/components/address/AddAddressBottomSheet';
 import { RouteErrorBoundary } from '../../src/components/feedback';
+import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+import { showAlert } from '../../src/components/feedback/AppAlert';
 
 export { RouteErrorBoundary as ErrorBoundary };
 
 export default function AddressScreen() {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const addAddressSheetRef = useRef<AddAddressBottomSheetRef>(null);
@@ -46,7 +49,7 @@ export default function AddressScreen() {
     if (address?.latitude && address?.longitude) {
       const validation = validateServiceArea({ lat: address.latitude, lng: address.longitude });
       if (!validation.isServiceable) {
-        Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+        showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
         return;
       }
     }
@@ -58,7 +61,7 @@ export default function AddressScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={palette.white} />
+      <ThemedStatusBar />
       <View style={styles.container}>
         {/* Screen Header */}
         <AddressHeader />
@@ -103,7 +106,7 @@ export default function AddressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: palette.white,

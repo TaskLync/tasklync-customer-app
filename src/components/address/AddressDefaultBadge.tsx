@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const AddressDefaultBadge: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.badge}>
       <Text style={styles.text}>Default</Text>
@@ -10,7 +12,7 @@ export const AddressDefaultBadge: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   badge: {
     marginLeft: 8,
   },

@@ -2,8 +2,8 @@ import { FC } from 'react';
 import { StyleSheet, Text, Pressable } from 'react-native';
 import { Search, SlidersHorizontal } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface MapSearchBarProps {
   placeholder?: string;
@@ -12,6 +12,8 @@ interface MapSearchBarProps {
 export const MapSearchBar: FC<MapSearchBarProps> = ({
   placeholder = 'Search services or workers...',
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   const handlePress = () => {
@@ -49,7 +51,7 @@ export const MapSearchBar: FC<MapSearchBarProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     height: 48,
     backgroundColor: colors.bgCard,

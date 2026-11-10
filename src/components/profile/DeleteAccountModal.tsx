@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { Trash2, X, AlertTriangle } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface DeleteAccountModalProps {
   visible: boolean;
@@ -37,6 +38,8 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   onClose,
   isLoading = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [inputText, setInputText] = useState<string>('');
 
@@ -103,7 +106,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
                 isConfirmed && styles.textInputConfirmed,
               ]}
               placeholder={`Type "${CONFIRMATION_KEYWORD}"`}
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.placeholder}
               value={inputText}
               onChangeText={setInputText}
               autoCapitalize="characters"
@@ -127,10 +130,10 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
               accessibilityLabel="Permanently Delete Account"
             >
               {isLoading ? (
-                <ActivityIndicator size="small" color={palette.white} />
+                <ActivityIndicator size="small" color={palette.pureWhite} />
               ) : (
                 <View style={styles.btnRow}>
-                  <Trash2 size={18} color={palette.white} />
+                  <Trash2 size={18} color={palette.pureWhite} />
                   <Text style={styles.deleteBtnText}>Permanently Delete My Account</Text>
                 </View>
               )}
@@ -151,14 +154,14 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.55)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bottomSheetBackground,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.lg,
@@ -234,7 +237,7 @@ const styles = StyleSheet.create({
   },
   textInputConfirmed: {
     borderColor: colors.textDanger,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.dangerLight,
   },
   actionsCol: {
     gap: spacing.sm,
@@ -245,7 +248,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.textDanger,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.textDanger,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -267,7 +270,7 @@ const styles = StyleSheet.create({
   deleteBtnText: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: fontSize.body1 - 1,
-    color: palette.white,
+    color: palette.pureWhite,
   },
   cancelBtn: {
     height: 50,

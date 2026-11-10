@@ -15,10 +15,11 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { ChevronDown } from 'lucide-react-native';
-import { colors } from '../../../design/colors';
 import { radius } from '../../../design/radius';
 import { shadows } from '../../../design/shadows';
 import { springConfig } from '../../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
+import { withAlpha } from '../../../design/colorUtils';
 
 interface AccordionItemProps {
   title: React.ReactNode;
@@ -39,6 +40,8 @@ export const AccordionItem: React.FC<AccordionItemProps> = ({
   style,
   headerStyle,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [bodyHeight, setBodyHeight] = useState(0);
 
@@ -99,7 +102,7 @@ export const AccordionItem: React.FC<AccordionItemProps> = ({
     const borderOpacity = interpolate(progress, [0, 1], [0, 1]);
 
     return {
-      borderColor: `rgba(226, 232, 240, ${borderOpacity})`, // softGray (#E2E8F0)
+      borderColor: withAlpha(colors.border, borderOpacity),
       borderWidth: 1,
     };
   });
@@ -138,7 +141,7 @@ export const AccordionItem: React.FC<AccordionItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.lg,

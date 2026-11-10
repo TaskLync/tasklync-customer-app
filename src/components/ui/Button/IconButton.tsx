@@ -6,9 +6,9 @@ import Animated, {
   withSpring,
   interpolateColor
 } from 'react-native-reanimated';
-import { colors } from '@design/colors';
 import { springConfig } from '@design/animations';
 import { getOpticalStrokeWidth } from '@design/iconography';
+import { useAppTheme } from '../../../theme/useAppTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -34,13 +34,17 @@ export const IconButton = ({
   iconSize = 20,
   strokeWidth,
   strokePreset = 'refined',
-  color = colors.textSecondary,
-  bg = colors.bgInput,
-  bgPressed = '#E9EAEC',
+  color: colorProp,
+  bg: bgProp,
+  bgPressed: bgPressedProp,
   style,
   accessibilityLabel,
   disabled = false,
 }: IconButtonProps) => {
+  const { colors } = useAppTheme();
+  const color = colorProp ?? colors.textSecondary;
+  const bg = bgProp ?? colors.bgInput;
+  const bgPressed = bgPressedProp ?? colors.bgHover;
   const resolvedStrokeWidth =
     strokeWidth ?? getOpticalStrokeWidth(iconSize, strokePreset);
   const scale = useSharedValue(1.0);

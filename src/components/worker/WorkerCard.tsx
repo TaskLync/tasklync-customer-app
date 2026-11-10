@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { ChevronRight } from 'lucide-react-native';
 
-import { colors } from '../../design/colors';
 import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
 import { layout } from '../../design/spacing';
@@ -13,6 +12,7 @@ import { springConfig } from '../../design/animations';
 import { OnlineBadge } from '../ui/Badge/OnlineBadge';
 import { WorkerNearby } from '../../types/worker.types';
 import { WorkerAvatar } from './WorkerAvatar';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -23,6 +23,8 @@ interface WorkerCardProps {
 }
 
 export const WorkerCard: React.FC<WorkerCardProps> = ({ worker }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const scale = useSharedValue(1);
 
@@ -106,7 +108,7 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({ worker }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
     height: 80,

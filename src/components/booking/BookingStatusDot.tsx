@@ -1,7 +1,7 @@
-import { colors, palette } from '../../design';
 import { View, StyleSheet } from 'react-native';
 import { BookingStatus } from '../../types/booking.types';
-import { bookingStatusMap } from '../../utils/bookingStatusMap';
+import { createBookingStatusMap } from '../../utils/bookingStatusMap';
+import { useAppTheme, useThemedStyles } from '../../theme/useAppTheme';
 
 export interface BookingStatusDotProps {
   status: BookingStatus;
@@ -9,7 +9,9 @@ export interface BookingStatusDotProps {
 }
 
 export const BookingStatusDot: React.FC<BookingStatusDotProps> = ({ status, size = 6 }) => {
-  const config = bookingStatusMap[status] || { color: '#6B7280' };
+  const { colors } = useAppTheme();
+  const bookingStatusMap = useThemedStyles(createBookingStatusMap);
+  const config = bookingStatusMap[status] || { color: colors.textMuted };
 
   return (
     <View

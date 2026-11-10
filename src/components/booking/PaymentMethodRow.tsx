@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CreditCard, Banknote, Wallet, CheckCircle2 } from 'lucide-react-native';
 import { InvoicePaymentMethodData } from '../../types/booking.types';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface PaymentMethodRowProps {
   paymentMethod: InvoicePaymentMethodData;
@@ -21,6 +22,8 @@ export const PaymentMethodRow: React.FC<PaymentMethodRowProps> = ({
   paymentMethod,
   paidAt,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const formattedPaidTime = React.useMemo(() => {
     if (!paidAt) return 'Payment Settled';
     try {
@@ -76,7 +79,7 @@ export const PaymentMethodRow: React.FC<PaymentMethodRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',

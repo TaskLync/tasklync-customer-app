@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { ShieldCheck, Building2, CheckCircle2 } from 'lucide-react-native';
-import { companyTokens } from '../../theme/companyTokens';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export type CompanyBadgeVariant = 'micro' | 'pill' | 'banner';
 
@@ -18,6 +18,8 @@ export const CompanyBadge: React.FC<CompanyBadgeProps> = ({
   ntnNumber,
   style,
 }) => {
+  const { companyTokens } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   if (variant === 'micro') {
     return (
       <View style={[styles.microContainer, style]}>
@@ -63,7 +65,7 @@ export const CompanyBadge: React.FC<CompanyBadgeProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ companyTokens }: AppTheme) => StyleSheet.create({
   microContainer: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -7,8 +7,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../../design/colors';
 import { springConfig } from '../../design/animations';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const SNAP_COLLAPSED = 210; // Collapsed height (~210px) showing header + card list
 const SNAP_EXPANDED = 390;  // Expanded height (~390px)
@@ -18,6 +18,7 @@ interface MapBottomPanelProps {
 }
 
 export const MapBottomPanel: FC<MapBottomPanelProps> = ({ children }) => {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
   const translateY = useSharedValue(screenHeight); // Start off-screen
@@ -76,12 +77,12 @@ export const MapBottomPanel: FC<MapBottomPanelProps> = ({ children }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   panel: {
     position: 'absolute',
     left: 0,
     right: 0,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     shadowColor: '#000',

@@ -1,9 +1,10 @@
 import { FC } from 'react';
 import { StyleSheet, Text } from 'react-native';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const EscrowNote: FC = () => {
+  const styles = useThemedStyles(createStyles);
   return (
     <Text style={styles.text}>
       Payment is held in escrow and released after job completion.
@@ -11,7 +12,7 @@ export const EscrowNote: FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   text: {
     marginTop: 10,
     fontFamily: typography.fontFamily.jakarta.regular,

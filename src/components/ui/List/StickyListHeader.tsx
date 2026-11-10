@@ -5,8 +5,8 @@ import {
   Text,
   ViewStyle,
 } from 'react-native';
-import { colors } from '../../../design/colors';
 import { typography } from '../../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 interface StickyListHeaderProps {
   title: string;
@@ -23,8 +23,11 @@ export const StickyListHeader: React.FC<StickyListHeaderProps> = ({
   subtitle = null,
   rightContent = null,
   style,
-  bgColor = colors.bgApp,
+  bgColor: bgColorProp,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+  const bgColor = bgColorProp ?? colors.bgApp;
   return (
     <View style={[styles.container, { backgroundColor: bgColor }, style]}>
       <View style={styles.topRow}>
@@ -55,7 +58,7 @@ export const StickyListHeader: React.FC<StickyListHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     paddingVertical: 12,
     paddingHorizontal: 16,

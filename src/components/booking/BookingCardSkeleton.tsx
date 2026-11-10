@@ -6,7 +6,7 @@ import {
   SkeletonText,
   SKELETON,
 } from '../ui/Skeleton/Skeleton';
-import { colors } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 /**
  * Mirrors BookingCard (flat row, 18px vertical padding, hairline divider):
@@ -16,6 +16,7 @@ import { colors } from '../../design';
  *   [ action ] [ action ]   (38px, r10)
  */
 export function BookingCardSkeleton() {
+  const styles = useThemedStyles(createStyles);
   return (
     <SkeletonGroup style={styles.card} accessibilityLabel="Loading booking">
       <View style={styles.header}>
@@ -41,7 +42,7 @@ export function BookingCardSkeleton() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     paddingVertical: 18,
     borderBottomWidth: StyleSheet.hairlineWidth,

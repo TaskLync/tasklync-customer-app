@@ -8,8 +8,8 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WifiOff } from 'lucide-react-native';
 import { fontFamily } from '../../design/typography';
-import { colors, palette } from '../../design/colors';
 import { NETWORK_CONFIG } from '../../config/networkConfig';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface OfflineBannerProps {
   isOffline: boolean;
@@ -27,6 +27,8 @@ const BANNER_HEIGHT = NETWORK_CONFIG.BANNER_HEIGHT; // 36px
  * - Accessibility live region announcement
  */
 export const OfflineBanner: React.FC<OfflineBannerProps> = React.memo(({ isOffline }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(-BANNER_HEIGHT);
   const opacity = useSharedValue(0);
@@ -80,7 +82,7 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = React.memo(({ isOffli
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     left: 0,
@@ -100,7 +102,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     ...Platform.select({
       ios: {
-        shadowColor: colors.shadow,
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,

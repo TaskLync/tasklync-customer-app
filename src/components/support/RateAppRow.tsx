@@ -1,8 +1,11 @@
 import { View, Text, TouchableOpacity, StyleSheet, Linking, Platform } from 'react-native';
 import { Star, ChevronRight } from 'lucide-react-native';
-import { colors, palette, fontFamily, spacing } from '../../design';
+import { fontFamily, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const RateAppRow: React.FC = () => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handleRatePress = async () => {
 
     const iosStoreUrl = 'https://apps.apple.com/app/id6440000000?action=write-review';
@@ -50,7 +53,7 @@ export const RateAppRow: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     minHeight: 64,
     flexDirection: 'row',

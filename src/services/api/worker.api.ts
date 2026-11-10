@@ -157,6 +157,36 @@ export const workerApi = {
   },
 
   /**
+   * POST /workers/:id/slots/hold — temporary checkout hold (worker-service, atomic, expires on its own).
+   * `startTime` is 24-hour "HH:MM". Errors are thrown as-is so callers can classify them.
+   */
+  holdSlot: async (
+    workerId: string,
+    date: string,
+    startTime: string,
+    durationHours: number
+  ): Promise<{ hold_id: string; expires_at: string; ttl_seconds: number }> => {
+    const response = await apiClient.post<any>(`/workers/${workerId}/slots/hold`, {
+      date,
+      startTime,
+      duration_hours: durationHours,
+    });
+    return response.data?.data ?? response.data;
+  },
+
+  /** DELETE /workers/:id/slots/hold — release this customer's hold (no-op if it already expired). */
+  releaseSlotHold: async (
+    workerId: string,
+    date: string,
+    startTime: string,
+    durationHours: number
+  ): Promise<void> => {
+    await apiClient.delete(`/workers/${workerId}/slots/hold`, {
+      data: { date, startTime, duration_hours: durationHours },
+    });
+  },
+
+  /**
    * GET /workers/:id/slots?date=YYYY-MM-DD
    * Fetch real-time open time slots for worker on a date
    */

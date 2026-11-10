@@ -7,7 +7,8 @@ import { useAddresses } from '../../hooks/useAddresses';
 import { AddressCard } from './AddressCard';
 import { AddressCardSkeleton } from './AddressCardSkeleton';
 import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddressListProps {
   selectedAddressId: string | null;
@@ -18,6 +19,8 @@ export const AddressList: React.FC<AddressListProps> = ({
   selectedAddressId,
   onSelectAddress,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const { addresses, isLoading, isError, refetch } = useAddresses();
   const setAddressStore = useBookingDraftStore((s) => s.setAddress);
 
@@ -103,7 +106,7 @@ export const AddressList: React.FC<AddressListProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
   },
@@ -136,7 +139,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.dangerLight,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: colors.dangerBorder,
     borderRadius: 16,
     padding: 14,
     marginBottom: 16,

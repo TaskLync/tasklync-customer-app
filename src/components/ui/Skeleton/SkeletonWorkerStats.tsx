@@ -1,9 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 import { SkeletonCircle, SkeletonGroup, SkeletonText } from './Skeleton';
-import { colors } from '../../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 /** Availability line + the 3-column stats strip (WorkerAvailabilityCard + WorkerStats). */
-export const SkeletonWorkerStats = () => (
+export const SkeletonWorkerStats = () => {
+  const styles = useThemedStyles(createStyles);
+  return (
   <SkeletonGroup accessibilityLabel="Loading availability">
     <View style={styles.availability}>
       <SkeletonCircle size={14} />
@@ -19,8 +21,9 @@ export const SkeletonWorkerStats = () => (
     </View>
   </SkeletonGroup>
 );
+};
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   availability: {
     flexDirection: 'row',
     alignItems: 'center',

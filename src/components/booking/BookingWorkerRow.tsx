@@ -1,9 +1,9 @@
-import { colors } from '../../design';
 import { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { Building2, ShieldCheck } from 'lucide-react-native';
 import { isGenericWorkerName } from '../../services/api/booking.api';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingWorkerRowProps {
   workerName?: string | null | undefined;
@@ -20,6 +20,8 @@ export function BookingWorkerRow({
   isCompany,
   assignedWorkerName,
 }: BookingWorkerRowProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [imageError, setImageError] = useState(false);
   const displayCategory = categoryName || 'Service';
   const hasRealName = Boolean(workerName && !isGenericWorkerName(workerName));
@@ -93,7 +95,7 @@ export function BookingWorkerRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

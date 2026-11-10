@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { DeleteAccountReason, DeleteAccountReasonOption } from '../../types/moderation.types';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
 import { Check } from 'lucide-react-native';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface DeleteAccountReasonStepProps {
   onContinue: (reason?: DeleteAccountReason) => void;
@@ -21,6 +22,8 @@ export const DeleteAccountReasonStep: React.FC<DeleteAccountReasonStepProps> = (
   onContinue,
   onSkip,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [selectedReason, setSelectedReason] = useState<DeleteAccountReason | null>(null);
 
   const handleSelect = (reason: DeleteAccountReason) => {
@@ -64,7 +67,7 @@ export const DeleteAccountReasonStep: React.FC<DeleteAccountReasonStepProps> = (
                   isSelected && styles.radioCircleSelected,
                 ]}
               >
-                {isSelected && <Check size={12} color={palette.white} strokeWidth={3} />}
+                {isSelected && <Check size={12} color={palette.pureWhite} strokeWidth={3} />}
               </View>
               <Text
                 style={[
@@ -106,7 +109,7 @@ export const DeleteAccountReasonStep: React.FC<DeleteAccountReasonStepProps> = (
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingVertical: spacing.xs,
   },

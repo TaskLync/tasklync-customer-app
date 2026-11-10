@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface StepProgressProps {
   steps?: string[];
@@ -17,6 +18,7 @@ export const StepProgress: React.FC<StepProgressProps> = ({
   activeIndex,
   currentStep,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const resolvedActiveIndex =
     typeof activeIndex === 'number'
       ? activeIndex
@@ -41,7 +43,7 @@ export const StepProgress: React.FC<StepProgressProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingTop: 4,

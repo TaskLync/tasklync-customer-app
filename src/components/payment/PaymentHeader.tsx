@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface PaymentHeaderProps {
   title?: string;
@@ -13,6 +14,8 @@ export const PaymentHeader: React.FC<PaymentHeaderProps> = ({
   title = 'Payment',
   onBack,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   const handleBack = () => {
@@ -48,7 +51,7 @@ export const PaymentHeader: React.FC<PaymentHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   header: {
     height: 56,
     flexDirection: 'row',
@@ -66,7 +69,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 3,
@@ -80,7 +83,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 18,
     lineHeight: 24,
-    color: '#111827',
+    color: colors.textPrimary,
     letterSpacing: -0.3,
     textAlign: 'center',
   },

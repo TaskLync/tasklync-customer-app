@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Bell, MessageSquare, Tag, Smartphone } from 'lucide-react-native';
 import { ToggleRow } from './ToggleRow';
 import { NotificationPreferences, NotificationPrefKey } from '../../types/settings.types';
-import { palette } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface NotificationPreferenceGroupProps {
   preferences: NotificationPreferences;
@@ -14,6 +14,8 @@ export const NotificationPreferenceGroup: React.FC<NotificationPreferenceGroupPr
   preferences,
   onToggle,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       {/* 1. Booking Updates */}
@@ -58,7 +60,7 @@ export const NotificationPreferenceGroup: React.FC<NotificationPreferenceGroupPr
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   container: {},
   divider: {
     height: StyleSheet.hairlineWidth,

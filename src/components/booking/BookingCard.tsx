@@ -1,4 +1,3 @@
-import { colors } from '../../design';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { BookingDetails } from '../../types/booking.types';
 import { BookingStatusBadge } from './BookingStatusBadge';
@@ -8,12 +7,15 @@ import { BookingPriceTag } from './BookingPriceTag';
 import { BookingCountdown } from './BookingCountdown';
 import { BookingActions } from './BookingActions';
 import { useRouter } from 'expo-router';
+import { DiscountSummaryRow } from '../offers/DiscountSummaryRow';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingCardProps {
   booking: BookingDetails;
 }
 
 export function BookingCard({ booking }: BookingCardProps) {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   const isCompany = Boolean(
@@ -82,7 +84,13 @@ export function BookingCard({ booking }: BookingCardProps) {
     >
       <View style={styles.header}>
         <BookingStatusBadge status={booking.status} />
-        <BookingPriceTag amount={booking.estimated_total} currency={booking.currency} />
+        <View style={styles.priceColumn}>
+          <BookingPriceTag amount={booking.estimated_total} currency={booking.currency} />
+          {/* A cancelled / rejected booking realises no saving. */}
+          {booking.status !== 'CANCELLED' && booking.status !== 'REJECTED' && (
+            <DiscountSummaryRow booking={booking} variant="tag" />
+          )}
+        </View>
       </View>
 
       <BookingWorkerRow
@@ -104,7 +112,7 @@ export function BookingCard({ booking }: BookingCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     backgroundColor: colors.bgCard,
     paddingVertical: 18,
@@ -117,8 +125,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
     width: '100%',
+  },
+  priceColumn: {
+    alignItems: 'flex-end',
   },
 });

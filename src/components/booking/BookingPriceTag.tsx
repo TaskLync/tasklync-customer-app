@@ -1,5 +1,5 @@
-import { colors } from '../../design';
 import { View, Text, StyleSheet } from 'react-native';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingPriceTagProps {
   amount: number;
@@ -18,6 +18,7 @@ const formatCurrency = (amount: number, currency: string) => {
 };
 
 export function BookingPriceTag({ amount, currency }: BookingPriceTagProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.price} numberOfLines={1}>
@@ -27,7 +28,7 @@ export function BookingPriceTag({ amount, currency }: BookingPriceTagProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     alignItems: 'flex-end',
     justifyContent: 'center',

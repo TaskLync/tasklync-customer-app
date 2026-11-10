@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Switch, StyleSheet, Platform, TouchableOpacity } from 'react-native';
-import { colors, palette, fontFamily, spacing } from '../../design';
+import { fontFamily, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ToggleRowProps {
   label: string;
@@ -28,6 +29,8 @@ export const ToggleRow: React.FC<ToggleRowProps> = ({
   onValueChange,
   disabled = false,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const accessibilityState = { checked: value, disabled };
   const a11yAnnouncement = `${label}${subtitle ? ', ' + subtitle : ''}, switch ${value ? 'on' : 'off'}`;
 
@@ -70,11 +73,11 @@ export const ToggleRow: React.FC<ToggleRowProps> = ({
           onValueChange={onValueChange}
           disabled={disabled}
           trackColor={{
-            false: Platform.OS === 'android' ? '#CBD5E1' : '#E2E8F0',
+            false: Platform.OS === 'android' ? colors.borderStrong : colors.border,
             true: colors.primaryDark,
           }}
-          thumbColor="#FFFFFF"
-          ios_backgroundColor="#E2E8F0"
+          thumbColor={colors.pureWhite}
+          ios_backgroundColor={colors.border}
           style={Platform.OS === 'ios' ? styles.iosSwitch : undefined}
         />
       </View>
@@ -82,7 +85,7 @@ export const ToggleRow: React.FC<ToggleRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     minHeight: 52,
     flexDirection: 'row',

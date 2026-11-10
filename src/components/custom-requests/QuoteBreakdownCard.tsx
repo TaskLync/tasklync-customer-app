@@ -2,13 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Banknote, ShieldCheck } from 'lucide-react-native';
 import { Quote } from '../../types/customRequest.types';
-import { colors, palette, typography } from '../../design';
+import { typography } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface QuoteBreakdownCardProps {
   quote: Quote;
 }
 
 export function QuoteBreakdownCard({ quote }: QuoteBreakdownCardProps) {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const formattedWorkPrice = Number(quote.work_price || 0).toLocaleString();
   const formattedInspectionFee = Number(quote.inspection_fee || 0).toLocaleString();
   const formattedSubtotal = Number(quote.subtotal || 0).toLocaleString();
@@ -70,7 +73,7 @@ export function QuoteBreakdownCard({ quote }: QuoteBreakdownCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgCard,
     paddingVertical: 16,
@@ -110,7 +113,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 6,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: colors.borderLight,
     marginTop: 4,
   },
   subtotalLabel: {
@@ -125,7 +128,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     marginVertical: 10,
   },
   totalRow: {

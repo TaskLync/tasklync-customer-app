@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Pressable,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -23,11 +22,13 @@ import { useAddresses } from '../../hooks/useAddresses';
 import { useLocation } from '../../hooks/useLocation';
 import { Address } from '../../types/address.types';
 import { labelToIcon } from '../../utils/address';
-import { colors, palette, fontFamily, radius } from '../../design';
+import { fontFamily, radius } from '../../design';
 import {
   validateServiceArea,
   SERVICE_UNAVAILABLE_MESSAGE,
 } from '../../config/serviceArea.config';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 export interface LocationSelectSheetRef {
   open: () => void;
@@ -40,6 +41,8 @@ export interface LocationSelectSheetProps {
 
 export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSelectSheetProps>(
   ({ onLocationSelected }, ref) => {
+    const { colors, palette } = useAppTheme();
+    const styles = useThemedStyles(createStyles);
     const bottomSheetRef = useRef<BottomSheetRef>(null);
     const router = useRouter();
 
@@ -106,7 +109,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
           if (!permResult.granted) {
             setIsSwitchingGPS(false);
             if (!permResult.canAskAgain) {
-              Alert.alert(
+              showAlert(
                 'Location Permission Denied',
                 'Tasklync needs location permission to show workers near you. Please enable it in Settings.',
                 [
@@ -120,7 +123,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
         }
 
         if (!isServicesEnabled) {
-          Alert.alert(
+          showAlert(
             'GPS Disabled',
             'Your device location services are turned off. Please turn on GPS in your device settings.',
             [
@@ -136,12 +139,12 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
         if (freshCoords) {
           const validation = validateServiceArea(freshCoords);
           if (!validation.isServiceable) {
-            Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+            showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
             setIsSwitchingGPS(false);
             return;
           }
         } else {
-          Alert.alert(
+          showAlert(
             'GPS Signal Weak',
             'Unable to acquire a verified GPS location. Please check your signal and try again.'
           );
@@ -154,7 +157,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
         }
         handleClose();
       } catch (_e) {
-        Alert.alert('Location Error', 'Failed to detect current GPS location.');
+        showAlert('Location Error', 'Failed to detect current GPS location.');
       } finally {
         setIsSwitchingGPS(false);
       }
@@ -166,7 +169,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
 
       const validation = validateServiceArea({ lat: addr.lat, lng: addr.lng });
       if (!validation.isServiceable) {
-        Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+        showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
         return;
       }
 
@@ -469,7 +472,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
   }
 );
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingTop: 8,
     flex: 1,

@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { CheckCircle2, User } from 'lucide-react-native';
-import { colors, palette, fontFamily, fontSize } from '../../design';
+import { fontFamily, fontSize } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ReviewWorkerContextProps {
   workerName: string;
@@ -26,6 +27,8 @@ export const ReviewWorkerContext: React.FC<ReviewWorkerContextProps> = ({
   serviceName,
   completedDate,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const formattedDate = useMemo(() => {
     if (!completedDate) return 'Completed recently';
     try {
@@ -83,7 +86,7 @@ export const ReviewWorkerContext: React.FC<ReviewWorkerContextProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',

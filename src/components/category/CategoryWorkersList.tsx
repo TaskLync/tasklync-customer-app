@@ -10,16 +10,14 @@ import { WorkerNearby } from '../../types/worker.types';
 import { SortOption } from '../../types/search.types';
 import { useInfiniteWorkers } from '../../hooks/useInfiniteWorkers';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
-import { useLocation } from '../../hooks/useLocation';
-import { FAISALABAD_CENTER } from '../../config/serviceArea.config';
 import { WorkerListRow, WorkerListRowSkeleton } from '../worker/WorkerListRow';
 import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
 import { EmptyState } from '../feedback/EmptyState/EmptyState';
 import { ErrorState } from '../feedback/ErrorState/ErrorState';
 import { StickyListHeader } from '../ui/List/StickyListHeader';
 import { SortDropdown } from '../ui/SortDropdown/SortDropdown';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface CategoryWorkersListProps {
   categoryId: string;
@@ -41,11 +39,8 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
   minRating = 0,
   radius = 10000,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const { isOffline } = useNetworkStatus();
-  const { location } = useLocation();
-
-  const lat = location?.lat ?? FAISALABAD_CENTER.lat;
-  const lng = location?.lng ?? FAISALABAD_CENTER.lng;
 
   const {
     workers,
@@ -58,8 +53,7 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
     loadMore,
     refetch,
   } = useInfiniteWorkers({
-    lat,
-    lng,
+    // position comes from useCustomerCoords inside the hook (omitted when unknown)
     category: categoryId,
     radius,
     minRating,
@@ -198,7 +192,7 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
   },

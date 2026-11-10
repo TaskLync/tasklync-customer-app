@@ -1,7 +1,8 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Plus } from 'lucide-react-native';
-import { colors, fontFamily, radius, spacing, shadows } from '../../design';
+import { fontFamily, radius, spacing, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddCardButtonProps {
   onPress: () => void;
@@ -16,6 +17,8 @@ export const AddCardButton: React.FC<AddCardButtonProps> = ({
   icon,
   style,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -39,7 +42,7 @@ export const AddCardButton: React.FC<AddCardButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   button: {
     height: 46,
     flexDirection: 'row',

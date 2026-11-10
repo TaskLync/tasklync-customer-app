@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { BottomSheet, BottomSheetRef } from '../BottomSheet';
-import { colors, palette } from '../../../design/colors';
 import { typography } from '../../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface ActionItem {
   label: string;
@@ -26,6 +26,8 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
   actions,
   cancelLabel = 'Cancel',
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const sheetRef = useRef<BottomSheetRef>(null);
   const prevVisible = useRef(isVisible);
 
@@ -127,7 +129,7 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingBottom: 4,

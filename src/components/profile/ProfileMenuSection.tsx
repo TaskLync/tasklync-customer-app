@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { ProfileMenuSectionConfig, ProfileMenuItemConfig } from '../../types/user.types';
 import { ProfileMenuItem } from './ProfileMenuItem';
 import { fontFamily } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ProfileMenuSectionProps {
   section: ProfileMenuSectionConfig;
@@ -20,6 +21,7 @@ export const ProfileMenuSection: React.FC<ProfileMenuSectionProps> = ({
   section,
   onPressItem,
 }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>{section.sectionTitle}</Text>
@@ -37,14 +39,14 @@ export const ProfileMenuSection: React.FC<ProfileMenuSectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     marginBottom: 20,
   },
   sectionTitle: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 12.5,
-    color: '#64748B',
+    color: colors.textSecondary,
     marginBottom: 10,
     marginLeft: 4,
     textTransform: 'uppercase',

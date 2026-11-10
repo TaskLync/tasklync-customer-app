@@ -6,13 +6,15 @@ import {
   SkeletonGroup,
   SkeletonText,
 } from '../ui/Skeleton/Skeleton';
-import { colors } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 /**
  * Mirrors MapWorkerCard: static 270×146 white card (same shadow), 52px avatar, name (14),
  * rating · distance line, response-time line, and the 44px "Book" button on the right.
  */
-export const MapSkeletonCard: FC = () => (
+export const MapSkeletonCard: FC = () => {
+  const styles = useThemedStyles(createStyles);
+  return (
   <View style={styles.card}>
     <SkeletonGroup style={styles.row} accessibilityLabel="Loading worker">
       <SkeletonCircle size={52} />
@@ -25,8 +27,9 @@ export const MapSkeletonCard: FC = () => (
     </SkeletonGroup>
   </View>
 );
+};
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     width: 270,
     height: 146,

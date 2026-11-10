@@ -5,7 +5,8 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface UrgentPriceBadgeProps {
   visible: boolean;
@@ -16,6 +17,7 @@ export const UrgentPriceBadge: React.FC<UrgentPriceBadgeProps> = ({
   visible,
   badgeText = '+30%',
 }) => {
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(visible ? 1 : 0);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export const UrgentPriceBadge: React.FC<UrgentPriceBadgeProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   badgeContainer: {
     backgroundColor: palette.warningLight,
     borderWidth: 1,

@@ -3,9 +3,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { FilterSheetContent } from '../../src/components/search/FilterSheetContent';
 import { useSearch } from '../../src/hooks/useSearch';
-import { colors } from '../../src/design/colors';
+import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 
 export default function FiltersScreen() {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { filters, setFilters, resetFilters, total } = useSearch();
 
@@ -39,7 +40,7 @@ export default function FiltersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgCard,

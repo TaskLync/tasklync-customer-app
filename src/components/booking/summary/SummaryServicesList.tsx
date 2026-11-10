@@ -3,13 +3,16 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Wrench } from 'lucide-react-native';
 import { SummarySectionCard } from './SummarySectionCard';
 import { CartItem } from '../../../store/cart.store';
-import { colors, palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface SummaryServicesListProps {
   items: CartItem[];
 }
 
 export const SummaryServicesList: React.FC<SummaryServicesListProps> = ({ items }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <SummarySectionCard
       icon={<Wrench size={16} color={colors.primaryDark} strokeWidth={2.2} />}
@@ -43,7 +46,7 @@ export const SummaryServicesList: React.FC<SummaryServicesListProps> = ({ items 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   listContainer: {
     width: '100%',
   },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { fontFamily } from '../../design/typography';
-import { colors } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface TabBadgeProps {
   count: number;
@@ -17,6 +17,7 @@ interface TabBadgeProps {
  * - Sensible count ceiling (99+)
  */
 export const TabBadge: React.FC<TabBadgeProps> = React.memo(({ count }) => {
+  const styles = useThemedStyles(createStyles);
   if (!count || count <= 0) return null;
 
   const displayCount = count > 99 ? '99+' : `${count}`;
@@ -41,7 +42,7 @@ export const TabBadge: React.FC<TabBadgeProps> = React.memo(({ count }) => {
 
 TabBadge.displayName = 'TabBadge';
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   badge: {
     position: 'absolute',
     top: -4,
@@ -68,7 +69,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 9.5,
     fontWeight: '700',
-    color: colors.white,
+    color: colors.pureWhite,
     textAlign: 'center',
     includeFontPadding: false,
     lineHeight: 11,

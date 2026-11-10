@@ -2,8 +2,8 @@ import { View, StyleSheet, Text, ViewStyle, Pressable } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { ReviewSummaryData, WorkerRatingSummary } from '../../types/review.types';
 import { ReviewStarRow } from './ReviewStarRow';
-import { colors, palette } from '../../design/colors';
 import { fontFamily as fonts } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ReviewSummaryProps {
   summary?: ReviewSummaryData | WorkerRatingSummary | undefined;
@@ -25,6 +25,8 @@ export const ReviewSummary = ({
   compact = false,
   onLayout,
 }: ReviewSummaryProps) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   if (!summary) return null;
 
   // Safely extract rating and total count across both ReviewSummaryData and WorkerRatingSummary formats
@@ -101,7 +103,7 @@ export const ReviewSummary = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingVertical: 4,
     marginBottom: 4,

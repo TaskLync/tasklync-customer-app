@@ -1,7 +1,8 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { statusToLabel } from '../../utils/bookingStatus';
-import { colors, palette, fontFamily, spacing } from '../../design';
+import { fontFamily, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface BookingHistoryItem {
   id: string;
@@ -37,6 +38,7 @@ const formatDate = (isoString: string): string => {
 };
 
 export const BookingHistoryCard: React.FC<BookingHistoryCardProps> = ({ booking }) => {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   const formattedDate = formatDate(booking.created_at || booking.scheduled_at || '');
@@ -89,7 +91,7 @@ export const BookingHistoryCard: React.FC<BookingHistoryCardProps> = ({ booking 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     minHeight: 76,
     flexDirection: 'row',

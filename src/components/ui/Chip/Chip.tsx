@@ -17,9 +17,9 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { Check } from 'lucide-react-native';
-import { colors, palette } from '../../../design/colors';
 import { typography } from '../../../design/typography';
 import { springConfig } from '../../../design/animations';
+import { useAppTheme } from '../../../theme/useAppTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -34,6 +34,8 @@ export interface ChipProps {
   onTrailingPress?: () => void;
   size?: 'xs' | 'sm' | 'md';
   variant?: 'filter' | 'status' | 'skill' | 'tag';
+  /** 'neutral': grey chip, selected = white with a charcoal outline and dark text (no brand fill). */
+  tone?: 'brand' | 'neutral';
   statusColor?: 'success' | 'warning' | 'danger' | 'info';
   showCheckmark?: boolean;
   style?: ViewStyle;
@@ -50,12 +52,14 @@ export const Chip: React.FC<ChipProps> = ({
   onTrailingPress,
   size = 'md',
   variant = 'filter',
+  tone = 'brand',
   statusColor,
   showCheckmark = true,
   style,
   textStyle,
   disabled = false,
 }) => {
+  const { colors } = useAppTheme();
   const isInteractive = !!onPress && !disabled;
   const scale = useSharedValue(1);
   const selectionProgress = useSharedValue(selected ? 1 : 0);
@@ -85,7 +89,11 @@ export const Chip: React.FC<ChipProps> = ({
     let backgroundColor = colors.bgInput;
     let borderColor = 'transparent';
 
-    if (variant === 'filter') {
+    if (variant === 'filter' && tone === 'neutral') {
+      backgroundColor = interpolateColor(selectionProgress.value, [0, 1], [colors.bgInput, colors.bgCard]);
+      // same colour as the fill when unselected, so selecting never shifts the layout
+      borderColor = interpolateColor(selectionProgress.value, [0, 1], [colors.bgInput, colors.textPrimary]);
+    } else if (variant === 'filter') {
       backgroundColor = interpolateColor(
         selectionProgress.value,
         [0, 1],
@@ -125,14 +133,21 @@ export const Chip: React.FC<ChipProps> = ({
       transform: [{ scale: scale.value }],
       backgroundColor,
       borderColor,
-      borderWidth: variant === 'status' || (variant === 'skill' && selected) ? 1 : 0,
+      borderWidth:
+        variant === 'status' || (variant === 'skill' && selected)
+          ? 1
+          : variant === 'filter' && tone === 'neutral'
+            ? 1.25
+            : 0,
     };
   });
 
   const textAnimatedStyle = useAnimatedStyle(() => {
     let color = colors.textMuted;
     
-    if (variant === 'filter') {
+    if (variant === 'filter' && tone === 'neutral') {
+      color = interpolateColor(selectionProgress.value, [0, 1], [colors.textSecondary, colors.textPrimary]);
+    } else if (variant === 'filter') {
       color = interpolateColor(
         selectionProgress.value,
         [0, 1],
@@ -193,7 +208,7 @@ export const Chip: React.FC<ChipProps> = ({
     >
       {variant === 'filter' && showCheckmark && (
         <AnimatedView style={[styles.checkmarkContainer, checkmarkAnimatedStyle]}>
-          <Check size={14} color={colors.white} />
+          <Check size={14} color={colors.pureWhite} />
         </AnimatedView>
       )}
 
@@ -207,7 +222,7 @@ export const Chip: React.FC<ChipProps> = ({
               return (
                 <IconComponent
                   size={size === 'xs' ? 12 : 14}
-                  color={variant === 'filter' && selected ? colors.white : colors.textMuted}
+                  color={variant === 'filter' && selected ? (tone === 'neutral' ? colors.textPrimary : colors.pureWhite) : colors.textMuted}
                 />
               );
             })()
@@ -247,7 +262,7 @@ export const Chip: React.FC<ChipProps> = ({
               return (
                 <TrailingIconComponent
                   size={size === 'xs' ? 12 : 14}
-                  color={variant === 'filter' && selected ? colors.white : colors.textMuted}
+                  color={variant === 'filter' && selected ? (tone === 'neutral' ? colors.textPrimary : colors.pureWhite) : colors.textMuted}
                 />
               );
             })()

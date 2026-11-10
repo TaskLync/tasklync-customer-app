@@ -1,8 +1,10 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { PaymentMethod } from '../../types/payment.types';
 import { CardBrandIcon } from './CardBrandIcon';
-import { colors, palette, fontFamily, radius, spacing, shadows } from '../../design';
+import { fontFamily, radius, spacing, shadows } from '../../design';
 import { Check, Lock } from 'lucide-react-native';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 export interface PaymentMethodPickerProps {
   methods: PaymentMethod[];
@@ -15,10 +17,12 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
   selectedId,
   onSelect,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handleSelect = (method: PaymentMethod) => {
     const isEnabled = method.isEnabled !== false && method.is_enabled !== false;
     if (!isEnabled) {
-      Alert.alert(
+      showAlert(
         'Online Payment Unavailable',
         method.disabled_reason ||
           'Online payment platforms are temporarily disabled. Please proceed with Cash on Delivery.'
@@ -103,7 +107,7 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
                   : styles.radioOuterUnselected,
               ]}
             >
-              {isSelected && <Check size={12} color={palette.white} strokeWidth={3} />}
+              {isSelected && <Check size={12} color={palette.pureWhite} strokeWidth={3} />}
             </View>
           </TouchableOpacity>
         );
@@ -112,7 +116,7 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     gap: spacing.sm + 2,
   },

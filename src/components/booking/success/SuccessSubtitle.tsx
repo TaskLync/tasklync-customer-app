@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface SuccessSubtitleProps {
   subtitle?: string;
@@ -8,17 +9,21 @@ export interface SuccessSubtitleProps {
 
 export const SuccessSubtitle: React.FC<SuccessSubtitleProps> = ({
   subtitle = 'Your service request has been sent to the professional.',
-}) => (
+}) => {
+  const styles = useThemedStyles(createStyles);
+  return (
   <View style={styles.container}>
     <Text style={styles.subtitleText}>{subtitle}</Text>
   </View>
 );
+};
 
 export interface BookingIdCardProps {
   bookingId: string;
 }
 
 export const BookingIdCard: React.FC<BookingIdCardProps> = ({ bookingId }) => {
+  const styles = useThemedStyles(createStyles);
   if (!bookingId) return null;
 
   return (
@@ -31,7 +36,7 @@ export const BookingIdCard: React.FC<BookingIdCardProps> = ({ bookingId }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 16,
   },

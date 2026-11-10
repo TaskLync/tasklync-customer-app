@@ -1,4 +1,3 @@
-import { colors, palette } from '../../design';
 import React, { useEffect } from 'react';
 import {
   View,
@@ -28,6 +27,7 @@ import {
   Sparkles,
   Info,
 } from 'lucide-react-native';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface InAppBannerData {
   id: string;
@@ -61,6 +61,8 @@ export const InAppBanner = React.memo(function InAppBanner({
   onDismiss,
   duration = 4000,
 }: InAppBannerProps) {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(-120);
   const opacity = useSharedValue(0);
@@ -172,20 +174,20 @@ export const InAppBanner = React.memo(function InAppBanner({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     left: 16,
     right: 16,
     zIndex: 9999,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.16,
     shadowRadius: 12,
     elevation: 10,
   },
   card: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 16,
     padding: 14,
     flexDirection: 'row',

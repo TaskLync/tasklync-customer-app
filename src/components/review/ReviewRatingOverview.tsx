@@ -1,8 +1,8 @@
 import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { WorkerRatingSummary, ReviewSummaryData, REVIEW_TAGS } from '../../types/review.types';
 import { ReviewStarRow } from './ReviewStarRow';
-import { colors, palette } from '../../design/colors';
 import { fontFamily as fonts } from '../../design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ReviewRatingOverviewProps {
   summary: WorkerRatingSummary | ReviewSummaryData;
@@ -20,6 +20,7 @@ const STAR_LEVELS = [5, 4, 3, 2, 1] as const;
  * - Highlights top customer tags and counts
  */
 export const ReviewRatingOverview = ({ summary, style }: ReviewRatingOverviewProps) => {
+  const styles = useThemedStyles(createStyles);
   // Normalize fields between WorkerRatingSummary and legacy ReviewSummaryData
   const average =
     'average' in summary
@@ -113,7 +114,7 @@ export const ReviewRatingOverview = ({ summary, style }: ReviewRatingOverviewPro
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgSection,
     borderRadius: 16,

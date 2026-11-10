@@ -1,4 +1,3 @@
-import { colors, palette } from '../../design';
 import React, { useCallback, useRef } from 'react';
 import { StyleSheet, View, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +12,7 @@ import { EmptyBookingsPast } from '../feedback/EmptyState/EmptyBookingsPast';
 import { EmptyBookingsCancelled } from '../feedback/EmptyState/EmptyBookingsCancelled';
 import { ErrorState } from '../feedback/ErrorState';
 import { TabType } from '../../hooks/useBookingsList';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingListProps {
   bookings: BookingDetails[];
@@ -32,6 +32,8 @@ export function BookingList({
   activeTab,
   onRefresh,
 }: BookingListProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const isFirstMount = useRef(true);
 
@@ -110,7 +112,7 @@ export function BookingList({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

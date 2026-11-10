@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Check } from 'lucide-react-native';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface SaveCardCheckboxProps {
   checked: boolean;
@@ -14,6 +15,8 @@ export const SaveCardCheckbox: React.FC<SaveCardCheckboxProps> = ({
   onToggle,
   label = 'Save this card for faster future checkout',
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handlePress = () => {
     onToggle(!checked);
   };
@@ -32,14 +35,14 @@ export const SaveCardCheckbox: React.FC<SaveCardCheckboxProps> = ({
           checked ? styles.checkboxChecked : styles.checkboxUnchecked,
         ]}
       >
-        {checked && <Check size={12} color={palette.white} strokeWidth={3} />}
+        {checked && <Check size={12} color={palette.pureWhite} strokeWidth={3} />}
       </View>
       <Text style={styles.label}>{label}</Text>
     </Pressable>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

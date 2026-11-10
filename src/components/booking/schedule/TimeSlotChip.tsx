@@ -7,7 +7,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { SlotInfo } from '../../../hooks/useWorkerSlots';
-import { colors, palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface TimeSlotChipProps {
   slot: SlotInfo;
@@ -22,6 +23,7 @@ export const TimeSlotChip: React.FC<TimeSlotChipProps> = ({
   isSelected,
   onSelect,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const { timeStr, available, isPeak } = slot;
 
   const scale = useSharedValue(1);
@@ -80,7 +82,7 @@ export const TimeSlotChip: React.FC<TimeSlotChipProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   chipWrapper: {
     width: '31.5%',
     marginBottom: 10,
@@ -97,7 +99,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.white,
     borderWidth: 1,
     borderColor: palette.gray200,
-    shadowColor: palette.gray900,
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 4,
@@ -107,7 +109,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderWidth: 1,
     borderColor: colors.primaryDark,
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -128,7 +130,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   textSelected: {
-    color: palette.white,
+    color: palette.pureWhite,
     fontFamily: fontFamily.inter.bold,
   },
   textUnavailable: {

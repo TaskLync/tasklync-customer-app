@@ -12,10 +12,10 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { colors } from '../../../design/colors';
 import { typography } from '../../../design/typography';
 import { shadows } from '../../../design/shadows';
 import { springConfig } from '../../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 interface ToggleOption {
   label: string;
@@ -37,6 +37,8 @@ export const TabToggle: React.FC<TabToggleProps> = ({
   onChange,
   disabled = false,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [containerWidth, setContainerWidth] = useState(0);
   const activeIndex = options.findIndex((o) => o.value === activeValue);
 
@@ -124,7 +126,7 @@ export const TabToggle: React.FC<TabToggleProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     height: 38,
     flexDirection: 'row',

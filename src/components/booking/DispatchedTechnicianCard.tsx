@@ -1,4 +1,3 @@
-import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
@@ -16,7 +15,7 @@ import {
   openPhoneDialer,
   openWhatsAppChat,
 } from '../../utils/phone.utils';
-import { companyTokens } from '../../theme/companyTokens';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface DispatchedTechnicianCardProps {
   companyName: string | null;
@@ -35,6 +34,9 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
   bookingId,
   onContactSupportOffice,
 }) => {
+  const { companyTokens } = useAppTheme();
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const resolvedAgencyName = companyName || 'Service Agency';
 
   // Smart label helper: prevents duplicate "Office" and handles long agency names cleanly
@@ -96,7 +98,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
             accessibilityLabel={getChatButtonLabel()}
           >
             <View style={styles.chatIconWrapper}>
-              <MessageSquare size={17} color={colors.white} strokeWidth={2.2} />
+              <MessageSquare size={17} color={colors.pureWhite} strokeWidth={2.2} />
             </View>
             <Text
               style={styles.primaryChatButtonText}
@@ -137,7 +139,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
       case 'UFONE':
         return { bg: companyTokens.colors.ufoneTint, text: companyTokens.colors.ufoneOrange };
       default:
-        return { bg: '#F1F5F9', text: companyTokens.colors.corporateMuted };
+        return { bg: colors.bgHover, text: companyTokens.colors.corporateMuted };
     }
   };
 
@@ -241,7 +243,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
             accessibilityLabel={`Call technician ${technicianName}`}
           >
             <View style={styles.actionBtnIconWrap}>
-              <Phone size={15} color={colors.white} strokeWidth={2.2} />
+              <Phone size={15} color={colors.textInverse} strokeWidth={2.2} />
             </View>
             <Text style={styles.callButtonText} numberOfLines={1}>Call Technician</Text>
           </Pressable>
@@ -276,7 +278,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   cardContainer: {
     backgroundColor: colors.bgCard,
     paddingVertical: 16,
@@ -425,7 +427,7 @@ const styles = StyleSheet.create({
   primaryChatButtonText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 13,
-    color: colors.white,
+    color: colors.pureWhite,
     lineHeight: 18,
     flexShrink: 1,
     textAlign: 'center',
@@ -557,12 +559,12 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   callButton: {
-    backgroundColor: '#0F172A',
+    backgroundColor: colors.inverseSurface,
   },
   callButtonText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 13,
-    color: colors.white,
+    color: colors.textInverse,
   },
   whatsappButton: {
     backgroundColor: colors.primaryTint,

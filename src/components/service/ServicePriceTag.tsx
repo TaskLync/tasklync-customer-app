@@ -5,8 +5,8 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ServicePriceTagProps {
   amount: number | null;
@@ -23,6 +23,7 @@ export const ServicePriceTag: React.FC<ServicePriceTagProps> = ({
   size = 'md',
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const formatPrice = (val: number) => {
     return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
@@ -130,7 +131,7 @@ export const ServicePriceTag: React.FC<ServicePriceTagProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'baseline',

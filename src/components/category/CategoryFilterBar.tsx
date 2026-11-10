@@ -9,7 +9,7 @@ import {
 import { SlidersHorizontal, X, MapPin } from 'lucide-react-native';
 import { Chip } from '../ui/Chip/Chip';
 import { SortOption, FilterState } from '../../types/search.types';
-import { colors } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface CategoryFilterBarProps {
   sortBy: SortOption;
@@ -30,6 +30,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
   onOpenDistance,
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   // Determine active filter chips
   const activeChips: Array<{ key: keyof FilterState; label: string }> = [];
 
@@ -153,7 +154,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   outerContainer: {
     width: '100%',
     backgroundColor: colors.bgCard,

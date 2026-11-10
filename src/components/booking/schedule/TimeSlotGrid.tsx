@@ -4,7 +4,8 @@ import { SlotInfo } from '../../../hooks/useWorkerSlots';
 import { TimeSlotChip } from './TimeSlotChip';
 import { TimeSlotSkeleton } from './TimeSlotSkeleton';
 import { SkeletonGroup } from '../../ui/Skeleton/Skeleton';
-import { colors, palette, fontFamily, radius } from '../../../design';
+import { fontFamily, radius } from '../../../design';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface TimeSlotGridProps {
   slots: SlotInfo[];
@@ -23,6 +24,7 @@ export const TimeSlotGrid: React.FC<TimeSlotGridProps> = ({
   isError = false,
   onRetry,
 }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -87,7 +89,7 @@ export const TimeSlotGrid: React.FC<TimeSlotGridProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingVertical: 14,
@@ -158,7 +160,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 12,
     lineHeight: 16,
-    color: palette.white,
+    color: palette.pureWhite,
     textAlign: 'center',
     textAlignVertical: 'center',
     includeFontPadding: false,

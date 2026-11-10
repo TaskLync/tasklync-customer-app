@@ -8,12 +8,13 @@ import { SkeletonWorkerCardHorizontal } from '../ui/Skeleton/SkeletonWorkerCardH
 import { EmptyState } from '../feedback/EmptyState';
 import { useNearbyWorkers } from '../../hooks/useNearbyWorkers';
 import { WorkerNearby } from '../../types/worker.types';
-import { colors } from '../../design/colors';
 import { pushOnce } from '../../utils/navigationGuard';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const CARD_GAP = 14;
 
 export const NearbyWorkersList = () => {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { workers, isLoading, error, refetch } = useNearbyWorkers();
   const { width: windowWidth } = useWindowDimensions();
@@ -145,7 +146,7 @@ export const NearbyWorkersList = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   sectionContainer: {
     width: '100%',
   },

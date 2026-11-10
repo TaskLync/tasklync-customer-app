@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
-import { colors } from '../../../design/colors';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 interface OnlineBadgeProps {
   status: 'online' | 'busy' | 'offline';
@@ -13,6 +13,8 @@ export const OnlineBadge: React.FC<OnlineBadgeProps> = ({
   size = 10,
   style,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const getStatusColor = () => {
     switch (status) {
       case 'online': return colors.online; // Green
@@ -38,7 +40,7 @@ export const OnlineBadge: React.FC<OnlineBadgeProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',

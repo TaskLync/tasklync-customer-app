@@ -1,9 +1,9 @@
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { ErrorState } from './ErrorState';
 import { fontFamily } from '../../design/typography';
-import { palette } from '../../design/colors';
 import { radius } from '../../design/radius';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ErrorBoundaryProps {
   children: ReactNode;
@@ -20,7 +20,6 @@ export interface ErrorBoundaryProps {
 interface State {
   hasError: boolean;
   error: Error | null;
-  showStack: boolean;
 }
 
 /**
@@ -33,7 +32,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
   public state: State = {
     hasError: false,
     error: null,
-    showStack: false,
   };
 
   public static getDerivedStateFromError(error: Error): Partial<State> {
@@ -63,11 +61,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
 
   public reset = () => {
     this.props.onReset?.();
-    this.setState({ hasError: false, error: null, showStack: false });
-  };
-
-  private toggleStack = () => {
-    this.setState((prev) => ({ showStack: !prev.showStack }));
+    this.setState({ hasError: false, error: null });
   };
 
   public render() {
@@ -82,48 +76,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
         return fallback;
       }
 
-      const shouldShowDebug = showDetails ?? __DEV__;
-
       return (
-        <View style={styles.container}>
-          <ErrorState
-            type="error"
-            title={title || 'Something went wrong'}
-            subtitle={
-              subtitle ||
-              (shouldShowDebug
-                ? this.state.error.message || 'An unexpected error occurred.'
-                : 'An unexpected error occurred. Please try again.')
-            }
-            onRetry={this.reset}
-            retryButtonText={retryText || 'Try Again'}
-          />
-
-          {shouldShowDebug && (
-            <View style={styles.debugContainer}>
-              <Pressable
-                onPress={this.toggleStack}
-                style={styles.debugToggle}
-                accessibilityRole="button"
-              >
-                <Text style={styles.debugToggleText}>
-                  {this.state.showStack ? 'Hide Error Details ▲' : 'Show Error Details ▼'}
-                </Text>
-              </Pressable>
-
-              {this.state.showStack && (
-                <ScrollView style={styles.debugScroll} nestedScrollEnabled>
-                  <Text style={styles.debugErrorName}>
-                    {this.state.error.name}: {this.state.error.message}
-                  </Text>
-                  {this.state.error.stack && (
-                    <Text style={styles.debugStackTrace}>{this.state.error.stack}</Text>
-                  )}
-                </ScrollView>
-              )}
-            </View>
-          )}
-        </View>
+        <DefaultFallback
+          error={this.state.error}
+          title={title}
+          subtitle={subtitle}
+          retryText={retryText}
+          showDetails={showDetails}
+          onRetry={this.reset}
+        />
       );
     }
 
@@ -131,7 +92,68 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
   }
 }
 
-const styles = StyleSheet.create({
+/** Function component so the fallback can read the active theme (class components cannot use hooks). */
+const DefaultFallback = ({
+  error,
+  title,
+  subtitle,
+  retryText,
+  showDetails,
+  onRetry,
+}: {
+  error: Error;
+  title: string | undefined;
+  subtitle: string | undefined;
+  retryText: string | undefined;
+  showDetails: boolean | undefined;
+  onRetry: () => void;
+}) => {
+  const styles = useThemedStyles(createStyles);
+  const [showStack, setShowStack] = useState(false);
+  const shouldShowDebug = showDetails ?? __DEV__;
+
+  return (
+    <View style={styles.container}>
+      <ErrorState
+        type="error"
+        title={title || 'Something went wrong'}
+        subtitle={
+          subtitle ||
+          (shouldShowDebug
+            ? error.message || 'An unexpected error occurred.'
+            : 'An unexpected error occurred. Please try again.')
+        }
+        onRetry={onRetry}
+        retryButtonText={retryText || 'Try Again'}
+      />
+
+      {shouldShowDebug && (
+        <View style={styles.debugContainer}>
+          <Pressable
+            onPress={() => setShowStack((v) => !v)}
+            style={styles.debugToggle}
+            accessibilityRole="button"
+          >
+            <Text style={styles.debugToggleText}>
+              {showStack ? 'Hide Error Details ▲' : 'Show Error Details ▼'}
+            </Text>
+          </Pressable>
+
+          {showStack && (
+            <ScrollView style={styles.debugScroll} nestedScrollEnabled>
+              <Text style={styles.debugErrorName}>
+                {error.name}: {error.message}
+              </Text>
+              {error.stack && <Text style={styles.debugStackTrace}>{error.stack}</Text>}
+            </ScrollView>
+          )}
+        </View>
+      )}
+    </View>
+  );
+};
+
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: palette.zenWhite,
@@ -155,7 +177,7 @@ const styles = StyleSheet.create({
   },
   debugScroll: {
     maxHeight: 180,
-    backgroundColor: palette.gray900,
+    backgroundColor: palette.black, // a code panel stays dark in both themes
     borderRadius: radius.md,
     padding: 12,
   },

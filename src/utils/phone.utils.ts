@@ -3,7 +3,8 @@
  * Compliant with E.164 normalization, PTA network codes, and Android/iOS intent handling.
  */
 
-import { Linking, Alert } from 'react-native';
+import { Linking } from 'react-native';
+import { showAlert } from '../components/feedback/AppAlert';
 
 export type PakistanCarrier = 'JAZZ' | 'ZONG' | 'TELENOR' | 'UFONE' | 'UNKNOWN';
 
@@ -130,7 +131,7 @@ export function parsePakistaniPhone(input: string | null | undefined): ParsedPak
  */
 export async function openPhoneDialer(phone: string | null | undefined): Promise<boolean> {
   if (!phone) {
-    Alert.alert('Phone Unavailable', 'No contact phone number is available.');
+    showAlert('Phone Unavailable', 'No contact phone number is available.');
     return false;
   }
 
@@ -143,12 +144,12 @@ export async function openPhoneDialer(phone: string | null | undefined): Promise
       await Linking.openURL(url);
       return true;
     } else {
-      Alert.alert('Error', 'Unable to initiate phone call on this device.');
+      showAlert('Error', 'Unable to initiate phone call on this device.');
       return false;
     }
   } catch (error) {
     console.warn('[openPhoneDialer] Error opening phone dialer:', error);
-    Alert.alert('Error', 'Could not open phone dialer.');
+    showAlert('Error', 'Could not open phone dialer.');
     return false;
   }
 }
@@ -161,7 +162,7 @@ export async function openWhatsAppChat(
   message?: string
 ): Promise<boolean> {
   if (!phone) {
-    Alert.alert('Phone Unavailable', 'No contact phone number is available.');
+    showAlert('Phone Unavailable', 'No contact phone number is available.');
     return false;
   }
 
@@ -185,7 +186,7 @@ export async function openWhatsAppChat(
     }
   } catch (error) {
     console.warn('[openWhatsAppChat] Error opening WhatsApp:', error);
-    Alert.alert('WhatsApp Unavailable', 'Could not open WhatsApp on this device.');
+    showAlert('WhatsApp Unavailable', 'Could not open WhatsApp on this device.');
     return false;
   }
 }

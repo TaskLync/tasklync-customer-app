@@ -1,14 +1,15 @@
 import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Skeleton, SkeletonCircle, SkeletonGroup, SkeletonText, SKELETON } from './Skeleton';
-import { colors } from '../../../design/colors';
 import { radius } from '../../../design/radius';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 /**
  * Mirrors WorkerCardHorizontal: same 228px shell (static), with avatar, favourite, name,
  * profession, rating/distance line, price and the mint "Book" pill as placeholders.
  */
 export const SkeletonWorkerCardHorizontal: React.FC<{ cardWidth?: number }> = ({ cardWidth }) => {
+  const styles = useThemedStyles(createStyles);
   const { width: windowWidth } = useWindowDimensions();
   const width = cardWidth ?? Math.min(Math.round(windowWidth * 0.72), 300);
 
@@ -37,7 +38,7 @@ export const SkeletonWorkerCardHorizontal: React.FC<{ cardWidth?: number }> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     height: 228,
     padding: 16,

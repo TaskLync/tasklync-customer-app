@@ -9,8 +9,8 @@ import {
   NativeSyntheticEvent,
   TextLayoutEventData,
 } from 'react-native';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 /** Lines shown while collapsed. Bios at or below this length never show a toggle. */
 const COLLAPSED_LINES = 4;
@@ -25,6 +25,7 @@ interface WorkerBioProps {
  * a long bio is clamped to COLLAPSED_LINES with a "Read more" toggle. No fixed heights.
  */
 export const WorkerBio: React.FC<WorkerBioProps> = ({ bio, style }) => {
+  const styles = useThemedStyles(createStyles);
   const [expanded, setExpanded] = useState(false);
   // Total line count of the full text at the current width (from an off-screen twin).
   const [lineCount, setLineCount] = useState(0);
@@ -80,7 +81,7 @@ export const WorkerBio: React.FC<WorkerBioProps> = ({ bio, style }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
   },

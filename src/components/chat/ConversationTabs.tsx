@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { ConversationFilterTab } from '../../types/chat.types';
 import { fontFamily } from '../../design/typography';
-import { colors, palette } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ConversationTabsProps {
   activeTab: ConversationFilterTab;
@@ -21,6 +21,7 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
   onTabChange,
   unreadCount = 0,
 }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.segmentedControl}>
@@ -67,7 +68,7 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingTop: 8,
@@ -101,7 +102,7 @@ const styles = StyleSheet.create({
   tabActive: {
     backgroundColor: colors.bgCard,
     borderColor: colors.border,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 2,
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 5,

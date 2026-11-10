@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { TrendingUp, Flame } from 'lucide-react-native';
-import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { TrendingTerm } from '../../types/search.types';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface TrendingSearchChipsProps {
   terms: TrendingTerm[];
@@ -16,6 +16,8 @@ export const TrendingSearchChips: React.FC<TrendingSearchChipsProps> = ({
   onSelect,
   title = 'Trending Searches',
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   if (!terms || terms.length === 0) return null;
 
   return (
@@ -46,7 +48,7 @@ export const TrendingSearchChips: React.FC<TrendingSearchChipsProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingTop: 18,

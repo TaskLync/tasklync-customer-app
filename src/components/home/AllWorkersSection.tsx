@@ -7,9 +7,9 @@ import { WorkerListRow, WorkerListRowSkeleton } from '../worker/WorkerListRow';
 import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
 import { useInfiniteWorkers } from '../../hooks/useInfiniteWorkers';
 import { WorkerNearby } from '../../types/worker.types';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { layout } from '../../design/spacing';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const INITIAL_VISIBLE_COUNT = 6;
@@ -22,6 +22,8 @@ interface AllWorkersSectionProps {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export const AllWorkersSection: React.FC<AllWorkersSectionProps> = ({ category }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   const workerParams = useMemo(() => {
@@ -138,7 +140,7 @@ export const AllWorkersSection: React.FC<AllWorkersSectionProps> = ({ category }
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   section: {
     marginBottom: 24,
   },

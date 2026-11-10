@@ -12,10 +12,12 @@ import { useLocation } from '../../hooks/useLocation';
 import { useLocationStore } from '../../store/location.store';
 import { useAddresses } from '../../hooks/useAddresses';
 import { SkeletonGroup, SkeletonText } from '../ui/Skeleton';
-import { colors, palette } from '../../design/colors';
 import { fontFamily } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const HomeHeader = () => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const authUser = useAuthStore((state) => state.user);
   const { user: profileUser } = useCurrentUser();
@@ -179,7 +181,7 @@ export const HomeHeader = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingVertical: 6,

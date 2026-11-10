@@ -1,5 +1,5 @@
 import { BookingStatus } from '../types/booking.types';
-import { colors, palette } from '../design/colors';
+import type { AppTheme } from '../theme/useAppTheme';
 import { 
   Clock, 
   CheckCircle2, 
@@ -17,7 +17,8 @@ export interface BookingStatusConfig {
   label: string;
 }
 
-export const bookingStatusMap: Record<BookingStatus, BookingStatusConfig> = {
+/** Status chip styling, resolved against the active theme: `const map = useThemedStyles(createBookingStatusMap)`. */
+export const createBookingStatusMap = ({ colors, palette }: AppTheme): Record<BookingStatus, BookingStatusConfig> => ({
   PENDING: {
     color: palette.amber500,
     bg: palette.amber50,
@@ -95,4 +96,4 @@ export const bookingStatusMap: Record<BookingStatus, BookingStatusConfig> = {
     icon: XCircle,
     label: 'Cancelled',
   },
-};
+});

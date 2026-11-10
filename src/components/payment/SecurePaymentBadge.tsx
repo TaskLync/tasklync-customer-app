@@ -1,9 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Lock, ShieldCheck } from 'lucide-react-native';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const SecurePaymentBadge: React.FC = () => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.badgeRow}>
@@ -19,7 +22,7 @@ export const SecurePaymentBadge: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, Alert, Share, Pressable } from 'react-native';
+import { StyleSheet, View, Text, Share, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -11,6 +10,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useWorkerProfile } from '@hooks/useWorkerProfile';
 import { useWorkerReviews } from '@hooks/useWorkerReviews';
 import { useWorkerPortfolio } from '@hooks/useWorkerPortfolio';
+import { useWorkerOffers } from '@hooks/useWorkerOffers';
+import { WorkerOffersSection } from '@components/offers/WorkerOffersSection';
 import { WorkerProfileHeader } from '@components/worker/WorkerProfileHeader';
 import { WorkerCompactHeader } from '@components/worker/WorkerCompactHeader';
 import { WorkerAvailabilityCard } from '@components/worker/WorkerAvailabilityCard';
@@ -43,9 +44,15 @@ import {
   SkeletonText,
 } from '@components/ui/Skeleton';
 
-import { colors } from '@design/colors';
 import { typography } from '@design/typography';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+import { showAlert } from '../../src/components/feedback/AppAlert';
+import { useBookNow } from '../../src/hooks/useBookNow';
+import { BookNowServiceSheet } from '../../src/components/worker/BookNowServiceSheet';
+import { WorkerConflictModal } from '../../src/components/cart/WorkerConflictModal';
+import { useCartStore } from '../../src/store/cart.store';
 
 // Spacing system — sections are separated by whitespace, not divider lines.
 //   20  screen gutter
@@ -58,6 +65,8 @@ const SECTION_GAP = 32;
 const FOOTER_BREATHING_ROOM = 24;
 
 export default function WorkerProfileScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
@@ -82,6 +91,9 @@ export default function WorkerProfileScreen() {
     isLoading: isReviewsLoading,
   } = useWorkerReviews(id || '');
   const { images: portfolioImages } = useWorkerPortfolio(id || '');
+  const { offers: workerOffers, isLoading: isOffersLoading } = useWorkerOffers(id || '');
+  const bookNow = useBookNow(worker, services);
+  const cartWorkerName = useCartStore((s) => s.worker?.name);
 
   const hasActiveBooking = Boolean(
     getPersistedBookings().find(
@@ -125,7 +137,7 @@ export default function WorkerProfileScreen() {
 
   const handleReport = () => {
     setOptionsVisible(false);
-    Alert.alert('Report Worker', 'Thank you for reporting. Our safety team will review this profile immediately.');
+    showAlert('Report Worker', 'Thank you for reporting. Our safety team will review this profile immediately.');
   };
 
   const handleBlock = () => {
@@ -148,16 +160,15 @@ export default function WorkerProfileScreen() {
         },
       } as any);
     } else {
-      Alert.alert(
+      showAlert(
         'Direct Chat',
         `Direct chat with ${worker?.name || 'this worker'} is enabled once you book a service.`
       );
     }
   };
 
-  const handleBookNow = () => {
-    Alert.alert('Book Now', `Proceed to checkout with ${worker?.name || 'worker'}?`);
-  };
+  // Book Now enters the existing booking flow (cart -> schedule -> address -> summary -> payment).
+  const handleBookNow = bookNow.start;
 
   const handleRatingPress = () => {
     router.push(`/worker/${id}/reviews`);
@@ -166,7 +177,7 @@ export default function WorkerProfileScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer} edges={['top', 'left', 'right']}>
-        <StatusBar style="dark" />
+        <ThemedStatusBar />
         {/* Real back button: the user can always leave while the profile loads. */}
         <View style={styles.loadingNav}>
           <Pressable
@@ -225,7 +236,7 @@ export default function WorkerProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar style="dark" />
+      <ThemedStatusBar />
       {/* Sticky Compact Header (Visible past scroll offset) */}
       <WorkerCompactHeader
         worker={worker}
@@ -266,6 +277,14 @@ export default function WorkerProfileScreen() {
 
           {/* Each section owns its top spacing and renders nothing when empty,
               so missing data never leaves an orphaned gap. */}
+          {/* Automatic offers: hidden entirely when there are none. Edge to edge so the cards scroll under the gutter. */}
+          <WorkerOffersSection
+            offers={workerOffers}
+            isLoading={isOffersLoading}
+            gutter={SCREEN_PADDING}
+            style={[styles.section, styles.fullBleed]}
+          />
+
           <WorkerBio bio={worker.bio} style={styles.section} />
 
           <WorkerSkillList skills={skills} style={styles.section} />
@@ -365,6 +384,24 @@ export default function WorkerProfileScreen() {
         onChat={handleChat}
         onBookNow={handleBookNow}
         isWorkerAvailable={isAvailable}
+        isStarting={bookNow.isStarting}
+        notice={bookNow.notice}
+      />
+
+      <BookNowServiceSheet
+        visible={bookNow.chooser.visible}
+        workerName={worker.name}
+        services={bookNow.chooser.services}
+        onConfirm={bookNow.chooser.onConfirm}
+        onClose={bookNow.chooser.onClose}
+      />
+
+      <WorkerConflictModal
+        visible={bookNow.conflict.visible}
+        onCancel={bookNow.conflict.onCancel}
+        onReplace={bookNow.conflict.onReplace}
+        currentWorkerName={cartWorkerName}
+        incomingWorkerName={worker.name}
       />
 
       {/* Options Actions Sheet Menu */}
@@ -402,7 +439,7 @@ export default function WorkerProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',

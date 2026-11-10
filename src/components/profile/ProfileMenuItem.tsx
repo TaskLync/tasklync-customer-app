@@ -18,7 +18,9 @@ import {
   UserX,
 } from 'lucide-react-native';
 import { ProfileMenuItemConfig } from '../../types/user.types';
-import { colors, fontFamily, radius } from '../../design';
+import { fontFamily, radius } from '../../design';
+import type { AppTheme } from '../../theme/useAppTheme';
+import { useAppTheme, useThemedStyles } from '../../theme/useAppTheme';
 
 export interface ProfileMenuItemProps {
   item: ProfileMenuItemConfig;
@@ -26,7 +28,7 @@ export interface ProfileMenuItemProps {
   isLast?: boolean;
 }
 
-const renderIcon = (iconName: string, isDanger: boolean) => {
+const renderIcon = (iconName: string, isDanger: boolean, colors: AppTheme['colors']) => {
   const iconColor = isDanger ? colors.textDanger : colors.primaryDark;
   const iconSize = 19;
 
@@ -74,6 +76,8 @@ export const ProfileMenuItem: React.FC<ProfileMenuItemProps> = ({
   item,
   onPress,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const isDanger = item.tone === 'danger';
 
   return (
@@ -86,7 +90,7 @@ export const ProfileMenuItem: React.FC<ProfileMenuItemProps> = ({
     >
       {/* Icon Pill */}
       <View style={[styles.iconContainer, isDanger && styles.iconContainerDanger]}>
-        {renderIcon(item.icon, isDanger)}
+        {renderIcon(item.icon, isDanger, colors)}
       </View>
 
       {/* Label & Subtitle Text Col */}
@@ -110,7 +114,7 @@ export const ProfileMenuItem: React.FC<ProfileMenuItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,10 +1,9 @@
-import { View, StyleSheet, StatusBar } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useSharedValue } from 'react-native-reanimated';
 
 // Design system
-import { palette } from '../../src/design';
 
 // Success Subcomponents
 import { SuccessCelebration } from '../../src/components/booking/success/SuccessCelebration';
@@ -15,8 +14,11 @@ import {
 } from '../../src/components/booking/success/SuccessSubtitle';
 import { SuccessCTAGroup } from '../../src/components/booking/success/SuccessCTAGroup';
 import { Reveal } from '../../src/components/booking/success/Reveal';
+import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 export default function SuccessScreen() {
+  const styles = useThemedStyles(createStyles);
   const params = useLocalSearchParams<{ bookingId?: string }>();
   const bookingId = params.bookingId || '';
 
@@ -25,7 +27,7 @@ export default function SuccessScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={palette.white} />
+      <ThemedStatusBar />
       <View style={styles.content}>
         {/* 1. Progress line → success circle + drawn checkmark */}
         <SuccessCelebration reveal={reveal} />
@@ -54,7 +56,7 @@ export default function SuccessScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: palette.white,

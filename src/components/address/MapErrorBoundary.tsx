@@ -1,7 +1,8 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MapPinOff, RefreshCw, Edit3 } from 'lucide-react-native';
-import { colors, palette, fontFamily, fontSize, radius } from '../../design';
+import { fontFamily, fontSize, radius } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface Props {
   children: ReactNode;
@@ -39,40 +40,7 @@ export class MapErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <View style={styles.fallbackContainer}>
-          <View style={styles.iconCircle}>
-            <MapPinOff size={32} color={palette.gray500} strokeWidth={2} />
-          </View>
-
-          <Text style={styles.title}>Map Preview Unavailable</Text>
-          <Text style={styles.description}>
-            Google Play Services or location preview could not be loaded on this device. You can still set your address manually.
-          </Text>
-
-          <View style={styles.actionsRow}>
-            <Pressable
-              onPress={this.handleRetry}
-              style={styles.retryButton}
-              accessibilityRole="button"
-              accessibilityLabel="Retry loading map"
-            >
-              <RefreshCw size={16} color={colors.textPrimary} />
-              <Text style={styles.retryText}>Retry Map</Text>
-            </Pressable>
-
-            {this.props.onManualAddressPress && (
-              <Pressable
-                onPress={this.props.onManualAddressPress}
-                style={styles.manualButton}
-                accessibilityRole="button"
-                accessibilityLabel="Enter address manually"
-              >
-                <Edit3 size={16} color={palette.white} />
-                <Text style={styles.manualText}>Enter Manually</Text>
-              </Pressable>
-            )}
-          </View>
-        </View>
+        <MapFallback onRetry={this.handleRetry} onManualAddressPress={this.props.onManualAddressPress} />
       );
     }
 
@@ -80,10 +48,58 @@ export class MapErrorBoundary extends Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
+/** Function component so the fallback can read the active theme (class components cannot use hooks). */
+const MapFallback = ({
+  onRetry,
+  onManualAddressPress,
+}: {
+  onRetry: () => void;
+  onManualAddressPress: (() => void) | undefined;
+}) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+  return (
+  <View style={styles.fallbackContainer}>
+    <View style={styles.iconCircle}>
+      <MapPinOff size={32} color={palette.gray500} strokeWidth={2} />
+    </View>
+
+    <Text style={styles.title}>Map Preview Unavailable</Text>
+    <Text style={styles.description}>
+      Google Play Services or location preview could not be loaded on this device. You can still set your address manually.
+    </Text>
+
+    <View style={styles.actionsRow}>
+      <Pressable
+        onPress={onRetry}
+        style={styles.retryButton}
+        accessibilityRole="button"
+        accessibilityLabel="Retry loading map"
+      >
+        <RefreshCw size={16} color={colors.textPrimary} />
+        <Text style={styles.retryText}>Retry Map</Text>
+      </Pressable>
+
+      {onManualAddressPress && (
+        <Pressable
+          onPress={onManualAddressPress}
+          style={styles.manualButton}
+          accessibilityRole="button"
+          accessibilityLabel="Enter address manually"
+        >
+          <Edit3 size={16} color={palette.pureWhite} />
+          <Text style={styles.manualText}>Enter Manually</Text>
+        </Pressable>
+      )}
+    </View>
+  </View>
+);
+};
+
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   fallbackContainer: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
@@ -96,7 +112,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 6,
@@ -149,6 +165,6 @@ const styles = StyleSheet.create({
   manualText: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 13,
-    color: palette.white,
+    color: palette.pureWhite,
   },
 });

@@ -1,4 +1,6 @@
 import { palette, colors } from './colors';
+import { withAlpha } from './colorUtils';
+import type { AppTheme } from './themes';
 import { radius } from './radius';
 
 /**
@@ -124,6 +126,20 @@ export const iconEnclosures = {
     },
   },
 };
+
+/** Enclosure fills resolved against a theme (the static `iconEnclosures.variants` above are the light values and the type source). */
+export const createEnclosureVariants = ({ colors, palette }: AppTheme): typeof iconEnclosures.variants => ({
+  naked: { backgroundColor: 'transparent', borderColor: 'transparent', borderWidth: 0 },
+  subtle: { backgroundColor: palette.iceGray, borderColor: 'transparent', borderWidth: 0 },
+  surface: { backgroundColor: palette.white, borderColor: palette.softGray, borderWidth: 1 },
+  tintedPrimary: { backgroundColor: withAlpha(palette.green500, 0.12), borderColor: withAlpha(palette.green500, 0.24), borderWidth: 1 },
+  tintedInfo: { backgroundColor: withAlpha(palette.blue500, 0.12), borderColor: withAlpha(palette.blue500, 0.24), borderWidth: 1 },
+  tintedWarning: { backgroundColor: withAlpha(palette.amber500, 0.12), borderColor: withAlpha(palette.amber500, 0.24), borderWidth: 1 },
+  tintedDanger: { backgroundColor: withAlpha(palette.red500, 0.12), borderColor: withAlpha(palette.red500, 0.24), borderWidth: 1 },
+  frosted: { backgroundColor: withAlpha(colors.bgCard, 0.85), borderColor: withAlpha(colors.bgCard, 0.6), borderWidth: 1 },
+  filledBrand: { backgroundColor: colors.primary, borderColor: 'transparent', borderWidth: 0 },
+  filledDark: { backgroundColor: colors.inverseSurface, borderColor: 'transparent', borderWidth: 0 },
+});
 
 export const iconography = {
   size: iconSize,

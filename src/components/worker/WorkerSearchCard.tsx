@@ -5,7 +5,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import Animated from 'react-native-reanimated';
 import { ShieldCheck, Zap } from 'lucide-react-native';
 import { WorkerNearby } from '../../types/worker.types';
-import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { usePressScale } from '../../hooks/usePressScale';
 import { pushOnce } from '../../utils/navigationGuard';
@@ -15,9 +14,9 @@ import { WorkerAvailabilityBadge } from './WorkerAvailabilityBadge';
 import { WorkerAvatar } from './WorkerAvatar';
 import { CompanyBadge } from '../company/CompanyBadge';
 import { Chip } from '../ui/Chip';
-import { useLocationStore } from '../../store/location.store';
-import { FAISALABAD_CENTER } from '../../config/serviceArea.config';
-import { formatDistance, resolveWorkerDistance } from '../../utils/locationUtils';
+import { useCustomerCoords } from '../../hooks/useCustomerCoords';
+import { resolveWorkerDistance } from '../../utils/locationUtils';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface WorkerSearchCardProps {
   worker: WorkerNearby;
@@ -26,6 +25,8 @@ interface WorkerSearchCardProps {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const WorkerSearchCard: React.FC<WorkerSearchCardProps> = ({ worker }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const queryClient = useQueryClient();
   const press = usePressScale(0.985);
@@ -81,20 +82,11 @@ export const WorkerSearchCard: React.FC<WorkerSearchCardProps> = ({ worker }) =>
   }, [categories]);
 
   // Resolve accurate distance between customer and worker
-  const distanceDisplay = useMemo(() => {
-    if (typeof worker.distanceMeters === 'number' && worker.distanceMeters > 0) {
-      return formatDistance(worker.distanceMeters);
-    }
-
-    const store = useLocationStore.getState();
-    const activeCoords =
-      store.locationMode === 'address' && store.selectedAddress
-        ? { lat: Number(store.selectedAddress.lat), lng: Number(store.selectedAddress.lng) }
-        : store.currentLocation ?? FAISALABAD_CENTER;
-
-    const { distanceLabel } = resolveWorkerDistance(worker, activeCoords);
-    return distanceLabel;
-  }, [worker.distanceMeters, worker.distanceLabel, worker.lat, worker.lng]);
+  const customerCoords = useCustomerCoords();
+  const distanceDisplay = useMemo(
+    () => resolveWorkerDistance(worker, customerCoords).distanceLabel,
+    [worker.id, worker.distanceMeters, worker.lat, worker.lng, customerCoords]
+  );
 
   const priceFormatted = useMemo(() => {
     const min = worker.minPrice ?? worker.startingPrice;
@@ -176,7 +168,7 @@ export const WorkerSearchCard: React.FC<WorkerSearchCardProps> = ({ worker }) =>
             <Text style={styles.reviewsText}> ({worker.totalReviews || 0})</Text>
           </View>
           <Text style={styles.separator}>·</Text>
-          <Text style={styles.distanceText}>{distanceDisplay}</Text>
+          {distanceDisplay ? <Text style={styles.distanceText}>{distanceDisplay}</Text> : null}
           {worker.responseTimeMins > 0 && (
             <>
               <Text style={styles.separator}>·</Text>
@@ -209,7 +201,7 @@ export const WorkerSearchCard: React.FC<WorkerSearchCardProps> = ({ worker }) =>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
     backgroundColor: colors.bgCard,

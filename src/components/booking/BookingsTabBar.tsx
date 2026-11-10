@@ -1,8 +1,8 @@
-import { colors, palette } from '../../design';
 import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, LayoutChangeEvent } from 'react-native';
 import { TabType } from '../../hooks/useBookingsList';
 import { BookingsTabIndicator } from './BookingsTabIndicator';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingsTabBarProps {
   activeTab: TabType;
@@ -16,6 +16,7 @@ const TABS: { id: TabType; label: string }[] = [
 ];
 
 export function BookingsTabBar({ activeTab, onTabChange }: BookingsTabBarProps) {
+  const styles = useThemedStyles(createStyles);
   const [tabWidth, setTabWidth] = useState(0);
 
   const handleLayout = (e: LayoutChangeEvent) => {
@@ -46,11 +47,11 @@ export function BookingsTabBar({ activeTab, onTabChange }: BookingsTabBarProps) 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
     backgroundColor: colors.bgCard,
     position: 'relative',
   },
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   tabLabelActive: {
     fontFamily: 'PlusJakartaSans-SemiBold',

@@ -3,13 +3,17 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MapPin, Navigation } from 'lucide-react-native';
 import { BookingAddress } from '../../store/bookingDraft.store';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { withAlpha } from '../../design/colorUtils';
 
 export interface MiniMapPreviewProps {
   selectedAddress: BookingAddress | null;
 }
 
 export const MiniMapPreview: React.FC<MiniMapPreviewProps> = ({ selectedAddress }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   const handlePress = () => {
@@ -39,7 +43,7 @@ export const MiniMapPreview: React.FC<MiniMapPreviewProps> = ({ selectedAddress 
           <View style={styles.pinWrapper}>
             <View style={styles.pinPulse} />
             <View style={styles.pinCircle}>
-              <MapPin size={18} color={palette.white} fill={colors.primary} />
+              <MapPin size={18} color={palette.pureWhite} fill={colors.primary} />
             </View>
           </View>
         </View>
@@ -65,7 +69,7 @@ export const MiniMapPreview: React.FC<MiniMapPreviewProps> = ({ selectedAddress 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     borderRadius: 18,
     overflow: 'hidden',
@@ -73,7 +77,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.gray100,
     backgroundColor: palette.white,
-    shadowColor: palette.gray900,
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 8,
@@ -85,7 +89,7 @@ const styles = StyleSheet.create({
   },
   mapBackground: {
     flex: 1,
-    backgroundColor: '#E5E9EC',
+    backgroundColor: palette.gray200,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -124,7 +128,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: palette.gray900,
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -135,7 +139,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    backgroundColor: withAlpha(colors.bgCard, 0.94),
     paddingHorizontal: 14,
     paddingVertical: 8,
     flexDirection: 'row',

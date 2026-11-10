@@ -5,8 +5,10 @@ import { Section } from '../layout/Section';
 import { ServiceListItem } from '../service/ServiceListItem';
 import { SkeletonServiceListItem } from '../ui/Skeleton';
 import { usePopularServices } from '../../hooks/usePopularServices';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const PopularServicesSection = () => {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { data: services, isLoading, error } = usePopularServices();
 
@@ -42,7 +44,7 @@ export const PopularServicesSection = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 10,
     flexDirection: 'row',
@@ -55,7 +57,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 13,
-    color: '#94A3B8',
+    color: colors.textMuted,
     textAlign: 'center',
     paddingVertical: 12,
   },

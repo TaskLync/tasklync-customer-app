@@ -20,10 +20,13 @@ import { Screen } from '@components/layout/Screen';
 import { Text } from '@components/ui/Text';
 import { TextInput } from '@components/ui/Input/TextInput';
 import { Button } from '@components/ui/Button';
-import { colors, fontFamily, palette } from '@design/index';
+import { fontFamily } from '@design/index';
 import { useUpdateName } from '@hooks/useAuth';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 
 export default function NameScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [name, setName] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const { updateName, isLoading, error } = useUpdateName();
@@ -110,7 +113,7 @@ export default function NameScreen() {
     : 20;
 
   return (
-    <Screen bg={colors.bgCard} statusBarStyle="dark-content" edges={['top', 'left', 'right']}>
+    <Screen bg={colors.bgCard} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior="padding"
@@ -185,7 +188,7 @@ export default function NameScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   keyboardAvoid: {
     flex: 1,
   },

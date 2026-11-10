@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { User } from 'lucide-react-native';
 import { BlockedWorker } from '../../types/moderation.types';
 import { UnblockConfirmPopover } from './UnblockConfirmPopover';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface BlockedWorkerRowProps {
   worker: BlockedWorker;
@@ -30,6 +31,8 @@ export const BlockedWorkerRow: React.FC<BlockedWorkerRowProps> = ({
   onUnblock,
   isUnblocking = false,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [popoverVisible, setPopoverVisible] = useState<boolean>(false);
 
   const formattedBlockedDate = formatDate(worker.blocked_at);
@@ -96,7 +99,7 @@ export const BlockedWorkerRow: React.FC<BlockedWorkerRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     height: 68,
     flexDirection: 'row',

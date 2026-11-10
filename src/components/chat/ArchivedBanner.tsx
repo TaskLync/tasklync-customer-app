@@ -1,8 +1,8 @@
-import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Lock } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ArchivedBannerProps {
   status?: string | undefined;
@@ -22,6 +22,8 @@ export const ArchivedBanner = React.memo(function ArchivedBanner({
   status,
   message,
 }: ArchivedBannerProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   const getNotice = () => {
@@ -54,7 +56,7 @@ export const ArchivedBanner = React.memo(function ArchivedBanner({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   wrapper: {
     backgroundColor: colors.bgSubtle,
     borderTopWidth: 1,

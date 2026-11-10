@@ -1,13 +1,16 @@
 import React from 'react';
-import { StyleSheet, View, Text, Pressable, ViewStyle, Alert } from 'react-native';
+import { StyleSheet, View, Text, Pressable, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ServicePriceTag } from '../service/ServicePriceTag';
 import { AddToCartButton } from '../cart/AddToCartButton';
 import { Button } from '../ui/Button/Button';
 import { useCartStore } from '../../store/cart.store';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { WorkerServiceOffering } from '../../types/worker.types';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
+import { WorkerConflictModal } from '../cart/WorkerConflictModal';
+import { useRowAddToCart } from '../../hooks/useRowAddToCart';
 
 /** Horizontal inset of the row surface; the parent cancels it so text aligns with section titles. */
 export const SERVICE_ROW_INSET = 12;
@@ -41,20 +44,26 @@ export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
   workerVerified,
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const cartServiceId = service.serviceId || service.id;
   // Same key AddToCartButton uses, so the row tint always matches the stepper state.
   const isAdded = useCartStore((s) => s.items.some((i) => i.serviceId === cartServiceId));
 
-  const handleRowPress = () => {
-    router.push({
-      pathname: `/service/${service.id}`,
-      params: { workerId },
-    } as any);
-  };
+  const rowCart = useRowAddToCart({
+    serviceId: cartServiceId,
+    serviceName: service.serviceName,
+    price: service.customPrice,
+    workerId,
+    workerName,
+    workerAvatar,
+    workerRating,
+    workerCategory,
+    isVerified: workerVerified,
+  });
 
   const handleQuotePress = () => {
-    Alert.alert(
+    showAlert(
       'Get Quote',
       `Would you like to chat with ${workerName || 'the provider'} to get a custom quote for ${service.serviceName}?`,
       [
@@ -71,7 +80,7 @@ export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
 
   return (
     <Pressable
-      onPress={handleRowPress}
+      onPress={isQuote ? handleQuotePress : rowCart.addFromRow}
       style={({ pressed }) => [
         styles.container,
         isAdded && styles.containerAdded,
@@ -80,6 +89,7 @@ export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
       ]}
       accessibilityRole="button"
       accessibilityLabel={`${service.serviceName}${isAdded ? ', added' : ''}`}
+      accessibilityHint={isQuote ? 'Ask for a custom quote' : isAdded ? undefined : 'Adds this service to your cart'}
     >
       <View style={styles.leftGroup}>
         <Text style={styles.nameText} numberOfLines={2}>
@@ -126,11 +136,18 @@ export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
           size="sm"
         />
       )}
+
+      <WorkerConflictModal
+        visible={rowCart.conflict.visible}
+        onCancel={rowCart.conflict.onCancel}
+        onReplace={rowCart.conflict.onReplace}
+        incomingWorkerName={workerName}
+      />
     </Pressable>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

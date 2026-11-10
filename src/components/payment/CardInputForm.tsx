@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { CreditCard, Calendar, Lock } from 'lucide-react-native';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface CardInputFormProps {
   onCardChange?: (complete: boolean, details: any) => void;
 }
 
 export const CardInputForm: React.FC<CardInputFormProps> = ({ onCardChange }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [cardNumber, setCardNumber] = useState<string>('');
   const [expiry, setExpiry] = useState<string>('');
   const [cvc, setCvc] = useState<string>('');
@@ -120,7 +123,7 @@ export const CardInputForm: React.FC<CardInputFormProps> = ({ onCardChange }) =>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: palette.white,
     borderRadius: 16,

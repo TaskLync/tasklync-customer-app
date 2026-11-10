@@ -41,7 +41,7 @@ import {
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
 import { BottomSheetHandle } from './BottomSheetHandle';
-import { colors } from '../../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -114,6 +114,7 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
     },
     ref
   ) => {
+    const styles = useThemedStyles(createStyles);
     const [isVisible, setIsVisible] = useState(Boolean(visible));
     const [measuredContentHeight, setMeasuredContentHeight] = useState(0);
     const [currentSnapIndex, setCurrentSnapIndex] = useState(defaultSnapIndex);
@@ -851,7 +852,7 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
 
 BottomSheet.displayName = 'BottomSheet';
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   modalRoot: {
     flex: 1,
   },
@@ -871,7 +872,7 @@ const styles = StyleSheet.create({
     width: '100%',
     // Lets the fixed-height sheet shrink to fit above the keyboard.
     flexShrink: 1,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bottomSheetBackground,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',

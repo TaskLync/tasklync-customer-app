@@ -1,11 +1,12 @@
 import { BookingStatus } from '../types/booking.types';
-import { colors, palette } from '../design/colors';
+import { getAppTheme } from '../theme/useAppTheme';
 
 /**
  * Single source of truth for booking status styling & labels
  */
 
 export function statusToColor(status?: BookingStatus | string): string {
+  const { colors, palette } = getAppTheme();
   switch (status) {
     case 'PENDING':
       return colors.warning; // Amber
@@ -31,6 +32,7 @@ export function statusToColor(status?: BookingStatus | string): string {
 }
 
 export function statusToBgColor(status?: BookingStatus | string): string {
+  const { colors, palette } = getAppTheme();
   switch (status) {
     case 'PENDING':
       return colors.warningLight; // Amber 100
@@ -56,6 +58,7 @@ export function statusToBgColor(status?: BookingStatus | string): string {
 }
 
 export function statusToTextColor(status?: BookingStatus | string): string {
+  const { colors, palette } = getAppTheme();
   switch (status) {
     case 'PENDING':
       return colors.textWarning;

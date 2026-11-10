@@ -1,19 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Modal,
-  TextInput,
-  Alert,
-  StatusBar,
-  Linking,
-  Platform,
-  KeyboardAvoidingView,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Linking, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -51,8 +37,12 @@ import { BookingReviewPrompt } from '../../src/components/review';
 import { formatCategoryName } from '../../src/utils/formatters';
 import { CANONICAL_FALLBACK_UUIDS } from '../../src/utils/uuid';
 import { isGenericWorkerName } from '../../src/services/api/booking.api';
-import { companyTokens } from '../../src/theme/companyTokens';
-import { colors, palette } from '../../src/design';
+import { PriceSummaryRows } from '../../src/components/booking/BookingPriceSummary';
+import { DiscountSummaryRow } from '../../src/components/offers/DiscountSummaryRow';
+import { bookingItemDiscount, buildPriceSummaryRows, getBookingSavings } from '../../src/utils/offers';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+import { showAlert } from '../../src/components/feedback/AppAlert';
 
 // 4 simple milestone steps like Uber / Foodpanda
 const TRACK_STEPS = [
@@ -63,6 +53,8 @@ const TRACK_STEPS = [
 ];
 
 export default function BookingDetailsScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -129,7 +121,7 @@ export default function BookingDetailsScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+        <ThemedStatusBar />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primaryDark} />
           <Text style={styles.loadingText}>Loading booking details...</Text>
@@ -141,7 +133,7 @@ export default function BookingDetailsScreen() {
   if (!booking) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+        <ThemedStatusBar />
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity
@@ -312,7 +304,7 @@ export default function BookingDetailsScreen() {
   // Confirm completion
   const handleConfirmJob = () => {
     if (isConfirming || confirmInFlight.current) return;
-    Alert.alert(
+    showAlert(
       'Confirm Completion',
       `Did the professional finish the job? Please confirm that you paid Rs. ${booking.estimated_total.toLocaleString()} in cash.`,
       [
@@ -326,13 +318,13 @@ export default function BookingDetailsScreen() {
               await confirmCompletion(booking.id);
               // Status only flips once the refetched backend state says so.
               await refetch();
-              Alert.alert('Success', 'Booking completed. Thank you!');
+              showAlert('Success', 'Booking completed. Thank you!');
             } catch (err: any) {
               const errorMessage =
                 err?.message ||
                 err?.response?.data?.error?.message ||
                 'Unable to confirm completion right now. Please try again.';
-              Alert.alert('Confirmation Error', errorMessage);
+              showAlert('Confirmation Error', errorMessage);
               refetch();
             } finally {
               confirmInFlight.current = false;
@@ -346,7 +338,7 @@ export default function BookingDetailsScreen() {
   // Dispute submission
   const handleOpenDispute = async () => {
     if (disputeReason.trim().length < 10) {
-      Alert.alert('Required', 'Please describe the issue (minimum 10 characters).');
+      showAlert('Required', 'Please describe the issue (minimum 10 characters).');
       return;
     }
     try {
@@ -355,10 +347,10 @@ export default function BookingDetailsScreen() {
       setDisputeModalVisible(false);
       setDisputeReason('');
       setEvidenceUrl('');
-      Alert.alert('Report Received', 'Our support team will contact you shortly.');
+      showAlert('Report Received', 'Our support team will contact you shortly.');
       refetch();
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to submit report.');
+      showAlert('Error', err?.message || 'Failed to submit report.');
     }
   };
 
@@ -367,7 +359,7 @@ export default function BookingDetailsScreen() {
     const phone = displayPhone || trackData?.worker_phone || booking?.worker_phone;
     if (phone) {
       Linking.openURL(`tel:${phone}`).catch(() => {
-        Alert.alert('Error', 'Unable to place call.');
+        showAlert('Error', 'Unable to place call.');
       });
     } else {
       router.push({
@@ -536,7 +528,7 @@ export default function BookingDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+      <ThemedStatusBar />
 
       {/* 1. Top Lightweight Navigation Header */}
       <View style={styles.header}>
@@ -672,7 +664,7 @@ export default function BookingDetailsScreen() {
                           ]}
                         >
                           {isDone ? (
-                            <Check size={11} color={colors.white} strokeWidth={3} />
+                            <Check size={11} color={colors.pureWhite} strokeWidth={3} />
                           ) : isCurrent ? (
                             <View style={styles.nodeCurrentInner} />
                           ) : (
@@ -798,7 +790,7 @@ export default function BookingDetailsScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Call professional"
                     >
-                      <Phone size={17} color={colors.white} />
+                      <Phone size={17} color={colors.pureWhite} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -842,26 +834,49 @@ export default function BookingDetailsScreen() {
           <View style={styles.card}>
             <Text style={styles.sectionHeading}>Payment Summary</Text>
 
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Base Service Rate</Text>
-              <Text style={styles.billValue}>Rs. {booking.base_price.toLocaleString()}</Text>
-            </View>
+            {getBookingSavings(booking).hasDiscount ? (
+              <>
+                {/* Discounted booking: figures come from the booking's own snapshot (estimated_total is already discounted). */}
+                <DiscountSummaryRow booking={booking} variant="source" />
+                {/* Original price, the exact coupon / offer, its value and amount, fee: all from the stored snapshot. */}
+                <PriceSummaryRows
+                  compact
+                  rows={buildPriceSummaryRows({
+                    originalAmount: booking.subtotal_before_discount ?? booking.base_price,
+                    baseAmount: booking.base_price,
+                    platformFee: booking.platform_fee,
+                    discount: {
+                      name: getBookingSavings(booking).rowLabel,
+                      valueLabel: getBookingSavings(booking).valueLabel,
+                      amount: bookingItemDiscount(booking) || getBookingSavings(booking).amount,
+                    },
+                  })}
+                />
+              </>
+            ) : (
+              <>
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Base Service Rate</Text>
+                  <Text style={styles.billValue}>Rs. {booking.base_price.toLocaleString()}</Text>
+                </View>
 
-            {booking.urgency_multiplier > 1.0 && (
-              <View style={styles.billRow}>
-                <Text style={styles.billLabel}>
-                  Urgency Surge ({booking.urgency_multiplier}x)
-                </Text>
-                <Text style={[styles.billValue, { color: colors.warningMedium }]}>
-                  +Rs. {(booking.base_price * (booking.urgency_multiplier - 1)).toLocaleString()}
-                </Text>
-              </View>
+                {booking.urgency_multiplier > 1.0 && (
+                  <View style={styles.billRow}>
+                    <Text style={styles.billLabel}>
+                      Urgency Surge ({booking.urgency_multiplier}x)
+                    </Text>
+                    <Text style={[styles.billValue, { color: colors.warningMedium }]}>
+                      +Rs. {(booking.base_price * (booking.urgency_multiplier - 1)).toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Platform Fee</Text>
+                  <Text style={styles.billValue}>Rs. {booking.platform_fee.toLocaleString()}</Text>
+                </View>
+              </>
             )}
-
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Platform Fee (15%)</Text>
-              <Text style={styles.billValue}>Rs. {booking.platform_fee.toLocaleString()}</Text>
-            </View>
 
             <View style={styles.billDivider} />
 
@@ -914,7 +929,7 @@ export default function BookingDetailsScreen() {
                   accessibilityState={{ disabled: isConfirming, busy: isConfirming }}
                 >
                   {isConfirming ? (
-                    <ActivityIndicator size="small" color={colors.white} />
+                    <ActivityIndicator size="small" color={colors.pureWhite} />
                   ) : (
                     <Text style={styles.primaryBtnText}>Confirm Completion</Text>
                   )}
@@ -956,7 +971,7 @@ export default function BookingDetailsScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="View Receipt"
                 >
-                  <FileText size={16} color={colors.white} style={{ marginRight: 6 }} />
+                  <FileText size={16} color={colors.pureWhite} style={{ marginRight: 6 }} />
                   <Text style={styles.primaryBtnText}>View Receipt</Text>
                 </TouchableOpacity>
 
@@ -1018,7 +1033,7 @@ export default function BookingDetailsScreen() {
                 <TextInput
                   style={styles.modalInput}
                   placeholder="Reason (at least 10 characters)..."
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholder}
                   value={disputeReason}
                   onChangeText={setDisputeReason}
                   multiline
@@ -1039,7 +1054,7 @@ export default function BookingDetailsScreen() {
                     disabled={isSubmittingDispute}
                   >
                     {isSubmittingDispute ? (
-                      <ActivityIndicator size="small" color={colors.white} />
+                      <ActivityIndicator size="small" color={colors.pureWhite} />
                     ) : (
                       <Text style={styles.modalSubmitText}>Submit</Text>
                     )}
@@ -1054,7 +1069,7 @@ export default function BookingDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.bgCard,
@@ -1584,7 +1599,7 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 14,
-    color: colors.white,
+    color: colors.pureWhite,
   },
   outlineBtn: {
     flex: 1,
@@ -1634,7 +1649,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalCard: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.modalBackground,
     borderRadius: 16,
     padding: 20,
   },
@@ -1685,7 +1700,7 @@ const styles = StyleSheet.create({
   modalSubmitText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 13,
-    color: colors.white,
+    color: colors.pureWhite,
   },
 
   // Center / Loading

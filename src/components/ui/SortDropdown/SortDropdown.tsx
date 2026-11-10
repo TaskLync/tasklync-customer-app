@@ -6,10 +6,10 @@ import {
   ViewStyle,
 } from 'react-native';
 import { ChevronDown, MapPin, Star, ArrowDownAZ } from 'lucide-react-native';
-import { colors } from '../../../design/colors';
 import { typography } from '../../../design/typography';
 import { ActionSheet, ActionItem } from '../../layout/ActionSheet/ActionSheet';
 import { SortOption } from '../../../types/search.types';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 interface SortDropdownProps {
   currentSort: SortOption;
@@ -22,10 +22,14 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({
   onSortChange,
   style,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [isVisible, setIsVisible] = useState(false);
 
   const getSortLabel = (sort: SortOption): string => {
     switch (sort) {
+      case 'relevance':
+        return 'Recommended';
       case 'distance':
         return 'Distance';
       case 'rating':
@@ -35,7 +39,7 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({
       case 'price_high':
         return 'Highest Price';
       default:
-        return 'Distance';
+        return 'Recommended';
     }
   };
 
@@ -53,6 +57,11 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({
   };
 
   const actions: ActionItem[] = [
+    {
+      label: 'Recommended',
+      icon: Star,
+      onPress: () => handleSelectSort('relevance'),
+    },
     {
       label: 'Nearest first',
       icon: MapPin,
@@ -98,7 +107,7 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

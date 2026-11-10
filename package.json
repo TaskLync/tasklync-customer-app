@@ -71,7 +71,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node --experimental-strip-types --test __tests__/**/*.test.ts"
+    "test": "node --experimental-strip-types --import ./__tests__/support/register-ts-resolve.mjs --test __tests__/**/*.test.ts"
   },
   "private": true
 }

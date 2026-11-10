@@ -8,7 +8,8 @@ import {
   Text,
 } from 'react-native';
 import { Search, X, Edit3 } from 'lucide-react-native';
-import { colors, palette, fontFamily, radius, fontSize, shadows } from '../../design';
+import { fontFamily, radius, fontSize, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddressSearchInputProps {
   value: string;
@@ -27,6 +28,8 @@ export const AddressSearchInput: React.FC<AddressSearchInputProps> = ({
   onManualAddressPress,
   placeholder = 'Search area, street, or landmark...',
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const inputRef = useRef<TextInput | null>(null);
 
   const handleClear = () => {
@@ -104,7 +107,7 @@ export const AddressSearchInput: React.FC<AddressSearchInputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
   },

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Pencil, Trash2 } from 'lucide-react-native';
 import { Address } from '../../types/address.types';
-import { palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddressSwipeActionsProps {
   address: Address;
@@ -18,6 +19,8 @@ export const AddressSwipeActions: React.FC<AddressSwipeActionsProps> = ({
   onDelete,
   children,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const swipeableRef = useRef<Swipeable | null>(null);
 
   const handleEdit = () => {
@@ -56,7 +59,7 @@ export const AddressSwipeActions: React.FC<AddressSwipeActionsProps> = ({
           accessibilityRole="button"
           accessibilityLabel={`Edit ${address.label || 'address'}`}
         >
-          <Pencil size={18} color={palette.white} strokeWidth={2.4} />
+          <Pencil size={18} color={palette.pureWhite} strokeWidth={2.4} />
           <Text style={styles.actionText} maxFontSizeMultiplier={1.3}>
             Edit
           </Text>
@@ -69,7 +72,7 @@ export const AddressSwipeActions: React.FC<AddressSwipeActionsProps> = ({
           accessibilityRole="button"
           accessibilityLabel={`Delete ${address.label || 'address'}`}
         >
-          <Trash2 size={18} color={palette.white} strokeWidth={2.4} />
+          <Trash2 size={18} color={palette.pureWhite} strokeWidth={2.4} />
           <Text style={styles.actionText} maxFontSizeMultiplier={1.3}>
             Delete
           </Text>
@@ -93,7 +96,7 @@ export const AddressSwipeActions: React.FC<AddressSwipeActionsProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   wrapper: {
     marginBottom: 10,
   },
@@ -125,7 +128,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.medium,
     fontSize: 12,
     lineHeight: 16,
-    color: palette.white,
+    color: palette.pureWhite,
     marginTop: 3,
   },
 });

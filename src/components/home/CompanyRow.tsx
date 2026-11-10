@@ -5,13 +5,15 @@ import { Building2 } from 'lucide-react-native';
 import { CompanyCircleItem } from './CompanyCircleItem';
 import { useCompanies } from '../../hooks/useCompanies';
 import { WorkerNearby } from '../../types/worker.types';
-import { colors } from '../../design/colors';
-import { companyTokens } from '../../theme/companyTokens';
 import { Skeleton, SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const ITEM_GAP = 14;
 
 export const CompanyRow: React.FC = () => {
+  const { companyTokens } = useAppTheme();
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { companies, isLoading, isError, refetch } = useCompanies({ limit: 10 });
   const isNavigating = useRef(false);
@@ -163,7 +165,7 @@ export const CompanyRow: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create({
   sectionContainer: {
     width: '100%',
   },
@@ -209,21 +211,21 @@ const styles = StyleSheet.create({
   emptyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bgCard,
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     gap: 12,
   },
   emptyIconWrapper: {
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: colors.primaryTint,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: colors.primaryBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -269,9 +271,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: colors.primaryTint,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: colors.primaryBorder,
   },
   retryText: {
     fontFamily: 'PlusJakartaSans-SemiBold',

@@ -1,5 +1,5 @@
 import { PaymentStatus, PaymentMethodCode } from '../types/payment.types';
-import { colors, palette } from '../design/colors';
+import { getAppTheme } from '../theme/useAppTheme';
 
 /**
  * Maps backend Payment error codes according to CUSTOMER_APP_PAYMENT_APIS.md Section 5
@@ -59,6 +59,7 @@ export function getPaymentStatusLabel(status?: PaymentStatus | string): string {
  * Returns status color for UI badges
  */
 export function getPaymentStatusColor(status?: PaymentStatus | string): { color: string; bg: string } {
+  const { colors, palette } = getAppTheme();
   switch (status) {
     case 'PENDING':
       return { color: colors.warningMedium, bg: colors.warningLight };

@@ -2,9 +2,9 @@ import React from 'react';
 import { StyleSheet, Text, View, StyleProp, ViewStyle } from 'react-native';
 import { Clock } from 'lucide-react-native';
 import { fontFamily } from '../../design/typography';
-import { palette } from '../../design/colors';
 import { NETWORK_CONFIG } from '../../config/networkConfig';
 import { useStaleDataLabel } from '../../hooks/useStaleDataLabel';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface StaleDataBadgeProps {
   cachedAt?: number | Date | null;
@@ -25,6 +25,8 @@ const BADGE_HEIGHT = NETWORK_CONFIG.STALE_BADGE_HEIGHT; // 20px
  */
 export const StaleDataBadge: React.FC<StaleDataBadgeProps> = React.memo(
   ({ cachedAt, style, showIcon = true }) => {
+    const { palette } = useAppTheme();
+    const styles = useThemedStyles(createStyles);
     const { label, fullAccessibilityLabel, isStale } = useStaleDataLabel(cachedAt);
 
     if (!cachedAt || !label) {
@@ -54,13 +56,13 @@ export const StaleDataBadge: React.FC<StaleDataBadgeProps> = React.memo(
   }
 );
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   badge: {
     height: BADGE_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9', // palette.gray100
-    borderColor: '#E2E8F0', // palette.gray200
+    backgroundColor: palette.gray100,
+    borderColor: palette.gray200,
     borderWidth: 1,
     borderRadius: 4,
     paddingHorizontal: 6,

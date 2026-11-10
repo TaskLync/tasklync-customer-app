@@ -17,14 +17,17 @@ import { Screen } from '@components/layout/Screen';
 import { Text } from '@components/ui/Text';
 import { OTPInput } from '@components/ui/Input/OTPInput';
 import { IconButton } from '@components/ui/Button/IconButton';
-import { colors, fontFamily } from '@design/index';
+import { fontFamily } from '@design/index';
 import { useVerifyOtp, useResendOtp } from '@hooks/useAuth';
 import { useToast } from '@providers/ToastProvider';
 import { mapOtpVerificationError } from '@utils/authError';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 
 export type OTPState = 'idle' | 'verifying' | 'error' | 'success';
 
 export default function OTPScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { phone } = useLocalSearchParams<{ phone: string }>();
@@ -176,7 +179,7 @@ export default function OTPScreen() {
   }));
 
   return (
-    <Screen bg={colors.bgCard} statusBarStyle="dark-content" edges={['top', 'left', 'right']}>
+    <Screen bg={colors.bgCard} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior="padding"
@@ -281,7 +284,7 @@ export default function OTPScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   keyboardAvoid: {
     flex: 1,
   },

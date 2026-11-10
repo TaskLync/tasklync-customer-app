@@ -6,8 +6,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Clock, Check, CheckCheck, AlertCircle } from 'lucide-react-native';
-import { palette } from '../../design/colors';
 import { NETWORK_CONFIG } from '../../config/networkConfig';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
@@ -29,6 +29,7 @@ const ICON_SIZE = NETWORK_CONFIG.MESSAGE_STATUS_ICON_SIZE; // 12px
  */
 export const MessageStatusIcon: React.FC<MessageStatusIconProps> = React.memo(
   ({ status, size = ICON_SIZE, colorOverride }) => {
+    const { palette } = useAppTheme();
     const opacity = useSharedValue(1);
 
     useEffect(() => {

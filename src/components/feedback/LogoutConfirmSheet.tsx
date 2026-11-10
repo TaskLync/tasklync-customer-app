@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { LogOut } from 'lucide-react-native';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface LogoutConfirmSheetProps {
   visible: boolean;
@@ -53,6 +54,8 @@ export const LogoutConfirmSheet: React.FC<LogoutConfirmSheetProps> = ({
   onCancel,
   isLoading = false,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal
       visible={visible}
@@ -90,7 +93,7 @@ export const LogoutConfirmSheet: React.FC<LogoutConfirmSheetProps> = ({
               accessibilityLabel="Confirm Log Out"
             >
               {isLoading ? (
-                <ActivityIndicator size="small" color={palette.white} />
+                <ActivityIndicator size="small" color={palette.pureWhite} />
               ) : (
                 <Text style={styles.logoutBtnText}>Log Out</Text>
               )}
@@ -114,7 +117,7 @@ export const LogoutConfirmSheet: React.FC<LogoutConfirmSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
@@ -132,7 +135,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 340,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bottomSheetBackground,
     borderRadius: radius.xl,
     padding: spacing.xl,
     alignItems: 'center',
@@ -178,7 +181,7 @@ const styles = StyleSheet.create({
   logoutBtnText: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: fontSize.body2 + 1,
-    color: palette.white,
+    color: palette.pureWhite,
   },
   cancelBtn: {
     backgroundColor: palette.gray100,

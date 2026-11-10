@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ShieldAlert } from 'lucide-react-native';
-import { palette, fontFamily, fontSize, radius, spacing, colors } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface DisputeInfoBannerProps {
   title?: string;
@@ -20,6 +21,8 @@ export const DisputeInfoBanner: React.FC<DisputeInfoBannerProps> = ({
   title = "We're here to help protect your booking",
   subtitle = 'Disputes are reviewed by our Trust & Safety team within 24 hours. Your payment remains safely locked in escrow while we investigate.',
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.banner} accessibilityRole="alert">
       <View style={styles.iconCircle}>
@@ -34,7 +37,7 @@ export const DisputeInfoBanner: React.FC<DisputeInfoBannerProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -68,7 +71,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fontFamily.jakarta.regular,
     fontSize: fontSize.caption,
-    color: '#1E3A8A',
+    color: colors.infoDark,
     lineHeight: 18,
   },
 });

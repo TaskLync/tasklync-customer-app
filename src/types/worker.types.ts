@@ -1,3 +1,5 @@
+import type { SearchWorkerPromotion } from './offers.types';
+
 export type ProviderType = 'INDIVIDUAL' | 'COMPANY';
 
 export type WorkerAvailabilityStatus = 'AVAILABLE' | 'BUSY' | 'OFFLINE' | 'PAUSED' | 'INACTIVE' | 'UNAVAILABLE';
@@ -37,6 +39,8 @@ export interface WorkerNearby {
   companyVerified?: boolean | undefined;
   maxConcurrentJobs?: number | undefined;
   hasDistance?: boolean | undefined;
+  /** Best live automatic offer for this worker (search-service). Approximate percent; see OfferBadge. */
+  promotion?: SearchWorkerPromotion | null | undefined;
 
   // ── Company / Agency Fields ──
   providerType?: ProviderType | undefined;

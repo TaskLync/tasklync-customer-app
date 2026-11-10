@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, ViewStyle } from 'react-native';
 import { fontFamily } from '../../design/typography';
-import { colors } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface WorkerStatsProps {
   yearsExperience?: number | undefined;
@@ -24,6 +24,7 @@ export const WorkerStats: React.FC<WorkerStatsProps> = ({
   avgResponseMins,
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const stats: { label: string; value: string }[] = [];
 
   if (typeof totalJobs === 'number' && totalJobs >= 0) {
@@ -60,7 +61,7 @@ export const WorkerStats: React.FC<WorkerStatsProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

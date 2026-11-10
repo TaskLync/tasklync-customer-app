@@ -7,7 +7,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useBookingDraftStore } from '../../../store/bookingDraft.store';
-import { colors, palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface SuccessCTAGroupProps {
   bookingId: string;
@@ -16,6 +17,7 @@ export interface SuccessCTAGroupProps {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const SuccessCTAGroup: React.FC<SuccessCTAGroupProps> = ({ bookingId }) => {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const resetDraft = useBookingDraftStore((s) => s.resetDraft);
 
@@ -74,7 +76,7 @@ export const SuccessCTAGroup: React.FC<SuccessCTAGroupProps> = ({ bookingId }) =
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 24,
     paddingBottom: 20,
@@ -87,7 +89,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -97,7 +99,7 @@ const styles = StyleSheet.create({
   primaryText: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: 16,
-    color: palette.white,
+    color: palette.pureWhite,
   },
   secondaryLink: {
     height: 48,

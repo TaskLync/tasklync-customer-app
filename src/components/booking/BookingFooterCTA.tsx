@@ -6,7 +6,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface BookingFooterCTAProps {
   label: string;
@@ -27,6 +28,8 @@ export const BookingFooterCTA: React.FC<BookingFooterCTAProps> = ({
   onPress,
   accessibilityLabel,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const isInteractive = enabled && !loading;
   const scale = useSharedValue(1);
@@ -81,7 +84,7 @@ export const BookingFooterCTA: React.FC<BookingFooterCTAProps> = ({
           accessibilityLabel={accessibilityLabel || label}
         >
           {loading ? (
-            <ActivityIndicator size="small" color={palette.white} />
+            <ActivityIndicator size="small" color={palette.pureWhite} />
           ) : (
             <Text
               style={[
@@ -98,7 +101,7 @@ export const BookingFooterCTA: React.FC<BookingFooterCTAProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: 0,
@@ -147,7 +150,7 @@ const styles = StyleSheet.create({
   },
   buttonEnabled: {
     backgroundColor: colors.primaryDark,
-    shadowColor: colors.primaryDark,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.16,
     shadowRadius: 8,
@@ -161,7 +164,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   textEnabled: {
-    color: palette.white,
+    color: palette.pureWhite,
   },
   textDisabled: {
     color: palette.gray400,

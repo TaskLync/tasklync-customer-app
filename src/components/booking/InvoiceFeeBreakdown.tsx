@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, fontFamily, fontSize, spacing } from '../../design';
+import { fontFamily, fontSize, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface InvoiceFeeBreakdownProps {
   subtotal: number;
@@ -26,6 +27,7 @@ export const InvoiceFeeBreakdown: React.FC<InvoiceFeeBreakdownProps> = ({
   total,
   currency = 'PKR',
 }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       {/* Subtotal */}
@@ -80,7 +82,7 @@ export const InvoiceFeeBreakdown: React.FC<InvoiceFeeBreakdownProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     paddingVertical: spacing.md,
   },

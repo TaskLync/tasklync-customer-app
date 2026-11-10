@@ -7,12 +7,12 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { ShoppingBag, ArrowRight } from 'lucide-react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cart.store';
 import { useCartTotals } from '../../hooks/useCartTotals';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface FloatingCartBarProps {
   bottomOffset?: number;
@@ -23,11 +23,11 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export const FloatingCartBar: FC<FloatingCartBarProps> = ({
   bottomOffset,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
-  const pathname = usePathname();
   const insets = useSafeAreaInsets();
 
-  const hydrate = useCartStore((state) => state.hydrate);
   const worker = useCartStore((state) => state.worker);
   const { subtotal, itemCount } = useCartTotals();
 
@@ -36,24 +36,17 @@ export const FloatingCartBar: FC<FloatingCartBarProps> = ({
   const translateY = useSharedValue(10);
   const scale = useSharedValue(1);
 
-  // Hydrate cart session on mount
-  useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
   const hasItems = itemCount > 0;
-  // Don't render cart bar inside the cart screen or any booking funnel screens (/booking/*)
-  const isHiddenRoute = pathname.includes('/cart') || pathname.includes('/booking');
 
   useEffect(() => {
-    if (hasItems && !isHiddenRoute) {
+    if (hasItems) {
       opacity.value = withTiming(1, { duration: 150, easing: Easing.ease });
       translateY.value = withTiming(0, { duration: 150, easing: Easing.ease });
     } else {
       opacity.value = withTiming(0, { duration: 120, easing: Easing.ease });
       translateY.value = withTiming(10, { duration: 120, easing: Easing.ease });
     }
-  }, [hasItems, isHiddenRoute, opacity, translateY]);
+  }, [hasItems, opacity, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -63,7 +56,7 @@ export const FloatingCartBar: FC<FloatingCartBarProps> = ({
     ],
   }));
 
-  if (!hasItems || isHiddenRoute) {
+  if (!hasItems) {
     return null;
   }
 
@@ -125,7 +118,7 @@ export const FloatingCartBar: FC<FloatingCartBarProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   floatingWrapper: {
     position: 'absolute',
     left: 16,

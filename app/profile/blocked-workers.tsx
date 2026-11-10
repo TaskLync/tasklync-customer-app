@@ -1,13 +1,5 @@
 import { useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  FlatList,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ShieldCheck } from 'lucide-react-native';
@@ -17,9 +9,13 @@ import { BlockedWorkerRow } from '../../src/components/worker/BlockedWorkerRow';
 import { ToastUndo } from '../../src/components/ui/ToastUndo';
 import { BlockedWorker } from '../../src/types/moderation.types';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
-import { colors, palette, fontFamily, fontSize, spacing } from '../../src/design';
+import { fontFamily, fontSize, spacing } from '../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 export default function BlockedWorkersScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -51,7 +47,7 @@ export default function BlockedWorkersScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgApp} />
+      <ThemedStatusBar />
 
       {/* Screen Header */}
       <View style={styles.header}>
@@ -119,7 +115,7 @@ export default function BlockedWorkersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

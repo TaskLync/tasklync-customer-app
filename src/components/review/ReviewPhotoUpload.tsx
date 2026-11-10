@@ -9,8 +9,9 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Camera, Image as ImageIcon, Plus, X } from 'lucide-react-native';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
 import { ReviewImageModal } from './ReviewImageModal';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ReviewPhotoUploadProps {
   photos: string[];
@@ -29,6 +30,8 @@ export const ReviewPhotoUpload: React.FC<ReviewPhotoUploadProps> = ({
   onRemovePhoto,
   disabled = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [pickerModalVisible, setPickerModalVisible] = useState<boolean>(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
@@ -178,7 +181,7 @@ export const ReviewPhotoUpload: React.FC<ReviewPhotoUploadProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingVertical: 16,
   },

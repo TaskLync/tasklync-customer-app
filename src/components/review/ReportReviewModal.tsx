@@ -10,13 +10,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Flag } from 'lucide-react-native';
 import { ReportReason, REPORT_REASONS, ReportReviewPayload } from '../../types/review.types';
 import { reviewApi, extractReviewErrorMessage } from '../../services/api/review.api';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 export interface ReportReviewModalProps {
   visible: boolean;
@@ -40,6 +41,8 @@ export const ReportReviewModal: React.FC<ReportReviewModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [selectedReason, setSelectedReason] = useState<ReportReason>('OFFENSIVE_LANGUAGE');
   const [note, setNote] = useState<string>('');
@@ -61,7 +64,7 @@ export const ReportReviewModal: React.FC<ReportReviewModalProps> = ({
 
       await reviewApi.reportReview(reviewId, payload);
 
-      Alert.alert(
+      showAlert(
         'Report Submitted',
         'Thank you for bringing this to our attention. Our trust and safety moderation team will review this report promptly.',
         [
@@ -226,7 +229,7 @@ export const ReportReviewModal: React.FC<ReportReviewModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   flexOne: {
     flex: 1,
   },
@@ -236,7 +239,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bottomSheetBackground,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.lg,

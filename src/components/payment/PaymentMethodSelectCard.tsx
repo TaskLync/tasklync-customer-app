@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Banknote, Check } from 'lucide-react-native';
-import { colors, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface PaymentMethodSelectCardProps {
   onPress?: () => void;
@@ -10,6 +11,8 @@ export interface PaymentMethodSelectCardProps {
 export const PaymentMethodSelectCard: React.FC<PaymentMethodSelectCardProps> = ({
   onPress,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.sectionHeading}>Payment method</Text>
@@ -37,7 +40,7 @@ export const PaymentMethodSelectCard: React.FC<PaymentMethodSelectCardProps> = (
 
         {/* Selected Checkmark Indicator */}
         <View style={styles.checkmarkBadge}>
-          <Check size={13} color={colors.white} strokeWidth={2.8} />
+          <Check size={13} color={colors.pureWhite} strokeWidth={2.8} />
         </View>
       </Pressable>
 
@@ -45,7 +48,7 @@ export const PaymentMethodSelectCard: React.FC<PaymentMethodSelectCardProps> = (
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     marginTop: 24,
   },

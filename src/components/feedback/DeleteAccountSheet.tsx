@@ -12,7 +12,8 @@ import { BottomSheet, BottomSheetScrollView } from '../layout/BottomSheet';
 import { DeleteAccountReason } from '../../types/moderation.types';
 import { DeleteAccountReasonStep } from './DeleteAccountReasonStep';
 import { DeleteAccountConfirmStep } from './DeleteAccountConfirmStep';
-import { colors, palette, fontFamily, fontSize, spacing } from '../../design';
+import { fontFamily, fontSize, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface DeleteAccountSheetProps {
   visible: boolean;
@@ -27,6 +28,8 @@ export const DeleteAccountSheet: React.FC<DeleteAccountSheetProps> = ({
   onDeleteAccount,
   isLoading = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<1 | 2>(1);
   const [chosenReason, setChosenReason] = useState<DeleteAccountReason | undefined>(undefined);
@@ -120,7 +123,7 @@ export const DeleteAccountSheet: React.FC<DeleteAccountSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   sheetContent: {
     flex: 1,
   },

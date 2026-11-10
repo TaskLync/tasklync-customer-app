@@ -1,7 +1,7 @@
-import { colors } from '../../design';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { BookingStatus } from '../../types/booking.types';
 import { bookingActionsMap, BookingActionConfig } from '../../utils/bookingActionsMap';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingActionsProps {
   status: BookingStatus;
@@ -9,6 +9,7 @@ interface BookingActionsProps {
 }
 
 export function BookingActions({ status, onAction }: BookingActionsProps) {
+  const styles = useThemedStyles(createStyles);
   const actions = bookingActionsMap[status];
 
   if (!actions || actions.length === 0) return null;
@@ -56,7 +57,7 @@ export function BookingActions({ status, onAction }: BookingActionsProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     marginTop: 12,
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   textPrimary: {
-    color: colors.white,
+    color: colors.pureWhite,
   },
   textSecondary: {
     color: colors.textPrimary,

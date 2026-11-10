@@ -9,7 +9,8 @@ import {
   Pressable,
 } from 'react-native';
 import { ChevronDown, Check, X } from 'lucide-react-native';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface YearCategoryFilterBarProps {
   selectedYear: number | 'all';
@@ -37,6 +38,8 @@ export const YearCategoryFilterBar: React.FC<YearCategoryFilterBarProps> = ({
   onYearChange,
   onCategoryChange,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [activeModal, setActiveModal] = useState<'year' | 'category' | null>(null);
 
   const yearLabel = selectedYear === 'all' ? 'All Years' : String(selectedYear);
@@ -222,7 +225,7 @@ export const YearCategoryFilterBar: React.FC<YearCategoryFilterBarProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     height: 44,
     backgroundColor: colors.bgApp,
@@ -283,7 +286,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 320,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.modalBackground,
     borderRadius: radius.xl,
     padding: spacing.md,
     ...shadows.lg,

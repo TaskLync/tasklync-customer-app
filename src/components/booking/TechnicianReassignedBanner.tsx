@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { UserCheck, X } from 'lucide-react-native';
 import { springConfig } from '../../design/animations';
-import { colors, palette } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface TechnicianReassignedBannerProps {
   newTechnicianName: string;
@@ -21,6 +21,8 @@ export const TechnicianReassignedBanner: React.FC<TechnicianReassignedBannerProp
   reason,
   onDismiss,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const translateY = useSharedValue(-100);
   const opacity = useSharedValue(0);
 
@@ -65,7 +67,7 @@ export const TechnicianReassignedBanner: React.FC<TechnicianReassignedBannerProp
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -77,7 +79,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 0,
     marginBottom: 12,
     gap: 10,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -87,7 +89,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#FDE68A',
+    backgroundColor: palette.amber200,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -103,7 +105,7 @@ const styles = StyleSheet.create({
   body: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 11.5,
-    color: '#78350F',
+    color: palette.amber900,
     marginTop: 2,
     lineHeight: 16,
   },

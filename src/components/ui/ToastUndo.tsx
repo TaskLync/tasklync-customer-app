@@ -7,7 +7,8 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ToastUndoProps {
   visible: boolean;
@@ -26,6 +27,7 @@ export const ToastUndo: React.FC<ToastUndoProps> = ({
   durationMs = 4000,
   bottomOffset = 24,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const translateY = useSharedValue(100);
   const opacity = useSharedValue(0);
 
@@ -94,7 +96,7 @@ export const ToastUndo: React.FC<ToastUndoProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     left: spacing.base,
@@ -113,7 +115,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fontFamily.jakarta.medium,
     fontSize: fontSize.body2,
-    color: palette.white,
+    color: palette.pureWhite,
     marginRight: spacing.sm,
   },
   undoButton: {

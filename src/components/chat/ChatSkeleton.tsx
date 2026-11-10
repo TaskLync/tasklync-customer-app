@@ -1,6 +1,6 @@
 import { View, StyleSheet, DimensionValue } from 'react-native';
 import { Skeleton, SkeletonGroup } from '../ui/Skeleton/Skeleton';
-import { colors } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 /** One line of 15/21 text + 7px vertical padding = 35; two lines = 56 (MessageBubble). */
 const ONE_LINE = 35;
@@ -24,6 +24,7 @@ const THREAD: Bubble[] = [
  * placeholder reads as "your messages / their messages".
  */
 export function ChatSkeleton() {
+  const styles = useThemedStyles(createStyles);
   return (
     <SkeletonGroup style={styles.container} accessibilityLabel="Loading messages">
       {THREAD.map((b, i) => (
@@ -47,7 +48,7 @@ export function ChatSkeleton() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'flex-end',

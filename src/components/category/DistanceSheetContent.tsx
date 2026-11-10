@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MapPin, Navigation, Check } from 'lucide-react-native';
 import { SortOption } from '../../types/search.types';
 import { Button } from '../ui/Button/Button';
-import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface DistanceSheetContentProps {
   currentRadius: number; // e.g. 5000, 10000, 25000, 50000
@@ -48,6 +48,8 @@ export const DistanceSheetContent: React.FC<DistanceSheetContentProps> = ({
   onApply,
   onReset,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [selectedRadius, setSelectedRadius] = useState<number>(currentRadius);
   const [sortByNearest, setSortByNearest] = useState<boolean>(currentSort === 'distance');
 
@@ -146,7 +148,7 @@ export const DistanceSheetContent: React.FC<DistanceSheetContentProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingTop: 8,

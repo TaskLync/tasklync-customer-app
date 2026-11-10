@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Modal,
@@ -35,7 +34,7 @@ import {
   Plus,
 } from 'lucide-react-native';
 
-import { colors, palette, fontFamily } from '../../src/design';
+import { fontFamily } from '../../src/design';
 import { WorkerAvatar } from '../../src/components/worker/WorkerAvatar';
 import { SkeletonCircle, SkeletonGroup, SkeletonText } from '../../src/components/ui/Skeleton';
 import { useWorkerProfile } from '../../src/hooks/useWorkerProfile';
@@ -49,6 +48,8 @@ import { useCreateCustomRequest } from '../../src/hooks/custom-requests/useCreat
 import { userApi } from '../../src/services/api/user.api';
 import { CreateCustomRequestDto, CustomServiceRequestMediaInput } from '../../src/types/customRequest.types';
 import { normalizeDateToYYYYMMDD } from '../../src/utils/timezone';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { showAlert } from '../../src/components/feedback/AppAlert';
 
 // Normalized address interface supporting all address structures in the app
 interface NormalizedAddress {
@@ -88,6 +89,8 @@ const MONTH_NAMES = [
 const WEEKDAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 export default function NewCustomRequestScreen() {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ workerId?: string; categoryId?: string; providerType?: string }>();
@@ -299,7 +302,7 @@ export default function NewCustomRequestScreen() {
     }
 
     if (!workerId) {
-      Alert.alert('Worker Required', 'No professional was selected for this quote request.');
+      showAlert('Worker Required', 'No professional was selected for this quote request.');
       return;
     }
 
@@ -695,19 +698,19 @@ export default function NewCustomRequestScreen() {
 
                       {slot.mediaType === 'VIDEO' && slot.status !== 'uploading' && (
                         <View style={styles.mediaVideoBadge}>
-                          <VideoIcon size={10} color={palette.white} />
+                          <VideoIcon size={10} color={palette.pureWhite} />
                         </View>
                       )}
 
                       {slot.status === 'success' && (
                         <View style={styles.mediaSuccessBadge}>
-                          <Check size={10} color={palette.white} strokeWidth={3} />
+                          <Check size={10} color={palette.pureWhite} strokeWidth={3} />
                         </View>
                       )}
 
                       {slot.status === 'uploading' && (
                         <View style={styles.mediaUploadingOverlay}>
-                          <ActivityIndicator size="small" color={palette.white} />
+                          <ActivityIndicator size="small" color={palette.pureWhite} />
                           <Text style={styles.mediaProgressText}>{slot.progress}%</Text>
                         </View>
                       )}
@@ -717,7 +720,7 @@ export default function NewCustomRequestScreen() {
                           style={styles.mediaErrorOverlay}
                           onPress={() => retrySlot(slot.id)}
                         >
-                          <AlertCircle size={16} color={palette.white} />
+                          <AlertCircle size={16} color={palette.pureWhite} />
                           <Text style={styles.mediaRetryText}>Retry</Text>
                         </TouchableOpacity>
                       )}
@@ -728,7 +731,7 @@ export default function NewCustomRequestScreen() {
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         accessibilityLabel="Remove media"
                       >
-                        <X size={12} color={palette.white} strokeWidth={2.5} />
+                        <X size={12} color={palette.pureWhite} strokeWidth={2.5} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -980,7 +983,7 @@ export default function NewCustomRequestScreen() {
             activeOpacity={0.85}
           >
             {createMutation.isPending ? (
-              <ActivityIndicator size="small" color={palette.white} />
+              <ActivityIndicator size="small" color={palette.pureWhite} />
             ) : (
               <Text style={styles.primaryButtonText}>Submit Request</Text>
             )}
@@ -1268,7 +1271,7 @@ export default function NewCustomRequestScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: palette.white,
@@ -1528,7 +1531,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mediaProgressText: {
-    color: palette.white,
+    color: palette.pureWhite,
     fontSize: 10,
     fontFamily: fontFamily.jakarta.medium || 'PlusJakartaSans-Medium',
     marginTop: 2,
@@ -1544,7 +1547,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mediaRetryText: {
-    color: palette.white,
+    color: palette.pureWhite,
     fontSize: 10,
     fontFamily: fontFamily.jakarta.bold || 'PlusJakartaSans-Bold',
     marginTop: 2,
@@ -1750,7 +1753,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontFamily: fontFamily.jakarta.bold || 'PlusJakartaSans-Bold',
     fontSize: 15,
-    color: palette.white,
+    color: palette.pureWhite,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -1763,7 +1766,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: palette.white,
+    backgroundColor: colors.bottomSheetBackground,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 20,
@@ -1958,7 +1961,7 @@ const styles = StyleSheet.create({
     color: palette.gray300,
   },
   calendarDayTextSelected: {
-    color: palette.white,
+    color: palette.pureWhite,
     fontFamily: fontFamily.jakarta.bold || 'PlusJakartaSans-Bold',
   },
   calendarDayTextToday: {

@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, ViewStyle } from 'react-native';
 import { WorkerServiceRow, SERVICE_ROW_INSET } from './WorkerServiceRow';
 import { SkeletonWorkerServiceRow } from '../ui/Skeleton/SkeletonWorkerServiceRow';
 import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { WorkerServiceOffering } from '../../types/worker.types';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface WorkerServicesSectionProps {
   services: WorkerServiceOffering[];
@@ -34,6 +34,7 @@ export const WorkerServicesSection: React.FC<WorkerServicesSectionProps> = ({
   footer,
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   if (isLoading) {
     return (
       <View style={style}>
@@ -78,7 +79,7 @@ export const WorkerServicesSection: React.FC<WorkerServicesSectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'baseline',

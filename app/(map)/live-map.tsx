@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View, Text, Pressable, Alert } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MapPin } from 'lucide-react-native';
 import {
@@ -23,9 +22,15 @@ import { MapControls } from '../../src/components/map/MapControls';
 import { MapBottomPanel } from '../../src/components/map/MapBottomPanel';
 import { MapPanelHeader } from '../../src/components/map/MapPanelHeader';
 import { MapWorkerList } from '../../src/components/map/MapWorkerList';
-import { colors, palette, fontFamily, radius, shadows } from '../../src/design';
+import { fontFamily, radius, shadows } from '../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+import { showAlert } from '../../src/components/feedback/AppAlert';
 
 export default function LiveMapScreen() {
+  const theme = useAppTheme();
+  const { palette } = theme;
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const {
     location: activeLocation,
@@ -96,8 +101,8 @@ export default function LiveMapScreen() {
   // Category label meta for panel header display
   const categoryLabel = useMemo(() => {
     if (!selectedCategory) return null;
-    return getCategoryMeta(selectedCategory).label;
-  }, [selectedCategory]);
+    return getCategoryMeta(selectedCategory, theme).label;
+  }, [selectedCategory, theme]);
 
   const handleRegionChange = useCallback(
     (region: any) => {
@@ -148,19 +153,19 @@ export default function LiveMapScreen() {
       if (freshCoords) {
         const validation = validateServiceArea(freshCoords);
         if (!validation.isServiceable) {
-          Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+          showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
           recenter(FAISALABAD_CENTER);
         } else {
           recenter(freshCoords, undefined, 'street');
         }
       } else {
-        Alert.alert(
+        showAlert(
           'Location Error',
           'Unable to acquire a high-confidence GPS position. Please check your GPS signal and settings.'
         );
       }
     } catch (_err) {
-      Alert.alert(
+      showAlert(
         'Location Error',
         'An error occurred while acquiring your GPS position. Please try again.'
       );
@@ -179,7 +184,7 @@ export default function LiveMapScreen() {
 
   return (
     <View style={styles.screenContainer}>
-      <StatusBar style="dark" />
+      <ThemedStatusBar />
 
       {/* 1. Full-screen map canvas */}
       <MapCanvas
@@ -209,7 +214,7 @@ export default function LiveMapScreen() {
           accessibilityRole="button"
           accessibilityLabel="Location disabled. Tap to enable"
         >
-          <MapPin size={13} color={palette.white} />
+          <MapPin size={13} color={palette.pureWhite} />
           <Text style={styles.locationBannerText}>
             {!isServicesEnabled
               ? 'GPS is turned off. Tap to open settings'
@@ -249,7 +254,7 @@ export default function LiveMapScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   screenContainer: {
     flex: 1,
     backgroundColor: colors.bgApp,
@@ -262,7 +267,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: palette.gray900,
+    backgroundColor: colors.inverseSurface,
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: radius.pill,
@@ -271,7 +276,7 @@ const styles = StyleSheet.create({
   locationBannerText: {
     fontFamily: fontFamily.jakarta.medium,
     fontSize: 11,
-    color: palette.white,
+    color: colors.textInverse,
   },
   locationBannerAction: {
     fontFamily: fontFamily.jakarta.bold,

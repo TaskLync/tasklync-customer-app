@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { Users } from 'lucide-react-native';
-import { colors } from '@design/colors';
 import { fontFamily as fonts } from '@design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface WorkerSocialProofProps {
   jobCount: number;
@@ -15,6 +15,8 @@ export const WorkerSocialProof = ({
   city,
   style,
 }: WorkerSocialProofProps) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const formatJobCount = (count: number) => {
     if (count > 1000) return `${(count / 1000).toFixed(1)}k+`;
     if (count > 100) return `${count}`;
@@ -42,7 +44,7 @@ export const WorkerSocialProof = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { NotificationItem as NotificationItemType } from '../../types/notification.types';
 import { NotificationIcon } from './NotificationIcon';
 import { formatRelativeTime } from '../../utils/groupByDate';
-import { colors, palette, fontFamily, radius, shadows } from '../../design';
+import { fontFamily, radius, shadows } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface NotificationItemProps {
   item: NotificationItemType;
@@ -23,6 +24,7 @@ export interface NotificationItemProps {
  */
 export const NotificationItem: React.FC<NotificationItemProps> = React.memo(
   function NotificationItem({ item, onPress }) {
+    const styles = useThemedStyles(createStyles);
     const handlePress = useCallback(() => {
       onPress(item);
     }, [item, onPress]);
@@ -86,7 +88,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = React.memo(
   }
 );
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     minHeight: 68,
     flexDirection: 'row',

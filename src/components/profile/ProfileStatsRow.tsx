@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { UserProfileStats } from '../../types/user.types';
-import { colors, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ProfileStatsRowProps {
   stats?: UserProfileStats | undefined;
@@ -16,6 +17,7 @@ export interface ProfileStatsRowProps {
  * - Subtle border and micro-shadow
  */
 export const ProfileStatsRow: React.FC<ProfileStatsRowProps> = ({ stats }) => {
+  const styles = useThemedStyles(createStyles);
   const bookingsCount = stats?.bookings_count ?? stats?.completed_jobs ?? 0;
   const rating = stats?.rating ? stats.rating.toFixed(1) : '5.0';
 
@@ -43,7 +45,7 @@ export const ProfileStatsRow: React.FC<ProfileStatsRowProps> = ({ stats }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     gap: 12,

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { HomeHeader } from '../../src/components/home/HomeHeader';
@@ -15,16 +14,16 @@ import { CustomRefreshControl } from '../../src/components/feedback/CustomRefres
 
 import { useCategories } from '../../src/hooks/useCategories';
 import { useCompanies } from '../../src/hooks/useCompanies';
-import { useNearbyWorkers } from '../../src/hooks/useNearbyWorkers';
 import { useLocation } from '../../src/hooks/useLocation';
 
-import { colors } from '../../src/design';
+import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 export default function HomeScreen() {
+  const styles = useThemedStyles(createStyles);
   const queryClient = useQueryClient();
   const { refetch: refetchCategories } = useCategories();
   const { refetch: refetchCompanies } = useCompanies({ limit: 10 });
-  const { refetch: refetchWorkers } = useNearbyWorkers();
   const {
     getCurrentPosition,
     locationMode,
@@ -39,7 +38,6 @@ export default function HomeScreen() {
       const promises: Promise<any>[] = [
         refetchCategories(),
         refetchCompanies(),
-        refetchWorkers(),
         queryClient.invalidateQueries({ queryKey: ['workers'] }),
         queryClient.invalidateQueries({ queryKey: ['companies'] }),
       ];
@@ -56,7 +54,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
+      <ThemedStatusBar />
       
       <ScrollView
         bounces={true}
@@ -103,7 +101,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

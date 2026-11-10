@@ -18,12 +18,13 @@ import { useSearch } from '../../src/hooks/useSearch';
 import { useRecentSearches } from '../../src/hooks/useRecentSearches';
 import { useCategories } from '../../src/hooks/useCategories';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
-import { colors } from '../../src/design/colors';
 import { typography } from '../../src/design/typography';
 import { AutocompleteSuggestion, DEFAULT_FILTERS, FilterState } from '../../src/types/search.types';
 import { X } from 'lucide-react-native';
+import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 
 export default function ExploreScreen() {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { isOffline } = useNetworkStatus();
   const scrollY = useSharedValue(0);
@@ -264,6 +265,7 @@ export default function ExploreScreen() {
               }}
               multiSelect={false}
               scrollable={false}
+              chipTone="neutral"
             />
           </View>
         )}
@@ -278,7 +280,8 @@ export default function ExploreScreen() {
         <EmptyState
           type="no-workers"
           title="No service providers found"
-          description="Try searching for something else, checking spelling, or clearing some filters."
+          description="Try adjusting your search or filters to find available providers."
+          actionVariant="neutral"
           actionLabel={activeFilterCount > 0 ? 'Reset Filters' : 'Clear Search'}
           onAction={() => {
             if (activeFilterCount > 0) {
@@ -371,6 +374,7 @@ export default function ExploreScreen() {
                       scrollable
                       paddingH={0}
                       chipSize="sm"
+                      chipTone="neutral"
                     />
                   </View>
                 </View>
@@ -430,7 +434,7 @@ export default function ExploreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,
@@ -486,7 +490,8 @@ const styles = StyleSheet.create({
   emptyResultsContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 60,
+    paddingTop: 36,
+    paddingBottom: 48,
     paddingHorizontal: 32,
   },
   emptyIconContainer: {

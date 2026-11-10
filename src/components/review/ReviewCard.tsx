@@ -17,10 +17,10 @@ import { ReviewReplyBubble } from './ReviewReplyBubble';
 import { ReviewImageModal } from './ReviewImageModal';
 import { ReportReviewModal } from './ReportReviewModal';
 import { Chip } from '../ui/Chip';
-import { colors, palette } from '../../design/colors';
 import { fontFamily as fonts } from '../../design/typography';
 import { radius } from '../../design/radius';
 import { useReviewerProfile } from '../../hooks/useReviewerProfile';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const REVIEW_CARD_GAP = 10;
 
@@ -52,6 +52,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   allowReport = true,
   style,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [isExpanded, setIsExpanded] = useState(false);
   const [lineCount, setLineCount] = useState(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -252,7 +254,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     backgroundColor: palette.white,
     paddingVertical: 16,

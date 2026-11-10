@@ -10,7 +10,8 @@ import { X, Smartphone, CreditCard, Check } from 'lucide-react-native';
 import { BottomSheet, BottomSheetScrollView } from '../layout/BottomSheet';
 import { AddPaymentMethodType, AddWalletDTO, AddCardDTO } from '../../types/payment.types';
 import { SecurePaymentNotice } from './SecurePaymentNotice';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddCardSheetProps {
   visible: boolean;
@@ -27,6 +28,8 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
   onAddCard,
   isLoading = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [selectedType, setSelectedType] = useState<AddPaymentMethodType>('jazzcash');
 
   // Wallet fields
@@ -353,7 +356,7 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
               }}
             >
               <View style={[styles.checkbox, isDefault && styles.checkboxActive]}>
-                {isDefault && <Check size={14} color={palette.white} strokeWidth={3} />}
+                {isDefault && <Check size={14} color={palette.pureWhite} strokeWidth={3} />}
               </View>
               <Text style={styles.checkboxLabel}>Set as default payment method</Text>
             </TouchableOpacity>
@@ -380,7 +383,7 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   sheetContent: {
     flex: 1,
   },

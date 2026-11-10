@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, useWindowDimensions, ViewStyle, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -9,15 +9,17 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Star, ShieldCheck, Heart, MapPin } from 'lucide-react-native';
 
-import { colors, palette } from '../../design/colors';
 import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
 import { usePressScale } from '../../hooks/usePressScale';
+import { useCustomerCoords } from '../../hooks/useCustomerCoords';
+import { resolveWorkerDistance } from '../../utils/locationUtils';
 import { pushOnce } from '../../utils/navigationGuard';
 import { prefetchWorkerProfile } from '../../hooks/useWorkerProfile';
 import { WorkerNearby } from '../../types/worker.types';
 import { WorkerAvatar } from './WorkerAvatar';
 import { useFavoritesStore } from '../../store/favorites.store';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -36,6 +38,8 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
   onBookNow,
   style,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { width: windowWidth } = useWindowDimensions();
@@ -81,7 +85,12 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
   const profession = worker.categories?.[0] || 'Professional Service';
   const ratingValue = worker.avgRating > 0 ? worker.avgRating.toFixed(1) : '5.0';
   const reviewCount = worker.totalReviews || 0;
-  const distance = worker.distanceLabel || `${((worker.distanceMeters || 1200) / 1000).toFixed(1)} km`;
+  // Real measurement only: customer coords vs worker coords. Hidden when unknown (never a default).
+  const customerCoords = useCustomerCoords();
+  const distance = useMemo(
+    () => resolveWorkerDistance(worker, customerCoords).distanceLabel,
+    [worker.id, worker.distanceMeters, worker.lat, worker.lng, customerCoords]
+  );
   const currency = worker.currency === 'Rs' ? 'PKR' : (worker.currency || 'PKR');
 
   return (
@@ -154,11 +163,15 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
             <Star size={13} color="#F59E0B" fill="#F59E0B" style={styles.starIcon} />
             <Text style={styles.ratingText}>{ratingValue}</Text>
             <Text style={styles.reviewsText}>({reviewCount})</Text>
-            <Text style={styles.separatorDot}>•</Text>
-            <MapPin size={12} color={colors.textMuted} style={styles.mapPinIcon} />
-            <Text style={styles.distanceText} numberOfLines={1}>
-              {distance}
-            </Text>
+            {distance ? (
+              <>
+                <Text style={styles.separatorDot}>•</Text>
+                <MapPin size={12} color={colors.textMuted} style={styles.mapPinIcon} />
+                <Text style={styles.distanceText} numberOfLines={1}>
+                  {distance}
+                </Text>
+              </>
+            ) : null}
           </View>
         </View>
       </View>
@@ -198,7 +211,7 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgCard,
     borderRadius: radius['2xl'],
@@ -246,7 +259,7 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     borderWidth: 2.5,
-    borderColor: '#FFFFFF',
+    borderColor: colors.bgCard,
   },
   favoriteButton: {
     width: 32,
@@ -347,7 +360,7 @@ const styles = StyleSheet.create({
     color: colors.primaryDark,
   },
   bookButton: {
-    backgroundColor: '#E8F8EE', // Very light green / subtle mint background
+    backgroundColor: colors.primaryTint, // subtle mint tint
     paddingHorizontal: 16,
     paddingVertical: 9,
     minHeight: 38,

@@ -12,9 +12,9 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import { Flame, Sparkles, Tag } from 'lucide-react-native';
-import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export type ServiceBadgeType = 'popular' | 'new' | 'deal' | 'limited';
 
@@ -29,6 +29,8 @@ export const ServiceBadge: React.FC<ServiceBadgeProps> = ({
   size = 'xs',
   style,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(0);
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export const ServiceBadge: React.FC<ServiceBadgeProps> = ({
         };
       case 'limited':
         return {
-          backgroundColor: colors.textPrimary,
+          backgroundColor: colors.inverseSurface,
           label: 'Limited',
           Icon: null,
         };
@@ -80,6 +82,8 @@ export const ServiceBadge: React.FC<ServiceBadgeProps> = ({
   };
 
   const config = getBadgeConfig();
+  // The inverse chip is light in dark mode, so its label flips with it.
+  const labelColor = config.backgroundColor === colors.inverseSurface ? colors.textInverse : colors.textOnGreen;
   const Icon = config.Icon;
 
   const isXs = size === 'xs';
@@ -107,17 +111,17 @@ export const ServiceBadge: React.FC<ServiceBadgeProps> = ({
         <Icon
           size={iconSize}
           strokeWidth={1.5}
-          color={colors.textOnGreen}
+          color={labelColor}
         />
       )}
-      <Text style={[styles.labelText, { fontSize }]}>
+      <Text style={[styles.labelText, { fontSize, color: labelColor }]}>
         {config.label}
       </Text>
     </Animated.View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   badgeContainer: {
     flexDirection: 'row',
     alignItems: 'center',

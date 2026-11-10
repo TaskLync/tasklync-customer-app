@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { OnlineBadge } from '../ui/Badge/OnlineBadge';
-import { colors } from '../../design/colors';
 import { WorkerAvailabilityStatus } from '../../types/worker.types';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 interface WorkerAvailabilityBadgeProps {
   status: WorkerAvailabilityStatus;
@@ -15,6 +15,7 @@ export const WorkerAvailabilityBadge: React.FC<WorkerAvailabilityBadgeProps> = (
   availableUntil,
   size = 'sm',
 }) => {
+  const { colors } = useAppTheme();
   const getBadgeConfig = () => {
     switch (status) {
       case 'AVAILABLE':

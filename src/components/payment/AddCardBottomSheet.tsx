@@ -4,7 +4,8 @@ import { BottomSheet, BottomSheetRef } from '../layout/BottomSheet/BottomSheet';
 import { BottomSheetScrollView } from '../layout/BottomSheet/BottomSheetScrollView';
 import { CardInputForm } from './CardInputForm';
 import { SaveCardCheckbox } from './SaveCardCheckbox';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddCardBottomSheetProps {
   onAddCard: (cardDetails: any) => void;
@@ -12,6 +13,7 @@ export interface AddCardBottomSheetProps {
 
 export const AddCardBottomSheet = forwardRef<BottomSheetRef, AddCardBottomSheetProps>(
   ({ onAddCard }, ref) => {
+    const styles = useThemedStyles(createStyles);
     const [cardDetails, setCardDetails] = useState<any>(null);
     const [isComplete, setIsComplete] = useState<boolean>(false);
     const [saveCard, setSaveCard] = useState<boolean>(true);
@@ -81,7 +83,7 @@ export const AddCardBottomSheet = forwardRef<BottomSheetRef, AddCardBottomSheetP
   }
 );
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   header: {
     marginBottom: 14,
   },
@@ -118,6 +120,6 @@ const styles = StyleSheet.create({
   submitText: {
     fontFamily: fontFamily.poppins.bold,
     fontSize: 15,
-    color: palette.white,
+    color: palette.pureWhite,
   },
 });

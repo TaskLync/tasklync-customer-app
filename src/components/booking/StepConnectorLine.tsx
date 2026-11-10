@@ -6,13 +6,14 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { colors, palette } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface StepConnectorLineProps {
   isFilled: boolean;
 }
 
 export const StepConnectorLine: React.FC<StepConnectorLineProps> = ({ isFilled }) => {
+  const styles = useThemedStyles(createStyles);
   const fillProgress = useSharedValue(isFilled ? 1 : 0);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export const StepConnectorLine: React.FC<StepConnectorLineProps> = ({ isFilled }
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   track: {
     flex: 1,
     height: 3,

@@ -29,11 +29,10 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { colors } from '../../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 // ─── Tokens ────────────────────────────────────────────────────────────────────
 export const SKELETON = {
-  color: colors.border, // #E2E8F0 — visible on white and on bgSection without being heavy
   radius: { text: 4, block: 8, card: 14, pill: 100 },
 } as const;
 
@@ -153,6 +152,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   borderRadius = SKELETON.radius.block,
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const inGroup = useContext(GroupContext);
   const block = <View style={[styles.block, { width, height, borderRadius }, style]} />;
   // Inside a group: a plain View (no wrapper). Standalone: animates itself.
@@ -189,6 +189,7 @@ export const SkeletonText: React.FC<SkeletonTextProps> = ({
   lastLineWidth = '60%',
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const box = lineHeight ?? Math.round(fontSize * 1.4);
   const bar = Math.max(8, Math.round(fontSize * 0.75));
   return (
@@ -206,9 +207,9 @@ export const SkeletonText: React.FC<SkeletonTextProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   block: {
-    backgroundColor: SKELETON.color,
+    backgroundColor: colors.border, // visible on the base surface and on secondary surfaces without being heavy
   },
   textLine: {
     justifyContent: 'center',

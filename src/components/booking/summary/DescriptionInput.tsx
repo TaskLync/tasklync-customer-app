@@ -6,7 +6,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
-import { colors, palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface DescriptionInputProps {
   value: string;
@@ -17,6 +18,8 @@ export const DescriptionInput: React.FC<DescriptionInputProps> = ({
   value,
   onChangeText,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [isExpanded, setIsExpanded] = useState<boolean>(Boolean(value));
   const heightProgress = useSharedValue(value ? 1 : 0);
 
@@ -69,7 +72,7 @@ export const DescriptionInput: React.FC<DescriptionInputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     backgroundColor: palette.white,
     paddingVertical: 16,

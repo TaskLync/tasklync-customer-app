@@ -17,9 +17,10 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react-native';
-import { colors, palette, radius, spacing } from '../../design';
+import { radius, spacing } from '../../design';
 import { formatRemainingTime } from '../../utils/verificationState.util';
 import { useBookingVerificationOtp } from '../../hooks/useBookingVerification';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingVerificationCardProps {
   bookingId: string;
@@ -32,6 +33,8 @@ export const BookingVerificationCard: React.FC<BookingVerificationCardProps> = (
   isEligible,
   onOpenQr,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     otp,
     remainingSeconds,
@@ -115,10 +118,10 @@ export const BookingVerificationCard: React.FC<BookingVerificationCardProps> = (
               accessibilityLabel="Generate a new verification code"
             >
               {isRefetching ? (
-                <ActivityIndicator size="small" color={colors.white} />
+                <ActivityIndicator size="small" color={colors.pureWhite} />
               ) : (
                 <>
-                  <RefreshCw size={15} color={colors.white} />
+                  <RefreshCw size={15} color={colors.pureWhite} />
                   <Text style={styles.refreshPrimaryBtnText}>Generate New Code</Text>
                 </>
               )}
@@ -224,7 +227,7 @@ export const BookingVerificationCard: React.FC<BookingVerificationCardProps> = (
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.xl,
@@ -354,7 +357,7 @@ const styles = StyleSheet.create({
   refreshPrimaryBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.white,
+    color: colors.pureWhite,
   },
   digitsRow: {
     flexDirection: 'row',

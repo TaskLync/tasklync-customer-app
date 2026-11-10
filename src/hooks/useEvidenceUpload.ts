@@ -3,6 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { compressImage } from '../utils/imageCompression';
 import { chatApi } from '../services/api/chat.api';
 import { EvidenceSlotState } from '../types/booking.types';
+import { showAlert } from '../components/feedback/AppAlert';
 
 const MAX_SLOTS = 3;
 
@@ -96,7 +97,7 @@ export function useEvidenceUpload(bookingId?: string | null) {
         if (source === 'camera') {
           const permission = await ImagePicker.requestCameraPermissionsAsync();
           if (!permission.granted) {
-            alert('Camera access is required to capture evidence photos.');
+            showAlert('Camera access is required to capture evidence photos.');
             return;
           }
 
@@ -108,7 +109,7 @@ export function useEvidenceUpload(bookingId?: string | null) {
         } else {
           const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (!permission.granted) {
-            alert('Gallery access is required to select evidence photos.');
+            showAlert('Gallery access is required to select evidence photos.');
             return;
           }
 

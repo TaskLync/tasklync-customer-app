@@ -16,7 +16,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Star } from 'lucide-react-native';
-import { palette } from '../../../design';
+import { useAppTheme } from '../../../theme/useAppTheme';
 
 export type RatingSizeVariant = 'sm' | 'md' | 'lg';
 
@@ -147,6 +147,7 @@ const StarItem: React.FC<{
   disabled: boolean;
   onPress: () => void;
 }> = React.memo(function StarItem({ index, currentValue, size, disabled, onPress }) {
+  const { palette } = useAppTheme();
   const isFilled = index <= currentValue;
   const scale = useSharedValue(1);
 

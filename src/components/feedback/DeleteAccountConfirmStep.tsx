@@ -14,7 +14,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { AlertTriangle } from 'lucide-react-native';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface DeleteAccountConfirmStepProps {
   onConfirmDelete: () => Promise<void>;
@@ -27,6 +28,8 @@ export const DeleteAccountConfirmStep: React.FC<DeleteAccountConfirmStepProps> =
   onBack,
   isLoading = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [confirmInput, setConfirmInput] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -129,7 +132,7 @@ export const DeleteAccountConfirmStep: React.FC<DeleteAccountConfirmStepProps> =
           accessibilityLabel="Permanently Delete My Account"
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color={palette.white} />
+            <ActivityIndicator size="small" color={palette.pureWhite} />
           ) : (
             <Text style={styles.deleteBtnText}>Permanently Delete My Account</Text>
           )}
@@ -150,7 +153,7 @@ export const DeleteAccountConfirmStep: React.FC<DeleteAccountConfirmStepProps> =
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingVertical: spacing.xs,
   },
@@ -245,7 +248,7 @@ const styles = StyleSheet.create({
   deleteBtnText: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: fontSize.body1,
-    color: palette.white,
+    color: palette.pureWhite,
   },
   backBtn: {
     height: 40,

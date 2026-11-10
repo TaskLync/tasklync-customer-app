@@ -1,8 +1,8 @@
-import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useBookingCountdown } from '../../hooks/useBookingCountdown';
 import { Clock, AlertCircle } from 'lucide-react-native';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingCountdownProps {
   expiresAt?: string | undefined;
@@ -10,6 +10,8 @@ interface BookingCountdownProps {
 }
 
 export function BookingCountdown({ expiresAt, status }: BookingCountdownProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   if (status !== 'PENDING' || !expiresAt) return null;
 
   const { isExpired, formattedText } = useBookingCountdown(expiresAt);
@@ -37,7 +39,7 @@ export function BookingCountdown({ expiresAt, status }: BookingCountdownProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,10 +1,10 @@
-import { colors } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Phone } from 'lucide-react-native';
 import { WorkerAvatar } from '../worker/WorkerAvatar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ChatHeaderProps {
   workerName: string;
@@ -29,6 +29,8 @@ export const ChatHeader = React.memo(function ChatHeader({
   isCompany = false,
   onCallPress,
 }: ChatHeaderProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -99,7 +101,7 @@ export const ChatHeader = React.memo(function ChatHeader({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgCard,
     borderBottomWidth: StyleSheet.hairlineWidth,

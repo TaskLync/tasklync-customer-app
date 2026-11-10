@@ -18,9 +18,8 @@ import {
   WorkerSearchDocument,
 } from '../types/search.types';
 import { WorkerNearby } from '../types/worker.types';
-import { useLocationStore } from '../store/location.store';
-import { FAISALABAD_CENTER } from '../config/serviceArea.config';
-import { resolveWorkerDistance } from '../utils/locationUtils';
+import { useCustomerCoords } from './useCustomerCoords';
+import { roundCoordForQuery } from '../utils/locationUtils';
 
 /**
  * Reusable debounce hook
@@ -125,20 +124,9 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     ...options.initialFilters,
   }));
 
-  // Resolve current active coordinates from location store
-  const { locationMode, selectedAddress, currentLocation } = useLocationStore();
-  const activeLocation = useMemo(() => {
-    if (
-      locationMode === 'address' &&
-      selectedAddress &&
-      !isNaN(Number(selectedAddress.lat)) &&
-      !isNaN(Number(selectedAddress.lng))
-    ) {
-      return { lat: Number(selectedAddress.lat), lng: Number(selectedAddress.lng) };
-    }
-    return currentLocation ?? FAISALABAD_CENTER;
-  }, [locationMode, selectedAddress, currentLocation]);
-
+  // Customer position (selected address, else device fix). null = unknown: geo params are then omitted
+  // (never a fixed city centre).
+  const activeLocation = useCustomerCoords();
   const lat = activeLocation?.lat;
   const lng = activeLocation?.lng;
 
@@ -210,8 +198,8 @@ export const useSearch = (options: UseSearchOptions = {}) => {
 
     // Geo Trio Rule: Provide lat, lng, and radius all together
     if (typeof lat === 'number' && typeof lng === 'number') {
-      params.lat = lat;
-      params.lng = lng;
+      params.lat = roundCoordForQuery(lat);
+      params.lng = roundCoordForQuery(lng);
       params.radius = filters.radius || 10000;
     }
 
@@ -246,25 +234,8 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     staleTime: 60 * 1000,
   });
 
-  // Reconcile distance and extract typed arrays
-  const workers = useMemo<WorkerNearby[]>(() => {
-    let rawList = data?.pages.flatMap((page) => page.workers) ?? [];
-    if (filters.provider_type === 'COMPANY') {
-      rawList = rawList.filter((w) => w.providerType === 'COMPANY' || w.isCompany === true);
-    } else if (filters.provider_type === 'INDIVIDUAL') {
-      rawList = rawList.filter((w) => w.providerType !== 'COMPANY' && !w.isCompany);
-    }
-
-    const customerCoords = lat && lng ? { lat, lng } : null;
-    return rawList.map((worker) => {
-      const { distanceMeters, distanceLabel } = resolveWorkerDistance(worker, customerCoords);
-      return {
-        ...worker,
-        distanceMeters: distanceMeters ?? worker.distanceMeters,
-        distanceLabel: distanceLabel || worker.distanceLabel,
-      };
-    });
-  }, [data, lat, lng, filters.provider_type]);
+  // Backend order and backend distance are used as received.
+  const workers = useMemo<WorkerNearby[]>(() => data?.pages.flatMap((page) => page.workers) ?? [], [data]);
 
   const documents = useMemo<WorkerSearchDocument[]>(() => {
     return data?.pages.flatMap((page) => page.documents) ?? [];

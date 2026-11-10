@@ -12,7 +12,8 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Check, Trash2, MailOpen } from 'lucide-react-native';
 import { NotificationItem } from '../../types/notification.types';
-import { colors, fontFamily, radius } from '../../design';
+import { fontFamily, radius } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const ACTION_WIDTH = 72;
 const TOTAL_ACTIONS_WIDTH = ACTION_WIDTH * 2; // 144px
@@ -50,6 +51,8 @@ export const NotificationSwipeRow: React.FC<NotificationSwipeRowProps> = ({
   onDelete,
   enabled = true,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const translateX = useSharedValue(0);
   const contextX = useSharedValue(0);
   const rowHeight = useSharedValue<number | null>(null);
@@ -191,9 +194,9 @@ export const NotificationSwipeRow: React.FC<NotificationSwipeRowProps> = ({
         >
           <Animated.View style={[styles.actionIconContainer, readActionAnimatedStyle]}>
             {item.is_read ? (
-              <MailOpen size={20} color={colors.white} strokeWidth={2.2} />
+              <MailOpen size={20} color={colors.pureWhite} strokeWidth={2.2} />
             ) : (
-              <Check size={20} color={colors.white} strokeWidth={2.5} />
+              <Check size={20} color={colors.pureWhite} strokeWidth={2.5} />
             )}
             <Text style={styles.actionText}>
               {item.is_read ? 'Unread' : 'Read'}
@@ -209,7 +212,7 @@ export const NotificationSwipeRow: React.FC<NotificationSwipeRowProps> = ({
           accessibilityLabel="Delete notification"
         >
           <Animated.View style={[styles.actionIconContainer, deleteActionAnimatedStyle]}>
-            <Trash2 size={20} color={colors.white} strokeWidth={2.2} />
+            <Trash2 size={20} color={colors.pureWhite} strokeWidth={2.2} />
             <Text style={styles.actionText}>Delete</Text>
           </Animated.View>
         </Pressable>
@@ -225,7 +228,7 @@ export const NotificationSwipeRow: React.FC<NotificationSwipeRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   wrapper: {
     position: 'relative',
     overflow: 'hidden',
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
   actionText: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 11,
-    color: colors.white,
+    color: colors.pureWhite,
   },
   foregroundCard: {
     backgroundColor: colors.bgCard,

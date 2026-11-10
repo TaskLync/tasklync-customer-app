@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { colors, palette, fontFamily, fontSize, spacing } from '../../design';
+import { fontFamily, fontSize, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ReviewCommentInputProps {
   value: string;
@@ -30,6 +31,8 @@ export const ReviewCommentInput: React.FC<ReviewCommentInputProps> = ({
   onFocus,
   onBlur,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [isFocused, setIsFocused] = useState(false);
   const charCount = value.length;
   const warningThreshold = Math.floor(maxLength * 0.9);
@@ -51,7 +54,7 @@ export const ReviewCommentInput: React.FC<ReviewCommentInputProps> = ({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholder}
           multiline
           maxLength={maxLength}
           editable={!disabled}
@@ -87,7 +90,7 @@ export const ReviewCommentInput: React.FC<ReviewCommentInputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,

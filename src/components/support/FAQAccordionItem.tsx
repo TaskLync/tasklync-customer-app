@@ -6,7 +6,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { ChevronDown } from 'lucide-react-native';
-import { colors, palette, fontFamily, spacing } from '../../design';
+import { fontFamily, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface FAQItemData {
   id: string;
@@ -25,6 +26,8 @@ export const FAQAccordionItem: React.FC<FAQAccordionItemProps> = ({
   isExpanded,
   onToggle,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const rotation = useSharedValue(isExpanded ? 180 : 0);
 
   useEffect(() => {
@@ -71,7 +74,7 @@ export const FAQAccordionItem: React.FC<FAQAccordionItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgCard,
   },

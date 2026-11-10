@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 export const CalendarWeekdayRow: React.FC = React.memo(() => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       {WEEKDAYS.map((day, idx) => (
@@ -18,7 +20,7 @@ export const CalendarWeekdayRow: React.FC = React.memo(() => {
 
 CalendarWeekdayRow.displayName = 'CalendarWeekdayRow';
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -12,16 +12,17 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
-import { colors, palette } from '../../../design/colors';
 import {
   iconSize,
   IconSizeKey,
   getOpticalStrokeWidth,
   iconEnclosures,
+  createEnclosureVariants,
   iconOpticalOffsets,
 } from '../../../design/iconography';
 import { springConfig } from '../../../design/animations';
 import { Text } from '../Text/Text';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -70,7 +71,7 @@ export const PremiumIcon: React.FC<PremiumIconProps> = ({
   size = 'action',
   strokeWidth: customStrokeWidth,
   strokePreset = 'refined',
-  color = colors.textPrimary,
+  color: colorProp,
   enclosure = 'naked',
   enclosureSize,
   enclosureRadius,
@@ -84,6 +85,10 @@ export const PremiumIcon: React.FC<PremiumIconProps> = ({
   disabled = false,
   style,
 }) => {
+  const { colors } = useAppTheme();
+  const enclosureVariants = useThemedStyles(createEnclosureVariants);
+  const styles = useThemedStyles(createStyles);
+  const color = colorProp ?? colors.textPrimary;
   // Resolve numeric icon size
   const resolvedIconSize: number = typeof size === 'number' ? size : iconSize[size];
 
@@ -147,7 +152,7 @@ export const PremiumIcon: React.FC<PremiumIconProps> = ({
       ? (minTouchTarget - containerDimension) / 2
       : 0;
 
-  const enclosureStyle = isEnclosed ? iconEnclosures.variants[enclosure] : null;
+  const enclosureStyle = isEnclosed ? enclosureVariants[enclosure] : null;
 
   const content = (
     <View
@@ -236,7 +241,7 @@ export const PremiumIcon: React.FC<PremiumIconProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -273,7 +278,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 9,
-    color: palette.white,
+    color: palette.pureWhite,
     fontWeight: '700',
     lineHeight: Platform.OS === 'ios' ? 11 : 12,
   },

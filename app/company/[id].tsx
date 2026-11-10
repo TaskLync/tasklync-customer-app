@@ -6,11 +6,9 @@ import {
   ScrollView,
   Pressable,
   Share,
-  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
 import {
   ChevronLeft,
@@ -21,20 +19,19 @@ import {
   Building2,
   MessageSquare,
   BadgeCheck,
-  Briefcase,
 } from 'lucide-react-native';
 
 import { useWorkerProfile } from '../../src/hooks/useWorkerProfile';
 import { useWorkerReviews } from '../../src/hooks/useWorkerReviews';
 import { WorkerPublicProfile, WorkerServiceOffering } from '../../src/types/worker.types';
-import { CompanyTrustGuaranteeCard } from '../../src/components/company/CompanyTrustGuaranteeCard';
 import { CompanyServiceRow } from '../../src/components/company/CompanyServiceRow';
 import { ReviewCard } from '../../src/components/review/ReviewCard';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
 import { SkeletonCompanyProfile } from '../../src/components/company/SkeletonCompanyProfile';
-import { colors } from '../../src/design/colors';
-import { companyTokens } from '../../src/theme/companyTokens';
 import { getPersistedBookings } from '../../src/services/api/booking.api';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+import { showAlert } from '../../src/components/feedback/AppAlert';
 
 const PAGE_PADDING = 20;
 const ICON_BUTTON = 44;
@@ -52,6 +49,9 @@ const flatReviewStyle = {
 } as const;
 
 export default function CompanyDetailScreen() {
+  const { companyTokens } = useAppTheme();
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -125,7 +125,7 @@ export default function CompanyDetailScreen() {
         },
       } as any);
     } else {
-      Alert.alert(
+      showAlert(
         'Message agency',
         `Chat with ${company?.business_name || 'this agency'} opens once you request a booking.`
       );
@@ -168,7 +168,7 @@ export default function CompanyDetailScreen() {
   if (isProfileLoading && !company) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <StatusBar style="dark" />
+        <ThemedStatusBar />
         {renderTopBar()}
         <SkeletonCompanyProfile />
       </SafeAreaView>
@@ -178,7 +178,7 @@ export default function CompanyDetailScreen() {
   if (!company) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <StatusBar style="dark" />
+        <ThemedStatusBar />
         {renderTopBar()}
         <View style={styles.centered}>
           <EmptyState
@@ -195,13 +195,13 @@ export default function CompanyDetailScreen() {
   const displayName = company.business_name || company.name;
   const description = company.bio?.trim() || '';
   const isVerified = company.verificationStatus === 'VERIFIED' || company.isVerified === true;
-  const capacity = company.max_concurrent_jobs;
+  const hasRating = reviewTotal > 0 && reviewAverage > 0;
   const city = company.city?.trim();
   const showSeeAll = reviewTotal > REVIEWS_PREVIEW_COUNT;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar style="dark" />
+      <ThemedStatusBar />
       {renderTopBar()}
 
       <ScrollView
@@ -220,66 +220,60 @@ export default function CompanyDetailScreen() {
                 accessibilityIgnoresInvertColors
               />
             ) : (
-              <Building2 size={26} color={companyTokens.colors.verifiedBlue} />
+              <Building2 size={26} color={colors.textMuted} />
             )}
           </View>
           <View style={styles.identityText}>
-            <Text style={styles.name}>{displayName}</Text>
+            <Text style={styles.name} numberOfLines={2}>
+              {displayName}
+            </Text>
             {isVerified ? (
               <View style={styles.verifiedRow}>
-                <BadgeCheck size={15} color={companyTokens.colors.escrowGreen} />
+                <BadgeCheck size={15} color={colors.primary} />
                 <Text style={styles.verifiedText}>Verified agency</Text>
+              </View>
+            ) : null}
+            {hasRating || city ? (
+              <View style={styles.metaRow}>
+                {hasRating ? (
+                  <View
+                    style={styles.fact}
+                    accessible
+                    accessibilityLabel={`Rated ${reviewAverage.toFixed(1)} from ${reviewTotal} ${
+                      reviewTotal === 1 ? 'review' : 'reviews'
+                    }`}
+                  >
+                    <Star
+                      size={13}
+                      color={companyTokens.colors.ratingGold}
+                      fill={companyTokens.colors.ratingGold}
+                    />
+                    <Text style={styles.factText}>
+                      <Text style={styles.factStrong}>{reviewAverage.toFixed(1)}</Text>
+                      {` (${reviewTotal})`}
+                    </Text>
+                  </View>
+                ) : null}
+                {city ? (
+                  <View style={[styles.fact, styles.cityFact]}>
+                    <MapPin size={13} color={colors.textMuted} />
+                    <Text style={styles.factText} numberOfLines={1}>
+                      {city}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             ) : null}
           </View>
         </View>
 
-        {/* ── Key facts (single compact line group) ── */}
-        <View style={styles.factsRow}>
-          <View style={styles.fact} accessible accessibilityLabel={
-            reviewTotal > 0
-              ? `Rated ${reviewAverage.toFixed(1)} from ${reviewTotal} reviews`
-              : 'No reviews yet'
-          }>
-            <Star
-              size={14}
-              color={reviewTotal > 0 ? companyTokens.colors.ratingGold : colors.textMuted}
-              fill={reviewTotal > 0 ? companyTokens.colors.ratingGold : 'transparent'}
-            />
-            {reviewTotal > 0 ? (
-              <Text style={styles.factText}>
-                <Text style={styles.factStrong}>{reviewAverage.toFixed(1)}</Text>
-                {` (${reviewTotal} ${reviewTotal === 1 ? 'review' : 'reviews'})`}
-              </Text>
-            ) : (
-              <Text style={styles.factText}>New on TaskLync</Text>
-            )}
-          </View>
-          {city ? (
-            <View style={styles.fact}>
-              <MapPin size={14} color={colors.textMuted} />
-              <Text style={styles.factText}>{city}</Text>
-            </View>
-          ) : null}
-          {capacity ? (
-            <View style={styles.fact}>
-              <Briefcase size={14} color={colors.textMuted} />
-              <Text style={styles.factText}>Up to {capacity} jobs at once</Text>
-            </View>
-          ) : null}
-        </View>
-
         {/* ── About ── */}
         {description ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>About</Text>
-            <Text
-              style={styles.bodyText}
-              numberOfLines={descriptionExpanded ? undefined : 4}
-            >
+          <View style={styles.about}>
+            <Text style={styles.bodyText} numberOfLines={descriptionExpanded ? undefined : 3}>
               {description}
             </Text>
-            {description.length > 160 ? (
+            {description.length > 120 ? (
               <Pressable
                 onPress={() => setDescriptionExpanded((v) => !v)}
                 hitSlop={8}
@@ -298,11 +292,7 @@ export default function CompanyDetailScreen() {
         {/* ── Services ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Services</Text>
-          {activeServices.length === 0 ? (
-            <Text style={styles.emptyText}>
-              This agency hasn&apos;t listed any bookable services yet.
-            </Text>
-          ) : (
+          {activeServices.length > 0 ? (
             <View>
               {activeServices.map((service, index) => (
                 <CompanyServiceRow
@@ -318,50 +308,47 @@ export default function CompanyDetailScreen() {
                 />
               ))}
             </View>
+          ) : (
+            <Text style={styles.emptyText}>No services listed yet.</Text>
           )}
+
+          {/* Custom quote: secondary action closing the services list */}
+          <Pressable
+            style={({ pressed }) => [styles.customQuoteRow, pressed && styles.pressed]}
+            onPress={() =>
+              router.push({
+                pathname: '/custom-request/new' as any,
+                params: {
+                  workerId: company.id,
+                  categoryId: company.categories?.[0] || '',
+                  providerType: 'COMPANY',
+                },
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel={`Request a custom quote from ${displayName}`}
+          >
+            <Text style={styles.customQuoteTitle}>Need something else? Request a custom quote</Text>
+            <ChevronRight size={16} color={colors.primary} />
+          </Pressable>
         </View>
 
-        {/* ── Custom service (same entry as an individual worker's profile) ── */}
-        <Pressable
-          style={({ pressed }) => [styles.customQuoteRow, pressed && styles.pressed]}
-          onPress={() =>
-            router.push({
-              pathname: '/custom-request/new' as any,
-              params: {
-                workerId: company.id,
-                categoryId: company.categories?.[0] || '',
-                providerType: 'COMPANY',
-              },
-            })
-          }
-          accessibilityRole="button"
-          accessibilityLabel={`Request a custom quote from ${displayName}`}
-        >
-          <Text style={styles.customQuoteTitle}>Request a custom quote</Text>
-          <ChevronRight size={18} color={colors.textMuted} />
-        </Pressable>
-
-        {/* ── Reviews ── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Customer reviews</Text>
-            {showSeeAll ? (
-              <Pressable
-                onPress={() => router.push(`/worker/${company.id}/reviews` as any)}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={`See all ${reviewTotal} reviews`}
-              >
-                <Text style={styles.textButtonLabel}>See all</Text>
-              </Pressable>
-            ) : null}
-          </View>
-
-          {reviews.length === 0 ? (
-            <Text style={styles.emptyText}>
-              No reviews yet. Feedback appears here after completed bookings.
-            </Text>
-          ) : (
+        {/* ── Reviews (only when real reviews exist) ── */}
+        {reviews.length > 0 ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Reviews</Text>
+              {showSeeAll ? (
+                <Pressable
+                  onPress={() => router.push(`/worker/${company.id}/reviews` as any)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`See all ${reviewTotal} reviews`}
+                >
+                  <Text style={styles.textButtonLabel}>See all</Text>
+                </Pressable>
+              ) : null}
+            </View>
             <View>
               {reviews.slice(0, REVIEWS_PREVIEW_COUNT).map((review, index) => (
                 <View key={review.id} style={index > 0 && styles.reviewDivider}>
@@ -369,19 +356,14 @@ export default function CompanyDetailScreen() {
                 </View>
               ))}
             </View>
-          )}
-        </View>
-
-        {/* ── Trust ── */}
-        <View style={styles.sectionLast}>
-          <CompanyTrustGuaranteeCard isVerified={isVerified} ntnNumber={company.ntn_number} />
-        </View>
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.bgApp,
@@ -417,10 +399,10 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: 64,
+    height: 64,
     borderRadius: 16,
-    backgroundColor: companyTokens.colors.verifiedBlueTint,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -448,13 +430,18 @@ const styles = StyleSheet.create({
   verifiedText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 13,
-    color: companyTokens.colors.escrowGreenDark,
+    color: colors.primary,
   },
-  factsRow: {
+  metaRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    columnGap: 16,
-    rowGap: 8,
+    alignItems: 'center',
+    columnGap: 12,
+    marginTop: 4,
+  },
+  cityFact: {
+    flexShrink: 1,
+  },
+  about: {
     marginTop: 16,
   },
   fact: {
@@ -472,29 +459,23 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   section: {
-    marginTop: 28,
+    marginTop: 24,
   },
   customQuoteRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: 48,
-    paddingVertical: 14,
-    marginTop: 20,
+    paddingVertical: 12,
+    gap: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: companyTokens.colors.borderSubtle,
+    borderTopColor: companyTokens.colors.borderSubtle,
   },
   customQuoteTitle: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 14,
-    color: colors.primaryDark,
-  },
-  sectionLast: {
-    marginTop: 28,
-    paddingTop: 20,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: companyTokens.colors.borderSubtle,
+    flex: 1,
+    fontSize: 13,
+    color: colors.primary,
   },
   sectionHeaderRow: {
     flexDirection: 'row',

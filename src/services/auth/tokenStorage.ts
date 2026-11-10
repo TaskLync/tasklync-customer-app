@@ -72,11 +72,12 @@ function clearLegacy(): void {
 }
 
 async function readSecure(): Promise<{ session: StoredSession | null; failed: boolean }> {
-  for (let attempt = 0; attempt < 2; attempt++) {
+  // Cold-start keystore reads can fail briefly (device still unlocking, Android keystore warm-up).
+  for (let attempt = 0; attempt < 4; attempt++) {
     try {
       return { session: parse(await SecureStore.getItemAsync(SECURE_KEY, SECURE_OPTS)), failed: false };
     } catch {
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
     }
   }
   return { session: null, failed: true };

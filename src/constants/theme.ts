@@ -1,54 +1,40 @@
 /**
  * Theme tokens and theme color definition
  * Centralized design-token theme bridge for TaskLync Customer Mobile App.
+ *
+ * `Colors` is the legacy flat shape used by the Expo template components (themed-text, themed-view, app-tabs).
+ * It is derived from the same semantic tokens as the rest of the app, so it cannot drift from them.
  */
 
-import { colors, palette } from '../design/colors';
 import { fontFamily } from '../design/typography';
+import { lightTheme, darkTheme, type AppTheme } from '../design/themes';
+
+const legacy = ({ colors, palette }: AppTheme) => ({
+  text: colors.textPrimary,
+  textSecondary: colors.textSecondary,
+  textMuted: colors.textMuted,
+  textDisabled: colors.textDisabled,
+  background: colors.bgApp,
+  backgroundElement: colors.bgCard,
+  backgroundSelected: colors.primaryTint,
+  tint: colors.primaryDark,
+  icon: colors.textSecondary,
+  tabIconDefault: colors.textMuted,
+  tabIconSelected: colors.primaryDark,
+  border: colors.border,
+  card: colors.bgCard,
+  primary: colors.primary,
+  primaryDark: colors.primaryDark,
+  error: colors.danger,
+  warning: colors.warning,
+  success: colors.success,
+  info: colors.info,
+  onBrand: palette.pureWhite,
+});
 
 export const Colors = {
-  light: {
-    text: colors.textPrimary,
-    textSecondary: colors.textSecondary,
-    textMuted: colors.textMuted,
-    textDisabled: colors.textDisabled,
-    background: colors.bgApp,
-    backgroundElement: colors.bgCard,
-    backgroundSelected: colors.primaryTint,
-    tint: colors.primaryDark,
-    icon: colors.textSecondary,
-    tabIconDefault: colors.textMuted,
-    tabIconSelected: colors.primaryDark,
-    border: colors.border,
-    card: colors.bgCard,
-    primary: colors.primary,
-    primaryDark: colors.primaryDark,
-    error: colors.danger,
-    warning: colors.warning,
-    success: colors.primaryDark,
-    info: colors.info,
-  },
-  dark: {
-    text: palette.gray50,
-    textSecondary: palette.gray300,
-    textMuted: palette.gray400,
-    textDisabled: palette.gray600,
-    background: palette.gray900,
-    backgroundElement: palette.gray800,
-    backgroundSelected: '#163322',
-    tint: colors.primaryLight,
-    icon: palette.gray300,
-    tabIconDefault: palette.gray500,
-    tabIconSelected: colors.primaryLight,
-    border: palette.gray700,
-    card: palette.gray800,
-    primary: colors.primaryLight,
-    primaryDark: colors.primary,
-    error: palette.red400,
-    warning: palette.amber400,
-    success: palette.green400,
-    info: palette.blue400,
-  },
+  light: legacy(lightTheme),
+  dark: legacy(darkTheme),
 };
 
 export type ThemeColor = keyof typeof Colors.light;

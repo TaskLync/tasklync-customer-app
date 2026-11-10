@@ -1,6 +1,7 @@
 import React, { Children, isValidElement, Fragment } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { palette, colors, fontFamily, spacing } from '../../design';
+import { fontFamily, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface SettingsSectionProps {
   title: string;
@@ -8,6 +9,7 @@ export interface SettingsSectionProps {
 }
 
 export const SettingsSection: React.FC<SettingsSectionProps> = ({ title, children }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.sectionHeader} maxFontSizeMultiplier={1.3}>
@@ -29,7 +31,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({ title, childre
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     marginBottom: spacing.lg,
   },

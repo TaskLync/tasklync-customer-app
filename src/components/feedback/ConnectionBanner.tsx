@@ -1,4 +1,3 @@
-import { colors, palette } from '../../design';
 import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,10 +10,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSocketStore } from '../../store/socket.store';
 import { SOCKET_CONFIG } from '../../config/socket.config';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 type BannerStatus = 'reconnecting' | 'back_online';
 
 export const ConnectionBanner: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const isConnected = useSocketStore((state) => state.isConnected);
   const [visible, setVisible] = useState(false);
@@ -125,7 +126,7 @@ export const ConnectionBanner: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { CheckCheck } from 'lucide-react-native';
 import { ConversationItem } from '../../types/chat.types';
 import { fontFamily } from '../../design/typography';
-import { colors, palette } from '../../design/colors';
+import type { AppTheme } from '../../theme/useAppTheme';
+import { useAppTheme, useThemedStyles } from '../../theme/useAppTheme';
 
 interface ConversationRowProps {
   item: ConversationItem;
@@ -66,14 +67,14 @@ function formatConversationTimestamp(dateString: string | null | undefined): str
 /**
  * Format status as subtle inline secondary metadata without bulky badge blocks
  */
-function getBookingStatusInfo(rawStatus?: string): { label: string; color: string } | null {
+function getBookingStatusInfo(rawStatus: string | undefined, colors: AppTheme['colors']): { label: string; color: string } | null {
   if (!rawStatus) return null;
   const s = rawStatus.toUpperCase();
   if (s === 'AVAILABLE') return null;
 
   switch (s) {
     case 'PENDING':
-      return { label: 'Pending', color: '#D97706' }; // soft amber
+      return { label: 'Pending', color: colors.warningMedium }; // soft amber
     case 'ACCEPTED':
       return { label: 'Accepted', color: colors.primaryDark }; // Tasklync green
     case 'IN_PROGRESS':
@@ -95,6 +96,8 @@ export const ConversationRow = React.memo(function ConversationRow({
   item,
   onPress,
 }: ConversationRowProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handlePress = () => {
     onPress(item);
   };
@@ -106,7 +109,7 @@ export const ConversationRow = React.memo(function ConversationRow({
   const isOutgoing =
     item.lastMessageSenderType === 'user' || item.lastMessageSenderType === 'customer';
   const isTyping = (item as any).isTyping;
-  const statusInfo = getBookingStatusInfo(item.bookingStatus);
+  const statusInfo = getBookingStatusInfo(item.bookingStatus, colors);
 
   return (
     <Pressable
@@ -221,7 +224,7 @@ export const ConversationRow = React.memo(function ConversationRow({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -380,7 +383,7 @@ const styles = StyleSheet.create({
   unreadBadgeText: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: 10.5,
-    color: colors.white,
+    color: colors.pureWhite,
     includeFontPadding: false,
   },
 });

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { DisputeReason, DisputeReasonOption } from '../../types/booking.types';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const DISPUTE_REASONS: DisputeReasonOption[] = [
   {
@@ -50,6 +51,7 @@ export const DisputeReasonRadioGroup: React.FC<DisputeReasonRadioGroupProps> = (
   onSelectReason,
   disabled = false,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const handleSelect = (key: DisputeReason) => {
     if (disabled || selectedReason === key) return;
     onSelectReason(key);
@@ -99,7 +101,7 @@ export const DisputeReasonRadioGroup: React.FC<DisputeReasonRadioGroupProps> = (
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     marginVertical: spacing.md,
   },

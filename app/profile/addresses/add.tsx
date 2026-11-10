@@ -1,12 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  Pressable,
-  StatusBar,
-  Keyboard,
-  Alert,
-} from 'react-native';
+import { View, StyleSheet, Pressable, Keyboard } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
@@ -31,12 +24,15 @@ import { locationService } from '../../../src/services/location/location.service
 import { createRequestGate } from '../../../src/utils/requestGate';
 
 import { Address, PlacePrediction, MapRegion } from '../../../src/types/address.types';
-import { colors, palette, radius, shadows } from '../../../src/design';
+import { radius, shadows } from '../../../src/design';
 import {
   validateServiceArea,
   SERVICE_UNAVAILABLE_MESSAGE,
   FAISALABAD_DEFAULT_REGION,
 } from '../../../src/config/serviceArea.config';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../../src/theme/ThemedStatusBar';
+import { showAlert } from '../../../src/components/feedback/AppAlert';
 
 const DEFAULT_REGION: MapRegion = FAISALABAD_DEFAULT_REGION;
 
@@ -52,6 +48,8 @@ const DEFAULT_REGION: MapRegion = FAISALABAD_DEFAULT_REGION;
  * - Non-blocking duplicate address detection within 15m radius
  */
 export default function AddEditAddressScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
@@ -259,7 +257,7 @@ export default function AddEditAddressScreen() {
     // The user picked something else while this was resolving: drop this one silently
     if (!selectGateRef.current.isLatest(ticket)) return;
     if (!details) {
-      Alert.alert(
+      showAlert(
         'Location Error',
         'Could not determine location for this address. Please select directly on the map.'
       );
@@ -269,7 +267,7 @@ export default function AddEditAddressScreen() {
 
     const validation = validateServiceArea({ lat: details.lat, lng: details.lng });
     if (!validation.isServiceable) {
-      Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
       resetSearch();
       return;
     }
@@ -299,7 +297,7 @@ export default function AddEditAddressScreen() {
     userInteractedRef.current = true; // explicit user action: auto-GPS must not move the pin again
     const validation = validateServiceArea(coords);
     if (!validation.isServiceable) {
-      Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -328,7 +326,7 @@ export default function AddEditAddressScreen() {
   }) => {
     const validation = validateServiceArea({ lat: payload.lat, lng: payload.lng });
     if (!validation.isServiceable) {
-      Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -428,7 +426,7 @@ export default function AddEditAddressScreen() {
         }
       }, 180);
     } catch (_err) {
-      Alert.alert(
+      showAlert(
         'Save Failed',
         "Couldn't save address. Please check your connection and try again."
       );
@@ -455,7 +453,7 @@ export default function AddEditAddressScreen() {
         router.replace('/profile/addresses');
       }
     } catch (_err) {
-      Alert.alert('Error', "Couldn't delete address.");
+      showAlert('Error', "Couldn't delete address.");
     }
   };
 
@@ -463,7 +461,7 @@ export default function AddEditAddressScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+      <ThemedStatusBar />
 
       {/* Full-Screen Map View with Fixed Center Pin */}
       <MapErrorBoundary>
@@ -554,7 +552,7 @@ export default function AddEditAddressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: palette.zenWhite,

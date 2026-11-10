@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { ShieldCheck } from 'lucide-react-native';
-import { palette, fontFamily, radius, spacing } from '../../design';
+import { fontFamily, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface SecurePaymentNoticeProps {
   customText?: string;
@@ -9,6 +10,8 @@ export interface SecurePaymentNoticeProps {
 export const SecurePaymentNotice: React.FC<SecurePaymentNoticeProps> = ({
   customText = '🔒 Payments secured by 256-bit encryption. Tasklync never stores your card PIN or CVV.',
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <ShieldCheck size={16} color={palette.green600} style={styles.icon} />
@@ -19,7 +22,7 @@ export const SecurePaymentNotice: React.FC<SecurePaymentNoticeProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

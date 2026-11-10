@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LogOut } from 'lucide-react-native';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface LogoutConfirmDialogProps {
   visible: boolean;
@@ -22,6 +23,8 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
   onCancel,
   isLoading = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal
       visible={visible}
@@ -57,7 +60,7 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator size="small" color={palette.white} />
+                <ActivityIndicator size="small" color={palette.pureWhite} />
               ) : (
                 <Text style={styles.logoutBtnText}>Log Out</Text>
               )}
@@ -69,7 +72,7 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
@@ -80,7 +83,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 340,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.modalBackground,
     borderRadius: radius.xl,
     padding: spacing.lg,
     alignItems: 'center',
@@ -137,6 +140,6 @@ const styles = StyleSheet.create({
   logoutBtnText: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: fontSize.caption + 1,
-    color: palette.white,
+    color: palette.pureWhite,
   },
 });

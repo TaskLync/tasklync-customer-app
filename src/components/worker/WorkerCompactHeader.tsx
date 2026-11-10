@@ -12,11 +12,11 @@ import { ChevronLeft } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../ui/Button/Button';
-import { colors } from '../../design/colors';
 import { shadows } from '../../design/shadows';
 import { typography } from '../../design/typography';
 import { WorkerPublicProfile } from '../../types/worker.types';
 import { WorkerAvatar } from './WorkerAvatar';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface WorkerCompactHeaderProps {
   worker?: WorkerPublicProfile;
@@ -31,6 +31,8 @@ export const WorkerCompactHeader: React.FC<WorkerCompactHeaderProps> = ({
   onBack,
   onBookNow,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [interactable, setInteractable] = useState(false);
 
   // We show the header when scroll is past 120px
@@ -118,7 +120,7 @@ export const WorkerCompactHeader: React.FC<WorkerCompactHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,

@@ -4,7 +4,8 @@ import { Camera, Image as ImageIcon, X } from 'lucide-react-native';
 import { BottomSheet } from '../layout/BottomSheet';
 import { EvidenceSlotState } from '../../types/booking.types';
 import { DisputeEvidenceSlot } from './DisputeEvidenceSlot';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface DisputeEvidenceUploadProps {
   slots: EvidenceSlotState[];
@@ -28,6 +29,8 @@ export const DisputeEvidenceUpload: React.FC<DisputeEvidenceUploadProps> = ({
   onRetrySlot,
   disabled = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
 
   const handleOpenPicker = (slotIndex: number) => {
@@ -125,7 +128,7 @@ export const DisputeEvidenceUpload: React.FC<DisputeEvidenceUploadProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     marginVertical: spacing.md,
   },

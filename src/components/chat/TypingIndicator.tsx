@@ -1,4 +1,3 @@
-import { colors, palette } from '../../design';
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -10,8 +9,10 @@ import Animated, {
   withDelay,
   Easing,
 } from 'react-native-reanimated';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 function BouncingDot({ delay }: { delay: number }) {
+  const styles = useThemedStyles(createStyles);
   const translateY = useSharedValue(0);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ interface TypingIndicatorProps {
 export const TypingIndicator = React.memo(function TypingIndicator({
   isVisible = true,
 }: TypingIndicatorProps) {
+  const styles = useThemedStyles(createStyles);
   if (!isVisible) return null;
 
   return (
@@ -56,7 +58,7 @@ export const TypingIndicator = React.memo(function TypingIndicator({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingVertical: 6,
@@ -79,6 +81,6 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#9CA3AF',
+    backgroundColor: colors.textMuted,
   },
 });

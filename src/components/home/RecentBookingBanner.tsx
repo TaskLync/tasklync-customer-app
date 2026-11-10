@@ -6,12 +6,14 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-na
 import { Button } from '../ui/Button';
 import { OnlineBadge } from '../ui/Badge/OnlineBadge';
 import { useActiveBooking } from '../../hooks/useActiveBooking';
-import { colors } from '../../design/colors';
 import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
 import { springConfig } from '../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const RecentBookingBanner = () => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { data: activeBooking } = useActiveBooking();
   const translateY = useSharedValue(-20);
@@ -116,7 +118,7 @@ export const RecentBookingBanner = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     marginVertical: 12,
     marginHorizontal: 16,

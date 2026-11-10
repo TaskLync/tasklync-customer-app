@@ -2,14 +2,16 @@ import { FC } from 'react';
 import { StyleSheet, View, Text, Pressable, Platform } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface CartHeaderProps {
   itemCount: number;
 }
 
 export const CartHeader: FC<CartHeaderProps> = ({ itemCount }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   const handleBack = () => {
@@ -49,7 +51,7 @@ export const CartHeader: FC<CartHeaderProps> = ({ itemCount }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   header: {
     height: 56,
     flexDirection: 'row',

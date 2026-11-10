@@ -17,10 +17,10 @@ import Animated, {
   withDelay
 } from 'react-native-reanimated';
 
-import { colors } from '@design/colors';
 import { radius } from '@design/radius';
 import { fontFamily } from '@design/typography';
 import { shakeSequence, springConfig } from '@design/animations';
+import { useAppTheme } from '../../../theme/useAppTheme';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -46,6 +46,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
   disabled = false,
   length = 6,
 }) => {
+  const { colors } = useAppTheme();
   const inputRef = useRef<RNTextInput>(null);
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const [selection, setSelection] = useState<{ start: number; end: number }>({

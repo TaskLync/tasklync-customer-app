@@ -13,12 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Bell, CalendarCheck, CreditCard, MessageSquare, Star, Sparkles, Shield } from 'lucide-react-native';
 import { notificationApi } from '../../src/services/api/notification.api';
 import { CategoryPreference, NotificationCategory } from '../../src/types/notification.types';
-import { colors, palette } from '../../src/design/colors';
+import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { useAppTheme } from '../../src/theme/useAppTheme';
 
-const CATEGORY_METADATA: Record<
-  NotificationCategory,
-  { label: string; description: string; icon: any; color: string }
-> = {
+type CategoryMeta = { label: string; description: string; icon: any; color: string };
+
+const createCategoryMetadata = ({ colors, palette }: AppTheme): Record<NotificationCategory, CategoryMeta> => ({
   booking: {
     label: 'Booking Updates',
     description: 'Acceptance, start, arrival, and completion alerts',
@@ -61,10 +61,13 @@ const CATEGORY_METADATA: Record<
     icon: Sparkles,
     color: palette.purple600,
   },
-};
+});
 
 export default function NotificationPreferencesScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
+  const categoryMetadata = useThemedStyles(createCategoryMetadata);
   const insets = useSafeAreaInsets();
 
   const [preferences, setPreferences] = useState<CategoryPreference[]>([]);
@@ -141,7 +144,7 @@ export default function NotificationPreferencesScreen() {
           <Text style={styles.sectionHeader}>NOTIFICATION CHANNELS BY CATEGORY</Text>
 
           {preferences.map((pref) => {
-            const meta = CATEGORY_METADATA[pref.category as NotificationCategory] || {
+            const meta = categoryMetadata[pref.category as NotificationCategory] || {
               label: pref.category,
               description: 'Notifications for this category',
               icon: Bell,
@@ -200,7 +203,7 @@ export default function NotificationPreferencesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

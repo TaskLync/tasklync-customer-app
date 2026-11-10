@@ -2,8 +2,8 @@ import { FC } from 'react';
 import { StyleSheet, Text, Pressable, Platform } from 'react-native';
 import { Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface AddMoreServicesLinkProps {
   workerId?: string;
@@ -14,6 +14,8 @@ export const AddMoreServicesLink: FC<AddMoreServicesLinkProps> = ({
   workerId,
   onPress,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   const handlePress = () => {
@@ -41,7 +43,7 @@ export const AddMoreServicesLink: FC<AddMoreServicesLinkProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -14,7 +14,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
-import { colors, palette } from '../../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 /**
  * Booking-success hero.
@@ -50,6 +50,8 @@ export interface SuccessCelebrationProps {
 }
 
 export const SuccessCelebration: React.FC<SuccessCelebrationProps> = ({ reveal }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const reduceMotion = useReducedMotion();
 
   const fill = useSharedValue(0);
@@ -140,7 +142,7 @@ export const SuccessCelebration: React.FC<SuccessCelebrationProps> = ({ reveal }
           <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE} viewBox="0 0 88 88">
             <AnimatedPath
               d={CHECK_PATH}
-              stroke={palette.white}
+              stroke={palette.pureWhite}
               strokeWidth={5}
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -155,7 +157,7 @@ export const SuccessCelebration: React.FC<SuccessCelebrationProps> = ({ reveal }
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     width: LINE_WIDTH,
     height: CIRCLE_SIZE,
@@ -178,7 +180,7 @@ const styles = StyleSheet.create({
   shape: {
     position: 'absolute',
     backgroundColor: colors.primary,
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 16,
   },

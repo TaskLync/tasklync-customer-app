@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { RefundPolicyResult } from '../../types/booking.types';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface RefundPolicyNoticeProps {
   policy: RefundPolicyResult;
@@ -20,6 +21,7 @@ export const RefundPolicyNotice: React.FC<RefundPolicyNoticeProps> = ({
   currency = 'PKR',
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const isFullRefund = policy.percentage === 100;
   const isPartialRefund = policy.percentage > 0 && policy.percentage < 100;
 
@@ -64,7 +66,7 @@ export const RefundPolicyNotice: React.FC<RefundPolicyNoticeProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

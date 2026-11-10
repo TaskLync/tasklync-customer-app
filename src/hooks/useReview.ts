@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { Alert } from 'react-native';
+
 import { reviewApi, extractReviewErrorMessage } from '../services/api/review.api';
 import {
   ReviewEligibility,
@@ -12,6 +12,7 @@ import {
   ReviewItem,
 } from '../types/review.types';
 import { useAuthStore } from '../store/auth.store';
+import { showAlert } from '../components/feedback/AppAlert';
 
 /**
  * 1. Check review eligibility & deadline for a booking
@@ -176,7 +177,7 @@ export function useReviewMediaUpload(bookingId?: string) {
   const pickAndUploadImage = useCallback(
     async (source: 'camera' | 'gallery') => {
       if (photos.length >= 5) {
-        Alert.alert('Photo Limit Reached', 'You can upload a maximum of 5 photos per review.');
+        showAlert('Photo Limit Reached', 'You can upload a maximum of 5 photos per review.');
         return;
       }
 
@@ -188,7 +189,7 @@ export function useReviewMediaUpload(bookingId?: string) {
         if (source === 'camera') {
           const { status } = await ImagePicker.requestCameraPermissionsAsync();
           if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'Camera permission is required to take review photos.');
+            showAlert('Permission Denied', 'Camera permission is required to take review photos.');
             return;
           }
           result = await ImagePicker.launchCameraAsync({
@@ -200,7 +201,7 @@ export function useReviewMediaUpload(bookingId?: string) {
         } else {
           const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (status !== 'granted') {
-            Alert.alert(
+            showAlert(
               'Permission Denied',
               'Photo library permission is required to attach review photos.'
             );
@@ -234,7 +235,7 @@ export function useReviewMediaUpload(bookingId?: string) {
       } catch (err: any) {
         const message = extractReviewErrorMessage(err);
         setUploadError(message);
-        Alert.alert('Upload Failed', message);
+        showAlert('Upload Failed', message);
       } finally {
         setIsUploading(false);
       }

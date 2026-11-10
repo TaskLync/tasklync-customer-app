@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, StatusBar } from 'react-native';
+import { useEffect, useMemo, useCallback, useState } from 'react';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 
 // Design system
-import { palette, colors } from '../../src/design';
 
 // Hooks & Stores
 import { useCalendarMonth } from '../../src/hooks/useCalendarMonth';
 import { useWorkerSlots } from '../../src/hooks/useWorkerSlots';
 import { useBookingDraftStore } from '../../src/store/bookingDraft.store';
 import { useCartStore } from '../../src/store/cart.store';
-import { normalizeDateToYYYYMMDD } from '../../src/utils/timezone';
+import { normalizeDateToYYYYMMDD, parseTimeSlot } from '../../src/utils/timezone';
+import { cartDurationHours } from '../../src/utils/bookingDuration';
+import { useAuthStore } from '../../src/store/auth.store';
+import { checkoutHold } from '../../src/services/booking/checkoutHold';
+import { invalidateAvailability } from '../../src/utils/availabilityEvents';
 
 // Components
 import { StepProgress } from '../../src/components/booking/StepProgress';
@@ -24,8 +27,12 @@ import { CalendarWeekdayRow } from '../../src/components/booking/schedule/Calend
 import { CalendarGrid } from '../../src/components/booking/schedule/CalendarGrid';
 import { TimeSlotGrid } from '../../src/components/booking/schedule/TimeSlotGrid';
 import { UrgentToggleRow } from '../../src/components/booking/schedule/UrgentToggleRow';
+import { BookingIssueSheet, type BookingIssueKind } from '../../src/components/booking/BookingIssueSheet';
+import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 export default function ScheduleScreen() {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -34,14 +41,9 @@ export default function ScheduleScreen() {
   const cartItems = useCartStore((s) => s.items);
 
   // Derive service duration dynamically from cart (defaults to 0.5 hours / 30 mins)
-  const serviceDurationHours = useMemo(() => {
-    if (!cartItems || cartItems.length === 0) return 0.5;
-    const total = cartItems.reduce((acc, item) => {
-      const itemHours = item.durationHours || (item.durationMins ? item.durationMins / 60 : 0.5);
-      return acc + itemHours * (item.quantity || 1);
-    }, 0);
-    return Math.max(0.5, Math.min(12, total));
-  }, [cartItems]);
+  // The SAME duration checkout sends (shared helper), so the slots shown are validated for the same interval.
+  const serviceDurationHours = useMemo(() => cartDurationHours(cartItems), [cartItems]);
+  const token = useAuthStore((s) => s.accessToken);
 
   // Booking draft store
   const {
@@ -128,14 +130,48 @@ export default function ScheduleScreen() {
   );
 
   // Navigation action
-  const handleContinue = () => {
+  // Continue = the customer commits to this slot: take a short server-side checkout hold so nobody else
+  // can book it while they enter address / review. Browsing slots never holds anything.
+  const [isHolding, setIsHolding] = useState(false);
+  const [holdIssue, setHoldIssue] = useState<{ kind: BookingIssueKind; reason: string | null } | null>(null);
+
+  const handleContinue = async () => {
+    if (isHolding) return;
+    const date = normalizeDateToYYYYMMDD(selectedDate);
+    // Guests cannot hold (auth required); booking create still validates atomically after sign-in.
+    if (token && resolvedWorkerId && date && selectedTimeSlot) {
+      const { hour24, minute } = parseTimeSlot(selectedTimeSlot);
+      const startTime = `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      setIsHolding(true);
+      const res = await checkoutHold.acquire({
+        workerId: resolvedWorkerId, date, startTime, durationHours: serviceDurationHours,
+      });
+      setIsHolding(false);
+      if (!res.ok) {
+        invalidateAvailability(resolvedWorkerId); // the calendar must stop offering it
+        if (res.failure.kind !== 'retryable' && res.failure.kind !== 'other') {
+          setHoldIssue({ kind: res.failure.kind, reason: res.failure.reason });
+        }
+        return;
+      }
+    }
     // Navigate to next funnel step (Day 23 Address Screen)
     router.push('/booking/address' as any);
   };
 
+  const onHoldIssuePrimary = () => {
+    const kind = holdIssue?.kind;
+    setHoldIssue(null);
+    if (kind === 'worker_unavailable') {
+      router.navigate('/(tabs)/explore' as any);
+      return;
+    }
+    setSelectedTimeSlot(null); // pick another time right here
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={palette.white} />
+      <ThemedStatusBar />
       <View style={styles.container}>
         {/* Screen Header */}
         <ScheduleHeader />
@@ -197,15 +233,27 @@ export default function ScheduleScreen() {
               ? `${selectedDate} • ${selectedTimeSlot}`
               : 'Select date & time slot'
           }
-          enabled={isSelectedSlotAvailable}
+          enabled={isSelectedSlotAvailable && !isHolding}
+          loading={isHolding}
           onPress={handleContinue}
         />
       </View>
+
+      {holdIssue ? (
+        <BookingIssueSheet
+          visible
+          kind={holdIssue.kind}
+          reason={holdIssue.reason}
+          onPrimary={onHoldIssuePrimary}
+          onSecondary={() => { setHoldIssue(null); refetchSlots(); }}
+          onDismiss={() => setHoldIssue(null)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.bgApp,

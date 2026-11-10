@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Layers, User, ArrowUpRight } from 'lucide-react-native';
 import { AutocompleteSuggestion } from '../../types/search.types';
-import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface AutocompleteDropdownProps {
   suggestions: AutocompleteSuggestion[];
@@ -16,6 +16,8 @@ export const AutocompleteDropdown: React.FC<AutocompleteDropdownProps> = ({
   onSelect,
   visible,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   if (!visible || !suggestions || suggestions.length === 0) return null;
 
   return (
@@ -68,9 +70,9 @@ export const AutocompleteDropdown: React.FC<AutocompleteDropdownProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,

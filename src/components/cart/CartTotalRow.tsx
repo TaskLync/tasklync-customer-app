@@ -1,13 +1,14 @@
 import { FC } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface CartTotalRowProps {
   total: number;
 }
 
 export const CartTotalRow: FC<CartTotalRowProps> = ({ total }) => {
+  const styles = useThemedStyles(createStyles);
   const formattedTotal = `Rs. ${total.toLocaleString()}`;
 
   return (
@@ -21,7 +22,7 @@ export const CartTotalRow: FC<CartTotalRowProps> = ({ total }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   totalRow: {
     flexDirection: 'row',
     alignItems: 'center',

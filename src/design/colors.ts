@@ -1,4 +1,18 @@
-export const palette = {
+/**
+ * Raw colour scales. The LIGHT palette is the Tasklync identity and is exported as `palette` for static
+ * (non-React) use. Components must not import it directly: they read the active theme with
+ * `useAppTheme()` / `useThemedStyles()` (src/theme), which resolves these same keys against the
+ * dark palette in src/design/themes.ts when the device is in dark mode.
+ */
+export const lightPalette = {
+  // Fixed colours: identical in every theme. Use for text/icons ON brand or photo surfaces.
+  pureWhite: '#FFFFFF',
+
+  // Overlay surfaces and inverse (high-contrast chip) pair
+  elevated: '#FFFFFF', // modals, bottom sheets, popovers
+  inverse: '#0F172A', // high-contrast chip / toast surface
+  onInverse: '#FFFFFF', // content on `inverse`
+
   // Primary (Green scale)
   green50: '#F0FDF4',
   green100: '#DCFCE7',
@@ -114,7 +128,47 @@ export const palette = {
   overlayLight: 'rgba(15, 23, 42, 0.3)',
 };
 
-export const colors = {
+export type Palette = typeof lightPalette;
+export type ThemeMode = 'light' | 'dark';
+
+/**
+ * Semantic colour tokens. The same builder serves both themes: every token is derived from the palette it
+ * is given, so a theme is defined once (its palette) and cannot drift from the other.
+ */
+export const buildColors = (palette: Palette, mode: ThemeMode) => ({
+  // ── Semantic tokens (preferred in new code) ──
+  background: palette.canvasGray,
+  surface: palette.white,
+  surfaceSecondary: palette.gray50,
+  surfaceElevated: palette.elevated,
+  textTertiary: palette.gray400,
+  textInverse: palette.onInverse,
+  primaryPressed: mode === 'dark' ? '#15803D' : palette.green700,
+  primarySubtle: palette.green50,
+  divider: palette.gray100,
+  success: palette.green600,
+  error: palette.red500,
+  inputBackground: palette.iceGray,
+  inputBorder: palette.softGray,
+  // Light: a step darker than textMuted so empty fields read at >= 3:1 (WCAG non-text/UI). Dark: gray400 already clears it.
+  placeholder: mode === 'light' ? '#7B8AA0' : palette.gray400,
+  cardBackground: palette.white,
+  modalBackground: palette.elevated,
+  bottomSheetBackground: palette.elevated,
+  tabBarBackground: palette.white,
+  // Bottom tab bar: neutral greys, never brand green. Contrast on the tab bar surface:
+  //   light  active #374151 10.3:1 | inactive #6B7280 4.8:1 (#9CA3AF is only 2.5:1, below AA for 11px labels)
+  //   dark   active #E5E7EB 14.9:1 | inactive #7C8593 5.0:1 (#6B7280 is only 3.8:1)
+  tabBarActive: mode === 'light' ? '#374151' : '#E5E7EB',
+  tabBarInactive: mode === 'light' ? '#6B7280' : '#7C8593',
+  tabBarBorder: mode === 'light' ? '#E5E7EB' : '#2A2F36',
+  iconPrimary: palette.gray900,
+  iconSecondary: palette.gray600,
+  inverseSurface: palette.inverse,
+  onBrand: palette.pureWhite,
+  pureWhite: palette.pureWhite,
+
+  // ── Existing tokens (kept: ~300 files use them) ──
   // Brand
   primary: palette.green500, // #22C55E
   primaryDark: palette.green600, // #16A34A (high contrast on white for text & icons)
@@ -196,12 +250,12 @@ export const colors = {
   white: palette.white,
   black: palette.black,
   overlay: palette.overlay,
-  shadow: palette.gray900,
+  shadow: mode === 'dark' ? palette.black : palette.gray900,
   starFilled: palette.amber500,
   starEmpty: palette.gray300,
-};
+});
 
-export const bookingStatusColors = {
+export const buildBookingStatusColors = (palette: Palette) => ({
   PENDING: {
     bg: palette.amber100,
     border: palette.amber500,
@@ -238,6 +292,11 @@ export const bookingStatusColors = {
     text: palette.red900,
     dot: palette.red600,
   },
-};
+});
+
+/** Static LIGHT instances for non-React code and as the backwards-compatible default. */
+export const palette: Palette = lightPalette;
+export const colors = buildColors(lightPalette, 'light');
+export const bookingStatusColors = buildBookingStatusColors(lightPalette);
 
 export type ColorKey = keyof typeof colors;

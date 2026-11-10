@@ -3,8 +3,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Calendar, Clock } from 'lucide-react-native';
 import { SummarySectionCard } from './SummarySectionCard';
 import { UrgentPriceBadge } from '../schedule/UrgentPriceBadge';
-import { colors, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
 import { formatPKTDate } from '../../../utils/timezone';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface SummaryScheduleRowProps {
   selectedDate: string | null;
@@ -17,6 +18,8 @@ export const SummaryScheduleRow: React.FC<SummaryScheduleRowProps> = ({
   selectedTimeSlot,
   isUrgent,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   // Format date helper: "2026-08-15" -> "Saturday, Aug 15, 2026"
   const formattedDate = React.useMemo(() => {
     if (!selectedDate) return 'Not selected';
@@ -43,7 +46,7 @@ export const SummaryScheduleRow: React.FC<SummaryScheduleRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',

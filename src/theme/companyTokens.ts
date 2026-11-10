@@ -4,10 +4,10 @@
  * Aligned with TaskLync Customer App design system and CUSTOMER_APP_COMPANY_HANDYMAN_IMPLEMENTATION_SPEC.md.
  */
 
-import { palette } from '../design/colors';
+import { lightPalette, type Palette, type ThemeMode } from '../design/colors';
 import { fontFamily } from '../design/typography';
 
-export const companyTokens = {
+export const buildCompanyTokens = (palette: Palette, mode: ThemeMode) => ({
   colors: {
     // Corporate primary (Navy / Deep Slate)
     corporatePrimary: palette.gray900,
@@ -21,10 +21,10 @@ export const companyTokens = {
     verifiedBlueBorder: palette.blue200,
 
     // Escrow Emerald (Safety & guarantee)
-    escrowGreen: '#059669',
-    escrowGreenDark: '#047857',
-    escrowGreenTint: '#ECFDF5',
-    escrowGreenBorder: '#A7F3D0',
+    escrowGreen: mode === 'dark' ? palette.green500 : '#059669',
+    escrowGreenDark: mode === 'dark' ? palette.green700 : '#047857',
+    escrowGreenTint: mode === 'dark' ? palette.green50 : '#ECFDF5',
+    escrowGreenBorder: mode === 'dark' ? palette.green200 : '#A7F3D0',
 
     // Rating gold
     ratingGold: palette.amber500,
@@ -123,4 +123,7 @@ export const companyTokens = {
       color: palette.gray600,
     },
   },
-} as const;
+}) as const;
+
+/** Static LIGHT instance, kept for non-React code. Components read `companyTokens` from the active theme. */
+export const companyTokens = buildCompanyTokens(lightPalette, 'light');

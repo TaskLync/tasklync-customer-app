@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, Modal, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -12,10 +12,12 @@ import {
 
 import { Screen } from '@components/layout/Screen';
 import { Button } from '@components/ui/Button';
-import { colors, fontFamily, radius, palette, shadows } from '@design/index';
+import { fontFamily, radius, shadows } from '@design/index';
 import { useLocationStore, useUIStore, useAuthStore } from '@store/index';
 import { locationService } from '../../src/services/location/location.service';
 import { validateServiceArea } from '../../src/config/serviceArea.config';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { showAlert } from '../../src/components/feedback/AppAlert';
 
 interface UnserviceableLocationState {
   visible: boolean;
@@ -25,6 +27,8 @@ interface UnserviceableLocationState {
 }
 
 export default function LocationPermissionScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -89,7 +93,7 @@ export default function LocationPermissionScreen() {
           });
           navigateToHome(true);
         } else {
-          Alert.alert(
+          showAlert(
             'Location Services Off',
             'Your device location services (GPS) are turned off. Please enable GPS in device settings to detect your location.',
             [
@@ -130,7 +134,7 @@ export default function LocationPermissionScreen() {
         }
 
         if (error.code === 'SERVICES_DISABLED') {
-          Alert.alert(
+          showAlert(
             'Location Services Off',
             error.userMessage || 'Please turn on GPS to detect your location.',
             [
@@ -142,7 +146,7 @@ export default function LocationPermissionScreen() {
         }
 
         // Weak GPS or timeout: inform user and allow manual choice without faking Faisalabad
-        Alert.alert(
+        showAlert(
           'GPS Signal Weak',
           error.userMessage ||
             'Unable to acquire a high-confidence GPS lock. You can continue to explore or retry.',
@@ -214,7 +218,7 @@ export default function LocationPermissionScreen() {
   };
 
   return (
-    <Screen bg={palette.white} statusBarStyle="dark-content" edges={['top', 'left', 'right']}>
+    <Screen bg={palette.white} edges={['top', 'left', 'right']}>
       <View style={styles.container}>
         {/* Minimalist Central Value Proposition */}
         <View style={styles.centerContent}>
@@ -397,7 +401,7 @@ export default function LocationPermissionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: palette.white,
@@ -478,7 +482,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 350,
-    backgroundColor: palette.white,
+    backgroundColor: colors.modalBackground,
     borderRadius: 24,
     padding: 22,
     ...shadows.xl,
@@ -603,6 +607,6 @@ const styles = StyleSheet.create({
   modalSettingsText: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 13,
-    color: palette.white,
+    color: palette.pureWhite,
   },
 });

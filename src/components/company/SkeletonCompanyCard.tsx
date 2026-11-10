@@ -6,8 +6,7 @@ import {
   SkeletonGroup,
   SkeletonText,
 } from '../ui/Skeleton/Skeleton';
-import { colors } from '../../design/colors';
-import { companyTokens } from '../../theme/companyTokens';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const PILL_WIDTHS = [72, 88, 64];
 
@@ -15,7 +14,9 @@ const PILL_WIDTHS = [72, 88, 64];
  * Mirrors the company card on the Companies screen (app/company/index.tsx): static bordered
  * shell, 54px logo, name / fleet badge / rating lines, chevron, and the category pill row.
  */
-export const SkeletonCompanyCard: React.FC = () => (
+export const SkeletonCompanyCard: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
+  return (
   <View style={styles.card}>
     <SkeletonGroup accessibilityLabel="Loading company">
       <View style={styles.header}>
@@ -34,8 +35,9 @@ export const SkeletonCompanyCard: React.FC = () => (
     </SkeletonGroup>
   </View>
 );
+};
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create({
   card: {
     backgroundColor: colors.bgCard,
     borderRadius: 16,

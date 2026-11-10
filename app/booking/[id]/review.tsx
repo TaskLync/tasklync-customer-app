@@ -1,15 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  StatusBar,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Clock, AlertCircle, Edit3, Lock } from 'lucide-react-native';
@@ -30,13 +20,9 @@ import { ReviewCommentInput } from '../../../src/components/review/ReviewComment
 import { ReviewSuccessState } from '../../../src/components/review/ReviewSuccessState';
 import { ReviewStarRow } from '../../../src/components/review/ReviewStarRow';
 
-import {
-  colors,
-  fontFamily,
-  fontSize,
-  radius,
-  spacing,
-} from '../../../src/design';
+import { fontFamily, fontSize, radius, spacing } from '../../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../../src/theme/ThemedStatusBar';
 
 /**
  * ReviewScreen
@@ -50,6 +36,8 @@ import {
  * - Safe areas and responsive Android layout handling
  */
 export default function ReviewScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -270,7 +258,7 @@ export default function ReviewScreen() {
   if (hasSubmitted) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+        <ThemedStatusBar />
         <ReviewSuccessState onDismiss={handleNavigateAfterSuccess} />
       </View>
     );
@@ -280,7 +268,7 @@ export default function ReviewScreen() {
   if (!isInitialLoading && eligibility?.isExpired && !existingReview) {
     return (
       <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+        <ThemedStatusBar />
         <View style={styles.header}>
           <Pressable
             style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
@@ -315,7 +303,7 @@ export default function ReviewScreen() {
   if (!isInitialLoading && isEditWindowExpired && existingReview) {
     return (
       <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+        <ThemedStatusBar />
         <View style={styles.header}>
           <Pressable
             style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
@@ -395,7 +383,7 @@ export default function ReviewScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+      <ThemedStatusBar />
 
       {/* Screen Header */}
       <View style={styles.header}>
@@ -525,7 +513,7 @@ export default function ReviewScreen() {
                 accessibilityState={{ disabled: !canSubmit || isSaving }}
               >
                 {isSaving ? (
-                  <ActivityIndicator size="small" color={colors.white} />
+                  <ActivityIndicator size="small" color={colors.pureWhite} />
                 ) : (
                   <Text
                     style={[
@@ -561,7 +549,7 @@ export default function ReviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   flexOne: {
     flex: 1,
   },
@@ -704,7 +692,7 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: fontSize.body1 - 1,
-    color: colors.white,
+    color: colors.pureWhite,
   },
   submitButtonTextDisabled: {
     color: colors.textMuted,
@@ -856,6 +844,6 @@ const styles = StyleSheet.create({
   primaryPillBtnText: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: fontSize.body2,
-    color: colors.white,
+    color: colors.pureWhite,
   },
 });

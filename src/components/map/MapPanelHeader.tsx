@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { typography } from '../../design/typography';
-import { colors } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface MapPanelHeaderProps {
   count: number;
@@ -14,6 +14,7 @@ export const MapPanelHeader: FC<MapPanelHeaderProps> = ({
   isLoading = false,
   categoryLabel,
 }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
@@ -34,7 +35,7 @@ export const MapPanelHeader: FC<MapPanelHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingTop: 4,

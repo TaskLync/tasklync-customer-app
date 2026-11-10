@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
 import { ServicePriceTag } from '../service/ServicePriceTag';
 import { AddToCartButton } from '../cart/AddToCartButton';
-import { colors } from '../../design/colors';
-import { companyTokens } from '../../theme/companyTokens';
 import { WorkerServiceOffering } from '../../types/worker.types';
+import { WorkerConflictModal } from '../cart/WorkerConflictModal';
+import { useRowAddToCart } from '../../hooks/useRowAddToCart';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface CompanyServiceRowProps {
   service: WorkerServiceOffering;
@@ -30,13 +32,31 @@ export const CompanyServiceRow: React.FC<CompanyServiceRowProps> = React.memo(
     workerVerified,
     showDivider,
   }) => {
+    const styles = useThemedStyles(createStyles);
+    const { colors } = useAppTheme();
     const router = useRouter();
     const isQuote = service.priceType === 'quote';
+    const rowCart = useRowAddToCart({
+      serviceId: service.id,
+      serviceName: service.serviceName,
+      price: service.customPrice,
+      workerId,
+      workerName,
+      workerAvatar,
+      workerRating,
+      workerCategory,
+      isVerified: workerVerified,
+    });
 
     return (
       <Pressable
         onPress={() =>
-          router.push({ pathname: `/service/${service.id}`, params: { workerId } } as any)
+          isQuote
+            ? router.push({
+                pathname: '/custom-request/new' as any,
+                params: { workerId, categoryId: workerCategory || '' },
+              })
+            : rowCart.addFromRow()
         }
         style={({ pressed }) => [
           styles.row,
@@ -44,7 +64,7 @@ export const CompanyServiceRow: React.FC<CompanyServiceRowProps> = React.memo(
           pressed && styles.pressed,
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`${service.serviceName}. View details`}
+        accessibilityLabel={isQuote ? `${service.serviceName}. Request a quote` : `${service.serviceName}. Add to cart`}
       >
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={2}>
@@ -59,7 +79,9 @@ export const CompanyServiceRow: React.FC<CompanyServiceRowProps> = React.memo(
           </View>
         </View>
 
-        {!isQuote && (
+        {isQuote ? (
+          <ChevronRight size={18} color={colors.textMuted} />
+        ) : (
           <AddToCartButton
             serviceId={service.id}
             serviceName={service.serviceName}
@@ -73,6 +95,13 @@ export const CompanyServiceRow: React.FC<CompanyServiceRowProps> = React.memo(
             size="sm"
           />
         )}
+
+        <WorkerConflictModal
+          visible={rowCart.conflict.visible}
+          onCancel={rowCart.conflict.onCancel}
+          onReplace={rowCart.conflict.onReplace}
+          incomingWorkerName={workerName}
+        />
       </Pressable>
     );
   }
@@ -80,7 +109,7 @@ export const CompanyServiceRow: React.FC<CompanyServiceRowProps> = React.memo(
 
 CompanyServiceRow.displayName = 'CompanyServiceRow';
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

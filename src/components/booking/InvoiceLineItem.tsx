@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { InvoiceLineItemData } from '../../types/booking.types';
-import { colors, fontFamily, fontSize, spacing } from '../../design';
+import { fontFamily, fontSize, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface InvoiceLineItemProps {
   item: InvoiceLineItemData;
@@ -20,6 +21,7 @@ export const InvoiceLineItem: React.FC<InvoiceLineItemProps> = ({
   item,
   currency = 'PKR',
 }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.titleCol}>
@@ -43,7 +45,7 @@ export const InvoiceLineItem: React.FC<InvoiceLineItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'flex-start',

@@ -9,8 +9,8 @@ import Animated, {
 import { Image } from 'expo-image';
 import { Text } from '../ui/Text/Text';
 import { Category } from '../../types/category.types';
-import { colors, palette } from '../../design/colors';
 import { fontFamily } from '../../design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ServiceCategoryCardProps {
   category: Category;
@@ -23,7 +23,7 @@ interface CategoryStyleConfig {
   displayName?: string;
 }
 
-const CATEGORY_STYLES: Record<string, CategoryStyleConfig> = {
+const createCategoryStyles = ({ colors, palette }: AppTheme) => ({ map: {
   electrician: {
     bg: palette.amber100,
     iconSource: require('../../../assets/icons/categories/electrician.svg'),
@@ -59,17 +59,19 @@ const CATEGORY_STYLES: Record<string, CategoryStyleConfig> = {
     iconSource: require('../../../assets/icons/categories/air-conditioner.svg'),
     displayName: 'AC Repair',
   },
-};
-
-const DEFAULT_STYLE: CategoryStyleConfig = {
-  bg: colors.canvasGray,
-  iconSource: require('../../../assets/icons/categories/cleaning.svg'),
-};
+} as Record<string, CategoryStyleConfig>,
+  fallback: {
+    bg: colors.canvasGray,
+    iconSource: require('../../../assets/icons/categories/cleaning.svg'),
+  } as CategoryStyleConfig,
+});
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const ServiceCategoryCard: React.FC<ServiceCategoryCardProps> = ({ category }) => {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
+  const categoryStyles = useThemedStyles(createCategoryStyles);
   const scale = useSharedValue(1);
 
   const handlePressIn = () => {
@@ -88,7 +90,7 @@ export const ServiceCategoryCard: React.FC<ServiceCategoryCardProps> = ({ catego
     transform: [{ scale: scale.value }],
   }));
 
-  const styleConfig = CATEGORY_STYLES[category.id] || DEFAULT_STYLE;
+  const styleConfig = categoryStyles.map[category.id] || categoryStyles.fallback;
   const labelText = styleConfig.displayName || category.name;
 
   return (
@@ -116,7 +118,7 @@ export const ServiceCategoryCard: React.FC<ServiceCategoryCardProps> = ({ catego
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     alignItems: 'center',
     width: 76,

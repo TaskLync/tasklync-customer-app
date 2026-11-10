@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
 import {
   ChevronLeft,
@@ -25,11 +24,14 @@ import { WorkerNearby } from '../../src/types/worker.types';
 import { CompanyBadge } from '../../src/components/company/CompanyBadge';
 import { CustomRefreshControl } from '../../src/components/feedback/CustomRefreshControl';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
-import { colors } from '../../src/design/colors';
-import { companyTokens } from '../../src/theme/companyTokens';
 import { SkeletonCompanyCard } from '../../src/components/company/SkeletonCompanyCard';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 export default function AllCompaniesScreen() {
+  const { companyTokens } = useAppTheme();
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -194,7 +196,7 @@ export default function AllCompaniesScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar style="dark" />
+      <ThemedStatusBar />
 
       {/* Screen Navigation Header */}
       <View style={styles.header}>
@@ -220,7 +222,7 @@ export default function AllCompaniesScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="Search company or service..."
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholder}
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
@@ -317,7 +319,7 @@ export default function AllCompaniesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.bgApp,
@@ -402,7 +404,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   filterChipTextSelected: {
-    color: colors.white,
+    color: colors.pureWhite,
     fontFamily: 'PlusJakartaSans-SemiBold',
   },
   listContainer: {

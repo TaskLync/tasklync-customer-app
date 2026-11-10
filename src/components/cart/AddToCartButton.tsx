@@ -14,8 +14,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useCartStore } from '../../store/cart.store';
 import { WorkerConflictModal } from './WorkerConflictModal';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface AddToCartButtonProps {
   serviceId: string;
@@ -50,6 +50,8 @@ export const AddToCartButton: FC<AddToCartButtonProps> = ({
   onRemove,
   style,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const items = useCartStore((state) => state.items);
   const currentWorker = useCartStore((state) => state.worker);
   const addItem = useCartStore((state) => state.addItem);
@@ -242,7 +244,7 @@ export const AddToCartButton: FC<AddToCartButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   buttonContainer: {
     justifyContent: 'center',
     alignItems: 'center',

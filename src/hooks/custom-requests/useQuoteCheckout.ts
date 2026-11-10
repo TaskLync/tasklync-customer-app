@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { customRequestApi } from '../../services/api/customRequest.api';
 import {
   Quote,
@@ -14,6 +14,7 @@ import { validateServiceArea, SERVICE_UNAVAILABLE_MESSAGE } from '../../config/s
 import { slotToUTCISO, normalizeDateToYYYYMMDD } from '../../utils/timezone';
 import { useAddresses } from '../useAddresses';
 import { isValidUUID, CANONICAL_FALLBACK_UUIDS } from '../../utils/uuid';
+import { showAlert } from '../../components/feedback/AppAlert';
 
 interface UseQuoteCheckoutProps {
   request: CustomServiceRequest;
@@ -185,15 +186,15 @@ export function useQuoteCheckout({ request, quote }: UseQuoteCheckoutProps) {
       setValidationError(apiMsg);
 
       if (code === 'CONCURRENT_BOOKING_LOCK') {
-        Alert.alert(
+        showAlert(
           'Slot Reserved',
           'This professional’s time slot was just booked by another customer. Please select another slot.'
         );
       } else if (code === 'BOOKING_ALREADY_CREATED') {
-        Alert.alert('Already Confirmed', 'A booking has already been created from this quote.');
+        showAlert('Already Confirmed', 'A booking has already been created from this quote.');
         router.replace('/(tabs)/bookings' as any);
       } else {
-        Alert.alert('Checkout Failed', apiMsg);
+        showAlert('Checkout Failed', apiMsg);
       }
     },
   });
@@ -204,25 +205,25 @@ export function useQuoteCheckout({ request, quote }: UseQuoteCheckoutProps) {
     if (!quote?.id) {
       const msg = 'Quote reference is missing. Please reload the quote page.';
       setValidationError(msg);
-      Alert.alert('Checkout Notice', msg);
+      showAlert('Checkout Notice', msg);
       return;
     }
     if (!selectedDate) {
       const msg = 'Please choose an appointment date from the calendar.';
       setValidationError(msg);
-      Alert.alert('Checkout Notice', msg);
+      showAlert('Checkout Notice', msg);
       return;
     }
     if (!selectedSlot) {
       const msg = 'Please choose an arrival time slot above.';
       setValidationError(msg);
-      Alert.alert('Checkout Notice', msg);
+      showAlert('Checkout Notice', msg);
       return;
     }
     if (!selectedAddress) {
       const msg = 'Please select or add a service delivery address.';
       setValidationError(msg);
-      Alert.alert('Checkout Notice', msg);
+      showAlert('Checkout Notice', msg);
       return;
     }
 

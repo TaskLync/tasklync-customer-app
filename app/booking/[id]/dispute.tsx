@@ -1,18 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  StatusBar,
-  Keyboard,
-  Pressable,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, CheckCircle2, ShieldCheck, Clock, AlertCircle } from 'lucide-react-native';
@@ -27,15 +14,9 @@ import {
   DISPUTE_REASONS,
 } from '../../../src/components/booking/DisputeReasonRadioGroup';
 import { DisputeEvidenceUpload } from '../../../src/components/booking/DisputeEvidenceUpload';
-import {
-  colors,
-  palette,
-  fontFamily,
-  fontSize,
-  radius,
-  shadows,
-  spacing,
-} from '../../../src/design';
+import { fontFamily, fontSize, radius, shadows, spacing } from '../../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../../src/theme/ThemedStatusBar';
 
 /**
  * DisputeScreen (Day 34 Guided Conflict Resolution)
@@ -56,6 +37,8 @@ import {
  * - Deferred-Submit Pattern: If uploads are in-flight when submitting, auto-dispatches on finish.
  */
 export default function DisputeScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
@@ -165,7 +148,7 @@ export default function DisputeScreen() {
   if (isSubmittedSuccess) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+        <ThemedStatusBar />
         <View style={styles.successContainer}>
           <View style={styles.successIconCircle}>
             <ShieldCheck size={56} color={colors.primaryDark} strokeWidth={2.2} />
@@ -213,7 +196,7 @@ export default function DisputeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+      <ThemedStatusBar />
 
       {/* Screen Header - Pinned at top, stable against keyboard avoidance adjustments */}
       <View style={styles.header}>
@@ -301,7 +284,7 @@ export default function DisputeScreen() {
                     ref={inputRef}
                     style={styles.textArea}
                     placeholder="Provide any details about what went wrong, damages, or agreed terms that were not met..."
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor={colors.placeholder}
                     value={description}
                     onChangeText={(val) => {
                       setDescription(val);
@@ -379,7 +362,7 @@ export default function DisputeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   flexOne: {
     flex: 1,
   },
@@ -492,7 +475,7 @@ const styles = StyleSheet.create({
   textInputFocused: {
     borderColor: colors.primaryDark,
     backgroundColor: palette.white,
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -538,7 +521,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,

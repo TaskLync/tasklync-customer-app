@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, View, ScrollView, useColorScheme } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCartStore } from '../../src/store/cart.store';
@@ -14,12 +13,12 @@ import { CartNoteInput } from '../../src/components/cart/CartNoteInput';
 import { CartSummary } from '../../src/components/cart/CartSummary';
 import { ProceedFooter } from '../../src/components/cart/ProceedFooter';
 import { EmptyCart } from '../../src/components/feedback/EmptyState/EmptyCart';
-import { colors } from '../../src/design/colors';
+import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 export default function CartScreen() {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
 
   const items = useCartStore((state) => state.items);
   const worker = useCartStore((state) => state.worker);
@@ -54,8 +53,8 @@ export default function CartScreen() {
   };
 
   return (
-    <View style={[styles.screenContainer, isDark && styles.screenContainerDark, { paddingTop: insets.top }]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+    <View style={[styles.screenContainer, { paddingTop: insets.top }]}>
+      <ThemedStatusBar />
 
       {/* 1. Header with back button & item count badge */}
       <CartHeader itemCount={totals.itemCount} />
@@ -99,13 +98,10 @@ export default function CartScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   screenContainer: {
     flex: 1,
     backgroundColor: colors.bgApp,
-  },
-  screenContainerDark: {
-    backgroundColor: colors.textPrimary,
   },
   contentWrapper: {
     flex: 1,

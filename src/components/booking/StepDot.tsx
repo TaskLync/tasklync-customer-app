@@ -6,7 +6,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Check } from 'lucide-react-native';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export type StepState = 'complete' | 'active' | 'future';
 
@@ -16,6 +17,8 @@ export interface StepDotProps {
 }
 
 export const StepDot: React.FC<StepDotProps> = ({ stepNumber, state }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(1);
   const checkOpacity = useSharedValue(state === 'complete' ? 1 : 0);
   const numberOpacity = useSharedValue(state === 'complete' ? 0 : 1);
@@ -65,7 +68,7 @@ export const StepDot: React.FC<StepDotProps> = ({ stepNumber, state }) => {
       >
         {/* Checkmark icon (for complete state) */}
         <Animated.View style={[styles.absoluteIcon, checkAnimatedStyle]}>
-          <Check size={14} color={palette.white} strokeWidth={3} />
+          <Check size={14} color={palette.pureWhite} strokeWidth={3} />
         </Animated.View>
 
         {/* Step number (for active & future states) */}
@@ -84,7 +87,7 @@ export const StepDot: React.FC<StepDotProps> = ({ stepNumber, state }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     width: 32,
     height: 32,
@@ -129,7 +132,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   textWhite: {
-    color: palette.white,
+    color: palette.pureWhite,
   },
   textGray: {
     color: palette.gray600,

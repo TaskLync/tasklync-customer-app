@@ -40,91 +40,108 @@ export function calculateDistanceMeters(
   return getDistanceMeters({ lat: lat1, lng: lng1 }, { lat: lat2, lng: lng2 });
 }
 
-/**
- * Format distance according to Uber / Zomato production standards:
- * - < 1,000 meters: "X m" (e.g. "450 m")
- * - >= 1,000 meters: "X.X km" (e.g. "1.2 km", "14.8 km")
- * - If unknown/unresolved: returns fallback (default 'Nearby')
- */
-export function formatDistance(
-  meters: number | null | undefined,
-  fallback = 'Nearby'
-): string {
-  if (meters === null || meters === undefined || isNaN(meters) || meters <= 0) {
-    return fallback;
-  }
-  if (meters < 1000) {
-    return `${Math.round(meters)} m`;
-  }
-  return `${(meters / 1000).toFixed(1)} km`;
+/** True for finite, in-range, non-(0,0) coordinates. */
+export function isValidCoordinate(
+  c?: { lat?: number | null | undefined; lng?: number | null | undefined } | null
+): c is Coordinates {
+  return (
+    !!c &&
+    typeof c.lat === 'number' &&
+    typeof c.lng === 'number' &&
+    Number.isFinite(c.lat) &&
+    Number.isFinite(c.lng) &&
+    Math.abs(c.lat) <= 90 &&
+    Math.abs(c.lng) <= 180 &&
+    !(c.lat === 0 && c.lng === 0)
+  );
 }
 
 /**
- * High-precision distance resolver between a customer and a worker.
- * Checks PostGIS distance first, then falls back to client-side geodesic Haversine
- * if worker and customer coordinates are present.
+ * Format distance:
+ * - < 1,000 m: whole metres ("55 m", "200 m")
+ * - >= 1,000 m: one decimal km ("1.2 km", "5.3 km")
+ * - unknown/invalid: returns `fallback` (default: empty string, i.e. show nothing)
+ */
+export function formatDistance(
+  meters: number | null | undefined,
+  fallback = ''
+): string {
+  if (meters === null || meters === undefined || !Number.isFinite(meters) || meters <= 0) {
+    return fallback;
+  }
+  const whole = Math.round(meters);
+  if (whole < 1000) {
+    return `${whole} m`;
+  }
+  return `${(whole / 1000).toFixed(1)} km`;
+}
+
+// ── Worker coordinate snapshots ──────────────────────────────────────────────
+// Some endpoints (search) omit worker coordinates, others (/workers/nearby) include them. Remember
+// coordinates seen in ANY response for a short time so the same worker resolves to the same
+// distance everywhere. Entries expire so a moved worker is never measured from an old position.
+const WORKER_COORD_TTL_MS = 10 * 60 * 1000;
+const workerCoordSnapshots = new Map<string, { lat: number; lng: number; at: number }>();
+
+export function rememberWorkerCoords(worker: {
+  id?: string | undefined;
+  lat?: number | null | undefined;
+  lng?: number | null | undefined;
+}): void {
+  const coords = { lat: worker.lat, lng: worker.lng };
+  if (worker.id && isValidCoordinate(coords)) {
+    workerCoordSnapshots.set(worker.id, { lat: coords.lat, lng: coords.lng, at: Date.now() });
+  }
+}
+
+function recallWorkerCoords(id?: string): Coordinates | null {
+  if (!id) return null;
+  const hit = workerCoordSnapshots.get(id);
+  if (!hit) return null;
+  if (Date.now() - hit.at > WORKER_COORD_TTL_MS) {
+    workerCoordSnapshots.delete(id);
+    return null;
+  }
+  return { lat: hit.lat, lng: hit.lng };
+}
+
+/**
+ * Single distance resolver used by every worker list.
+ * 1. Haversine between the customer's exact coordinates and the worker's coordinates
+ *    (from the response, or a recent snapshot from another response).
+ * 2. Otherwise the backend's own distance (already measured from the request coordinates).
+ * 3. Otherwise unknown: { distanceMeters: null, distanceLabel: '' } — never a made-up value.
  */
 export function resolveWorkerDistance(
   worker: {
+    id?: string | undefined;
     distanceMeters?: number | null | undefined;
-    distanceLabel?: string | null | undefined;
     lat?: number | null | undefined;
     lng?: number | null | undefined;
   },
   customerCoords?: { lat: number; lng: number } | null | undefined
 ): { distanceMeters: number | null; distanceLabel: string } {
-  // 1. Direct PostGIS distance from backend
-  if (typeof worker.distanceMeters === 'number' && worker.distanceMeters > 0) {
+  if (isValidCoordinate(customerCoords)) {
+    const ownCoords = { lat: worker.lat, lng: worker.lng };
+    const workerCoords = isValidCoordinate(ownCoords) ? ownCoords : recallWorkerCoords(worker.id);
+    if (workerCoords) {
+      const meters = Math.round(getDistanceMeters(customerCoords, workerCoords));
+      return { distanceMeters: meters, distanceLabel: formatDistance(meters) };
+    }
+  }
+
+  if (
+    typeof worker.distanceMeters === 'number' &&
+    Number.isFinite(worker.distanceMeters) &&
+    worker.distanceMeters > 0
+  ) {
     return {
       distanceMeters: worker.distanceMeters,
       distanceLabel: formatDistance(worker.distanceMeters),
     };
   }
 
-  // 2. Client-side geodesic calculation if coordinates are present
-  if (
-    customerCoords &&
-    typeof customerCoords.lat === 'number' &&
-    typeof customerCoords.lng === 'number' &&
-    !isNaN(customerCoords.lat) &&
-    !isNaN(customerCoords.lng) &&
-    typeof worker.lat === 'number' &&
-    typeof worker.lng === 'number' &&
-    !isNaN(worker.lat) &&
-    !isNaN(worker.lng) &&
-    worker.lat !== 0 &&
-    worker.lng !== 0
-  ) {
-    const computedMeters = Math.round(
-      calculateDistanceMeters(
-        customerCoords.lat,
-        customerCoords.lng,
-        worker.lat,
-        worker.lng
-      )
-    );
-    return {
-      distanceMeters: computedMeters,
-      distanceLabel: formatDistance(computedMeters),
-    };
-  }
-
-  // 3. Use pre-formatted label if valid and not "0.0 km"
-  if (
-    worker.distanceLabel &&
-    worker.distanceLabel !== '0.0 km' &&
-    worker.distanceLabel !== '0 km'
-  ) {
-    return {
-      distanceMeters: null,
-      distanceLabel: worker.distanceLabel,
-    };
-  }
-
-  return {
-    distanceMeters: null,
-    distanceLabel: 'Nearby',
-  };
+  return { distanceMeters: null, distanceLabel: '' };
 }
 
 /**

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface NotificationGroupHeaderProps {
   title: string;
@@ -17,6 +18,7 @@ export interface NotificationGroupHeaderProps {
  */
 export const NotificationGroupHeader: React.FC<NotificationGroupHeaderProps> = React.memo(
   function NotificationGroupHeader({ title }) {
+    const styles = useThemedStyles(createStyles);
     return (
       <View style={styles.container} accessibilityRole="header">
         <Text style={styles.title}>{title}</Text>
@@ -25,7 +27,7 @@ export const NotificationGroupHeader: React.FC<NotificationGroupHeaderProps> = R
   }
 );
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     paddingHorizontal: 4,
     paddingTop: 14,

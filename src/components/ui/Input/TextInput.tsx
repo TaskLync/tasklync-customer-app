@@ -18,10 +18,10 @@ import Animated, {
   interpolate
 } from 'react-native-reanimated';
 
-import { colors } from '@design/colors';
 import { layout, spacing } from '@design/spacing';
 import { fontFamily, fontSize } from '@design/typography';
 import { shakeSequence, springConfig, timingConfig } from '@design/animations';
+import { useAppTheme } from '../../../theme/useAppTheme';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedText = Animated.createAnimatedComponent(Animated.Text);
@@ -54,6 +54,7 @@ export const TextInput = React.forwardRef<RNTextInput, TextInputProps>(({
   placeholder,
   ...rest
 }, ref) => {
+  const { colors } = useAppTheme();
   const [isFocused, setIsFocused] = useState(false);
   
   const labelProgress = useSharedValue(value ? 1 : 0);

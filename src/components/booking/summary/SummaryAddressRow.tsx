@@ -4,13 +4,16 @@ import { MapPin, Home, Briefcase } from 'lucide-react-native';
 import { SummarySectionCard } from './SummarySectionCard';
 import { BookingAddress } from '../../../store/bookingDraft.store';
 import { AddressDefaultBadge } from '../../address/AddressDefaultBadge';
-import { colors, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface SummaryAddressRowProps {
   address: BookingAddress | null;
 }
 
 export const SummaryAddressRow: React.FC<SummaryAddressRowProps> = ({ address }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const label = address?.label || 'Service Location';
   const street = address?.street || 'Select delivery address';
   const unit = address?.unit;
@@ -49,7 +52,7 @@ export const SummaryAddressRow: React.FC<SummaryAddressRowProps> = ({ address })
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   contentContainer: {
     width: '100%',
   },

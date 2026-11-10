@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Switch, StyleSheet } from 'react-native';
 import { UrgentPriceBadge } from './UrgentPriceBadge';
-import { colors, palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface UrgentToggleRowProps {
   isUrgent: boolean;
@@ -12,6 +13,8 @@ export const UrgentToggleRow: React.FC<UrgentToggleRowProps> = ({
   isUrgent,
   onToggle,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handleValueChange = (value: boolean) => {
     onToggle(value);
   };
@@ -42,7 +45,7 @@ export const UrgentToggleRow: React.FC<UrgentToggleRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',

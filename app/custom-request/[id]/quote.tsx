@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
 } from 'react-native';
@@ -26,15 +25,18 @@ import {
   Info,
 } from 'lucide-react-native';
 
-import { colors, palette, typography } from '../../../src/design';
+import { typography } from '../../../src/design';
 import { useCustomRequestDetail } from '../../../src/hooks/custom-requests/useCustomRequestDetail';
 import { useQuoteDetail } from '../../../src/hooks/custom-requests/useQuoteDetail';
 import { QuoteBreakdownCard } from '../../../src/components/custom-requests/QuoteBreakdownCard';
 import { QuoteExpiryCountdown } from '../../../src/components/custom-requests/QuoteExpiryCountdown';
 import { DeclineQuoteModal } from '../../../src/components/custom-requests/DeclineQuoteModal';
 import { QuotePricingType, QuoteStatus } from '../../../src/types/customRequest.types';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
 
 export default function QuoteReviewScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -278,7 +280,7 @@ export default function QuoteReviewScreen() {
               activeOpacity={0.8}
             >
               {isAccepting ? (
-                <ActivityIndicator size="small" color={colors.white} />
+                <ActivityIndicator size="small" color={colors.pureWhite} />
               ) : (
                 <Text style={styles.acceptBtnText}>Accept & Book</Text>
               )}
@@ -354,7 +356,7 @@ export default function QuoteReviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: palette.canvasGray,
@@ -394,7 +396,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   backButtonCenterText: {
-    color: colors.white,
+    color: colors.pureWhite,
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 14,
   },
@@ -641,7 +643,7 @@ const styles = StyleSheet.create({
   acceptBtnText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 14,
-    color: colors.white,
+    color: colors.pureWhite,
   },
   proceedCheckoutBtn: {
     backgroundColor: palette.green600,
@@ -653,7 +655,7 @@ const styles = StyleSheet.create({
   proceedCheckoutBtnText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 14,
-    color: colors.white,
+    color: colors.pureWhite,
   },
   terminalStateBar: {
     paddingVertical: 12,
@@ -726,6 +728,6 @@ const styles = StyleSheet.create({
   confirmProceedBtnText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 14,
-    color: colors.white,
+    color: colors.pureWhite,
   },
 });

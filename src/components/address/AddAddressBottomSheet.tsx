@@ -8,7 +8,6 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -33,13 +32,15 @@ import { useAuthStore } from '../../store/auth.store';
 import { useLocationStore } from '../../store/location.store';
 import { Address } from '../../types/address.types';
 import { labelToIcon } from '../../utils/address';
-import { colors, palette, fontFamily, radius } from '../../design';
+import { fontFamily, radius } from '../../design';
 import { generateUUID, isValidUUID } from '../../utils/uuid';
 import {
   validateServiceArea,
   SERVICE_UNAVAILABLE_MESSAGE,
   FAISALABAD_CENTER,
 } from '../../config/serviceArea.config';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 const LABEL_PRESETS = ['Home', 'Office', 'Apartment', 'Other'];
 
@@ -56,6 +57,8 @@ export const AddAddressBottomSheet = forwardRef<
   AddAddressBottomSheetRef,
   AddAddressBottomSheetProps
 >(({ onAddressCreated }, ref) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const bottomSheetRef = useRef<BottomSheetRef>(null);
   const streetInputRef = useRef<TextInput>(null);
   const queryClient = useQueryClient();
@@ -133,7 +136,7 @@ export const AddAddressBottomSheet = forwardRef<
 
     const validation = validateServiceArea(coords);
     if (!validation.isServiceable) {
-      Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -169,7 +172,7 @@ export const AddAddressBottomSheet = forwardRef<
         const perm = await locationService.requestPermission();
         if (!perm.granted) {
           if (!perm.canAskAgain) {
-            Alert.alert(
+            showAlert(
               'Permission Required',
               'Location permission is permanently disabled. Please enable it in Settings.',
               [
@@ -178,7 +181,7 @@ export const AddAddressBottomSheet = forwardRef<
               ]
             );
           } else {
-            Alert.alert('Permission Denied', 'Please enable location permissions to use GPS.');
+            showAlert('Permission Denied', 'Please enable location permissions to use GPS.');
           }
           setIsLocating(false);
           return;
@@ -186,7 +189,7 @@ export const AddAddressBottomSheet = forwardRef<
       }
 
       if (!state.servicesEnabled) {
-        Alert.alert(
+        showAlert(
           'Location Services Off',
           'Please enable GPS in your device settings to detect your current location.',
           [
@@ -207,7 +210,7 @@ export const AddAddressBottomSheet = forwardRef<
         };
         const validation = validateServiceArea(coords);
         if (!validation.isServiceable) {
-          Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+          showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
           setIsLocating(false);
           return;
         }
@@ -226,7 +229,7 @@ export const AddAddressBottomSheet = forwardRef<
           setCity(geo.cityName);
         }
       } else {
-        Alert.alert(
+        showAlert(
           freshResult.error.code === 'SERVICES_DISABLED'
             ? 'Location Services Off'
             : freshResult.error.code === 'LOW_ACCURACY'
@@ -236,7 +239,7 @@ export const AddAddressBottomSheet = forwardRef<
         );
       }
     } catch (_err) {
-      Alert.alert('Location Error', 'Unable to retrieve current GPS location.');
+      showAlert('Location Error', 'Unable to retrieve current GPS location.');
     } finally {
       setIsLocating(false);
     }
@@ -244,21 +247,21 @@ export const AddAddressBottomSheet = forwardRef<
 
   const handleSave = async () => {
     if (!street.trim()) {
-      Alert.alert('Address Required', 'Please enter your street / building address.');
+      showAlert('Address Required', 'Please enter your street / building address.');
       streetInputRef.current?.focus();
       return;
     }
 
     const validation = validateServiceArea({ lat, lng });
     if (!validation.isServiceable) {
-      Alert.alert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
       return;
     }
 
     // No verified position for this address: saving would attach the city centre / an unrelated
     // spot to the typed street. Send the customer to the map picker to place the pin instead.
     if (!coordsVerified) {
-      Alert.alert(
+      showAlert(
         'Confirm location on map',
         'We need the exact spot for this address so your technician can find you. Tap "Use my location" or place the pin on the map.',
         [
@@ -349,7 +352,7 @@ export const AddAddressBottomSheet = forwardRef<
       bottomSheetRef.current?.close();
       setStreet('');
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to save address. Please try again.');
+      showAlert('Error', err?.message || 'Failed to save address. Please try again.');
     } finally {
       isSubmittingRef.current = false;
       setIsSaving(false);
@@ -572,7 +575,7 @@ export const AddAddressBottomSheet = forwardRef<
                       activeOpacity={0.75}
                     >
                       {isSelected && (
-                        <Check size={13} color={palette.white} style={{ marginRight: 4 }} />
+                        <Check size={13} color={palette.pureWhite} style={{ marginRight: 4 }} />
                       )}
                       <Text style={[styles.presetText, isSelected && styles.presetTextSelected]}>
                         {p}
@@ -598,7 +601,7 @@ export const AddAddressBottomSheet = forwardRef<
                   onFocus={() => setIsStreetFocused(true)}
                   onBlur={() => setIsStreetFocused(false)}
                   placeholder="e.g. House 12, Street 4, D-Ground"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholder}
                   returnKeyType="done"
                 />
                 {street.length > 0 && (
@@ -643,7 +646,7 @@ export const AddAddressBottomSheet = forwardRef<
               accessibilityLabel="Save and select address"
             >
               {isSaving ? (
-                <ActivityIndicator color={palette.white} />
+                <ActivityIndicator color={palette.pureWhite} />
               ) : (
                 <Text style={styles.saveButtonText}>Save & Select Address</Text>
               )}
@@ -657,7 +660,7 @@ export const AddAddressBottomSheet = forwardRef<
 
 AddAddressBottomSheet.displayName = 'AddAddressBottomSheet';
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   sheetBody: {
     flex: 1,
   },
@@ -972,7 +975,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   presetTextSelected: {
-    color: palette.white,
+    color: palette.pureWhite,
     fontFamily: fontFamily.jakarta.semiBold,
   },
   inputWrapper: {
@@ -1042,6 +1045,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: 15,
-    color: palette.white,
+    color: palette.pureWhite,
   },
 });

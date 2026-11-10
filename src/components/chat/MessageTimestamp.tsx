@@ -1,6 +1,6 @@
-import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface MessageTimestampProps {
   label: string;
@@ -9,6 +9,7 @@ interface MessageTimestampProps {
 export const MessageTimestamp = React.memo(function MessageTimestamp({
   label,
 }: MessageTimestampProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.pill}>
@@ -18,7 +19,7 @@ export const MessageTimestamp = React.memo(function MessageTimestamp({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',

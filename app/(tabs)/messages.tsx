@@ -1,11 +1,5 @@
 import { useCallback, useRef } from 'react';
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  StatusBar,
-} from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -19,10 +13,13 @@ import { SkeletonGroup } from '../../src/components/ui/Skeleton';
 import { SearchInput } from '../../src/components/ui/Input/SearchInput';
 import { useConversations } from '../../src/hooks/useConversations';
 import { ConversationItem } from '../../src/types/chat.types';
-import { colors } from '../../src/design/colors';
 import { radius } from '../../src/design/radius';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 export default function MessagesScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -103,7 +100,7 @@ export default function MessagesScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+      <ThemedStatusBar />
 
       {/* Screen Header */}
       <MessagesHeader totalUnreadCount={totalUnreadCount} />
@@ -154,7 +151,7 @@ export default function MessagesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

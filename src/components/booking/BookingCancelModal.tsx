@@ -7,13 +7,15 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
-import { X, AlertCircle } from 'lucide-react-native';
+import { X, AlertCircle, Tag } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheet } from '../layout/BottomSheet';
 import { BookingDetails } from '../../types/booking.types';
 import { useCancelBooking } from '../../hooks/useCancelBooking';
 import { RefundPolicyNotice } from './RefundPolicyNotice';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { cancelDiscountNotice, getBookingSavings } from '../../utils/offers';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface BookingCancelModalProps {
   visible: boolean;
@@ -46,11 +48,19 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
   onClose,
   onCancelled,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { cancelBooking, isLoading, error, refundPolicy } = useCancelBooking(booking);
 
   const [selectedReason, setSelectedReason] = useState<string>(CANCEL_REASONS[0]);
   const [customReason, setCustomReason] = useState<string>('');
+
+  // A used promo code / offer is returned on a PENDING cancellation and kept once the booking is ACCEPTED.
+  const discountNotice = useMemo(
+    () => cancelDiscountNotice(booking?.status, getBookingSavings(booking).hasDiscount),
+    [booking]
+  );
 
   // Resolved refund amount to ensure accurate display of PKR 2,100
   const resolvedRefundPolicy = useMemo(() => {
@@ -125,6 +135,27 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
           />
         )}
 
+        {discountNotice && (
+          <View
+            style={[styles.discountNotice, discountNotice.tone === 'warning' && styles.discountNoticeWarning]}
+            accessibilityRole="alert"
+          >
+            <Tag
+              size={14}
+              color={discountNotice.tone === 'warning' ? palette.amber700 : palette.green700}
+              strokeWidth={2.4}
+            />
+            <Text
+              style={[
+                styles.discountNoticeText,
+                discountNotice.tone === 'warning' && styles.discountNoticeTextWarning,
+              ]}
+            >
+              {discountNotice.text}
+            </Text>
+          </View>
+        )}
+
         {/* Reasons List */}
         <View style={styles.reasonsList} accessibilityRole="radiogroup">
           {CANCEL_REASONS.map((r) => {
@@ -170,7 +201,7 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
           <TextInput
             style={styles.customInput}
             placeholder="Please describe why..."
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholder}
             value={customReason}
             onChangeText={setCustomReason}
             maxLength={140}
@@ -202,7 +233,7 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
             accessibilityLabel="Cancel Booking"
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color={palette.white} />
+              <ActivityIndicator size="small" color={palette.pureWhite} />
             ) : (
               <Text style={styles.cancelBtnText}>Cancel Booking</Text>
             )}
@@ -228,7 +259,7 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   sheetContent: {
     width: '100%',
   },
@@ -256,6 +287,28 @@ const styles = StyleSheet.create({
   },
   refundRow: {
     marginBottom: spacing.md,
+  },
+  discountNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.primaryTint,
+    marginBottom: spacing.md,
+  },
+  discountNoticeWarning: {
+    backgroundColor: palette.amber50,
+  },
+  discountNoticeText: {
+    flex: 1,
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: fontSize.caption,
+    lineHeight: 17,
+    color: palette.green800,
+  },
+  discountNoticeTextWarning: {
+    color: palette.amber800,
   },
   reasonsList: {
     gap: spacing.xs + 2,
@@ -357,7 +410,7 @@ const styles = StyleSheet.create({
   cancelBtnText: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: fontSize.body1 - 1,
-    color: palette.white,
+    color: palette.pureWhite,
   },
   keepBtn: {
     backgroundColor: palette.gray100,

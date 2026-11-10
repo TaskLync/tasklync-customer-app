@@ -1,8 +1,9 @@
 import React from 'react';
 import { RefreshControl, RefreshControlProps } from 'react-native';
-import { colors } from '../../design/colors';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 export const CustomRefreshControl: React.FC<RefreshControlProps> = (props) => {
+  const { colors } = useAppTheme();
   return (
     <RefreshControl
       tintColor={colors.primary}

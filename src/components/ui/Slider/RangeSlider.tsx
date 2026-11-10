@@ -12,9 +12,9 @@ import Animated, {
   useAnimatedStyle,
   runOnJS,
 } from 'react-native-reanimated';
-import { colors } from '../../../design/colors';
 import { typography } from '../../../design/typography';
 import { shadows } from '../../../design/shadows';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 interface RangeSliderProps {
   min: number;
@@ -36,9 +36,12 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
   onChange,
   prefix = 'Rs ',
   suffix = '',
-  trackColor = colors.primary,
+  trackColor: trackColorProp,
   disabled = false,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+  const trackColor = trackColorProp ?? colors.primary;
   const initialMin = value?.[0] ?? min;
   const initialMax = value?.[1] ?? max;
 
@@ -255,7 +258,7 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
     paddingVertical: 10,

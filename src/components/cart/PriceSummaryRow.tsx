@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface PriceSummaryRowProps {
   label: string;
@@ -12,6 +12,7 @@ export const PriceSummaryRow: FC<PriceSummaryRowProps> = ({
   label,
   amount,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const formattedAmount = `Rs. ${amount.toLocaleString()}`;
 
   return (
@@ -25,7 +26,7 @@ export const PriceSummaryRow: FC<PriceSummaryRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

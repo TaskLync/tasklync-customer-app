@@ -3,11 +3,13 @@ import { useRouter } from 'expo-router';
 import { Search } from 'lucide-react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { Text } from '../ui/Text/Text';
-import { colors } from '../../design/colors';
 import { radius } from '../../design/radius';
 import { fontFamily } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export const SearchPromptBar = () => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const scale = useSharedValue(1);
   const borderColor = useSharedValue<string>(colors.border);
@@ -49,7 +51,7 @@ export const SearchPromptBar = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     height: 50,
     backgroundColor: colors.bgSection,

@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Alert } from 'react-native';
+
 import { customRequestApi } from '../../services/api/customRequest.api';
 import { Quote, QuoteRevision, QuoteStatus } from '../../types/customRequest.types';
+import { showAlert } from '../../components/feedback/AppAlert';
 
 export function useQuoteDetail(requestId: string) {
   const queryClient = useQueryClient();
@@ -33,7 +34,7 @@ export function useQuoteDetail(requestId: string) {
       router.push(`/custom-request/${requestId}/checkout` as any);
     },
     onError: (err: any) => {
-      Alert.alert('Acceptance Error', err?.message || 'Could not accept quote. Please try again.');
+      showAlert('Acceptance Error', err?.message || 'Could not accept quote. Please try again.');
     },
   });
 
@@ -43,10 +44,10 @@ export function useQuoteDetail(requestId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custom-requests', requestId] });
       queryClient.invalidateQueries({ queryKey: ['custom-requests', requestId, 'quotes'] });
-      Alert.alert('Quote Declined', 'The professional has been notified. They may issue an updated quote.');
+      showAlert('Quote Declined', 'The professional has been notified. They may issue an updated quote.');
     },
     onError: (err: any) => {
-      Alert.alert('Decline Error', err?.message || 'Could not decline quote. Please try again.');
+      showAlert('Decline Error', err?.message || 'Could not decline quote. Please try again.');
     },
   });
 

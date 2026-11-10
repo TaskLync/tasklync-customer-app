@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, ViewStyle, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@design/colors';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 export interface StickyFooterProps {
   children: React.ReactNode;
@@ -13,9 +13,11 @@ export interface StickyFooterProps {
 export const StickyFooter = ({
   children,
   noBorder = false,
-  bg = colors.bgCard,
+  bg: bgProp,
   style
 }: StickyFooterProps) => {
+  const { colors } = useAppTheme();
+  const bg = bgProp ?? colors.bgCard;
   const insets = useSafeAreaInsets();
   
   return (

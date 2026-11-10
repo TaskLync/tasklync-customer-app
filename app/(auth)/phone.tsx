@@ -24,10 +24,13 @@ import { Text } from '@components/ui/Text';
 import { Button } from '@components/ui/Button';
 import { PhoneInput } from '@components/ui/Input/PhoneInput';
 import { IconButton } from '@components/ui/Button/IconButton';
-import { colors, fontFamily } from '@design/index';
+import { fontFamily } from '@design/index';
 import { useSendOtp } from '@hooks/useAuth';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 
 export default function PhoneScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState('');
@@ -132,7 +135,7 @@ export default function PhoneScreen() {
     : 20;
 
   return (
-    <Screen bg={colors.bgCard} statusBarStyle="dark-content" edges={['top', 'left', 'right']}>
+    <Screen bg={colors.bgCard} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior="padding"
@@ -222,7 +225,7 @@ export default function PhoneScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   keyboardAvoid: {
     flex: 1,
   },

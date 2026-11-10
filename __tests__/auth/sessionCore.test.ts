@@ -83,9 +83,18 @@ describe('401 policy: a 401 is never a logout by itself', () => {
 // ---------------------------------------------------------------------------
 describe('refresh failure classification', () => {
   test('401 from the refresh endpoint ends the session', () => {
-    for (const reason of [undefined, 'SESSION_NOT_FOUND', 'TOKEN_REUSE_DETECTED', 'SESSION_REPLACED', 'REFRESH_TOKEN_EXPIRED']) {
+    for (const reason of ['SESSION_NOT_FOUND', 'TOKEN_REUSE_DETECTED', 'SESSION_REPLACED', 'REFRESH_TOKEN_EXPIRED', 'REFRESH_TOKEN_INVALID']) {
       assert.strictEqual(classifyRefreshFailure({ status: 401, reason }), 'TERMINAL', String(reason));
     }
+    // older auth server: no `reason`, but it is our error envelope
+    assert.strictEqual(classifyRefreshFailure({ status: 401, appEnvelope: true }), 'TERMINAL');
+  });
+  test('a bare 401 from a proxy / WAF / CDN (no reason, not our envelope) keeps the session', () => {
+    assert.strictEqual(classifyRefreshFailure({ status: 401 }), 'TRANSIENT');
+    assert.strictEqual(classifyRefreshFailure({ status: 401, appEnvelope: false }), 'TRANSIENT');
+  });
+  test('400 on refresh (body lost in transit) keeps the session', () => {
+    assert.strictEqual(classifyRefreshFailure({ status: 400 }), 'TRANSIENT');
   });
   test('network, timeout, 429, 5xx never end the session', () => {
     for (const f of [{ noResponse: true }, {}, { status: 429 }, { status: 500 }, { status: 502 }, { status: 503 }, { status: 504 }, { status: 408 }]) {

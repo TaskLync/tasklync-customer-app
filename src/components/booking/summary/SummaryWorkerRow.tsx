@@ -4,13 +4,16 @@ import { Image } from 'expo-image';
 import { UserCheck, Star, User, Building2 } from 'lucide-react-native';
 import { SummarySectionCard } from './SummarySectionCard';
 import { WorkerInfo } from '../../../store/cart.store';
-import { colors, palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface SummaryWorkerRowProps {
   worker: WorkerInfo | null;
 }
 
 export const SummaryWorkerRow: React.FC<SummaryWorkerRowProps> = ({ worker }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const isCompany = Boolean(
     worker?.isCompany ||
     worker?.providerType === 'COMPANY' ||
@@ -77,7 +80,7 @@ export const SummaryWorkerRow: React.FC<SummaryWorkerRowProps> = ({ worker }) =>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',

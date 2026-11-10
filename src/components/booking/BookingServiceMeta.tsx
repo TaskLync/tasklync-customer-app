@@ -1,13 +1,14 @@
-import { colors, palette } from '../../design';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { formatPKTDateTime } from '../../utils/timezone';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingServiceMetaProps {
   scheduledAt: string;
 }
 
 export function BookingServiceMeta({ scheduledAt }: BookingServiceMetaProps) {
+  const styles = useThemedStyles(createStyles);
   const formattedDateTime = formatPKTDateTime(scheduledAt);
 
   return (
@@ -19,7 +20,7 @@ export function BookingServiceMeta({ scheduledAt }: BookingServiceMetaProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

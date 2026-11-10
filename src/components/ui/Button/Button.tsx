@@ -7,12 +7,12 @@ import Animated, {
   withTiming,
   interpolateColor
 } from 'react-native-reanimated';
-import { colors, palette } from '@design/colors';
 import { layout, spacing } from '@design/spacing';
 import { radius } from '@design/radius';
 import { springConfig } from '@design/animations';
 import { fontFamily } from '@design/typography';
 import { getOpticalStrokeWidth } from '@design/iconography';
+import { useAppTheme } from '../../../theme/useAppTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedText = Animated.createAnimatedComponent(Animated.Text);
@@ -53,6 +53,7 @@ export const Button = ({
   haptic = 'none',
   numberOfLines = 1,
 }: ButtonProps) => {
+  const { colors, palette } = useAppTheme();
   const scale = useSharedValue(1.0);
   const isPressed = useSharedValue(false);
   const [fixedWidth, setFixedWidth] = useState<number | null>(null);
@@ -185,7 +186,7 @@ export const Button = ({
     borderWidth: variant === 'secondary' ? 1.5 : 0,
     borderColor: variant === 'secondary' ? colorConfig.border : 'transparent',
     opacity: (colorConfig as any).opacity || 1,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: ['primary', 'danger'].includes(variant) && !disabled ? 0.05 : 0,
     shadowRadius: 2,

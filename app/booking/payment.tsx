@@ -1,13 +1,13 @@
-import { View, ScrollView, Alert, StyleSheet, StatusBar } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 // Hooks & APIs
 import { useCartStore } from '../../src/store/cart.store';
-import { useBookingEstimate } from '../../src/hooks/useBookingEstimate';
 import { useBookingDetails } from '../../src/hooks/useBookingDetails';
 import { usePayment } from '../../src/hooks/usePayment';
-import { colors } from '../../src/design';
+import { getPersistedBookings } from '../../src/services/api/booking.api';
+import { DiscountSummaryRow } from '../../src/components/offers/DiscountSummaryRow';
 
 // Components
 import {
@@ -16,8 +16,12 @@ import {
   PaymentMethodSelectCard,
   PaymentStickyFooter,
 } from '../../src/components/payment';
+import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+import { showAlert } from '../../src/components/feedback/AppAlert';
 
 export default function PaymentScreen() {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ bookingId?: string }>();
@@ -25,13 +29,15 @@ export default function PaymentScreen() {
 
   const clearCart = useCartStore((s) => s.clearCart);
 
-  // Derived price calculation hook & live booking details
-  const { total: estimateTotal } = useBookingEstimate();
   const { booking } = useBookingDetails(bookingId);
 
-  // Authoritative total amount to pay (fallback to 1,575 for display fidelity if unset)
-  const rawAmount = booking?.estimated_total || estimateTotal || 0;
-  const amountToPay = rawAmount > 0 ? rawAmount : 1575;
+  // The booking just created is already stored locally with its DISCOUNTED total; use it until the
+  // server copy arrives so the cash amount never flashes the undiscounted estimate.
+  const savedBooking = bookingId ? getPersistedBookings().find((b) => b.id === bookingId) : undefined;
+  const bookingRecord = booking ?? savedBooking;
+
+  // Authoritative amount to pay: the booking's own (already discounted) total. Never a guess.
+  const amountToPay = bookingRecord?.estimated_total ?? 0;
 
   // Process payment hook
   const { initiateCodPayment, isLoading, error: paymentError } = usePayment();
@@ -49,7 +55,7 @@ export default function PaymentScreen() {
 
     const { success, error } = await initiateCodPayment(
       bookingId,
-      rawAmount > 0 ? rawAmount : undefined,
+      amountToPay > 0 ? amountToPay : undefined,
       booking?.worker_id
     );
 
@@ -60,7 +66,7 @@ export default function PaymentScreen() {
         params: { bookingId },
       } as any);
     } else {
-      Alert.alert(
+      showAlert(
         'Booking Confirmation',
         error || paymentError || 'Payment confirmation failed. Please check your connection and try again.'
       );
@@ -69,7 +75,7 @@ export default function PaymentScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgApp} />
+      <ThemedStatusBar />
       <View style={styles.container}>
         {/* Header: Back button + Title "Payment" */}
         <PaymentHeader title="Payment" />
@@ -82,6 +88,7 @@ export default function PaymentScreen() {
         >
           {/* 1. What am I paying? Amount to pay card */}
           <PaymentAmountCard total={amountToPay} />
+          <DiscountSummaryRow booking={bookingRecord} style={styles.savings} />
 
           {/* 2. How am I paying? Payment method selection card */}
           <PaymentMethodSelectCard />
@@ -93,7 +100,7 @@ export default function PaymentScreen() {
         {/* 3. Confirm my booking: Bottom sticky checkout area */}
         <PaymentStickyFooter
           total={amountToPay}
-          loading={isLoading}
+          loading={isLoading || amountToPay <= 0}
           onPress={handlePay}
         />
       </View>
@@ -101,7 +108,7 @@ export default function PaymentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.bgApp,
@@ -120,5 +127,8 @@ const styles = StyleSheet.create({
   },
   footerSpacer: {
     height: 110,
+  },
+  savings: {
+    marginTop: 12,
   },
 });

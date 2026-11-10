@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Linking,
-  Alert,
   TouchableOpacity,
   AppState,
 } from 'react-native';
@@ -36,10 +35,12 @@ import {
   MessageContextMenu,
   MessageContextMenuRef,
 } from '../../../src/components/chat';
-import { colors } from '../../../src/design/colors';
-import { CHAT_CANVAS } from '../../../src/components/chat/chatTheme';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
+import { showAlert } from '../../../src/components/feedback/AppAlert';
 
 export default function RequestClarificationChatScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const params = useLocalSearchParams<{
     requestId: string;
@@ -138,10 +139,10 @@ export default function RequestClarificationChatScreen() {
     if (resolvedWorkerPhone) {
       const cleanPhone = resolvedWorkerPhone.replace(/[^\d+]/g, '');
       Linking.openURL(`tel:${cleanPhone}`).catch(() => {
-        Alert.alert('Unable to place call', 'Could not open phone dialer on this device.');
+        showAlert('Unable to place call', 'Could not open phone dialer on this device.');
       });
     } else {
-      Alert.alert('Phone Call', 'Professional contact number is available once a quote is confirmed.');
+      showAlert('Phone Call', 'Professional contact number is available once a quote is confirmed.');
     }
   }, [resolvedWorkerPhone]);
 
@@ -281,10 +282,10 @@ export default function RequestClarificationChatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: CHAT_CANVAS,
+    backgroundColor: palette.gray100,
   },
   flex: {
     flex: 1,

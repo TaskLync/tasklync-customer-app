@@ -4,9 +4,9 @@ import { useRouter } from 'expo-router';
 import { Home } from 'lucide-react-native';
 import { ErrorState } from './ErrorState';
 import { fontFamily } from '../../design/typography';
-import { palette, colors } from '../../design/colors';
 import { radius } from '../../design/radius';
 import { useAuthStore } from '../../store/auth.store';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface RouteErrorBoundaryProps {
   error: Error;
@@ -20,6 +20,8 @@ export interface RouteErrorBoundaryProps {
  * `export { RouteErrorBoundary as ErrorBoundary } from '../../src/components/feedback/RouteErrorBoundary';`
  */
 export function RouteErrorBoundary({ error, retry }: RouteErrorBoundaryProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const [showStack, setShowStack] = useState(false);
 
@@ -95,7 +97,7 @@ export function RouteErrorBoundary({ error, retry }: RouteErrorBoundaryProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: palette.zenWhite,
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
   },
   debugScroll: {
     maxHeight: 180,
-    backgroundColor: palette.gray900,
+    backgroundColor: palette.black, // a code panel stays dark in both themes
     borderRadius: radius.md,
     padding: 12,
   },

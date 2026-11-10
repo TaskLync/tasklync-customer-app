@@ -6,8 +6,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { Navigation } from 'lucide-react-native';
-import { colors } from '../../design/colors';
 import { springConfig } from '../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface RecenterButtonProps {
   visible: boolean;
@@ -22,6 +22,8 @@ export const RecenterButton: FC<RecenterButtonProps> = ({
   onRecenter,
   isLoading = false,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(visible ? 1 : 0);
   const opacity = useSharedValue(visible ? 1 : 0);
 
@@ -68,7 +70,7 @@ export const RecenterButton: FC<RecenterButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   button: {
     width: 44,
     height: 44, // Fitts's Law: 44px minimum touch target

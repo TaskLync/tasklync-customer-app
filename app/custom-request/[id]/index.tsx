@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
   Modal,
   TextInput,
   Pressable,
@@ -32,15 +31,18 @@ import {
   Maximize2,
 } from 'lucide-react-native';
 
-import { colors, palette, typography } from '../../../src/design';
+import { typography } from '../../../src/design';
 import { WorkerAvatar } from '../../../src/components/worker/WorkerAvatar';
 import { useCustomRequestDetail } from '../../../src/hooks/custom-requests/useCustomRequestDetail';
 import { useWorkerProfile } from '../../../src/hooks/useWorkerProfile';
 import { CustomRequestStatus } from '../../../src/types/customRequest.types';
 import { ImageViewer } from '../../../src/components/common/ImageViewer';
 import { chatApi } from '../../../src/services/api/chat.api';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
 
 export default function CustomRequestDetailScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -428,7 +430,7 @@ export default function CustomRequestDetailScreen() {
                 >
                   <Image source={{ uri: item.media_url }} style={styles.mediaThumb} contentFit="cover" />
                   <View style={styles.expandOverlay}>
-                    <Maximize2 size={12} color={colors.white} />
+                    <Maximize2 size={12} color={colors.pureWhite} />
                   </View>
                 </TouchableOpacity>
               ))}
@@ -577,7 +579,7 @@ export default function CustomRequestDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: palette.canvasGray,
@@ -616,7 +618,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
-    color: colors.white,
+    color: colors.pureWhite,
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 14,
   },
@@ -1002,7 +1004,7 @@ const styles = StyleSheet.create({
   reviewQuoteCtaText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 15,
-    color: colors.white,
+    color: colors.pureWhite,
   },
   modalOverlay: {
     flex: 1,
@@ -1067,6 +1069,6 @@ const styles = StyleSheet.create({
   modalConfirmBtnText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 14,
-    color: colors.white,
+    color: colors.pureWhite,
   },
 });

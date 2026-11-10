@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Clock, AlertCircle } from 'lucide-react-native';
-import { palette, colors } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface QuoteExpiryCountdownProps {
   validUntil: string;
@@ -9,6 +9,9 @@ interface QuoteExpiryCountdownProps {
 }
 
 export function QuoteExpiryCountdown({ validUntil, onExpire }: QuoteExpiryCountdownProps) {
+  const { colors } = useAppTheme();
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [timeLeftStr, setTimeLeftStr] = useState<string>('');
   const [isUrgent, setIsUrgent] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
@@ -57,7 +60,7 @@ export function QuoteExpiryCountdown({ validUntil, onExpire }: QuoteExpiryCountd
 
   return (
     <View style={[styles.container, isUrgent && styles.containerUrgent]}>
-      <Clock size={15} color={isUrgent ? '#DC2626' : '#2563EB'} />
+      <Clock size={15} color={isUrgent ? colors.textDanger : colors.textInfo} />
       <Text style={[styles.text, isUrgent && styles.textUrgent]}>
         {isUrgent ? 'Hurry! ' : 'Valid for '}
         {timeLeftStr}
@@ -66,7 +69,7 @@ export function QuoteExpiryCountdown({ validUntil, onExpire }: QuoteExpiryCountd
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

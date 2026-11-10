@@ -3,6 +3,7 @@ import { WorkerSearchDocument } from '../../types/search.types';
 import { WorkerReview, ReviewSummaryData, WorkerPortfolioImage } from '../../types/review.types';
 import { parsePriceNumber } from '../../utils/formatters';
 import { resolveReviewerIdentity } from '../../utils/reviewerUtils';
+import { parseSearchPromotion } from '../../utils/offers';
 
 /**
  * Data Mapper / DTO Transformer for Worker Service API Spec v2.0.0
@@ -472,6 +473,7 @@ export const mapRawWorkerNearby = (raw: any): WorkerNearby => {
     companyVerified,
     maxConcurrentJobs,
     hasDistance: hasExplicitDistance,
+    promotion: parseSearchPromotion(raw.promotion),
     providerType,
     businessName,
     isCompany,

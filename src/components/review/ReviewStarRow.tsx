@@ -1,7 +1,7 @@
 import { View, StyleSheet, Text, TextStyle, ViewStyle } from 'react-native';
 import { Svg, Path, Defs, ClipPath, Rect, G } from 'react-native-svg';
-import { colors } from '../../design/colors';
 import { fontFamily as fonts } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ReviewStarRowProps {
   rating: number; // 1-5
@@ -16,6 +16,7 @@ export interface ReviewStarRowProps {
 }
 
 const StarIcon = ({ filled, half, sizePx }: { filled: boolean; half?: boolean; sizePx: number }) => {
+  const { colors } = useAppTheme();
   if (half) {
     return (
       <Svg width={sizePx} height={sizePx} viewBox="0 0 24 24">
@@ -55,6 +56,7 @@ export const ReviewStarRow = ({
   numberStyle,
   style,
 }: ReviewStarRowProps) => {
+  const styles = useThemedStyles(createStyles);
   const sizeMap = {
     xs: 12,
     sm: 16,
@@ -110,7 +112,7 @@ export const ReviewStarRow = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

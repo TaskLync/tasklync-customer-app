@@ -6,9 +6,9 @@ import Animated, {
   withDelay,
   withSpring,
 } from 'react-native-reanimated';
-import { colors } from '../../design/colors';
 import { fontFamily as fonts } from '../../design/typography';
 import { radius } from '../../design/radius';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface RatingBarRowProps {
   label: string;
@@ -33,10 +33,14 @@ export const RatingBarRow = ({
   maxValue = 5,
   animated = false,
   animationDelay = 0,
-  trackColor = colors.border,
-  fillColor = colors.primary,
+  trackColor: trackColorProp,
+  fillColor: fillColorProp,
   style,
 }: RatingBarRowProps) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+  const trackColor = trackColorProp ?? colors.border;
+  const fillColor = fillColorProp ?? colors.primary;
   const targetPercent = value !== null ? (value / maxValue) * 100 : 0;
   const progress = useSharedValue(animated ? 0 : targetPercent);
 
@@ -76,7 +80,7 @@ export const RatingBarRow = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -12,7 +12,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react-native';
-import { colors, palette } from '../../design';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 export interface NotificationIconProps {
   category?: string | null;
@@ -29,6 +29,7 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
   containerSize = 42,
   style,
 }) => {
+  const { colors, palette } = useAppTheme();
   const cat = (category || '').toLowerCase();
   const template = (templateKey || '').toLowerCase();
 

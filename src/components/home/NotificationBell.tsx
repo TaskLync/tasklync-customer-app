@@ -14,8 +14,8 @@ import Animated, {
 import { IconButton } from '../ui/Button/IconButton';
 import { Text } from '../ui/Text/Text';
 import { useUnreadCount } from '../../hooks/useUnreadCount';
-import { colors, palette } from '../../design/colors';
 import { fontFamily } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface NotificationBellProps {
   unreadCount?: number;
@@ -34,6 +34,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
   iconSize = 22,
   showDot,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { unreadCount: hookUnreadCount } = useUnreadCount();
   const effectiveUnreadCount = propUnreadCount !== undefined ? propUnreadCount : hookUnreadCount;
@@ -124,7 +126,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     position: 'relative',
     justifyContent: 'center',

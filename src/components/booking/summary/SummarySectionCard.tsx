@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface SummarySectionCardProps {
   /** Kept for API compatibility; sections are text-led and no longer render an icon. */
@@ -15,6 +16,7 @@ export const SummarySectionCard: React.FC<SummarySectionCardProps> = ({
   children,
   rightAction,
 }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
@@ -26,7 +28,7 @@ export const SummarySectionCard: React.FC<SummarySectionCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   section: {
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,

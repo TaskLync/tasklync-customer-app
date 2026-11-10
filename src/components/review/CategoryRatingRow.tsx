@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { RatingInput } from '../ui/Rating/RatingInput';
-import { colors, fontFamily, fontSize, spacing } from '../../design';
+import { fontFamily, fontSize, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface CategoryRatingRowProps {
   label: string;
@@ -20,6 +21,7 @@ export interface CategoryRatingRowProps {
  */
 export const CategoryRatingRow: React.FC<CategoryRatingRowProps> = React.memo(
   function CategoryRatingRow({ label, value, onChange, disabled = false }) {
+    const styles = useThemedStyles(createStyles);
     return (
       <View style={styles.row} accessibilityRole="none">
         <Text style={styles.label}>{label}</Text>
@@ -35,7 +37,7 @@ export const CategoryRatingRow: React.FC<CategoryRatingRowProps> = React.memo(
   }
 );
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

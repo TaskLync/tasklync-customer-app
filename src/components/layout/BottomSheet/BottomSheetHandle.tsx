@@ -6,6 +6,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { radius } from '../../../design/radius';
 import { springConfig } from '../../../design/animations';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -18,6 +19,7 @@ export const BottomSheetHandle: React.FC<BottomSheetHandleProps> = ({
   style,
   indicatorStyle,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(1);
 
   const handlePressIn = () => {
@@ -47,7 +49,7 @@ export const BottomSheetHandle: React.FC<BottomSheetHandleProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
@@ -63,7 +65,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4.5,
     borderRadius: radius.pill,
-    backgroundColor: '#CBD5E1', // High-contrast subtle neutral gray pill
+    backgroundColor: colors.borderStrong, // subtle neutral grab pill
   },
 });
 

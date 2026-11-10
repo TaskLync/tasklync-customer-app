@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
-import { colors, palette, fontFamily, spacing } from '../../design';
+import { fontFamily, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface SettingsRowProps {
   label: string;
@@ -22,6 +23,8 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
   onPress,
   accessibilityLabel,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const isInteractive = Boolean(onPress);
 
   const handlePress = () => {
@@ -90,7 +93,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     minHeight: 52,
     justifyContent: 'center',

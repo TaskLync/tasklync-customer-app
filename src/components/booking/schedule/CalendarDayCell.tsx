@@ -6,7 +6,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { CalendarDayItem } from '../../../hooks/useCalendarMonth';
-import { colors, palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface CalendarDayCellProps {
   dayItem: CalendarDayItem;
@@ -21,6 +22,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
   isSelected,
   onSelect,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const { dateStr, dayNumber, isCurrentMonth, isToday, isPast, isAvailable } = dayItem;
 
   // Disabled if outside current month, in the past, or has no real-time availability
@@ -79,7 +81,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   outerContainer: {
     flex: 1,
     aspectRatio: 1,
@@ -123,7 +125,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.inter.bold,
   },
   textSelected: {
-    color: palette.white,
+    color: palette.pureWhite,
     fontFamily: fontFamily.inter.bold,
   },
   textDisabled: {

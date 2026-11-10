@@ -11,7 +11,8 @@ import Animated, {
   FadeOut,
 } from 'react-native-reanimated';
 import { Camera } from 'lucide-react-native';
-import { colors, palette, fontFamily, shadows } from '../../design';
+import { fontFamily, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -42,6 +43,8 @@ export const AvatarUploadRing: React.FC<AvatarUploadRingProps> = ({
   onPress,
   showEditBadge = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const isUploading = progress !== null && progress >= 0 && progress <= 1;
 
   const radiusVal = (size - strokeWidth) / 2;
@@ -129,7 +132,7 @@ export const AvatarUploadRing: React.FC<AvatarUploadRingProps> = ({
       {/* Camera Edit Badge */}
       {showEditBadge && (
         <View style={styles.editBadge}>
-          <Camera size={14} color={palette.white} />
+          <Camera size={14} color={palette.pureWhite} />
         </View>
       )}
     </View>
@@ -152,7 +155,7 @@ export const AvatarUploadRing: React.FC<AvatarUploadRingProps> = ({
   return avatarContent;
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   avatarContainer: {
     position: 'relative',
     alignItems: 'center',

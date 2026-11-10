@@ -1,4 +1,3 @@
-import { colors, palette } from '../../design';
 import React from 'react';
 import { StyleSheet, Pressable, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -10,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { WorkerPortfolioImage } from '../../types/review.types';
 import { radius } from '@design/radius';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface PortfolioCellProps {
   image: WorkerPortfolioImage;
@@ -34,6 +34,7 @@ export const PortfolioCell = ({
   index,
   priority = 'normal',
 }: PortfolioCellProps) => {
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
 
@@ -94,13 +95,13 @@ export const PortfolioCell = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     borderRadius: radius.sm,
     overflow: 'hidden',
-    backgroundColor: '#E2E8F0',
+    backgroundColor: colors.border,
   },
   placeholder: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: colors.border,
   },
 });

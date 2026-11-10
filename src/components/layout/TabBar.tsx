@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, Search, Calendar, MessageSquare, User } from 'lucide-react-native';
-import { colors } from '../../design/colors';
 import { fontFamily } from '../../design/typography';
 import { useChatUnreadStore } from '../../store/chatUnread.store';
 import { TabBadge } from './TabBadge';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 /**
  * TabBar
@@ -14,22 +14,22 @@ import { TabBadge } from './TabBadge';
  * Senior Mobile UI/UX Uber/Foodpanda/Zomato-grade bottom navigation bar.
  * Architecture & Design:
  * - Minimalist, docked edge-to-edge layout with razor-thin top border
- * - Brand green (#16A34A / colors.primaryDark) for active state with 4.54:1 contrast ratio (WCAG AA)
- * - Neutral slate gray (#64748B) for inactive state with 4.65:1 contrast ratio (WCAG AA)
- * - Clean neutral light gray (#F5F6F7) background
+ * - Neutral grey active / inactive states from theme tokens (tabBarActive / tabBarInactive), no brand colour;
+ *   both meet WCAG AA on the tab bar surface in light and dark (see colors.ts)
+ * - Theme surface background with a hairline top separator (tabBarBorder), no shadow
  * - Pure static render without animation overhead for instantaneous, responsive touch feel
  * - Micro notification badge on Messages supporting unread sync and 99+ ceiling
  * - Full compliance with iOS Home Indicator and Android gesture/button safe areas
  * - Accessible touch targets (>= 48dp) and screen-reader accessibility labeling
  */
 
-const TAB_BAR_BACKGROUND = colors.bgCard;
-const ACTIVE_COLOR = colors.primaryDark; // #16A34A - vibrant brand green on white
-const INACTIVE_COLOR = colors.textSecondary; // Slate gray (WCAG AA on white)
-const BORDER_COLOR = colors.borderLight; // Ultra-clean subtle top hairline border
 
 export const TabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
+  const ACTIVE_COLOR = colors.tabBarActive;
+  const INACTIVE_COLOR = colors.tabBarInactive;
   const unreadMessageCount = useChatUnreadStore((s) => s.unreadCount);
 
   // Calculate bottom inset: respect iOS home indicator (typically 34dp) and Android navigation bar (~16-48dp) with intentional breathing room
@@ -148,25 +148,13 @@ export const TabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, naviga
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: TAB_BAR_BACKGROUND,
+    backgroundColor: colors.tabBarBackground,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: BORDER_COLOR,
+    borderTopColor: colors.tabBarBorder,
     width: '100%',
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.black,
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 6,
-      },
-      default: {},
-    }),
   },
   tab: {
     flex: 1,
@@ -203,11 +191,11 @@ const styles = StyleSheet.create({
   labelActive: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontWeight: '600',
-    color: ACTIVE_COLOR,
+    color: colors.tabBarActive,
   },
   labelInactive: {
     fontFamily: fontFamily.jakarta.medium,
     fontWeight: '500',
-    color: INACTIVE_COLOR,
+    color: colors.tabBarInactive,
   },
 });

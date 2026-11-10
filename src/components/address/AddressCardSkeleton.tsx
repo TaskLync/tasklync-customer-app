@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SkeletonCircle, SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
-import { colors } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface AddressCardSkeletonProps {
   /** 'select' adds the radio placeholder used by AddressCard in selection mode. */
@@ -12,7 +12,9 @@ interface AddressCardSkeletonProps {
  * Mirrors AddressCard: flat 68px row (14px vertical padding, hairline divider), 38px icon,
  * 15/20 label and 14/18 address line. Wrap several in one <SkeletonGroup> for a list.
  */
-export const AddressCardSkeleton: React.FC<AddressCardSkeletonProps> = ({ variant = 'manage' }) => (
+export const AddressCardSkeleton: React.FC<AddressCardSkeletonProps> = ({ variant = 'manage' }) => {
+  const styles = useThemedStyles(createStyles);
+  return (
   <SkeletonGroup style={styles.card} accessibilityLabel="Loading address">
     <View style={styles.row}>
       <SkeletonCircle size={38} style={styles.icon} />
@@ -24,8 +26,9 @@ export const AddressCardSkeleton: React.FC<AddressCardSkeletonProps> = ({ varian
     </View>
   </SkeletonGroup>
 );
+};
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     minHeight: 68,
     paddingVertical: 14,

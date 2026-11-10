@@ -1,4 +1,3 @@
-import { colors } from '../../design';
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ViewStyle } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
@@ -6,6 +5,7 @@ import { MessageBubbleItem } from '../../types/chat.types';
 import { ReadReceipt } from './ReadReceipt';
 import { ImageMessage } from './ImageMessage';
 import { formatPKTTime } from '../../utils/timezone';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface MessageBubbleProps {
   item: MessageBubbleItem;
@@ -27,6 +27,7 @@ export const MessageBubble = React.memo(function MessageBubble({
   onImagePress,
   ...restProps
 }: MessageBubbleProps & Record<string, any>) {
+  const styles = useThemedStyles(createStyles);
   const message = item?.message || (restProps as any)?.message;
   if (!message) return null;
 
@@ -156,7 +157,7 @@ const BUBBLE_RADIUS = 16;
 const TIGHT_RADIUS = 6;
 const TAIL_RADIUS = 4;
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     paddingHorizontal: 12,

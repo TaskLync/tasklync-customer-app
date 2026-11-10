@@ -1,16 +1,8 @@
 import { useState, useRef } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  Pressable,
-  StatusBar,
-  Platform,
-} from 'react-native';
+import { StyleSheet, View, Text, Pressable, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { colors } from '@design/colors';
 import { typography } from '@design/typography';
 import { useCategoryById } from '@hooks/useCategories';
 import { CategoryFilterBar, CategoryWorkersList, DistanceSheetContent } from '@components/category';
@@ -19,8 +11,12 @@ import { FilterSheetContent } from '@components/search/FilterSheetContent';
 import { FilterState, SortOption, DEFAULT_FILTERS } from '../../src/types/search.types';
 
 import { formatCategoryName } from '../../src/utils/formatters';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 export default function CategoryScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const categoryId = Array.isArray(id) ? id[0] : id;
@@ -29,7 +25,7 @@ export default function CategoryScreen() {
   const { category } = useCategoryById(categoryId || '');
 
   // Screen States
-  const [sortBy, setSortBy] = useState<SortOption>('distance');
+  const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [filters, setFilters] = useState<FilterState>({
     ...DEFAULT_FILTERS,
     categories: categoryId ? [categoryId] : [],
@@ -83,7 +79,7 @@ export default function CategoryScreen() {
       categories: categoryId ? [categoryId] : [],
       radius: 10000,
     });
-    setSortBy('distance');
+    setSortBy('relevance');
     filterSheetRef.current?.close();
   };
 
@@ -94,8 +90,8 @@ export default function CategoryScreen() {
   };
 
   const handleResetDistance = () => {
-    setFilters((prev) => ({ ...prev, radius: 10000, sortBy: 'distance' }));
-    setSortBy('distance');
+    setFilters((prev) => ({ ...prev, radius: 10000, sortBy: 'relevance' }));
+    setSortBy('relevance');
     distanceSheetRef.current?.close();
   };
 
@@ -103,10 +99,7 @@ export default function CategoryScreen() {
 
   return (
     <SafeAreaView style={styles.safeContainer} edges={['top', 'bottom', 'left', 'right']}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={colors.bgApp}
-      />
+      <ThemedStatusBar />
 
       {/* Custom Header */}
       <View style={styles.header}>
@@ -188,7 +181,7 @@ export default function CategoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   safeContainer: {
     flex: 1,
     backgroundColor: colors.bgApp,

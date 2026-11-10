@@ -1,7 +1,8 @@
 import React from 'react';
 import { Text as RNText, TextProps as RNTextProps, StyleSheet } from 'react-native';
 import { textStyles } from '@design/typography';
-import { colors } from '@design/colors';
+import type { AppTheme } from '../../../theme/useAppTheme';
+import { useAppTheme } from '../../../theme/useAppTheme';
 
 export type TextVariant = 
   | 'display' | 'h1' | 'h2' | 'h3' | 'h4' 
@@ -21,7 +22,7 @@ export interface TextProps extends Omit<RNTextProps, 'style'> {
   children: React.ReactNode;
 }
 
-const resolveColor = (colorInput: TextColor): string => {
+const resolveColor = (colorInput: TextColor, colors: AppTheme['colors']): string => {
   switch (colorInput) {
     case 'primary': return colors.textPrimary;
     case 'secondary': return colors.textSecondary;
@@ -54,7 +55,8 @@ export const Text = ({
   numberOfLines,
   ...rest
 }: TextProps) => {
-  const resolvedColor = resolveColor(color || getDefaultColorForVariant(variant));
+  const { colors } = useAppTheme();
+  const resolvedColor = resolveColor(color || getDefaultColorForVariant(variant), colors);
   
   const baseStyle = textStyles[variant];
   

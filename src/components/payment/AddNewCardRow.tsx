@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Plus, ChevronRight, Lock } from 'lucide-react-native';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 export interface AddNewCardRowProps {
   onPress?: () => void;
@@ -16,9 +18,11 @@ export const AddNewCardRow: React.FC<AddNewCardRowProps> = ({
   subtitle = 'Online methods currently unavailable · Cash on Delivery active',
   disabled = true,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handlePress = () => {
     if (disabled) {
-      Alert.alert(
+      showAlert(
         'Online Payments Disabled',
         'Online payment registration (Debit/Credit Card, JazzCash, EasyPaisa) is temporarily paused while online gateways are offline. Cash on Delivery is automatically active for all your bookings.'
       );
@@ -68,7 +72,7 @@ export const AddNewCardRow: React.FC<AddNewCardRowProps> = ({
 // Compatibility export
 export const AddNewPaymentMethodRow = AddNewCardRow;
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     marginTop: 12,
     marginBottom: 16,
@@ -83,7 +87,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: palette.gray200,
     borderStyle: 'dashed',
-    shadowColor: palette.gray900,
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
     shadowRadius: 4,

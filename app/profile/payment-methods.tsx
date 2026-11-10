@@ -1,12 +1,4 @@
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  Alert,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Lock } from 'lucide-react-native';
@@ -18,10 +10,15 @@ import {
   PaymentMethodSwipeActions,
   AddCardButton,
 } from '../../src/components/payment';
-import { colors, palette, fontFamily, fontSize, spacing, shadows, radius } from '../../src/design';
+import { fontFamily, fontSize, spacing, shadows, radius } from '../../src/design';
 import { ONLINE_PAYMENTS_DISABLED_MESSAGE } from '../../src/types/payment.types';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+import { showAlert } from '../../src/components/feedback/AppAlert';
 
 export default function PaymentMethodsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -37,7 +34,7 @@ export default function PaymentMethodsScreen() {
   };
 
   const handleAddPress = () => {
-    Alert.alert(
+    showAlert(
       'Online Payments Unavailable',
       `${ONLINE_PAYMENTS_DISABLED_MESSAGE}\n\nAdding credit/debit cards or mobile wallets is temporarily paused while online gateways are safely disconnected.`
     );
@@ -56,7 +53,7 @@ export default function PaymentMethodsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgApp} />
+      <ThemedStatusBar />
 
       {/* Screen Header */}
       <View style={styles.header}>
@@ -126,7 +123,7 @@ export default function PaymentMethodsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

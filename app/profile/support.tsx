@@ -1,11 +1,4 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Headphones } from 'lucide-react-native';
@@ -15,9 +8,13 @@ import {
   ContactOptionRow,
   RateAppRow,
 } from '../../src/components/support';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../src/design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 export default function SupportScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -27,7 +24,7 @@ export default function SupportScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgApp} />
+      <ThemedStatusBar />
 
       {/* Screen Header */}
       <View style={styles.header}>
@@ -121,7 +118,7 @@ export default function SupportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

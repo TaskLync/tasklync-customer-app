@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { StyleSheet, View, Pressable, Platform } from 'react-native';
 import { Plus, Minus } from 'lucide-react-native';
-import { colors } from '../../design/colors';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ZoomControlProps {
   onZoomIn: () => void;
@@ -12,6 +12,8 @@ export const ZoomControl: FC<ZoomControlProps> = ({
   onZoomIn,
   onZoomOut,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handleZoomIn = () => {
     onZoomIn();
   };
@@ -55,7 +57,7 @@ export const ZoomControl: FC<ZoomControlProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgCard,
     width: 44,

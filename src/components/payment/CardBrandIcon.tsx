@@ -1,7 +1,8 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { CardBrand } from '../../types/payment.types';
 import { CreditCard, Banknote } from 'lucide-react-native';
-import { palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface CardBrandIconProps {
   brand?: CardBrand | string;
@@ -9,6 +10,8 @@ export interface CardBrandIconProps {
 }
 
 export const CardBrandIcon: React.FC<CardBrandIconProps> = ({ brand = 'unknown', size = 'md' }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const normalized = (brand || 'unknown').toLowerCase();
 
   // Width & height: 36×24px for md, 44×28px for lg, 30×20px for sm
@@ -174,7 +177,7 @@ export const CardBrandIcon: React.FC<CardBrandIconProps> = ({ brand = 'unknown',
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -190,26 +193,26 @@ const styles = StyleSheet.create({
   epText: {
     fontFamily: fontFamily.poppins.bold,
     fontSize: 10,
-    color: palette.white,
+    color: palette.pureWhite,
     letterSpacing: 0.5,
   },
   visaText: {
     fontFamily: fontFamily.inter.bold,
     fontSize: 9,
-    color: palette.white,
+    color: palette.pureWhite,
     fontStyle: 'italic',
     letterSpacing: 0.8,
   },
   paypakText: {
     fontFamily: fontFamily.inter.bold,
     fontSize: 7,
-    color: palette.white,
+    color: palette.pureWhite,
     letterSpacing: 0.2,
   },
   amexText: {
     fontFamily: fontFamily.inter.bold,
     fontSize: 7.5,
-    color: palette.white,
+    color: palette.pureWhite,
     letterSpacing: 0.3,
   },
   mcCircles: {

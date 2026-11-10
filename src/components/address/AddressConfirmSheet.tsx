@@ -8,8 +8,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
-  useColorScheme,
   useWindowDimensions,
   Keyboard,
 } from 'react-native';
@@ -33,11 +31,13 @@ import { AddressLabelChips } from './AddressLabelChips';
 import { AddressNotesInput } from './AddressNotesInput';
 import { Address, ReverseGeocodeResult } from '../../types/address.types';
 import { findNearbySavedAddress, formatAddressLine } from '../../utils/address';
-import { colors, palette, fontFamily, radius, fontSize, shadows } from '../../design';
+import { fontFamily, radius, fontSize, shadows } from '../../design';
 import {
   validateServiceArea,
   SERVICE_UNAVAILABLE_MESSAGE,
 } from '../../config/serviceArea.config';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 export interface AddressConfirmSheetProps {
   reverseGeocodeResult: ReverseGeocodeResult | null;
@@ -77,10 +77,10 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
   onSaveAddress,
   onDeleteAddress,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
   const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
   const isInputFocusedRef = useRef<boolean>(false);
@@ -285,7 +285,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
   const handleDelete = () => {
     if (!onDeleteAddress) return;
 
-    Alert.alert(
+    showAlert(
       'Delete Address',
       'Are you sure you want to remove this saved address?',
       [
@@ -322,14 +322,9 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
   return (
     <KeyboardAvoidingView {...sheetWrapperProps}>
       <View
-        style={[
-          styles.sheetContainer,
-          isDark && styles.sheetContainerDark,
-          isExpanded
+        style={[styles.sheetContainer, isExpanded
             ? [styles.sheetExpanded, { maxHeight: maxAllowedHeight }]
-            : styles.sheetCollapsed,
-          { paddingBottom: activeBottomPadding },
-        ]}
+            : styles.sheetCollapsed, { paddingBottom: activeBottomPadding }]}
       >
         {/* Draggable Handle & Address Header */}
         <View collapsable={false}>
@@ -340,24 +335,20 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
               accessibilityRole="button"
               accessibilityLabel={isExpanded ? 'Collapse address details' : 'Expand address details'}
             >
-              <View style={[styles.handle, isDark && styles.handleDark]} />
+              <View style={[styles.handle]} />
             </Pressable>
 
             {/* Address Header Preview */}
             <Pressable onPress={toggleExpand} style={styles.headerRow}>
-              <View style={[styles.pinIconWrap, isDark && styles.pinIconWrapDark]}>
-                <MapPin size={20} color={isDark ? palette.green400 : colors.primaryDark} strokeWidth={2.4} />
+              <View style={[styles.pinIconWrap]}>
+                <MapPin size={20} color={colors.primaryDark} strokeWidth={2.4} />
               </View>
               <View style={styles.headerTextWrap}>
-                <Text style={[styles.headerSectionTitle, isDark && styles.headerSectionTitleDark]} maxFontSizeMultiplier={1.3}>
+                <Text style={[styles.headerSectionTitle]} maxFontSizeMultiplier={1.3}>
                   Location
                 </Text>
                 <Animated.Text
-                  style={[
-                    styles.addressPreviewText,
-                    isDark && styles.addressPreviewTextDark,
-                    animatedAddressStyle,
-                  ]}
+                  style={[styles.addressPreviewText, animatedAddressStyle]}
                   numberOfLines={isExpanded ? 2 : 1}
                   maxFontSizeMultiplier={1.3}
                 >
@@ -366,9 +357,9 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
               </View>
               <View style={styles.expandChevronWrap}>
                 {isExpanded ? (
-                  <ChevronDown size={20} color={isDark ? palette.gray400 : palette.gray500} />
+                  <ChevronDown size={20} color={palette.gray500} />
                 ) : (
-                  <ChevronUp size={20} color={isDark ? palette.gray400 : palette.gray500} />
+                  <ChevronUp size={20} color={palette.gray500} />
                 )}
               </View>
             </Pressable>
@@ -453,7 +444,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
             disabled={!isFormValid || !isServiceable || isSaving || isGeocoding}
             style={({ pressed }) => [
               styles.saveButton,
-              (!isFormValid || !isServiceable) && (isDark ? styles.saveButtonDisabledDark : styles.saveButtonDisabled),
+              (!isFormValid || !isServiceable) && (styles.saveButtonDisabled),
               isSuccessFeedback && styles.saveButtonSuccess,
               pressed && isFormValid && isServiceable && styles.saveButtonPressed,
             ]}
@@ -462,10 +453,10 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
             accessibilityState={{ disabled: !isFormValid || !isServiceable || isSaving }}
           >
             {isSaving ? (
-              <ActivityIndicator size="small" color={palette.white} />
+              <ActivityIndicator size="small" color={palette.pureWhite} />
             ) : isSuccessFeedback ? (
               <View style={styles.successRow}>
-                <Check size={18} color={palette.white} strokeWidth={3} />
+                <Check size={18} color={palette.pureWhite} strokeWidth={3} />
                 <Text style={styles.saveButtonText} maxFontSizeMultiplier={1.3}>
                   {isEditMode ? 'Updated!' : 'Saved!'}
                 </Text>
@@ -474,7 +465,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
               <Text
                 style={[
                   styles.saveButtonText,
-                  (!isFormValid || !isServiceable) && (isDark ? styles.saveButtonTextDisabledDark : styles.saveButtonTextDisabled),
+                  (!isFormValid || !isServiceable) && (styles.saveButtonTextDisabled),
                 ]}
                 maxFontSizeMultiplier={1.3}
               >
@@ -492,7 +483,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   keyboardContainer: {
     position: 'absolute',
     bottom: 0,
@@ -501,17 +492,13 @@ const styles = StyleSheet.create({
     zIndex: 28,
   },
   sheetContainer: {
-    backgroundColor: palette.white,
+    backgroundColor: colors.bottomSheetBackground,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderWidth: 1,
     borderColor: palette.gray200,
     ...shadows.xl,
     paddingHorizontal: 20,
-  },
-  sheetContainerDark: {
-    backgroundColor: palette.slate800,
-    borderColor: palette.gray700,
   },
   sheetCollapsed: {
     maxHeight: 200,
@@ -532,9 +519,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: palette.gray300,
   },
-  handleDark: {
-    backgroundColor: palette.slate600,
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -549,9 +533,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  pinIconWrapDark: {
-    backgroundColor: palette.gray900,
-  },
   headerTextWrap: {
     flex: 1,
   },
@@ -563,18 +544,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  headerSectionTitleDark: {
-    color: colors.textMuted,
-  },
   addressPreviewText: {
     fontFamily: fontFamily.jakarta.medium,
     fontSize: 15,
     lineHeight: 20,
     color: colors.textPrimary,
     marginTop: 2,
-  },
-  addressPreviewTextDark: {
-    color: palette.gray50,
   },
   expandChevronWrap: {
     padding: 6,
@@ -654,7 +629,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.green600,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: palette.green600,
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -669,11 +644,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
   },
-  saveButtonDisabledDark: {
-    backgroundColor: palette.gray700,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
   saveButtonSuccess: {
     backgroundColor: palette.green500,
   },
@@ -681,13 +651,10 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: fontSize.body1,
     lineHeight: 22,
-    color: palette.white,
+    color: palette.pureWhite,
   },
   saveButtonTextDisabled: {
     color: palette.gray400,
-  },
-  saveButtonTextDisabledDark: {
-    color: colors.textSecondary,
   },
   successRow: {
     flexDirection: 'row',

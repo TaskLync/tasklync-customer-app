@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { ShieldCheck, FileText, MessageCircle, LifeBuoy, LucideIcon } from 'lucide-react-native';
-import { companyTokens } from '../../theme/companyTokens';
-import { colors } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 interface CompanyTrustGuaranteeCardProps {
   /** True only when the backend reports this agency as verified. */
@@ -33,6 +33,8 @@ export const CompanyTrustGuaranteeCard: React.FC<CompanyTrustGuaranteeCardProps>
   ntnNumber,
   style,
 }) => {
+  const { companyTokens } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const items: TrustItem[] = [];
 
   if (isVerified) {
@@ -87,7 +89,7 @@ export const CompanyTrustGuaranteeCard: React.FC<CompanyTrustGuaranteeCardProps>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create({
   heading: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16,

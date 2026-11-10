@@ -1,9 +1,11 @@
 import { useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Trash2 } from 'lucide-react-native';
 import { PaymentMethod } from '../../types/payment.types';
-import { palette, fontFamily, radius, spacing } from '../../design';
+import { fontFamily, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { showAlert } from '../feedback/AppAlert';
 
 export interface PaymentMethodSwipeActionsProps {
   method: PaymentMethod;
@@ -16,6 +18,8 @@ export const PaymentMethodSwipeActions: React.FC<PaymentMethodSwipeActionsProps>
   onDelete,
   children,
 }) => {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const swipeableRef = useRef<Swipeable>(null);
 
   // Cash on Delivery cannot be deleted
@@ -28,7 +32,7 @@ export const PaymentMethodSwipeActions: React.FC<PaymentMethodSwipeActionsProps>
 
     if (method.is_default) {
       // Soft confirmation for default payment method
-      Alert.alert(
+      showAlert(
         'Delete Default Method?',
         'This is currently set as your default payment method. Are you sure you want to remove it?',
         [
@@ -57,7 +61,7 @@ export const PaymentMethodSwipeActions: React.FC<PaymentMethodSwipeActionsProps>
           accessibilityRole="button"
           accessibilityLabel={`Delete ${method.title}`}
         >
-          <Trash2 size={20} color={palette.white} />
+          <Trash2 size={20} color={palette.pureWhite} />
           <Text style={styles.deleteText}>Delete</Text>
         </TouchableOpacity>
       </View>
@@ -78,7 +82,7 @@ export const PaymentMethodSwipeActions: React.FC<PaymentMethodSwipeActionsProps>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   wrapper: {
     marginBottom: spacing.sm + 2,
   },
@@ -106,6 +110,6 @@ const styles = StyleSheet.create({
   deleteText: {
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 11,
-    color: palette.white,
+    color: palette.pureWhite,
   },
 });

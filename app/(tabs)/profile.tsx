@@ -1,15 +1,5 @@
 import { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  StatusBar,
-  Linking,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LogOut } from 'lucide-react-native';
@@ -25,7 +15,9 @@ import { ProfileMenuSection } from '../../src/components/profile/ProfileMenuSect
 import { LogoutConfirmSheet, showNativeLogoutActionSheet } from '../../src/components/feedback/LogoutConfirmSheet';
 import { DeleteAccountSheet } from '../../src/components/feedback/DeleteAccountSheet';
 import { DeleteAccountReason } from '../../src/types/moderation.types';
-import { colors, fontFamily } from '../../src/design';
+import { fontFamily } from '../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 /**
  * ProfileScreen (Day 35, 37 & 38 Profile & Account Control Hub)
@@ -37,6 +29,8 @@ import { colors, fontFamily } from '../../src/design';
  * - High-Friction 2-Step Delete Account flow with Peak-End goodbye screen
  */
 export default function ProfileScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -102,7 +96,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgApp} />
+      <ThemedStatusBar />
 
       {/* Screen Header Bar */}
       <View style={styles.header}>
@@ -184,7 +178,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

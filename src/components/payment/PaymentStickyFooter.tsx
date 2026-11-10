@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface PaymentStickyFooterProps {
   total: number;
@@ -16,6 +17,8 @@ export const PaymentStickyFooter: React.FC<PaymentStickyFooterProps> = ({
   onPress,
   disabled = false,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const displayTotal = total > 0 ? total : 1575;
   const formattedAmount = `Rs. ${displayTotal.toLocaleString()}`;
@@ -45,7 +48,7 @@ export const PaymentStickyFooter: React.FC<PaymentStickyFooterProps> = ({
           accessibilityLabel={`Confirm Booking for ${formattedAmount}`}
         >
           {loading ? (
-            <ActivityIndicator size="small" color={colors.white} />
+            <ActivityIndicator size="small" color={colors.pureWhite} />
           ) : (
             <Text style={styles.ctaText}>Confirm Booking</Text>
           )}
@@ -55,7 +58,7 @@ export const PaymentStickyFooter: React.FC<PaymentStickyFooterProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: 0,
@@ -66,7 +69,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.borderLight,
     paddingHorizontal: 20,
     paddingTop: 14,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.04,
     shadowRadius: 12,
@@ -105,7 +108,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primaryDark,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -124,7 +127,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 15,
     lineHeight: 20,
-    color: colors.white,
+    color: colors.pureWhite,
     letterSpacing: -0.2,
   },
 });

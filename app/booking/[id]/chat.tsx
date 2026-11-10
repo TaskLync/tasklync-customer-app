@@ -6,7 +6,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Linking,
-  Alert,
   AppState,
 } from 'react-native';
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -32,9 +31,11 @@ import {
   MessageContextMenu,
   MessageContextMenuRef,
 } from '../../../src/components/chat';
-import { CHAT_CANVAS } from '../../../src/components/chat/chatTheme';
+import { showAlert } from '../../../src/components/feedback/AppAlert';
+import { useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
 
 export default function BookingChatScreen() {
+  const styles = useThemedStyles(createStyles);
   const params = useLocalSearchParams<{
     id: string;
     workerName?: string;
@@ -194,12 +195,12 @@ export default function BookingChatScreen() {
 
   const handleCallPress = useCallback(() => {
     if (!resolvedWorkerPhone) {
-      Alert.alert('Contact Unavailable', 'Direct phone calling is not available for this booking.');
+      showAlert('Contact Unavailable', 'Direct phone calling is not available for this booking.');
       return;
     }
     const cleanPhone = resolvedWorkerPhone.replace(/[^\d+]/g, '');
     Linking.openURL(`tel:${cleanPhone}`).catch(() => {
-      Alert.alert('Unable to place call', 'Could not open phone dialer on this device.');
+      showAlert('Unable to place call', 'Could not open phone dialer on this device.');
     });
   }, [resolvedWorkerPhone]);
 
@@ -316,10 +317,10 @@ export default function BookingChatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: CHAT_CANVAS,
+    backgroundColor: palette.gray100,
   },
   flex: {
     flex: 1,

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-nati
 import { Image } from 'expo-image';
 import { Plus, X, RotateCw } from 'lucide-react-native';
 import { EvidenceSlotState } from '../../types/booking.types';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface DisputeEvidenceSlotProps {
   slot: EvidenceSlotState;
@@ -30,6 +31,8 @@ export const DisputeEvidenceSlot: React.FC<DisputeEvidenceSlotProps> = ({
   onRetrySlot,
   disabled = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const isSuccess = slot.status === 'success';
   const isUploading = slot.status === 'uploading';
   const isError = slot.status === 'error';
@@ -95,7 +98,7 @@ export const DisputeEvidenceSlot: React.FC<DisputeEvidenceSlotProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`Retry uploading photo ${index + 1}`}
           >
-            <RotateCw size={20} color={palette.white} />
+            <RotateCw size={20} color={palette.pureWhite} />
             <Text style={styles.retryText}>Retry</Text>
           </Pressable>
 
@@ -107,7 +110,7 @@ export const DisputeEvidenceSlot: React.FC<DisputeEvidenceSlotProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Remove failed photo"
           >
-            <X size={14} color={palette.white} />
+            <X size={14} color={palette.pureWhite} />
           </Pressable>
         </View>
       )}
@@ -131,7 +134,7 @@ export const DisputeEvidenceSlot: React.FC<DisputeEvidenceSlotProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`Remove photo ${index + 1}`}
           >
-            <X size={14} color={palette.white} strokeWidth={2.5} />
+            <X size={14} color={palette.pureWhite} strokeWidth={2.5} />
           </Pressable>
         </View>
       )}
@@ -139,7 +142,7 @@ export const DisputeEvidenceSlot: React.FC<DisputeEvidenceSlotProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     aspectRatio: 1,
@@ -186,7 +189,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   uploadingSlot: {
-    backgroundColor: palette.gray800,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -214,7 +217,7 @@ const styles = StyleSheet.create({
   uploadProgressText: {
     fontFamily: fontFamily.inter.bold,
     fontSize: fontSize.dataXS,
-    color: palette.white,
+    color: palette.pureWhite,
   },
   errorSlot: {
     backgroundColor: palette.dangerDark,
@@ -233,7 +236,7 @@ const styles = StyleSheet.create({
   retryText: {
     fontFamily: fontFamily.jakarta.bold,
     fontSize: fontSize.nano + 1,
-    color: palette.white,
+    color: palette.pureWhite,
   },
   successSlot: {
     backgroundColor: palette.gray100,

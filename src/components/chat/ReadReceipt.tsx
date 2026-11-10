@@ -1,7 +1,7 @@
 import React from 'react';
 import { MessageStatusIcon } from '../feedback/MessageStatusIcon';
 import { ReadReceiptStatus } from '../../types/chat.types';
-import { colors } from '../../design';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 interface ReadReceiptProps {
   status: ReadReceiptStatus;
@@ -19,6 +19,7 @@ export const ReadReceipt = React.memo(function ReadReceipt({
   color,
   size = 13,
 }: ReadReceiptProps) {
+  const { colors } = useAppTheme();
   const resolved =
     color ??
     (status === 'read' ? colors.primaryDark : status === 'failed' ? colors.danger : colors.textMuted);

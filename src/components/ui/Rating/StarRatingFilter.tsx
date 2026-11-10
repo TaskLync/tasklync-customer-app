@@ -9,9 +9,9 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Star } from 'lucide-react-native';
-import { colors } from '../../../design/colors';
 import { typography } from '../../../design/typography';
 import { springConfig } from '../../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 interface StarRatingFilterProps {
   value: number; // 0 = any, 1-5 = minimum
@@ -26,6 +26,7 @@ export const StarRatingFilter: React.FC<StarRatingFilterProps> = ({
   onChange,
   size = 28,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const [label, setLabel] = useState(getLabelForValue(value));
   const labelOpacity = useSharedValue(1);
 
@@ -80,6 +81,8 @@ const StarItem: React.FC<{
   size: number;
   onPress: () => void;
 }> = ({ index, currentValue, size, onPress }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const isSelected = index <= currentValue;
   const progress = useSharedValue(isSelected ? 1 : 0);
 
@@ -134,7 +137,7 @@ function getLabelForValue(val: number): string {
   }
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     alignItems: 'flex-start',
   },

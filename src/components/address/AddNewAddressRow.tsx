@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Plus, ChevronRight } from 'lucide-react-native';
-import { colors, palette, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddNewAddressRowProps {
   onAdd?: () => void;
@@ -9,6 +10,8 @@ export interface AddNewAddressRowProps {
 }
 
 export const AddNewAddressRow: React.FC<AddNewAddressRowProps> = ({ onAdd, onPress }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handlePress = () => {
     if (onPress) {
       onPress();
@@ -39,7 +42,7 @@ export const AddNewAddressRow: React.FC<AddNewAddressRowProps> = ({ onAdd, onPre
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   rowContainer: {
     flexDirection: 'row',
     alignItems: 'center',

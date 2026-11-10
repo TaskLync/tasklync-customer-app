@@ -1,5 +1,6 @@
-import { View, Text, TextInput, StyleSheet, useColorScheme, Platform, Keyboard } from 'react-native';
-import { colors, palette, fontFamily, fontSize } from '../../design';
+import { View, Text, TextInput, StyleSheet, Platform, Keyboard } from 'react-native';
+import { fontFamily, fontSize } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddressNotesInputProps {
   value: string;
@@ -14,27 +15,27 @@ export const AddressNotesInput: React.FC<AddressNotesInputProps> = ({
   onFocus,
   onBlur,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <View style={styles.container}>
       <View style={styles.labelRow}>
-        <Text style={[styles.label, isDark && styles.labelDark]} maxFontSizeMultiplier={1.3}>
+        <Text style={[styles.label]} maxFontSizeMultiplier={1.3}>
           Delivery & Entry Notes
         </Text>
-        <Text style={[styles.optionalText, isDark && styles.optionalTextDark]} maxFontSizeMultiplier={1.3}>
+        <Text style={[styles.optionalText]} maxFontSizeMultiplier={1.3}>
           Optional
         </Text>
       </View>
       <TextInput
-        style={[styles.input, isDark && styles.inputDark]}
+        style={[styles.input]}
         value={value}
         onChangeText={onChangeText}
         onFocus={onFocus}
         onBlur={onBlur}
         placeholder="e.g. Flat 3B, blue gate, near the mosque"
-        placeholderTextColor={isDark ? '#64748B' : palette.gray400}
+        placeholderTextColor={colors.placeholder}
         maxLength={120}
         multiline={false}
         returnKeyType="done"
@@ -47,7 +48,7 @@ export const AddressNotesInput: React.FC<AddressNotesInputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     marginVertical: 8,
   },
@@ -63,17 +64,11 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: colors.textSecondary,
   },
-  labelDark: {
-    color: colors.textMuted,
-  },
   optionalText: {
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 12,
     lineHeight: 16,
     color: colors.textMuted,
-  },
-  optionalTextDark: {
-    color: colors.textSecondary,
   },
   input: {
     height: 48,
@@ -86,11 +81,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     borderWidth: 1,
     borderColor: palette.gray200,
-  },
-  inputDark: {
-    backgroundColor: palette.gray900,
-    borderColor: palette.gray700,
-    color: palette.gray50,
   },
 });
 

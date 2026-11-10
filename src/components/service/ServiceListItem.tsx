@@ -1,16 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Zap, Wind, Droplet, Sparkles, Wrench } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, interpolateColor } from 'react-native-reanimated';
 
-import { colors } from '../../design/colors';
 import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
 import { springConfig } from '../../design/animations';
 import { typography } from '../../design/typography';
 import { Image } from 'expo-image';
 import { AddToCartButton } from '../cart/AddToCartButton';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -25,6 +24,8 @@ interface ServiceListItemProps {
   imageUrl?: any;
   isHeader?: boolean;
   style?: any;
+  /** Optional: the caller decides what tapping a catalogue service does. */
+  onPress?: () => void;
 }
 
 export const ServiceListItem: React.FC<ServiceListItemProps> = ({
@@ -38,8 +39,10 @@ export const ServiceListItem: React.FC<ServiceListItemProps> = ({
   imageUrl,
   isHeader = false,
   style,
+  onPress,
 }) => {
-  const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(1);
   const pressed = useSharedValue(0);
 
@@ -54,7 +57,7 @@ export const ServiceListItem: React.FC<ServiceListItemProps> = ({
   };
 
   const handlePress = () => {
-    router.push(`/service/${id}` as any);
+    onPress?.();
   };
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -148,7 +151,7 @@ export const ServiceListItem: React.FC<ServiceListItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     marginHorizontal: 6,

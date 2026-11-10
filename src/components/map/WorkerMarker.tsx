@@ -3,7 +3,7 @@ import { StyleSheet, View, Image, Text, Platform } from 'react-native';
 import { Marker } from 'react-native-maps';
 import { WorkerNearby } from '../../types/worker.types';
 import { WorkerMarkerBadge } from './WorkerMarkerBadge';
-import { colors } from '../../design/colors';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface WorkerMarkerProps {
   worker: WorkerNearby;
@@ -17,6 +17,8 @@ export const WorkerMarker: FC<WorkerMarkerProps> = memo(({
   isSelected,
   onSelect,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   // Markers are rasterised once when tracksViewChanges is false (Android), so a remote avatar that
   // finishes loading later, or the selected-state restyle, would never show. Track changes only
   // briefly after mount / selection change / avatar load, then freeze to keep the map cheap.
@@ -83,7 +85,7 @@ export const WorkerMarker: FC<WorkerMarkerProps> = memo(({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   markerContainer: {
     width: 48,
     height: 48,
@@ -110,7 +112,7 @@ const styles = StyleSheet.create({
   pinSelected: {
     borderColor: colors.primary,
     borderWidth: 2,
-    shadowColor: colors.primary,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 10,

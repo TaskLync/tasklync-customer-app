@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  Linking,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -17,6 +9,7 @@ import {
   Globe,
   DollarSign,
   Info,
+  Moon,
 } from 'lucide-react-native';
 
 import { useAppPreferences } from '../../src/hooks/useAppPreferences';
@@ -26,10 +19,14 @@ import {
   SettingsRow,
   LanguageToggle,
   CurrencyToggle,
+  ThemeToggle,
   NotificationPreferenceGroup,
   AppVersionRow,
 } from '../../src/components/settings';
-import { colors, palette, fontFamily, fontSize, spacing } from '../../src/design';
+import { fontFamily, fontSize, spacing } from '../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+import { useThemeStore } from '../../src/store/theme.store';
 
 /**
  * SettingsScreen (Uber / Foodpanda / Careem Minimalist Standard)
@@ -42,10 +39,14 @@ import { colors, palette, fontFamily, fontSize, spacing } from '../../src/design
  * 5. Full Persistence: MMKV storage cache + background sync with graceful error handling.
  */
 export default function SettingsScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const { language, currency, setLanguage, setCurrency } = useAppPreferences();
+  const themePreference = useThemeStore((s) => s.preference);
+  const setThemePreference = useThemeStore((s) => s.setPreference);
   const { preferences, togglePreference } = useNotificationPreferences();
 
   const handleBack = () => {
@@ -60,7 +61,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={palette.white} />
+      <ThemedStatusBar />
 
       {/* Screen Header */}
       <View style={styles.header}>
@@ -108,6 +109,15 @@ export default function SettingsScreen() {
           />
         </SettingsSection>
 
+        {/* Appearance: follows the device by default */}
+        <SettingsSection title="Appearance">
+          <SettingsRow
+            label="Theme"
+            icon={<Moon size={18} color={palette.gray500} />}
+            rightElement={<ThemeToggle value={themePreference} onChange={setThemePreference} />}
+          />
+        </SettingsSection>
+
         {/* 2. Notifications Section */}
         <SettingsSection title="Notifications">
           <NotificationPreferenceGroup
@@ -143,7 +153,7 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { colors, palette, fontFamily } from '../../../design';
+import { fontFamily } from '../../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface CalendarHeaderProps {
   monthLabel: string; // e.g. "August 2026"
@@ -22,6 +23,8 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   onPrev,
   onNext,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const handlePrev = onPrevMonth ?? onPrev ?? (() => {});
   const handleNext = onNextMonth ?? onNext ?? (() => {});
 
@@ -62,7 +65,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

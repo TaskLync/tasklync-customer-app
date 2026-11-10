@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { UserCheck } from 'lucide-react-native';
 import { UserProfile } from '../../types/user.types';
 import { AvatarUploadRing } from './AvatarUploadRing';
-import { colors, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ProfileHeaderProps {
   user?: UserProfile | null | undefined;
@@ -23,6 +24,8 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   user,
   onEditPress,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const name = user?.name || 'Tasklync Customer';
   const phone = user?.phone || '+92 300 0000000';
   const isVerified = user?.is_verified ?? true;
@@ -68,7 +71,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { CategoryFilterChips } from './CategoryFilterChips';
 import { MapSearchBar } from './MapSearchBar';
-import { colors } from '../../design/colors';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface MapTopBarProps {
   showSearchBar?: boolean;
@@ -14,6 +14,8 @@ interface MapTopBarProps {
 export const MapTopBar: FC<MapTopBarProps> = ({
   showSearchBar = true,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -53,7 +55,7 @@ export const MapTopBar: FC<MapTopBarProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,

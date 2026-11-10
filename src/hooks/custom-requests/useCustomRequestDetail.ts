@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert } from 'react-native';
+
 import { customRequestApi } from '../../services/api/customRequest.api';
 import {
   CustomServiceRequest,
@@ -7,6 +7,7 @@ import {
   CustomRequestStatus,
   Quote,
 } from '../../types/customRequest.types';
+import { showAlert } from '../../components/feedback/AppAlert';
 
 export function useCustomRequestDetail(id: string) {
   const queryClient = useQueryClient();
@@ -45,10 +46,10 @@ export function useCustomRequestDetail(id: string) {
         };
       });
       queryClient.invalidateQueries({ queryKey: ['custom-requests'] });
-      Alert.alert('Request Cancelled', 'Your custom service request has been cancelled.');
+      showAlert('Request Cancelled', 'Your custom service request has been cancelled.');
     },
     onError: (err: any) => {
-      Alert.alert('Cancellation Failed', err?.message || 'Could not cancel request. Please try again.');
+      showAlert('Cancellation Failed', err?.message || 'Could not cancel request. Please try again.');
     },
   });
 

@@ -12,13 +12,15 @@ import {
   Wrench,
 } from 'lucide-react-native';
 import { CustomServiceRequest, CustomRequestStatus } from '../../types/customRequest.types';
-import { palette, colors } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface CustomRequestCardProps {
   request: CustomServiceRequest;
 }
 
 export function CustomRequestCard({ request }: CustomRequestCardProps) {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
   const handlePress = () => {
@@ -152,7 +154,7 @@ export function CustomRequestCard({ request }: CustomRequestCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
     backgroundColor: colors.bgCard,
     paddingVertical: 16,

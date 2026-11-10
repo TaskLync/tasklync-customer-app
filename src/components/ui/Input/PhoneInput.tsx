@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { View, StyleSheet, Pressable, TextInput as RNTextInput } from 'react-native';
 import { Text } from '@components/ui/Text';
-import { colors, radius } from '@design/index';
+import { radius } from '@design/index';
 import { ChevronDown } from 'lucide-react-native';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 interface PhoneInputProps {
   value: string;
@@ -29,6 +30,8 @@ export const PhoneInput = ({
   onFocus,
   onBlur,
 }: PhoneInputProps) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [isFocused, setIsFocused] = useState(false);
 
   const borderColor = error
@@ -56,7 +59,7 @@ export const PhoneInput = ({
           onChangeText={onChangeText}
           keyboardType="phone-pad"
           placeholder="3XX XXXXXXX"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholder}
           maxLength={10}
           autoFocus={autoFocus}
           onFocus={() => {
@@ -80,7 +83,7 @@ export const PhoneInput = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     height: 52,

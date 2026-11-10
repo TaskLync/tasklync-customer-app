@@ -1,12 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Alert,
-  StatusBar,
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -29,7 +22,10 @@ import { AddressCardSkeleton } from '../../src/components/address/AddressCardSke
 import { SkeletonGroup } from '../../src/components/ui/Skeleton';
 import { AddressEmptyState } from '../../src/components/address/AddressEmptyState';
 import { Address } from '../../src/types/address.types';
-import { colors, palette, fontFamily, fontSize, radius, shadows } from '../../src/design';
+import { fontFamily, fontSize, radius, shadows } from '../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+import { showAlert } from '../../src/components/feedback/AppAlert';
 
 /**
  * Screen 1 — Saved Addresses List (`addresses.tsx`)
@@ -42,6 +38,8 @@ import { colors, palette, fontFamily, fontSize, radius, shadows } from '../../sr
  * - Optimistic CRUD updates with seamless rollback on network failure
  */
 export default function SavedAddressesScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -78,7 +76,7 @@ export default function SavedAddressesScreen() {
 
   const handleDeleteAddress = (address: Address) => {
     setActionSheetAddress(null);
-    Alert.alert(
+    showAlert(
       'Delete Address',
       `Are you sure you want to delete "${address.label || 'this address'}"?`,
       [
@@ -90,7 +88,7 @@ export default function SavedAddressesScreen() {
             try {
               await deleteAddress(address.id);
             } catch (_err) {
-              Alert.alert('Error', "Couldn't delete address. Tap retry.");
+              showAlert('Error', "Couldn't delete address. Tap retry.");
             }
           },
         },
@@ -104,7 +102,7 @@ export default function SavedAddressesScreen() {
     try {
       await setDefaultAddress(address.id);
     } catch (_err) {
-      Alert.alert('Error', 'Failed to update default address.');
+      showAlert('Error', 'Failed to update default address.');
     }
   };
 
@@ -131,7 +129,7 @@ export default function SavedAddressesScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={palette.zenWhite} />
+      <ThemedStatusBar />
 
       <View style={styles.container}>
         {/* Header (Back arrow + Screen title "Saved Addresses") */}
@@ -294,7 +292,7 @@ export default function SavedAddressesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: palette.zenWhite,

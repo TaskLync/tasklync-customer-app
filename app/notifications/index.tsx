@@ -1,14 +1,5 @@
 import { useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  RefreshControl,
-  ActivityIndicator,
-  StatusBar,
-  Linking,
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl, ActivityIndicator, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -28,7 +19,9 @@ import { EmptyNotifications } from '../../src/components/feedback/EmptyState/Emp
 import { ErrorState } from '../../src/components/feedback/ErrorState';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { resolveNotificationRoute } from '../../src/utils/deepLink';
-import { colors, palette, fontFamily, radius } from '../../src/design';
+import { fontFamily, radius } from '../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 /**
  * NotificationsScreen
@@ -41,6 +34,8 @@ import { colors, palette, fontFamily, radius } from '../../src/design';
  * - Safe area handling for Android status & navigation bars
  */
 export default function NotificationsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isOffline } = useNetworkStatus();
@@ -145,7 +140,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={palette.white} />
+      <ThemedStatusBar />
 
       {/* Screen Header */}
       <View style={styles.header}>
@@ -310,7 +305,7 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

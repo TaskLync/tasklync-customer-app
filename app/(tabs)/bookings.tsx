@@ -19,11 +19,13 @@ import { useCustomRequestsList } from '../../src/hooks/custom-requests/useCustom
 import { CustomRequestCard } from '../../src/components/custom-requests/CustomRequestCard';
 import { CustomRequestStatus } from '../../src/types/customRequest.types';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
-import { colors, palette } from '../../src/design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 
 type MainSectionType = 'BOOKINGS' | 'CUSTOM_REQUESTS';
 
 export default function BookingsScreen() {
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const [mainSection, setMainSection] = useState<MainSectionType>('BOOKINGS');
   const [activeTab, setActiveTab] = useState<TabType>('ACTIVE');
@@ -241,7 +243,7 @@ export default function BookingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,
@@ -294,7 +296,7 @@ const styles = StyleSheet.create({
   quoteCountText: {
     fontFamily: 'Inter-Bold',
     fontSize: 10,
-    color: colors.white,
+    color: colors.pureWhite,
   },
   listContainer: {
     flex: 1,
@@ -380,7 +382,7 @@ const styles = StyleSheet.create({
   findWorkersBtnText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 13,
-    color: colors.white,
+    color: colors.pureWhite,
     marginRight: 4,
   },
 });

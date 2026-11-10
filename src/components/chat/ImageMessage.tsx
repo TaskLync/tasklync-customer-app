@@ -1,4 +1,3 @@
-import { colors, palette } from '../../design';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -19,6 +18,7 @@ import Animated, {
 import { RotateCcw, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Message } from '../../types/chat.types';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -53,6 +53,8 @@ export const ImageMessage = React.memo(function ImageMessage({
   onPress,
   isOutgoing = false,
 }: ImageMessageProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [isViewerVisible, setIsViewerVisible] = useState<boolean>(false);
 
@@ -131,7 +133,7 @@ export const ImageMessage = React.memo(function ImageMessage({
                     cx={RING_SIZE / 2}
                     cy={RING_SIZE / 2}
                     r={RADIUS}
-                    stroke={colors.white}
+                    stroke={colors.pureWhite}
                     strokeWidth={STROKE_WIDTH}
                     fill="transparent"
                     strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
@@ -159,7 +161,7 @@ export const ImageMessage = React.memo(function ImageMessage({
                 accessibilityRole="button"
                 accessibilityLabel="Retry photo upload"
               >
-                <RotateCcw size={22} color={colors.white} strokeWidth={2.5} />
+                <RotateCcw size={22} color={colors.pureWhite} strokeWidth={2.5} />
               </Pressable>
               <Text style={styles.failedBadgeText}>Tap to retry</Text>
             </View>
@@ -185,7 +187,7 @@ export const ImageMessage = React.memo(function ImageMessage({
               accessibilityRole="button"
               accessibilityLabel="Close photo viewer"
             >
-              <X size={24} color={colors.white} strokeWidth={2.5} />
+              <X size={24} color={colors.pureWhite} strokeWidth={2.5} />
             </Pressable>
           </View>
 
@@ -205,7 +207,7 @@ export const ImageMessage = React.memo(function ImageMessage({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     borderRadius: 14,
     overflow: 'hidden',
@@ -245,7 +247,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontFamily: 'Inter-Medium',
     fontSize: 11,
-    color: colors.white,
+    color: colors.pureWhite,
     fontWeight: '600',
   },
   retryCircleButton: {
@@ -255,7 +257,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(239, 68, 68, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -268,7 +270,7 @@ const styles = StyleSheet.create({
   failedBadgeText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
-    color: colors.white,
+    color: colors.pureWhite,
     marginTop: 6,
     textShadowColor: 'rgba(0, 0, 0, 0.4)',
     textShadowOffset: { width: 0, height: 1 },

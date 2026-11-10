@@ -5,9 +5,9 @@ import Animated, {
   withSpring,
   useDerivedValue,
 } from 'react-native-reanimated';
-import { colors } from '../../../design/colors';
 import { typography } from '../../../design/typography';
 import { springConfig } from '../../../design/animations';
+import { useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface RadioOption {
   label: string;
@@ -30,6 +30,7 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
   onChange,
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.container, style]} accessibilityRole="radiogroup">
       {options.map((option, index) => {
@@ -60,6 +61,7 @@ const RadioOptionItem: React.FC<{
   isLast: boolean;
   onSelect: () => void;
 }> = ({ option, isSelected, isLast, onSelect }) => {
+  const styles = useThemedStyles(createStyles);
   // Reanimated 3 standard animation
   const scale = useDerivedValue(() => {
     return withSpring(isSelected ? 1 : 0, isSelected ? springConfig.snappy : springConfig.stiff);
@@ -109,7 +111,7 @@ const RadioOptionItem: React.FC<{
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
   },

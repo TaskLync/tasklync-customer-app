@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Search, X } from 'lucide-react-native';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface RecentSearchesSectionProps {
   searches: string[];
@@ -17,6 +17,8 @@ export const RecentSearchesSection: React.FC<RecentSearchesSectionProps> = ({
   onRemove,
   onClearAll,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   if (!searches || searches.length === 0) return null;
 
   return (
@@ -64,7 +66,7 @@ export const RecentSearchesSection: React.FC<RecentSearchesSectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     paddingVertical: 16,
   },

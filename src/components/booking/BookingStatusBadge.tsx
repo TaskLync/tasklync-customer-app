@@ -1,12 +1,14 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { BookingStatus } from '../../types/booking.types';
-import { bookingStatusMap } from '../../utils/bookingStatusMap';
+import { createBookingStatusMap } from '../../utils/bookingStatusMap';
+import { useThemedStyles } from '../../theme/useAppTheme';
 
 interface BookingStatusBadgeProps {
   status: BookingStatus;
 }
 
 export function BookingStatusBadge({ status }: BookingStatusBadgeProps) {
+  const bookingStatusMap = useThemedStyles(createBookingStatusMap);
   const config = bookingStatusMap[status];
   if (!config) return null;
 

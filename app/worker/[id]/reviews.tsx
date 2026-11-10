@@ -1,13 +1,5 @@
 import { useCallback, useState } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  RefreshControl,
-  Pressable,
-  ScrollView,
-  StatusBar,
-} from 'react-native';
+import { StyleSheet, View, Text, RefreshControl, Pressable, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -19,9 +11,10 @@ import { ReviewRatingOverview } from '../../../src/components/review/ReviewRatin
 import { ReviewCard, REVIEW_CARD_GAP } from '../../../src/components/review/ReviewCard';
 import { SkeletonGroup, SkeletonReviewCard } from '../../../src/components/ui/Skeleton';
 import { EmptyState } from '../../../src/components/feedback/EmptyState';
-import { colors, palette } from '../../../src/design/colors';
 import { fontFamily as fonts } from '../../../src/design/typography';
 import { radius } from '../../../src/design/radius';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../../src/theme/ThemedStatusBar';
 
 const RATING_FILTER_OPTIONS: Array<{ key: number | undefined; label: string }> = [
   { key: undefined, label: 'All' },
@@ -44,6 +37,8 @@ const ReviewSeparator = () => <View />;
  * - Review cards with photo galleries, tag pills, worker replies, and report modal
  */
 export default function WorkerReviewsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const { id: workerId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -191,7 +186,7 @@ export default function WorkerReviewsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+      <ThemedStatusBar />
 
       {/* Screen Header */}
       <View style={styles.header}>
@@ -238,7 +233,7 @@ export default function WorkerReviewsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

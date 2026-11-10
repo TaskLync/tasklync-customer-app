@@ -6,7 +6,7 @@ import {
   SkeletonText,
   SKELETON,
 } from '../ui/Skeleton/Skeleton';
-import { colors } from '../../design/colors';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const PAGE_PADDING = 20;
 
@@ -14,7 +14,9 @@ const PAGE_PADDING = 20;
  * Mirrors the company profile body (app/company/[id].tsx) below its real top bar:
  * 60px logo tile + name/verified line, the facts row, then the Services list (CompanyServiceRow).
  */
-export const SkeletonCompanyProfile: React.FC = () => (
+export const SkeletonCompanyProfile: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
+  return (
   <SkeletonGroup style={styles.body} accessibilityLabel="Loading company">
     <View style={styles.identityRow}>
       <Skeleton width={60} height={60} borderRadius={16} />
@@ -44,8 +46,9 @@ export const SkeletonCompanyProfile: React.FC = () => (
     </View>
   </SkeletonGroup>
 );
+};
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   body: {
     paddingHorizontal: PAGE_PADDING,
     paddingTop: 8,

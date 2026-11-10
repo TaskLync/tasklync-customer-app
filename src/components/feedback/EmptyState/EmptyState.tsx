@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { RefreshCw } from 'lucide-react-native';
-import { colors, palette } from '../../../design/colors';
 import { fontFamily } from '../../../design/typography';
 import { radius } from '../../../design/radius';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export type EmptyStateType = 'no-workers' | 'no-internet' | 'server-error' | 'no-data';
 
@@ -47,7 +47,7 @@ export interface EmptyStateProps {
   /** Compact sizing for bottom sheets, cards, or embedded panels */
   compact?: boolean | undefined;
   /** Visual variant of the action button */
-  actionVariant?: 'primary' | 'secondary' | undefined;
+  actionVariant?: 'primary' | 'secondary' | 'neutral' | undefined;
   /** Optional test identifier */
   testID?: string | undefined;
 }
@@ -99,6 +99,8 @@ export const EmptyState: React.FC<EmptyStateProps> = React.memo(({
   actionVariant,
   testID,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const defaults = DEFAULT_STRINGS[type] || DEFAULT_STRINGS['no-data'];
   const displayTitle = title ?? defaults.title;
   const displayDescription = description ?? subtitle ?? defaults.description;
@@ -175,9 +177,18 @@ export const EmptyState: React.FC<EmptyStateProps> = React.memo(({
           <Pressable
             style={({ pressed }) => [
               styles.buttonBase,
-              resolvedVariant === 'primary' ? styles.primaryButton : styles.secondaryButton,
+              resolvedVariant === 'primary'
+                ? styles.primaryButton
+                : resolvedVariant === 'neutral'
+                  ? styles.neutralButton
+                  : styles.secondaryButton,
               fullWidthAction && styles.buttonFull,
-              pressed && (resolvedVariant === 'primary' ? styles.primaryButtonPressed : styles.secondaryButtonPressed),
+              pressed &&
+                (resolvedVariant === 'primary'
+                  ? styles.primaryButtonPressed
+                  : resolvedVariant === 'neutral'
+                    ? styles.neutralButtonPressed
+                    : styles.secondaryButtonPressed),
               isLoading && styles.buttonDisabled,
             ]}
             onPress={effectiveOnAction}
@@ -189,21 +200,25 @@ export const EmptyState: React.FC<EmptyStateProps> = React.memo(({
             {isLoading ? (
               <ActivityIndicator
                 size="small"
-                color={resolvedVariant === 'primary' ? palette.white : colors.primaryDark}
+                color={resolvedVariant === 'primary' ? palette.pureWhite : resolvedVariant === 'neutral' ? colors.textPrimary : colors.primaryDark}
               />
             ) : (
               <>
                 {isErrorType && (
                   <RefreshCw
                     size={15}
-                    color={resolvedVariant === 'primary' ? palette.white : colors.primaryDark}
+                    color={resolvedVariant === 'primary' ? palette.pureWhite : colors.primaryDark}
                     strokeWidth={2.4}
                   />
                 )}
                 <Text
                   style={[
                     styles.buttonText,
-                    resolvedVariant === 'primary' ? styles.primaryButtonText : styles.secondaryButtonText,
+                    resolvedVariant === 'primary'
+                      ? styles.primaryButtonText
+                      : resolvedVariant === 'neutral'
+                        ? styles.neutralButtonText
+                        : styles.secondaryButtonText,
                   ]}
                   numberOfLines={1}
                 >
@@ -220,7 +235,7 @@ export const EmptyState: React.FC<EmptyStateProps> = React.memo(({
 
 EmptyState.displayName = 'EmptyState';
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -316,7 +331,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: colors.primary, // #22C55E
-    shadowColor: colors.primaryDark,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.18,
     shadowRadius: 6,
@@ -335,6 +350,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryBorderSubtle, // #DCFCE7
     transform: [{ scale: 0.98 }],
   },
+  neutralButton: {
+    backgroundColor: colors.bgInput,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  neutralButtonPressed: {
+    backgroundColor: colors.border,
+    transform: [{ scale: 0.98 }],
+  },
+  neutralButtonText: {
+    color: colors.textPrimary,
+  },
   buttonDisabled: {
     opacity: 0.7,
   },
@@ -344,7 +371,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   primaryButtonText: {
-    color: palette.white,
+    color: palette.pureWhite,
   },
   secondaryButtonText: {
     color: colors.primaryDark,

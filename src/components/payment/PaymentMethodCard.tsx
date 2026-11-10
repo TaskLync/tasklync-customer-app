@@ -8,7 +8,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PaymentMethod } from '../../types/payment.types';
 import { CardBrandIcon } from './CardBrandIcon';
-import { colors, palette, fontFamily, radius, spacing } from '../../design';
+import { fontFamily, radius, spacing } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface PaymentMethodCardProps {
   method: PaymentMethod;
@@ -21,6 +22,9 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   isNewlyAdded = false,
   onSetDefault,
 }) => {
+  const { colors } = useAppTheme();
+  const { palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const { id, type, brand, title, subtitle, account_number, last4, exp_month, exp_year, is_default } = method;
 
   // Highlight animation on freshly added item: 400ms transition from green-50 to white
@@ -38,7 +42,7 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
     const backgroundColor = interpolateColor(
       highlightProgress.value,
       [0, 1],
-      ['#FFFFFF', palette.green50]
+      [colors.bgCard, palette.green50]
     );
     return { backgroundColor };
   });
@@ -127,7 +131,7 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   cardContainer: {
     height: 70,
     flexDirection: 'row',

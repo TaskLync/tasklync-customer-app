@@ -10,8 +10,8 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react-native';
 import { fontFamily } from '../../../design/typography';
-import { colors, palette } from '../../../design/colors';
 import { NETWORK_CONFIG } from '../../../config/networkConfig';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export type ToastVariant = 'error' | 'success' | 'info' | 'warning';
 
@@ -43,6 +43,8 @@ interface ToastProps {
  * - Press scale microinteraction on actions
  */
 export const Toast: React.FC<ToastProps> = React.memo(({ toast, onDismiss }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(60);
   const opacity = useSharedValue(0);
@@ -178,7 +180,7 @@ export const Toast: React.FC<ToastProps> = React.memo(({ toast, onDismiss }) => 
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   wrapper: {
     position: 'absolute',
     left: 16,
@@ -188,7 +190,7 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '100%',
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 12,
     borderWidth: 1,
     paddingVertical: 12,
@@ -197,7 +199,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: colors.shadow,
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.12,
         shadowRadius: 8,

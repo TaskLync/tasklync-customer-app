@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { formatDistanceToNow, format, parseISO, differenceInDays } from 'date-fns';
-import { colors, palette } from '../../design/colors';
 import { fontFamily as fonts } from '../../design/typography';
 import { ReviewStarRow } from './ReviewStarRow';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ReviewMetaRowProps {
   avatarUrl: string | null;
@@ -61,6 +61,7 @@ export const ReviewMetaRow: React.FC<ReviewMetaRowProps> = ({
   size = 'md',
   style,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const [imageError, setImageError] = useState(false);
   const avatarSize = size === 'md' ? 36 : 30;
   const avatarShape = { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 };
@@ -115,7 +116,7 @@ export const ReviewMetaRow: React.FC<ReviewMetaRowProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

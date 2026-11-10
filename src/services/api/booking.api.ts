@@ -6,10 +6,9 @@ import { useAuthStore } from '../../store/auth.store';
 import { useCartStore } from '../../store/cart.store';
 import { formatCategoryName } from '../../utils/formatters';
 import { isValidUUID, CANONICAL_FALLBACK_UUIDS } from '../../utils/uuid';
+import { bookingItemDiscount, normalizeDiscountFields, toNumber } from '../../utils/offers';
 import {
   BookingStatus,
-  PriceEstimateParams,
-  PriceEstimateData,
   CreateBookingPayload,
   BookingDetails,
   ListBookingsParams,
@@ -389,43 +388,6 @@ export function syncPersistedBookings(remoteBookings: BookingDetails[]): Booking
   }
 }
 
-/**
- * Helper to calculate realistic spec-compliant estimate locally
- */
-function calculateLocalEstimate(params: PriceEstimateParams): PriceEstimateData {
-  const cartItems = useCartStore.getState().items;
-  const cartSubtotal = cartItems.reduce(
-    (acc: number, i: any) => acc + (Number(i.price) || 0) * (Number(i.quantity) || 1),
-    0
-  );
-  const basePrice = params.custom_base_price || (cartSubtotal > 0 ? cartSubtotal : 500);
-
-  const urgencyMultiplier = params.is_urgent ? 1.3 : 1.0;
-  const demandMultiplier = 1.0;
-  const timeOfDayMultiplier = 1.0;
-
-  const subtotalWithSurge = Math.round(
-    basePrice * urgencyMultiplier * demandMultiplier * timeOfDayMultiplier
-  );
-  const platformFee = Math.round(subtotalWithSurge * 0.05); // 5% customer platform fee
-  const workerCommission = Math.round(subtotalWithSurge * 0.05); // 5% worker commission
-  const estimatedTotal = subtotalWithSurge + platformFee; // customer total
-  const workerAmount = subtotalWithSurge - workerCommission; // worker payout
-
-  return {
-    base_price: basePrice,
-    urgency_multiplier: urgencyMultiplier,
-    demand_multiplier: demandMultiplier,
-    time_of_day_multiplier: timeOfDayMultiplier,
-    estimated_total: estimatedTotal,
-    platform_fee: platformFee,
-    worker_commission: workerCommission,
-    worker_amount: workerAmount,
-    platform_revenue: platformFee + workerCommission,
-    currency: 'PKR',
-    price_type: 'fixed',
-  };
-}
 
 function getLocalList(params?: ListBookingsParams): ListBookingsResponse {
   let filtered = getPersistedBookings();
@@ -455,25 +417,6 @@ function getLocalList(params?: ListBookingsParams): ListBookingsResponse {
  * Implements Customer API Specification v2.0.0 (Port 3004 / Gateway /api/v1/bookings)
  */
 export const bookingApi = {
-  /**
-   * 6.1 Get Price Estimate
-   * GET /api/v1/bookings/estimate
-   */
-  getPriceEstimate: async (params: PriceEstimateParams): Promise<PriceEstimateData> => {
-    const token = useAuthStore.getState().accessToken;
-    if (!token) {
-      return calculateLocalEstimate(params);
-    }
-
-    try {
-      const response = await apiClient.get<ApiEnvelope<PriceEstimateData>>('/bookings/estimate', {
-        params,
-      });
-      return response.data?.data || (response.data as any);
-    } catch (_error) {
-      return calculateLocalEstimate(params);
-    }
-  },
 
   /**
    * 6.2 Create Booking
@@ -495,7 +438,7 @@ export const bookingApi = {
       ...payload,
       // Never substitute a shared placeholder worker: it would book (and block) the wrong worker's calendar.
       worker_id: payload.worker_id,
-      service_id: isValidUUID(payload.service_id) ? payload.service_id : CANONICAL_FALLBACK_UUIDS.SERVICE_DEFAULT,
+      ...(isValidUUID(payload.service_id) ? { service_id: payload.service_id } : {}),
       address_id: isValidUUID(payload.address_id) ? payload.address_id : CANONICAL_FALLBACK_UUIDS.ADDRESS_HOME,
     };
 
@@ -564,6 +507,10 @@ export const bookingApi = {
       assigned_worker_name: workerInfo.assigned_worker_name || serverBooking.assigned_worker_name,
       assigned_worker_phone: workerInfo.assigned_worker_phone || serverBooking.assigned_worker_phone,
       assignee: workerInfo.assignee || serverBooking.assignee,
+      // NUMERIC columns can arrive as strings (spec B17): the totals shown and paid must be numbers.
+      ...(serverBooking.estimated_total != null ? { estimated_total: toNumber(serverBooking.estimated_total) } : {}),
+      ...(serverBooking.platform_fee != null ? { platform_fee: toNumber(serverBooking.platform_fee) } : {}),
+      ...normalizeDiscountFields(serverBooking),
     };
 
     savePersistedBooking(confirmedBooking);
@@ -644,11 +591,11 @@ export const bookingApi = {
             lat: Number(b.latitude || b.lat || 31.4187),
             lng: Number(b.longitude || b.lng || 73.0791),
           },
-          base_price: Number(b.base_price || b.basePrice || b.estimated_total || 500),
+          base_price: Number(b.base_price ?? b.basePrice ?? b.estimated_total ?? 0),
           urgency_multiplier: Number(b.urgency_multiplier || 1),
           demand_multiplier: Number(b.demand_multiplier || 1),
           time_of_day_multiplier: Number(b.time_of_day_multiplier || 1),
-          estimated_total: Number(b.estimated_total || b.total_amount || b.totalAmount || b.price || b.base_price || 500),
+          estimated_total: Number(b.estimated_total ?? b.total_amount ?? b.totalAmount ?? b.price ?? b.base_price ?? 0),
           platform_fee: Number(b.platform_fee || b.platformFee || 0),
           worker_amount: Number(b.worker_amount || b.workerAmount || 0),
           currency: b.currency || 'PKR',
@@ -668,6 +615,7 @@ export const bookingApi = {
           assigned_worker_name: workerInfo.assigned_worker_name || b.assigned_worker_name,
           assigned_worker_phone: workerInfo.assigned_worker_phone || b.assigned_worker_phone,
           assignee: workerInfo.assignee || b.assignee,
+          ...normalizeDiscountFields(b),
         };
       });
 
@@ -746,11 +694,11 @@ export const bookingApi = {
             lat: Number(raw.latitude || raw.lat || 31.4187),
             lng: Number(raw.longitude || raw.lng || 73.0791),
           },
-          base_price: Number(raw.base_price || raw.basePrice || raw.estimated_total || 500),
+          base_price: Number(raw.base_price ?? raw.basePrice ?? raw.estimated_total ?? 0),
           urgency_multiplier: Number(raw.urgency_multiplier || 1),
           demand_multiplier: Number(raw.demand_multiplier || 1),
           time_of_day_multiplier: Number(raw.time_of_day_multiplier || 1),
-          estimated_total: Number(raw.estimated_total || raw.total_amount || raw.totalAmount || raw.price || raw.base_price || 500),
+          estimated_total: Number(raw.estimated_total ?? raw.total_amount ?? raw.totalAmount ?? raw.price ?? raw.base_price ?? 0),
           platform_fee: Number(raw.platform_fee || raw.platformFee || 0),
           worker_amount: Number(raw.worker_amount || raw.workerAmount || 0),
           currency: raw.currency || 'PKR',
@@ -770,6 +718,7 @@ export const bookingApi = {
           assigned_worker_name: workerInfo.assigned_worker_name || raw.assigned_worker_name,
           assigned_worker_phone: workerInfo.assigned_worker_phone || raw.assigned_worker_phone,
           assignee: workerInfo.assignee || raw.assignee,
+          ...normalizeDiscountFields(raw),
           dispute:
             raw.dispute && typeof raw.dispute === 'object' && raw.dispute.id && raw.dispute.status
               ? raw.dispute
@@ -1123,15 +1072,16 @@ export const bookingApi = {
                     id: 'item-1',
                     name: local?.category_name || 'Home Service',
                     quantity: 1,
-                    unit_price: Number(local?.base_price || 500),
-                    total_price: Number(local?.base_price || 500),
+                    unit_price: Number(local?.subtotal_before_discount ?? local?.base_price ?? 0),
+                    total_price: Number(local?.subtotal_before_discount ?? local?.base_price ?? 0),
                   },
                 ],
-            subtotal: Number(raw.subtotal || local?.base_price || 500),
-            platform_fee: Number(raw.platform_fee || raw.platformFee || local?.platform_fee || 50),
+            subtotal: Number(raw.subtotal ?? local?.subtotal_before_discount ?? local?.base_price ?? 0),
+            platform_fee: Number(raw.platform_fee ?? raw.platformFee ?? local?.platform_fee ?? 0),
             urgency_fee: raw.urgency_fee ? Number(raw.urgency_fee) : undefined,
-            discount: raw.discount ? Number(raw.discount) : undefined,
-            total: Number(raw.total || local?.estimated_total || 550),
+            // Server invoice discount, else the discount recorded on the booking itself.
+            discount: raw.discount ? Number(raw.discount) : local ? bookingItemDiscount(local) || undefined : undefined,
+            total: Number(raw.total ?? local?.estimated_total ?? 0),
             currency: raw.currency || local?.currency || 'PKR',
             payment_method: {
               type: raw.payment_method?.type || 'cash',
@@ -1150,9 +1100,11 @@ export const bookingApi = {
     }
 
     // Default Fallback: Generate structured invoice from local booking details
-    const basePrice = Number(local?.base_price || 500);
-    const platformFee = Number(local?.platform_fee || 50);
-    const totalPrice = Number(local?.estimated_total || basePrice + platformFee);
+    // Only stored booking values: nothing here is invented.
+    const basePrice = Number(local?.subtotal_before_discount ?? local?.base_price ?? 0);
+    const platformFee = Number(local?.platform_fee ?? 0);
+    const totalPrice = Number(local?.estimated_total ?? 0);
+    const itemDiscount = local ? bookingItemDiscount(local) : 0;
 
     const fallbackInvoice: StructuredInvoiceData = {
       kind: 'structured',
@@ -1183,6 +1135,7 @@ export const bookingApi = {
       ],
       subtotal: basePrice,
       platform_fee: platformFee,
+      ...(itemDiscount > 0 ? { discount: itemDiscount } : {}),
       total: totalPrice,
       currency: local?.currency || 'PKR',
       payment_method: {

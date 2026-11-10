@@ -7,9 +7,9 @@ import Animated, {
   withSequence,
 } from 'react-native-reanimated';
 import { Plus, Minus } from 'lucide-react-native';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface QuantityStepperProps {
   value: number;
@@ -27,6 +27,8 @@ export const QuantityStepper: FC<QuantityStepperProps> = ({
   onDecrement,
   min = 1,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const minusScale = useSharedValue(1);
   const plusScale = useSharedValue(1);
   const numberScale = useSharedValue(1);
@@ -105,7 +107,7 @@ export const QuantityStepper: FC<QuantityStepperProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

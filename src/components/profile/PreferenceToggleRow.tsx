@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, palette, fontFamily, fontSize, radius, spacing } from '../../design';
+import { fontFamily, fontSize, radius, spacing } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface PreferenceOption<T extends string = string> {
   label: string;
@@ -31,6 +32,7 @@ export function PreferenceToggleRow<T extends string = string>({
   onSelect,
   disabled = false,
 }: PreferenceToggleRowProps<T>) {
+  const styles = useThemedStyles(createStyles);
   const handleSelect = (val: T) => {
     if (disabled || selectedValue === val) return;
     onSelect(val);
@@ -71,7 +73,7 @@ export function PreferenceToggleRow<T extends string = string>({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -108,7 +110,7 @@ const styles = StyleSheet.create({
   },
   segmentBtnActive: {
     backgroundColor: colors.bgCard,
-    shadowColor: palette.gray900,
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,

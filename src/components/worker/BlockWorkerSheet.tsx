@@ -9,7 +9,8 @@ import {
 import { X, ShieldAlert, Check, AlertCircle } from 'lucide-react-native';
 import { BottomSheet, BottomSheetScrollView } from '../layout/BottomSheet';
 import { BlockReason, BlockReasonOption } from '../../types/moderation.types';
-import { colors, palette, fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface BlockWorkerSheetProps {
   visible: boolean;
@@ -37,6 +38,8 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
   onBlock,
   isLoading = false,
 }) => {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [selectedReason, setSelectedReason] = useState<BlockReason | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -94,7 +97,7 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
           {/* Edge Case Warning: Active Booking */}
           {hasActiveBooking && (
             <View style={styles.activeBookingWarning}>
-              <AlertCircle size={18} color="#B45309" style={styles.warningIcon} />
+              <AlertCircle size={18} color={palette.amber700} style={styles.warningIcon} />
               <Text style={styles.activeBookingText} maxFontSizeMultiplier={1.3}>
                 You still have an active booking with this worker — blocking won't cancel or affect your ongoing service.
               </Text>
@@ -126,7 +129,7 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
                       isSelected && styles.radioCircleSelected,
                     ]}
                   >
-                    {isSelected && <Check size={12} color={palette.white} strokeWidth={3} />}
+                    {isSelected && <Check size={12} color={palette.pureWhite} strokeWidth={3} />}
                   </View>
                   <Text
                     style={[
@@ -160,7 +163,7 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
               accessibilityLabel={`Confirm block ${workerName}`}
             >
               {isLoading ? (
-                <ActivityIndicator size="small" color={palette.white} />
+                <ActivityIndicator size="small" color={palette.pureWhite} />
               ) : (
                 <Text style={styles.blockBtnText}>Block Service Provider</Text>
               )}
@@ -183,7 +186,7 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   sheetContent: {
     flex: 1,
   },
@@ -245,7 +248,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.jakarta.medium,
     fontSize: 12,
     lineHeight: 16,
-    color: '#92400E',
+    color: palette.amber800,
   },
   reasonHeader: {
     fontFamily: fontFamily.poppins.semiBold,
@@ -323,7 +326,7 @@ const styles = StyleSheet.create({
   blockBtnText: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: fontSize.body1,
-    color: palette.white,
+    color: palette.pureWhite,
   },
   cancelBtn: {
     height: 44,

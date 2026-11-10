@@ -1,4 +1,3 @@
-import { colors, palette } from '../../design';
 import { useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import {
   View,
@@ -17,6 +16,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Copy } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 let ClipboardModule: any = null;
 try {
@@ -45,6 +46,8 @@ export interface MessageContextMenuProps {
  */
 export const MessageContextMenu = forwardRef<MessageContextMenuRef, MessageContextMenuProps>(
   function MessageContextMenu({ onCopied }, ref) {
+    const { colors } = useAppTheme();
+    const styles = useThemedStyles(createStyles);
     const insets = useSafeAreaInsets();
     const [isAndroidModalVisible, setIsAndroidModalVisible] = useState(false);
     const [pendingContent, setPendingContent] = useState<string>('');
@@ -154,7 +157,7 @@ export const MessageContextMenu = forwardRef<MessageContextMenuRef, MessageConte
                   accessibilityRole="button"
                   accessibilityLabel="Copy text"
                 >
-                  <Copy size={18} color="#1E293B" strokeWidth={2} style={styles.optionIcon} />
+                  <Copy size={18} color={colors.textPrimary} strokeWidth={2} style={styles.optionIcon} />
                   <Text style={styles.optionText}>Copy</Text>
                 </Pressable>
 
@@ -192,19 +195,19 @@ export const MessageContextMenu = forwardRef<MessageContextMenuRef, MessageConte
   }
 );
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.modalBackground,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 12,
     paddingHorizontal: 16,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -245,12 +248,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 56,
     alignSelf: 'center',
-    backgroundColor: colors.textPrimary,
+    backgroundColor: colors.inverseSurface,
     paddingHorizontal: 20,
     paddingVertical: 9,
     borderRadius: 20,
     zIndex: 9999,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 8,
@@ -259,7 +262,7 @@ const styles = StyleSheet.create({
   toastText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 13,
-    color: colors.white,
+    color: colors.textInverse,
     letterSpacing: -0.1,
   },
 });

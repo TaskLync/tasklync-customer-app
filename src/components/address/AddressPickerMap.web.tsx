@@ -18,8 +18,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MapPin, Navigation } from 'lucide-react-native';
 import { MapRegion } from '../../types/address.types';
-import { colors, palette, fontFamily, radius } from '../../design';
+import { fontFamily, radius } from '../../design';
 import { FAISALABAD_DEFAULT_REGION } from '../../config/serviceArea.config';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface AddressPickerMapRef {
   animateToRegion: (region: MapRegion, duration?: number) => void;
@@ -36,6 +37,8 @@ const DEFAULT_REGION: MapRegion = FAISALABAD_DEFAULT_REGION;
 
 export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMapProps>(
   ({ initialRegion = DEFAULT_REGION, onRegionChangeComplete }, ref) => {
+    const { colors } = useAppTheme();
+    const styles = useThemedStyles(createStyles);
     const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number }>({
       lat: initialRegion.latitude,
       lng: initialRegion.longitude,
@@ -125,7 +128,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
 
 AddressPickerMap.displayName = 'AddressPickerMap';
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative',
@@ -199,7 +202,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: palette.green200,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,

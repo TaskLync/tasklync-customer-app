@@ -1,13 +1,5 @@
 import { useCallback, useState } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  RefreshControl,
-  Pressable,
-  ActivityIndicator,
-  StatusBar,
-} from 'react-native';
+import { StyleSheet, View, Text, RefreshControl, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -20,9 +12,10 @@ import { ReviewStarRow } from '../../src/components/review/ReviewStarRow';
 import { ReviewReplyBubble } from '../../src/components/review/ReviewReplyBubble';
 import { ReviewImageModal } from '../../src/components/review/ReviewImageModal';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
-import { colors, palette } from '../../src/design/colors';
 import { fontFamily as fonts } from '../../src/design/typography';
 import { radius } from '../../src/design/radius';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 /**
  * CustomerReviewsScreen (My Reviews)
@@ -33,6 +26,8 @@ import { radius } from '../../src/design/radius';
  * - Displays professional rebuttal/reply
  */
 export default function CustomerReviewsScreen() {
+  const { colors, palette } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -180,7 +175,7 @@ export default function CustomerReviewsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.bgCard} />
+      <ThemedStatusBar />
 
       {/* Screen Header */}
       <View style={styles.header}>
@@ -229,7 +224,7 @@ export default function CustomerReviewsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,

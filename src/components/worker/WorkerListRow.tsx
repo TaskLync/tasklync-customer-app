@@ -4,16 +4,16 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { BadgeCheck, Star } from 'lucide-react-native';
 import { WorkerNearby } from '../../types/worker.types';
-import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { pushOnce } from '../../utils/navigationGuard';
 import { prefetchWorkerProfile } from '../../hooks/useWorkerProfile';
-import { useLocationStore } from '../../store/location.store';
-import { FAISALABAD_CENTER } from '../../config/serviceArea.config';
+import { useCustomerCoords } from '../../hooks/useCustomerCoords';
 import { resolveWorkerDistance } from '../../utils/locationUtils';
 import { WorkerAvatar } from './WorkerAvatar';
 import { CompanyBadge } from '../company/CompanyBadge';
+import { OfferBadge } from '../offers/OfferBadge';
 import { SkeletonCircle, SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 // ─── Layout tokens (shared with the skeleton so loading → loaded never jumps) ──
 const GUTTER = 16;
@@ -38,6 +38,8 @@ const formatPrice = (amount: number) => amount.toLocaleString('en-US');
  * Every value comes from the backend; missing data is omitted, never invented.
  */
 const WorkerListRowBase: React.FC<WorkerListRowProps> = ({ worker, isLast = false }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -62,15 +64,11 @@ const WorkerListRowBase: React.FC<WorkerListRowProps> = ({ worker, isLast = fals
   const hasRating = reviews > 0 && rating > 0;
 
   // ── Distance: only a real measurement, not the "Nearby" fallback ──
+  const customerCoords = useCustomerCoords();
   const distanceLabel = useMemo(() => {
-    const store = useLocationStore.getState();
-    const coords =
-      store.locationMode === 'address' && store.selectedAddress
-        ? { lat: Number(store.selectedAddress.lat), lng: Number(store.selectedAddress.lng) }
-        : store.currentLocation ?? FAISALABAD_CENTER;
-    const { distanceMeters, distanceLabel: label } = resolveWorkerDistance(worker, coords);
+    const { distanceMeters, distanceLabel: label } = resolveWorkerDistance(worker, customerCoords);
     return distanceMeters ? label : null;
-  }, [worker.distanceMeters, worker.distanceLabel, worker.lat, worker.lng]);
+  }, [worker.id, worker.distanceMeters, worker.lat, worker.lng, customerCoords]);
 
   const responseLabel = worker.responseTimeMins > 0 ? `~${worker.responseTimeMins} min reply` : null;
 
@@ -132,7 +130,7 @@ const WorkerListRowBase: React.FC<WorkerListRowProps> = ({ worker, isLast = fals
             {displayName}
           </Text>
           {isVerified ? (
-            <BadgeCheck size={15} color={colors.white} fill={colors.primaryDark} strokeWidth={2.4} />
+            <BadgeCheck size={15} color={colors.pureWhite} fill={colors.primaryDark} strokeWidth={2.4} />
           ) : null}
           {isCompany && <CompanyBadge variant="micro" />}
         </View>
@@ -161,6 +159,8 @@ const WorkerListRowBase: React.FC<WorkerListRowProps> = ({ worker, isLast = fals
         </View>
 
         {isBusy && <Text style={styles.busyText}>On a job · book for later</Text>}
+
+        <OfferBadge promotion={worker.promotion} />
       </View>
 
       {/* Right: price */}
@@ -185,7 +185,9 @@ const WorkerListRowBase: React.FC<WorkerListRowProps> = ({ worker, isLast = fals
 export const WorkerListRow = memo(WorkerListRowBase);
 
 /** Placeholder with the exact row geometry. */
-export const WorkerListRowSkeleton: React.FC<{ isLast?: boolean }> = ({ isLast = false }) => (
+export const WorkerListRowSkeleton: React.FC<{ isLast?: boolean }> = ({ isLast = false }) => {
+  const styles = useThemedStyles(createStyles);
+  return (
   // Same line boxes as the real row (name 15/20, category 13/18, meta 12.5/17, price 11 + 15/20).
   <SkeletonGroup style={styles.row} accessibilityLabel="Loading worker">
     <SkeletonCircle size={AVATAR} />
@@ -201,8 +203,9 @@ export const WorkerListRowSkeleton: React.FC<{ isLast?: boolean }> = ({ isLast =
     {!isLast && <View style={styles.separator} />}
   </SkeletonGroup>
 );
+};
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

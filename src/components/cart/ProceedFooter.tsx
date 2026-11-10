@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { StyleSheet, View, Text, Pressable, Platform, useColorScheme } from 'react-native';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,9 +8,9 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { colors, palette } from '../../design/colors';
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ProceedFooterProps {
   total: number;
@@ -25,9 +25,9 @@ export const ProceedFooter: FC<ProceedFooterProps> = ({
   itemCount,
   onProceed,
 }) => {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const router = useRouter();
   const scale = useSharedValue(1);
 
@@ -67,19 +67,13 @@ export const ProceedFooter: FC<ProceedFooterProps> = ({
 
   return (
     <View
-      style={[
-        styles.container,
-        isDark && styles.containerDark,
-        { paddingBottom: bottomPadding },
-      ]}
+      style={[styles.container, { paddingBottom: bottomPadding }]}
     >
       <AnimatedPressable
         style={[
           styles.button,
           isEnabled
             ? styles.enabledButton
-            : isDark
-            ? styles.disabledButtonDark
             : styles.disabledButton,
           animatedButtonStyle,
         ]}
@@ -95,7 +89,7 @@ export const ProceedFooter: FC<ProceedFooterProps> = ({
           <Text
             style={[
               styles.ctaText,
-              !isEnabled && (isDark ? styles.disabledTextDark : styles.disabledText),
+              !isEnabled && (styles.disabledText),
             ]}
           >
             Proceed to Booking
@@ -114,23 +108,18 @@ export const ProceedFooter: FC<ProceedFooterProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgCard,
     paddingHorizontal: 16,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    shadowColor: colors.shadow,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 8,
-  },
-  containerDark: {
-    backgroundColor: palette.slate800,
-    borderTopColor: palette.slate700,
-    shadowOpacity: 0.25,
   },
   button: {
     height: 52,
@@ -141,7 +130,7 @@ const styles = StyleSheet.create({
   },
   enabledButton: {
     backgroundColor: colors.primaryDark,
-    shadowColor: colors.primaryDark,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -149,9 +138,6 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: colors.bgSkeleton,
-  },
-  disabledButtonDark: {
-    backgroundColor: palette.slate700,
   },
   contentRow: {
     width: '100%',
@@ -165,11 +151,6 @@ const styles = StyleSheet.create({
     color: colors.textOnGreen,
   },
   disabledText: {
-    color: colors.textMuted,
-    textAlign: 'center',
-    width: '100%',
-  },
-  disabledTextDark: {
     color: colors.textMuted,
     textAlign: 'center',
     width: '100%',

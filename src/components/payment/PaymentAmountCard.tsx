@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, fontFamily } from '../../design';
+import { fontFamily } from '../../design';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface PaymentAmountCardProps {
   total: number;
 }
 
 export const PaymentAmountCard: React.FC<PaymentAmountCardProps> = ({ total }) => {
+  const styles = useThemedStyles(createStyles);
   // If total is 0 or uninitialized, fallback gracefully to 1,575 for display fidelity
   const displayTotal = total > 0 ? total : 1575;
   const formattedAmount = displayTotal.toLocaleString();
@@ -22,7 +24,7 @@ export const PaymentAmountCard: React.FC<PaymentAmountCardProps> = ({ total }) =
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
     backgroundColor: colors.primaryTint,
     borderRadius: 16,

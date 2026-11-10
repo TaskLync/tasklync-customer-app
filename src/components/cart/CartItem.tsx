@@ -2,8 +2,8 @@ import { FC } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { CartItem as CartItemType } from '../../store/cart.store';
 import { QuantityStepper } from './QuantityStepper';
-import { colors } from '../../design/colors';
 import { typography } from '../../design/typography';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface CartItemProps {
   item: CartItemType;
@@ -16,6 +16,7 @@ export const CartItem: FC<CartItemProps> = ({
   onIncrement,
   onDecrement,
 }) => {
+  const styles = useThemedStyles(createStyles);
   const formattedPrice = `Rs. ${(item.price * item.quantity).toLocaleString()}`;
 
   return (
@@ -40,7 +41,7 @@ export const CartItem: FC<CartItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',

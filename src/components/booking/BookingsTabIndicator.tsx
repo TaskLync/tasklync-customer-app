@@ -1,8 +1,8 @@
-import { colors, palette } from '../../design';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { TabType } from '../../hooks/useBookingsList';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingsTabIndicatorProps {
   activeTab: TabType;
@@ -10,6 +10,7 @@ interface BookingsTabIndicatorProps {
 }
 
 export function BookingsTabIndicator({ activeTab, tabWidth }: BookingsTabIndicatorProps) {
+  const styles = useThemedStyles(createStyles);
   const translateX = useSharedValue(0);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export function BookingsTabIndicator({ activeTab, tabWidth }: BookingsTabIndicat
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   indicator: {
     position: 'absolute',
     bottom: 0,
