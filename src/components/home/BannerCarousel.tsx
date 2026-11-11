@@ -4,32 +4,36 @@ import {
   Text,
   StyleSheet,
   useWindowDimensions,
-  Pressable,
   Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { ArrowRight } from 'lucide-react-native';
 
 import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
-import { springConfig } from '../../design/animations';
 import { fontFamily } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+import { BookNowButton } from '../ui/Button/BookNowButton';
 
 const HERO_IMAGE = require('../../../assets/images/hero-images/hero-image.jpeg');
 const BANNER_HEIGHT = 156;
 
+const SCRIM_LIGHT_MODE = [
+  'rgba(6, 20, 14, 0.94)',
+  'rgba(6, 20, 14, 0.82)',
+  'rgba(6, 20, 14, 0.45)',
+  'rgba(6, 20, 14, 0.0)',
+] as const;
+const SCRIM_DARK_MODE = [
+  'rgba(8, 28, 19, 0.88)',
+  'rgba(8, 28, 19, 0.7)',
+  'rgba(8, 28, 19, 0.28)',
+  'rgba(8, 28, 19, 0.0)',
+] as const;
+
 export const BannerCarousel = () => {
-  const { palette } = useAppTheme();
+  const { isDark } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
@@ -37,21 +41,6 @@ export const BannerCarousel = () => {
   // Responsive, deterministic banner layout (16px horizontal margins)
   const bannerWidth = Math.max(screenWidth - 32, 280);
   const contentMaxWidth = Math.min(Math.round(bannerWidth * 0.62), 240);
-
-  // CTA button micro-interaction spring animation
-  const ctaScale = useSharedValue(1);
-
-  const handlePressIn = () => {
-    ctaScale.value = withSpring(0.95, springConfig.stiff);
-  };
-
-  const handlePressOut = () => {
-    ctaScale.value = withSpring(1.0, springConfig.bouncy);
-  };
-
-  const ctaAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: ctaScale.value }],
-  }));
 
   const handleCtaPress = useCallback(() => {
     router.push('/(tabs)/explore' as any);
@@ -76,19 +65,19 @@ export const BannerCarousel = () => {
           {/* Layer 1: Gradient Scrim Overlay */}
           {/* Dark scrim anchored on the left to guarantee WCAG AAA text contrast, */}
           {/* tapering smoothly to full transparency to reveal handyman and brand artwork on the right */}
+          {/* Dark mode: a lighter, shorter scrim lets the artwork read against the dark screen while the
+              text column stays well above 4.5:1. Light mode keeps the original scrim untouched. */}
           <LinearGradient
-            colors={[
-              'rgba(6, 20, 14, 0.94)',
-              'rgba(6, 20, 14, 0.82)',
-              'rgba(6, 20, 14, 0.45)',
-              'rgba(6, 20, 14, 0.0)',
-            ]}
-            locations={[0, 0.42, 0.64, 0.82]}
+            colors={isDark ? SCRIM_DARK_MODE : SCRIM_LIGHT_MODE}
+            locations={isDark ? [0, 0.38, 0.6, 0.8] : [0, 0.42, 0.64, 0.82]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
             style={styles.gradientOverlay}
             pointerEvents="none"
           />
+
+          {/* Dark mode only: hairline edge to separate the banner from the dark surface */}
+          {isDark ? <View style={styles.darkEdge} pointerEvents="none" /> : null}
 
           {/* Layer 2: Content Layer */}
           {/* collapsable={false} prevents view flattening in Fabric (New Architecture) on Android. */}
@@ -115,18 +104,13 @@ export const BannerCarousel = () => {
             </View>
 
             {/* Premium "Book Now" CTA Pill */}
-            <AnimatedPressable
+            <BookNowButton
+              variant="onDark"
+              showArrow
               onPress={handleCtaPress}
-              onPressIn={handlePressIn}
-              onPressOut={handlePressOut}
-              style={[styles.ctaPill, ctaAnimatedStyle]}
-              accessibilityRole="button"
               accessibilityLabel="Book Now - Explore services"
               accessibilityHint="Navigates to explore services page"
-            >
-              <Text style={styles.ctaPillText}>Book Now</Text>
-              <ArrowRight size={13} color={palette.green900} strokeWidth={2.4} style={styles.arrowIcon} />
-            </AnimatedPressable>
+            />
           </View>
         </View>
       </View>
@@ -134,7 +118,7 @@ export const BannerCarousel = () => {
   );
 };
 
-const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
+const createStyles = ({ colors, palette, isDark }: AppTheme) => StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
@@ -155,7 +139,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderRadius: radius['2xl'],
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: palette.slate900,
+    backgroundColor: '#06140E',
   },
   heroImage: {
     position: 'absolute',
@@ -165,6 +149,17 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     bottom: 0,
     width: '100%',
     height: '100%',
+  },
+  darkEdge: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius['2xl'],
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    zIndex: 3,
   },
   gradientOverlay: {
     position: 'absolute',
@@ -195,9 +190,9 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   promoBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(74, 222, 128, 0.16)',
+    backgroundColor: isDark ? 'rgba(74, 222, 128, 0.24)' : 'rgba(74, 222, 128, 0.16)',
     borderWidth: 1,
-    borderColor: 'rgba(74, 222, 128, 0.32)',
+    borderColor: isDark ? 'rgba(74, 222, 128, 0.5)' : 'rgba(74, 222, 128, 0.32)',
     borderRadius: radius.xs,
     paddingHorizontal: 7,
     paddingVertical: 2,
@@ -228,37 +223,6 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     lineHeight: 15,
     color: 'rgba(255, 255, 255, 0.88)',
     marginTop: 4,
-  },
-  ctaPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.white,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.12,
-        shadowRadius: 4,
-      },
-      web: {
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.12)',
-      },
-      // Android inherits contentLayer elevation: 2 without clipping against overflow: 'hidden'
-    }),
-  },
-  ctaPillText: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: 12,
-    lineHeight: 16,
-    color: palette.green900,
-    letterSpacing: 0.1,
-  },
-  arrowIcon: {
-    marginLeft: 5,
   },
 });
 

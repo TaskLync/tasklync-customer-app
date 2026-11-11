@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Share,
 } from 'react-native';
+import { shareEntity } from '../../src/services/links/shareEntity';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -98,14 +98,7 @@ export default function CompanyDetailScreen() {
 
   const handleShare = useCallback(async () => {
     if (!company) return;
-    try {
-      await Share.share({
-        message: `Check out ${company.business_name || company.name} on TaskLync.`,
-        url: `https://tasklync.pk/company/${company.id}`,
-      });
-    } catch (err) {
-      console.warn('Error sharing company profile:', err);
-    }
+    await shareEntity('company', company.id, `Check out ${company.business_name || company.name} on TaskLync.`);
   }, [company]);
 
   const handleChatSupport = useCallback(() => {

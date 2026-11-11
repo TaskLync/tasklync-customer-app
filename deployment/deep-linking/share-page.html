@@ -1,0 +1,65 @@
+<!doctype html>
+<!--
+  Reference share page for GET /worker/:id and /company/:id (backend renders the {{placeholders}}).
+  Mobile behaviour: try to open the app automatically; if it is not installed, show the store button.
+  Crawlers (WhatsApp etc.) only read the <meta> tags; the script does not matter to them.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{og_title}}</title>
+  <meta property="og:type" content="profile">
+  <meta property="og:site_name" content="Tasklync">
+  <meta property="og:title" content="{{og_title}}">
+  <meta property="og:description" content="{{og_description}}">
+  <meta property="og:url" content="https://tasklync.pk/{{type}}/{{id}}">
+  <meta property="og:image" content="{{og_image}}">
+  <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://tasklync.pk/{{type}}/{{id}}">
+</head>
+<body>
+  <h1>{{name}}</h1>
+  <p>{{og_description}}</p>
+  <a id="open" href="tasklync://{{type}}/{{id}}">Open in Tasklync</a>
+  <a id="store" href="#">Get the app</a>
+
+<script>
+(function () {
+  var TYPE = "{{type}}", ID = "{{id}}";            // server-validated: [A-Za-z0-9_-]{6,64}
+  var PKG = "com.tasklync.user";
+  var APP_STORE = "{{ios_app_store_url}}";           // https://apps.apple.com/app/id<ID>
+  var APP_URL = "tasklync://" + TYPE + "/" + ID;
+  var WEB_URL = "https://tasklync.pk/" + TYPE + "/" + ID;
+  var PLAY = "https://play.google.com/store/apps/details?id=" + PKG +
+             "&referrer=" + encodeURIComponent("link=/" + TYPE + "/" + ID);
+  var ua = navigator.userAgent;
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+  var store = document.getElementById("store");
+  store.href = isAndroid ? PLAY : APP_STORE;
+
+  // Deferred deep link on iOS: leave the destination on the clipboard for first launch.
+  store.addEventListener("click", function () {
+    if (isIOS && navigator.clipboard) navigator.clipboard.writeText(WEB_URL).catch(function () {});
+  });
+
+  if (isAndroid) {
+    // Android: intent URL opens the app if installed, otherwise goes to Play with the install referrer.
+    var fallback = encodeURIComponent(PLAY);
+    var intent = "intent://" + TYPE + "/" + ID + "#Intent;scheme=tasklync;package=" + PKG +
+                 ";S.browser_fallback_url=" + fallback + ";end";
+    document.getElementById("open").href = intent;
+    window.location.replace(intent);
+  } else if (isIOS) {
+    // iOS: if the app opens, the page is hidden; if still visible after 1.5s the app is not installed.
+    var t = setTimeout(function () { /* stay on page; user taps "Get the app" */ }, 1500);
+    document.addEventListener("visibilitychange", function () { if (document.hidden) clearTimeout(t); });
+    window.location.href = APP_URL;
+  }
+})();
+</script>
+</body>
+</html>

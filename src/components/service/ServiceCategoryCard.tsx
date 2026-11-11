@@ -10,7 +10,7 @@ import { Image } from 'expo-image';
 import { Text } from '../ui/Text/Text';
 import { Category } from '../../types/category.types';
 import { fontFamily } from '../../design/typography';
-import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ServiceCategoryCardProps {
   category: Category;
@@ -20,10 +20,12 @@ interface ServiceCategoryCardProps {
 interface CategoryStyleConfig {
   bg: string;
   iconSource: any;
+  /** Single-colour (black) artwork: tinted white in dark mode. Multi-colour icons are never tinted. */
+  monochrome?: boolean;
   displayName?: string;
 }
 
-const createCategoryStyles = ({ colors, palette }: AppTheme) => ({ map: {
+const createCategoryStyles = ({ colors, palette, isDark }: AppTheme) => ({ map: {
   electrician: {
     bg: palette.amber100,
     iconSource: require('../../../assets/icons/categories/electrician.svg'),
@@ -32,26 +34,33 @@ const createCategoryStyles = ({ colors, palette }: AppTheme) => ({ map: {
   plumber: {
     bg: palette.blue100,
     iconSource: require('../../../assets/icons/categories/plumber.svg'),
+    monochrome: true,
     displayName: 'Plumber',
   },
   carpenter: {
     bg: palette.orange100,
     iconSource: require('../../../assets/icons/categories/carpenter.svg'),
+    monochrome: true,
     displayName: 'Carpenter',
   },
   painter: {
     bg: palette.purple100,
     iconSource: require('../../../assets/icons/categories/painter.svg'),
+    monochrome: true,
     displayName: 'Painter',
   },
   cleaning: {
-    bg: colors.primaryLight,
+    // Dark: deep green tint, same tier as the amber/blue/sky 100 backgrounds. Light keeps the original.
+    bg: isDark ? palette.green100 : colors.primaryLight,
     iconSource: require('../../../assets/icons/categories/cleaning.svg'),
+    monochrome: true,
     displayName: 'Cleaner',
   },
   cleaner: {
-    bg: colors.primaryLight,
+    // Dark: deep green tint, same tier as the amber/blue/sky 100 backgrounds. Light keeps the original.
+    bg: isDark ? palette.green100 : colors.primaryLight,
     iconSource: require('../../../assets/icons/categories/cleaning.svg'),
+    monochrome: true,
     displayName: 'Cleaner',
   },
   ac_repair: {
@@ -63,12 +72,14 @@ const createCategoryStyles = ({ colors, palette }: AppTheme) => ({ map: {
   fallback: {
     bg: colors.canvasGray,
     iconSource: require('../../../assets/icons/categories/cleaning.svg'),
+    monochrome: true,
   } as CategoryStyleConfig,
 });
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const ServiceCategoryCard: React.FC<ServiceCategoryCardProps> = ({ category }) => {
+  const { isDark } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const categoryStyles = useThemedStyles(createCategoryStyles);
@@ -108,6 +119,7 @@ export const ServiceCategoryCard: React.FC<ServiceCategoryCardProps> = ({ catego
           source={styleConfig.iconSource}
           style={styles.icon}
           contentFit="contain"
+          {...(isDark && styleConfig.monochrome ? { tintColor: '#FFFFFF' } : {})}
           priority="high"
         />
       </View>

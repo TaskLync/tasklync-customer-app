@@ -24,6 +24,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     bundleIdentifier: 'com.tasklync.user',
     supportsTablet: false,
+    // Universal Links: requires https://tasklync.pk/.well-known/apple-app-site-association
+    associatedDomains: ['applinks:tasklync.pk'],
     infoPlist: {
       NSLocationWhenInUseUsageDescription: 'Tasklync uses your location to find nearby service workers.',
       NSLocationAlwaysAndWhenInUseUsageDescription: 'Tasklync uses your location to find nearby service workers even when the app is in background.',
@@ -40,6 +42,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // This allows chat message lists to adapt dynamically, keeps the ChatHeader pinned,
     // and pairs cleanly with KeyboardAvoidingView behavior=undefined on Android without double-adjustment.
     softwareKeyboardLayoutMode: 'resize',
+    // Verified App Links: requires https://tasklync.pk/.well-known/assetlinks.json (see deployment/deep-linking).
+    // Only entity pages open the app; the rest of tasklync.pk (terms, privacy, ...) stays in the browser.
+    intentFilters: [
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        data: ['/worker', '/company'].map((pathPrefix) => ({
+          scheme: 'https',
+          host: 'tasklync.pk',
+          pathPrefix,
+        })),
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+    ],
     adaptiveIcon: {
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundColor: '#16A34A',
@@ -63,6 +79,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    './plugins/withTransparentNavigationBar',
     'expo-font',
     [
       'expo-location',

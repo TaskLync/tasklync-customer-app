@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { NearbyWorkersParams } from '../types';
 import { useCustomerCoords } from './useCustomerCoords';
 import { workerApi } from '../services/api/worker.api';
-import { roundCoordForQuery } from '../utils/locationUtils';
+import { roundCoordForQuery, rememberWorkerCoords } from '../utils/locationUtils';
 
 const MAX_ALLOWED_RADIUS = 20000; // Backend constraint: Radius cannot exceed 20,000 meters
 
@@ -44,6 +44,8 @@ export const useNearbyWorkers = (params?: Partial<NearbyWorkersParams>) => {
         ...(queryParams.serviceId ? { serviceId: queryParams.serviceId } : {}),
         ...(queryParams.minRating !== undefined ? { minRating: queryParams.minRating } : {}),
       });
+      // Share these live coordinates with every other worker list (same worker => same distance).
+      res?.workers?.forEach(rememberWorkerCoords);
       return res;
     },
     enabled: hasCoordinates,

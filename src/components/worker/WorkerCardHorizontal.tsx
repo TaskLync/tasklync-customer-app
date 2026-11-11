@@ -13,6 +13,7 @@ import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
 import { usePressScale } from '../../hooks/usePressScale';
 import { useCustomerCoords } from '../../hooks/useCustomerCoords';
+import { useWorkerCoordsVersion } from '../../hooks/useWorkerCoordsVersion';
 import { resolveWorkerDistance } from '../../utils/locationUtils';
 import { pushOnce } from '../../utils/navigationGuard';
 import { prefetchWorkerProfile } from '../../hooks/useWorkerProfile';
@@ -20,6 +21,7 @@ import { WorkerNearby } from '../../types/worker.types';
 import { WorkerAvatar } from './WorkerAvatar';
 import { useFavoritesStore } from '../../store/favorites.store';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { BookNowButton } from '../ui/Button/BookNowButton';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -56,7 +58,6 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
 
   // Animations
   const card = usePressScale(0.985);
-  const book = usePressScale(0.97);
   const prefetch = () => prefetchWorkerProfile(queryClient, worker.id);
   const heartScale = useSharedValue(1);
 
@@ -87,9 +88,10 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
   const reviewCount = worker.totalReviews || 0;
   // Real measurement only: customer coords vs worker coords. Hidden when unknown (never a default).
   const customerCoords = useCustomerCoords();
+  const coordsVersion = useWorkerCoordsVersion();
   const distance = useMemo(
     () => resolveWorkerDistance(worker, customerCoords).distanceLabel,
-    [worker.id, worker.distanceMeters, worker.lat, worker.lng, customerCoords]
+    [worker.id, worker.distanceMeters, worker.lat, worker.lng, customerCoords, coordsVersion]
   );
   const currency = worker.currency === 'Rs' ? 'PKR' : (worker.currency || 'PKR');
 
@@ -191,21 +193,14 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
           )}
         </View>
 
-        {/* Right Side — Subtle Mint Pill "Book Now" CTA with Accessible Touch Target */}
-        <AnimatedPressable
+        {/* Right Side — "Book Now" CTA */}
+        <BookNowButton
+          variant="brand"
           onPress={handleBookPress}
-          onPressIn={() => {
-            book.onPressIn();
-            prefetch();
-          }}
-          onPressOut={book.onPressOut}
-          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          style={[styles.bookButton, book.animatedStyle]}
-          accessibilityRole="button"
+          onPressIn={prefetch}
+          style={styles.bookButton}
           accessibilityLabel={`Book ${worker.name} now`}
-        >
-          <Text style={styles.bookButtonText}>Book Now</Text>
-        </AnimatedPressable>
+        />
       </View>
     </AnimatedPressable>
   );
@@ -360,21 +355,6 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     color: colors.primaryDark,
   },
   bookButton: {
-    backgroundColor: colors.primaryTint, // subtle mint tint
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    minHeight: 38,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.22)', // Delicate mint border
-    justifyContent: 'center',
-    alignItems: 'center',
     marginLeft: 8,
-  },
-  bookButtonText: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 13,
-    color: palette.green800, // Dark green text with medium-bold typography
-    letterSpacing: 0.1,
   },
 });

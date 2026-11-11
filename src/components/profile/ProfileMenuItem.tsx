@@ -29,7 +29,7 @@ export interface ProfileMenuItemProps {
 }
 
 const renderIcon = (iconName: string, isDanger: boolean, colors: AppTheme['colors']) => {
-  const iconColor = isDanger ? colors.textDanger : colors.primaryDark;
+  const iconColor = isDanger ? colors.textDanger : colors.iconDefault;
   const iconSize = 19;
 
   switch (iconName) {

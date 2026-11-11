@@ -15,6 +15,7 @@ import { WorkerAvatar } from './WorkerAvatar';
 import { CompanyBadge } from '../company/CompanyBadge';
 import { Chip } from '../ui/Chip';
 import { useCustomerCoords } from '../../hooks/useCustomerCoords';
+import { useWorkerCoordsVersion } from '../../hooks/useWorkerCoordsVersion';
 import { resolveWorkerDistance } from '../../utils/locationUtils';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -83,9 +84,10 @@ export const WorkerSearchCard: React.FC<WorkerSearchCardProps> = ({ worker }) =>
 
   // Resolve accurate distance between customer and worker
   const customerCoords = useCustomerCoords();
+  const coordsVersion = useWorkerCoordsVersion();
   const distanceDisplay = useMemo(
     () => resolveWorkerDistance(worker, customerCoords).distanceLabel,
-    [worker.id, worker.distanceMeters, worker.lat, worker.lng, customerCoords]
+    [worker.id, worker.distanceMeters, worker.lat, worker.lng, customerCoords, coordsVersion]
   );
 
   const priceFormatted = useMemo(() => {

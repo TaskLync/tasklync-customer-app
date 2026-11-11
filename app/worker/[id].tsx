@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, Share, Pressable } from 'react-native';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
+import { shareEntity } from '../../src/services/links/shareEntity';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -117,14 +118,7 @@ export default function WorkerProfileScreen() {
 
   const handleShare = async () => {
     if (!worker) return;
-    try {
-      await Share.share({
-        message: `Check out ${worker.name} on Tasklync! Providing expert home services.`,
-        url: `https://tasklync.com/worker/${worker.id}`,
-      });
-    } catch (error) {
-      console.error('Error sharing profile', error);
-    }
+    await shareEntity('worker', worker.id, `Check out ${worker.name} on Tasklync! Providing expert home services.`);
   };
 
   const handleMore = () => {

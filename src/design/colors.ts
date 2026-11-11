@@ -208,6 +208,11 @@ export const buildColors = (palette: Palette, mode: ThemeMode) => ({
   textInfo: palette.blue600, // #2563EB
   textInfoDark: palette.blue800, // #1E40AF
 
+  // Icons (semantic): neutral grey in light, off-white in dark; green only for active/selected
+  iconDefault: mode === 'dark' ? palette.gray900 : palette.gray500, // #64748B (4.8:1 on white) / #F0F2F5
+  iconActive: palette.green600, // selected/active, matches the existing primary active state
+  iconDisabled: palette.gray300,
+
   // Borders
   border: palette.softGray, // #E2E8F0
   borderLight: palette.gray100, // #F1F5F9

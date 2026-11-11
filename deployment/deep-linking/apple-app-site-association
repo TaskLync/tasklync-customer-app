@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["REPLACE_WITH_APPLE_TEAM_ID.com.tasklync.user"],
+        "components": [
+          { "/": "/worker/*", "comment": "Worker profile" },
+          { "/": "/company/*", "comment": "Company profile" }
+        ]
+      }
+    ]
+  }
+}

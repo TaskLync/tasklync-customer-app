@@ -8,6 +8,7 @@ import { typography } from '../../design/typography';
 import { pushOnce } from '../../utils/navigationGuard';
 import { prefetchWorkerProfile } from '../../hooks/useWorkerProfile';
 import { useCustomerCoords } from '../../hooks/useCustomerCoords';
+import { useWorkerCoordsVersion } from '../../hooks/useWorkerCoordsVersion';
 import { resolveWorkerDistance } from '../../utils/locationUtils';
 import { WorkerAvatar } from './WorkerAvatar';
 import { CompanyBadge } from '../company/CompanyBadge';
@@ -65,10 +66,11 @@ const WorkerListRowBase: React.FC<WorkerListRowProps> = ({ worker, isLast = fals
 
   // ── Distance: only a real measurement, not the "Nearby" fallback ──
   const customerCoords = useCustomerCoords();
+  const coordsVersion = useWorkerCoordsVersion();
   const distanceLabel = useMemo(() => {
     const { distanceMeters, distanceLabel: label } = resolveWorkerDistance(worker, customerCoords);
     return distanceMeters ? label : null;
-  }, [worker.id, worker.distanceMeters, worker.lat, worker.lng, customerCoords]);
+  }, [worker.id, worker.distanceMeters, worker.lat, worker.lng, customerCoords, coordsVersion]);
 
   const responseLabel = worker.responseTimeMins > 0 ? `~${worker.responseTimeMins} min reply` : null;
 

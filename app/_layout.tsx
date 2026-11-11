@@ -14,6 +14,8 @@ import { RouteErrorBoundary } from '../src/components/feedback';
 import { useAuthStore } from '../src/store/auth.store';
 import { useAppTheme } from '../src/theme/useAppTheme';
 import { ThemedStatusBar } from '../src/theme/ThemedStatusBar';
+import { ThemedNavigationBar } from '../src/theme/ThemedNavigationBar';
+import { resolveDeferredLink } from '../src/services/links/deferredLink';
 
 export { RouteErrorBoundary as ErrorBoundary };
 
@@ -52,6 +54,8 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded && sessionRestored) {
       SplashScreen.hideAsync();
+      // First launch after install only (guarded inside): restores the shared-link destination.
+      resolveDeferredLink();
     }
   }, [fontsLoaded, sessionRestored]);
 
@@ -66,6 +70,7 @@ export default function RootLayout() {
           <AppProviders>
             <ThemeProvider value={navigationTheme}>
             <ThemedStatusBar />
+            <ThemedNavigationBar />
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bgApp } }}>
               <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
               <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />

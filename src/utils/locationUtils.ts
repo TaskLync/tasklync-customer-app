@@ -83,6 +83,22 @@ export function formatDistance(
 const WORKER_COORD_TTL_MS = 10 * 60 * 1000;
 const workerCoordSnapshots = new Map<string, { lat: number; lng: number; at: number }>();
 
+let snapshotVersion = 0;
+const snapshotListeners = new Set<() => void>();
+
+/** Subscribe to snapshot changes (used by useWorkerCoordsVersion so rendered labels re-resolve). */
+export function subscribeWorkerCoords(listener: () => void): () => void {
+  snapshotListeners.add(listener);
+  return () => {
+    snapshotListeners.delete(listener);
+  };
+}
+export const getWorkerCoordsVersion = (): number => snapshotVersion;
+
+/**
+ * Record the live coordinates of workers from the location-owning endpoint (/workers/nearby).
+ * The version only bumps when a coordinate actually changed, so unchanged refetches cause no re-render.
+ */
 export function rememberWorkerCoords(worker: {
   id?: string | undefined;
   lat?: number | null | undefined;
@@ -90,7 +106,12 @@ export function rememberWorkerCoords(worker: {
 }): void {
   const coords = { lat: worker.lat, lng: worker.lng };
   if (worker.id && isValidCoordinate(coords)) {
+    const prev = workerCoordSnapshots.get(worker.id);
     workerCoordSnapshots.set(worker.id, { lat: coords.lat, lng: coords.lng, at: Date.now() });
+    if (!prev || prev.lat !== coords.lat || prev.lng !== coords.lng) {
+      snapshotVersion += 1;
+      snapshotListeners.forEach((l) => l());
+    }
   }
 }
 
@@ -122,8 +143,10 @@ export function resolveWorkerDistance(
   customerCoords?: { lat: number; lng: number } | null | undefined
 ): { distanceMeters: number | null; distanceLabel: string } {
   if (isValidCoordinate(customerCoords)) {
+    // The live snapshot (worker-service /nearby) wins over coordinates embedded in other responses
+    // (e.g. a possibly stale search index), so every list measures to the same point.
     const ownCoords = { lat: worker.lat, lng: worker.lng };
-    const workerCoords = isValidCoordinate(ownCoords) ? ownCoords : recallWorkerCoords(worker.id);
+    const workerCoords = recallWorkerCoords(worker.id) ?? (isValidCoordinate(ownCoords) ? ownCoords : null);
     if (workerCoords) {
       const meters = Math.round(getDistanceMeters(customerCoords, workerCoords));
       return { distanceMeters: meters, distanceLabel: formatDistance(meters) };
