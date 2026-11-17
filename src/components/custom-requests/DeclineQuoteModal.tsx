@@ -198,7 +198,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     backgroundColor: colors.bgApp,
   },
   reasonItemActive: {
-    borderColor: palette.green600,
+    borderColor: colors.buttonPrimary,
     backgroundColor: colors.primaryTint,
   },
   radioCircle: {
@@ -212,13 +212,13 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     marginRight: 10,
   },
   radioCircleActive: {
-    borderColor: palette.green600,
+    borderColor: colors.buttonPrimary,
   },
   radioDot: {
     width: 9,
     height: 9,
     borderRadius: 4.5,
-    backgroundColor: palette.green600,
+    backgroundColor: colors.buttonPrimary,
   },
   reasonText: {
     fontFamily: 'PlusJakartaSans-Medium',

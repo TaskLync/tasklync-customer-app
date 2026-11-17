@@ -53,13 +53,23 @@ export default function CategoryScreen() {
       const updated = { ...prev };
       if (key === 'minRating') updated.minRating = 0;
       if (key === 'maxRate') updated.maxRate = 0;
+      if (key === 'minRate') updated.minRate = 0;
       if (key === 'available') updated.available = 'any';
       if (key === 'radius') updated.radius = 10000;
       return updated;
     });
   };
 
+  // Base state for this screen: Reset in the sheet returns here (keeps the category).
+  const categoryDefaults: FilterState = {
+    ...DEFAULT_FILTERS,
+    categories: categoryId ? [categoryId] : [],
+    radius: 10000,
+  };
+  // Remount per open: the sheet's draft starts from the applied filters every time.
+  const [filterSheetKey, setFilterSheetKey] = useState(0);
   const handleOpenFilters = () => {
+    setFilterSheetKey((k) => k + 1);
     filterSheetRef.current?.open();
   };
 
@@ -70,16 +80,6 @@ export default function CategoryScreen() {
   const handleApplyFilters = (newFilters: FilterState) => {
     setFilters(newFilters);
     setSortBy(newFilters.sortBy);
-    filterSheetRef.current?.close();
-  };
-
-  const handleResetFilters = () => {
-    setFilters({
-      ...DEFAULT_FILTERS,
-      categories: categoryId ? [categoryId] : [],
-      radius: 10000,
-    });
-    setSortBy('relevance');
     filterSheetRef.current?.close();
   };
 
@@ -140,9 +140,9 @@ export default function CategoryScreen() {
           categoryId={categoryId || ''}
           sortBy={sortBy}
           onSortChange={handleSortChange}
+          minRate={filters.minRate}
           maxRate={filters.maxRate}
           minRating={filters.minRating}
-          available={filters.available}
           radius={filters.radius || 10000}
         />
       </View>
@@ -153,14 +153,15 @@ export default function CategoryScreen() {
         snapPoints={['85%']}
         contentPadding={false}
       >
+        {/* This list is solo workers only and has no availability signal: those sections are hidden. */}
         <FilterSheetContent
+          key={filterSheetKey}
           filters={filters}
+          defaultFilters={categoryDefaults}
           onApply={handleApplyFilters}
-          onReset={handleResetFilters}
-          resultCount={null}
           showCategories={false}
-          showMaxRate={true}
-          showDistance={true}
+          showProviderType={false}
+          showAvailability={false}
         />
       </BottomSheet>
 

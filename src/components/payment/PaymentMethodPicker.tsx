@@ -135,7 +135,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   itemSelected: {
     borderWidth: 2,
-    borderColor: palette.green500,
+    borderColor: colors.buttonPrimary,
     backgroundColor: palette.green50,
   },
   itemDisabled: {
@@ -209,7 +209,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderColor: palette.gray300,
   },
   radioOuterSelected: {
-    backgroundColor: palette.green500,
+    backgroundColor: colors.buttonPrimary,
   },
   radioOuterDisabled: {
     borderWidth: 1.5,

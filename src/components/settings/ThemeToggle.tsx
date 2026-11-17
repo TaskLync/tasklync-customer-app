@@ -70,7 +70,7 @@ const createStyles = ({ colors, palette }: AppTheme) =>
       borderRadius: radius.pill,
     },
     optionActive: {
-      backgroundColor: colors.primaryDark,
+      backgroundColor: colors.buttonPrimary,
     },
     optionText: {
       fontFamily: fontFamily.jakarta.medium,

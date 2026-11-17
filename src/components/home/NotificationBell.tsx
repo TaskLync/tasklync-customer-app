@@ -24,6 +24,8 @@ export interface NotificationBellProps {
   size?: number;
   iconSize?: number;
   showDot?: boolean;
+  /** 'neutral': ink badge (grayscale screens) instead of the red alert badge. */
+  tone?: 'alert' | 'neutral';
 }
 
 export const NotificationBell: React.FC<NotificationBellProps> = ({
@@ -33,6 +35,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
   size = 40,
   iconSize = 22,
   showDot,
+  tone = 'alert',
 }) => {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
@@ -113,12 +116,12 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 
       {isDotVariant ? (
         hasIndicator && (
-          <Animated.View style={[styles.dotBadge, badgeStyle]} pointerEvents="none" />
+          <Animated.View style={[styles.dotBadge, tone === 'neutral' && styles.dotBadgeNeutral, badgeStyle]} pointerEvents="none" />
         )
       ) : (
         effectiveUnreadCount > 0 && (
-          <Animated.View style={[styles.badge, badgeStyle]} pointerEvents="none">
-            <Text style={styles.badgeText}>{displayCount}</Text>
+          <Animated.View style={[styles.badge, tone === 'neutral' && styles.badgeNeutral, badgeStyle]} pointerEvents="none">
+            <Text style={[styles.badgeText, tone === 'neutral' && styles.badgeTextNeutral]}>{displayCount}</Text>
           </Animated.View>
         )
       )}
@@ -156,6 +159,17 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     backgroundColor: palette.danger,
     borderWidth: 1.5,
     borderColor: colors.bgApp,
+  },
+  badgeNeutral: {
+    backgroundColor: colors.neutralInk,
+    borderColor: colors.neutralBg,
+  },
+  dotBadgeNeutral: {
+    backgroundColor: colors.neutralInk,
+    borderColor: colors.neutralBg,
+  },
+  badgeTextNeutral: {
+    color: colors.neutralOnInk,
   },
   badgeText: {
     fontFamily: fontFamily.inter.bold,

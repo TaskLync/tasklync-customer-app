@@ -1,4 +1,4 @@
-import { WorkerNearby } from './worker.types';
+import type { WorkerNearby } from './worker.types';
 
 /**
  * Search Service v1.2.0 Sort Options
@@ -17,16 +17,26 @@ export type ProviderTypeFilter = 'ANY' | 'ALL' | 'INDIVIDUAL' | 'COMPANY';
 
 export type TrendingWindow = '24h' | '7d';
 
+/**
+ * 'now' = not currently on a job. There is no "today" option: search results are already limited
+ * to active, bookable workers and the backend exposes no per-day schedule to filter on.
+ */
+export type AvailabilityFilter = 'any' | 'now';
+
+/**
+ * Customer-facing worker filters. There is no city filter: Tasklync operates in one city and
+ * results are scoped by the customer's position (lat/lng/radius) instead.
+ * minRate / maxRate: 0 = unbounded.
+ */
 export interface FilterState {
   categories: string[];
   categoryId?: string | undefined;
   categoryLabel?: string | undefined;
-  city?: string | undefined;
   minRating: number;
   minRate: number;
   maxRate: number;
   sortBy: SortOption;
-  available: 'any' | 'now' | 'today';
+  available: AvailabilityFilter;
   radius?: number | undefined;
   provider_type?: ProviderTypeFilter | undefined;
 }
@@ -35,7 +45,6 @@ export const DEFAULT_FILTERS: FilterState = {
   categories: [],
   categoryId: undefined,
   categoryLabel: undefined,
-  city: undefined,
   minRating: 0,
   minRate: 0,
   maxRate: 0,

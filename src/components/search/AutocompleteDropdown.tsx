@@ -109,7 +109,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     marginRight: 12,
   },
   categoryIconWrap: {
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
   },
   workerIconWrap: {
     backgroundColor: palette.blue50,

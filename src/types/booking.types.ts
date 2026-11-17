@@ -179,10 +179,13 @@ export interface BookingDetails extends BookingDiscountFields {
   expires_at?: string | undefined;
   address_id: string;
   address_text: string;
-  job_site_location: {
+  /** Absent when the server sent no valid point (never a fabricated fallback). */
+  job_site_location?: {
     lat: number;
     lng: number;
-  };
+  } | undefined;
+  /** Customer's directions for the professional (snapshot; booking-service migration 018). */
+  address_instructions?: string | null | undefined;
   base_price: number;
   urgency_multiplier: number;
   demand_multiplier: number;

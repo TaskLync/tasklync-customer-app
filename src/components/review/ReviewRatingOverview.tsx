@@ -171,7 +171,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   fill: {
     height: '100%',
     borderRadius: 3,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
   },
   barCount: {
     fontFamily: fonts.jakarta.regular,
@@ -195,7 +195,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     gap: 6,
   },
   tagBadge: {
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 100,

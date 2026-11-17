@@ -289,7 +289,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: radius.pill,
@@ -322,7 +322,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     marginTop: 10,
   },
   tagChip: {
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radius.pill,

@@ -392,9 +392,9 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   addButton: {
     height: 52,
     borderRadius: radius.pill,
-    backgroundColor: palette.green50,
+    backgroundColor: colors.buttonSecondary,
     borderWidth: 1.5,
-    borderColor: palette.green300,
+    borderColor: colors.buttonSecondaryBorder,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -402,15 +402,15 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     ...shadows.sm,
   },
   addButtonPressed: {
-    backgroundColor: palette.green100,
-    borderColor: palette.green400,
+    backgroundColor: colors.buttonSecondaryPressed,
+    borderColor: colors.buttonSecondaryBorder,
     transform: [{ scale: 0.99 }],
   },
   addButtonText: {
     fontFamily: fontFamily.poppins.semiBold,
     fontSize: 15,
     lineHeight: 20,
-    color: colors.primaryDark,
+    color: colors.buttonSecondaryText,
   },
   actionSheetContent: {
     paddingBottom: 16,

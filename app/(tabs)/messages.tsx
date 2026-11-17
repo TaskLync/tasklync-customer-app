@@ -1,27 +1,34 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   MessagesHeader,
   ConversationTabs,
   ConversationRow,
+  ConversationSearchBar,
   SkeletonConversationRow,
   ConversationEmptyState,
 } from '../../src/components/chat';
+import { CONVERSATION_ROW } from '../../src/components/chat/ConversationRow';
 import { SkeletonGroup } from '../../src/components/ui/Skeleton';
-import { SearchInput } from '../../src/components/ui/Input/SearchInput';
 import { useConversations } from '../../src/hooks/useConversations';
 import { ConversationItem } from '../../src/types/chat.types';
-import { radius } from '../../src/design/radius';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
+
+const SKELETON_ROWS = [
+  { nameWidth: 132, previewWidth: '82%' },
+  { nameWidth: 104, previewWidth: '68%' },
+  { nameWidth: 148, previewWidth: '76%' },
+  { nameWidth: 118, previewWidth: '58%' },
+  { nameWidth: 126, previewWidth: '72%' },
+] as const;
 
 export default function MessagesScreen() {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const {
     conversations,
@@ -49,6 +56,19 @@ export default function MessagesScreen() {
     }, [refetch])
   );
 
+  // Filter switch: a short cross-fade of the list instead of a hard content swap.
+  const listOpacity = useSharedValue(1);
+  const isFirstTab = useRef(true);
+  useEffect(() => {
+    if (isFirstTab.current) {
+      isFirstTab.current = false;
+      return;
+    }
+    listOpacity.value = 0.25;
+    listOpacity.value = withTiming(1, { duration: 200 });
+  }, [activeTab, listOpacity]);
+  const listFade = useAnimatedStyle(() => ({ opacity: listOpacity.value }));
+
   const handleConversationPress = useCallback(
     (item: ConversationItem) => {
       markAsRead(item);
@@ -68,22 +88,24 @@ export default function MessagesScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: ConversationItem }) => (
-      <ConversationRow item={item} onPress={handleConversationPress} />
-    ),
+    ({ item }: { item: ConversationItem }) => <ConversationRow item={item} onPress={handleConversationPress} />,
     [handleConversationPress]
   );
 
   const keyExtractor = useCallback((item: ConversationItem) => item.id, []);
 
+  const renderSeparator = useCallback(() => <View style={styles.separator} />, [styles.separator]);
+
+  const clearSearch = useCallback(() => setSearchQuery(''), [setSearchQuery]);
+  const resetTab = useCallback(() => setActiveTab('all'), [setActiveTab]);
+
   const renderEmptyComponent = () => {
     if (isLoading) {
       return (
         <SkeletonGroup accessibilityLabel="Loading conversations">
-          <SkeletonConversationRow />
-          <SkeletonConversationRow />
-          <SkeletonConversationRow />
-          <SkeletonConversationRow />
+          {SKELETON_ROWS.map((r, i) => (
+            <SkeletonConversationRow key={i} nameWidth={r.nameWidth} previewWidth={r.previewWidth} />
+          ))}
         </SkeletonGroup>
       );
     }
@@ -92,93 +114,83 @@ export default function MessagesScreen() {
       <ConversationEmptyState
         searchQuery={searchQuery}
         activeTab={activeTab}
-        onClearSearch={() => setSearchQuery('')}
-        onResetTab={() => setActiveTab('all')}
+        onClearSearch={clearSearch}
+        onResetTab={resetTab}
       />
     );
   };
+
+  const isEmpty = !isLoading && conversations.length === 0;
 
   return (
     <View style={styles.container}>
       <ThemedStatusBar />
 
-      {/* Screen Header */}
-      <MessagesHeader totalUnreadCount={totalUnreadCount} />
+      <MessagesHeader />
 
-      {/* Search Input Bar */}
-      <View style={styles.searchContainer}>
-        <SearchInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onClear={() => setSearchQuery('')}
-          placeholder="Search conversations or workers..."
-          autoFocus={false}
-          height={56}
-          style={styles.searchInput}
-        />
+      <View style={styles.searchWrap}>
+        <ConversationSearchBar value={searchQuery} onChangeText={setSearchQuery} onClear={clearSearch} />
       </View>
 
-      {/* Category / Status Filter Tabs */}
-      <ConversationTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        unreadCount={totalUnreadCount}
-      />
+      <ConversationTabs activeTab={activeTab} onTabChange={setActiveTab} unreadCount={totalUnreadCount} />
 
-      {/* Conversations List */}
-      <FlatList
-        data={isLoading ? [] : conversations}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        contentContainerStyle={[
-          styles.listContent,
-          conversations.length === 0 && !isLoading && styles.listContentEmpty,
-          { paddingBottom: Math.max(insets.bottom, 16) + 96 },
-        ]}
-        ListEmptyComponent={renderEmptyComponent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={refetch}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
-      />
+      <Animated.View style={[styles.listWrap, listFade]}>
+        <FlatList
+          data={isLoading ? [] : conversations}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          ItemSeparatorComponent={renderSeparator}
+          ListEmptyComponent={renderEmptyComponent}
+          contentContainerStyle={[
+            styles.listContent,
+            isEmpty && styles.listContentEmpty,
+            styles.listBottom,
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          initialNumToRender={10}
+          windowSize={7}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={refetch}
+              tintColor={colors.neutralInkSecondary}
+              colors={[colors.neutralInk]}
+              progressBackgroundColor={colors.neutralBg}
+            />
+          }
+        />
+      </Animated.View>
     </View>
   );
 }
 
-const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgApp,
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 14,
-    backgroundColor: colors.bgCard,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
-  },
-  searchInput: {
-    height: 56,
-    minHeight: 56,
-    borderRadius: radius.pill,
-    backgroundColor: colors.bgApp,
-    borderColor: colors.border,
-    borderWidth: 1.2,
-  },
-  listContent: {
-    paddingTop: 12,
-    flexGrow: 1,
-  },
-  listContentEmpty: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingTop: 0,
-  },
-});
+const createStyles = ({ colors }: AppTheme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.neutralBg,
+    },
+    searchWrap: {
+      paddingHorizontal: 20,
+    },
+    listWrap: {
+      flex: 1,
+    },
+    listContent: {
+      flexGrow: 1,
+      paddingTop: 4,
+    },
+    listBottom: {
+      paddingBottom: 24,
+    },
+    listContentEmpty: {
+      justifyContent: 'center',
+    },
+    separator: {
+      height: 1,
+      marginLeft: CONVERSATION_ROW.textInset,
+      backgroundColor: colors.neutralDivider,
+    },
+  });

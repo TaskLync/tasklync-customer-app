@@ -126,7 +126,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   plusButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
   },
   disabledButton: {
     backgroundColor: 'transparent',

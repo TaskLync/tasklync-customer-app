@@ -83,7 +83,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   chipPressed: {
     backgroundColor: colors.bgSection,
-    borderColor: colors.primary,
+    borderColor: colors.buttonPrimary,
   },
   chipText: {
     fontFamily: typography.fontFamily.jakarta.semiBold,

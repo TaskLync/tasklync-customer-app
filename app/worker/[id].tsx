@@ -513,7 +513,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
   },
   customQuoteTextCol: {
     flex: 1,

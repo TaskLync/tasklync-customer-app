@@ -83,7 +83,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 12,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
   },
   iconWrap: {
     width: 30,
@@ -130,7 +130,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     paddingHorizontal: 7,
     height: 19,
     borderRadius: 6,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     justifyContent: 'center',
   },
   tagText: {

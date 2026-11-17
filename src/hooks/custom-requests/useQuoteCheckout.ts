@@ -9,11 +9,30 @@ import {
   CreateBookingFromQuoteDto,
   BookingFromQuoteResponse,
 } from '../../types/customRequest.types';
-import { UserAddress } from '../../types/user.types';
+/**
+ * The address chosen for a quote booking. (Previously typed as `UserAddress`, which has a different
+ * shape — `address_line/lat/lng` — and produced the type errors this file used to carry.)
+ */
+export interface CheckoutAddress {
+  id: string;
+  user_id: string;
+  label: string;
+  street: string;
+  city: string;
+  latitude: number | undefined;
+  longitude: number | undefined;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+type UserAddress = CheckoutAddress;
 import { validateServiceArea, SERVICE_UNAVAILABLE_MESSAGE } from '../../config/serviceArea.config';
 import { slotToUTCISO, normalizeDateToYYYYMMDD } from '../../utils/timezone';
 import { useAddresses } from '../useAddresses';
-import { isValidUUID, CANONICAL_FALLBACK_UUIDS } from '../../utils/uuid';
+import { isValidUUID } from '../../utils/uuid';
+
+/** Marker for "book at the custom request's own address" (never sent as an address id). */
+const REQUEST_LOCATION_ID = 'request-location';
 import { showAlert } from '../../components/feedback/AppAlert';
 
 interface UseQuoteCheckoutProps {
@@ -38,42 +57,34 @@ export function useQuoteCheckout({ request, quote }: UseQuoteCheckoutProps) {
     return request?.preferred_time_slot || null;
   });
 
-  const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(() => {
-    if (request?.address_text) {
-      return {
-        id: request.address_id || CANONICAL_FALLBACK_UUIDS.ADDRESS_HOME,
-        user_id: request.user_id || '',
-        label: 'Request Location',
-        street: request.address_text,
-        city: 'Faisalabad',
-        latitude: request.latitude || 31.4504,
-        longitude: request.longitude || 73.135,
-        is_default: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    }
-    return null;
-  });
+  // The request's own location: real coordinates only (never a guessed city point). The backend
+  // books it from the request record itself, so no placeholder address id is ever sent.
+  const requestLocation = (): UserAddress | null =>
+    request?.address_text && Number.isFinite(request.latitude) && Number.isFinite(request.longitude)
+      ? {
+          id: REQUEST_LOCATION_ID,
+          user_id: request.user_id || '',
+          label: 'Request Location',
+          street: request.address_text,
+          city: '',
+          latitude: request.latitude,
+          longitude: request.longitude,
+          is_default: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+      : null;
+
+  const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(() => requestLocation());
 
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Sync selectedAddress when request loads or when user saved addresses arrive
   useEffect(() => {
     if (!selectedAddress) {
-      if (request?.address_text) {
-        setSelectedAddress({
-          id: request.address_id || CANONICAL_FALLBACK_UUIDS.ADDRESS_HOME,
-          user_id: request.user_id || '',
-          label: 'Request Location',
-          street: request.address_text,
-          city: 'Faisalabad',
-          latitude: request.latitude || 31.4504,
-          longitude: request.longitude || 73.135,
-          is_default: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+      const fromRequest = requestLocation();
+      if (fromRequest) {
+        setSelectedAddress(fromRequest);
       } else if (addresses && addresses.length > 0) {
         const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
         setSelectedAddress({
@@ -81,9 +92,9 @@ export function useQuoteCheckout({ request, quote }: UseQuoteCheckoutProps) {
           user_id: '',
           label: defaultAddr.label || 'Home',
           street: defaultAddr.address_line,
-          city: defaultAddr.city || 'Faisalabad',
-          latitude: defaultAddr.lat || 31.4504,
-          longitude: defaultAddr.lng || 73.135,
+          city: defaultAddr.city || '',
+          latitude: defaultAddr.lat,
+          longitude: defaultAddr.lng,
           is_default: defaultAddr.is_default,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -141,18 +152,31 @@ export function useQuoteCheckout({ request, quote }: UseQuoteCheckoutProps) {
 
       // Convert local date + time slot ("10:00 AM", "14:30", "10:00 - 12:00") into canonical ISO UTC
       const scheduledAt = slotToUTCISO(selectedDate, selectedSlot);
-      const validAddressId = isValidUUID(selectedAddress.id)
-        ? selectedAddress.id
-        : CANONICAL_FALLBACK_UUIDS.ADDRESS_HOME;
+      const usesRequestLocation = selectedAddress.id === REQUEST_LOCATION_ID;
+      if (!usesRequestLocation && !isValidUUID(selectedAddress.id)) {
+        // Never a shared placeholder id (audit LOC-007): only the customer's own saved address.
+        throw new Error('Please choose one of your saved addresses for this booking.');
+      }
+      if (
+        !usesRequestLocation &&
+        (!Number.isFinite(selectedAddress.latitude) || !Number.isFinite(selectedAddress.longitude))
+      ) {
+        throw new Error('This address has no map location. Please re-select it.');
+      }
 
       const payload: CreateBookingFromQuoteDto = {
         quote_id: quote.id,
         scheduled_at: scheduledAt,
         duration_hours: Number(quote.estimated_duration_hours || 2),
-        address_id: validAddressId,
-        address_text: `${selectedAddress.street}${selectedAddress.city ? `, ${selectedAddress.city}` : ''}`,
-        latitude: selectedAddress.latitude || 31.4504,
-        longitude: selectedAddress.longitude || 73.135,
+        // Request location → let the backend use the request's own verified address.
+        ...(usesRequestLocation
+          ? {}
+          : {
+              address_id: selectedAddress.id,
+              address_text: `${selectedAddress.street}${selectedAddress.city ? `, ${selectedAddress.city}` : ''}`,
+              latitude: selectedAddress.latitude,
+              longitude: selectedAddress.longitude,
+            }),
         payment_method: 'CASH_ON_DELIVERY',
       };
 

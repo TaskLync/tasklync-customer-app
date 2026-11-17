@@ -10,8 +10,6 @@ import {
   AutocompleteSuggestion,
   DEFAULT_FILTERS,
   FilterState,
-  ProviderTypeFilter,
-  SearchSortOption,
   SearchWorkersParams,
   TrendingTerm,
   TrendingWindow,
@@ -20,6 +18,15 @@ import {
 import { WorkerNearby } from '../types/worker.types';
 import { useCustomerCoords } from './useCustomerCoords';
 import { roundCoordForQuery } from '../utils/locationUtils';
+import {
+  applyClientSideFilters,
+  buildWorkerSearchParams,
+  countActiveFilters,
+  hasClientSideFilters,
+} from '../utils/searchFilters';
+
+/** Client-side filters (availability) thin pages out: keep loading until a screenful is visible. */
+const MIN_VISIBLE_RESULTS = 10;
 
 /**
  * Reusable debounce hook
@@ -107,6 +114,11 @@ export interface UseSearchOptions {
   initialFilters?: Partial<FilterState>;
   pageSize?: number;
   trendingWindow?: TrendingWindow;
+  /**
+   * Also load results before the customer searches (default listing: nearby professionals,
+   * backend ranking). Off by default so screens that only edit filters make no request.
+   */
+  browseWhenIdle?: boolean;
 }
 
 /**
@@ -130,20 +142,7 @@ export const useSearch = (options: UseSearchOptions = {}) => {
   const lat = activeLocation?.lat;
   const lng = activeLocation?.lng;
 
-  // Compute active filter count
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (filters.categories.length > 0 || filters.categoryId) count++;
-    if (filters.city) count++;
-    if (filters.minRating > 0) count++;
-    if (filters.minRate > 0) count++;
-    if (filters.maxRate > 0) count++;
-    if (filters.sortBy !== 'relevance') count++;
-    if (filters.available !== 'any') count++;
-    if (filters.provider_type && filters.provider_type !== 'ALL' && filters.provider_type !== 'ANY') count++;
-    if (filters.radius && filters.radius !== 10000) count++;
-    return count;
-  }, [filters]);
+  const activeFilterCount = useMemo(() => countActiveFilters(filters, DEFAULT_FILTERS), [filters]);
 
   // Autocomplete suggestions (debounced 250ms, >= 2 chars)
   const {
@@ -157,54 +156,20 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     isLoading: isTrendingLoading,
   } = useTrendingSearches(options.trendingWindow ?? '24h', 8);
 
-  // Build clean SearchWorkersParams
-  const searchParams = useMemo<Omit<SearchWorkersParams, 'page'>>(() => {
-    const params: Omit<SearchWorkersParams, 'page'> = {
-      limit: options.pageSize ?? 20,
-    };
-
-    if (debouncedQuery) {
-      params.q = debouncedQuery;
-    }
-
-    if (filters.categoryId) {
-      params.category_id = filters.categoryId;
-    } else if (filters.categories.length > 0) {
-      params.category = filters.categories[0];
-    }
-
-    if (filters.city) {
-      params.city = filters.city;
-    }
-
-    if (filters.minRate > 0) {
-      params.min_price = filters.minRate;
-    }
-    if (filters.maxRate > 0) {
-      params.max_price = filters.maxRate;
-    }
-
-    if (filters.minRating > 0) {
-      params.min_rating = filters.minRating;
-    }
-
-    if (filters.sortBy) {
-      params.sort = filters.sortBy as SearchSortOption;
-    }
-
-    if (filters.provider_type && filters.provider_type !== 'ALL') {
-      params.provider_type = filters.provider_type as ProviderTypeFilter;
-    }
-
-    // Geo Trio Rule: Provide lat, lng, and radius all together
-    if (typeof lat === 'number' && typeof lng === 'number') {
-      params.lat = roundCoordForQuery(lat);
-      params.lng = roundCoordForQuery(lng);
-      params.radius = filters.radius || 10000;
-    }
-
-    return params;
-  }, [debouncedQuery, filters, lat, lng, options.pageSize]);
+  // Structured params: the text query and the applied filters are combined, never merged into q.
+  const searchParams = useMemo<Omit<SearchWorkersParams, 'page'>>(
+    () =>
+      buildWorkerSearchParams(
+        // A single character is not a search yet (matches hasSearchIntent).
+        debouncedQuery.length >= 2 ? debouncedQuery : '',
+        filters,
+        typeof lat === 'number' && typeof lng === 'number'
+          ? { lat: roundCoordForQuery(lat), lng: roundCoordForQuery(lng) }
+          : null,
+        options.pageSize ?? 20
+      ),
+    [debouncedQuery, filters, lat, lng, options.pageSize]
+  );
 
   const hasSearchIntent = debouncedQuery.length >= 2 || activeFilterCount > 0;
 
@@ -218,10 +183,11 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     fetchNextPage,
     refetch,
     isRefetching,
+    isPlaceholderData,
   } = useInfiniteQuery({
     queryKey: ['search', 'workers', searchParams],
     queryFn: ({ pageParam = 1, signal }) =>
-      searchApi.searchWorkers({ ...searchParams, page: pageParam as number }, signal),
+      searchApi.searchWorkers({ ...searchParams, page: pageParam as number }, signal, { throwOnError: true }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       if (lastPage.hasMore && lastPage.page < 50) {
@@ -229,19 +195,29 @@ export const useSearch = (options: UseSearchOptions = {}) => {
       }
       return undefined;
     },
-    enabled: hasSearchIntent,
+    enabled: hasSearchIntent || Boolean(options.browseWhenIdle),
     placeholderData: keepPreviousData,
     staleTime: 60 * 1000,
   });
 
   // Backend order and backend distance are used as received.
-  const workers = useMemo<WorkerNearby[]>(() => data?.pages.flatMap((page) => page.workers) ?? [], [data]);
+  const allWorkers = useMemo<WorkerNearby[]>(() => data?.pages.flatMap((page) => page.workers) ?? [], [data]);
+  const workers = useMemo(() => applyClientSideFilters(allWorkers, filters), [allWorkers, filters]);
+  const isClientFiltered = hasClientSideFilters(filters);
+
+  // A client-side filter can leave a page (or the whole first screen) empty while the backend still
+  // has more: fetch on until a screenful is visible or the results run out (page cap 50).
+  useEffect(() => {
+    if (!isClientFiltered || !hasNextPage || isFetchingNextPage || isLoading) return;
+    if (workers.length < MIN_VISIBLE_RESULTS) void fetchNextPage();
+  }, [isClientFiltered, hasNextPage, isFetchingNextPage, isLoading, workers.length, fetchNextPage]);
 
   const documents = useMemo<WorkerSearchDocument[]>(() => {
     return data?.pages.flatMap((page) => page.documents) ?? [];
   }, [data]);
 
-  const total = data?.pages[0]?.total ?? 0;
+  // With a client-side filter the backend total counts workers we hide, so it is not exact.
+  const total = isClientFiltered ? workers.length : data?.pages[0]?.total ?? 0;
   const totalPages = data?.pages[0]?.totalPages ?? 0;
 
   const resetFilters = useCallback(() => {
@@ -302,10 +278,14 @@ export const useSearch = (options: UseSearchOptions = {}) => {
     workers,
     documents,
     total,
+    /** true when total only counts the results loaded so far (more pages may match). */
+    isTotalPartial: isClientFiltered && Boolean(hasNextPage),
     totalPages,
-    isLoading: isLoading && hasSearchIntent,
+    isLoading: isLoading && (hasSearchIntent || Boolean(options.browseWhenIdle)),
     isLoadingMore: isFetchingNextPage,
     isRefetching,
+    /** Showing the previous query's results while the new ones load. */
+    isPlaceholderData,
     isError,
     error,
     hasMore: Boolean(hasNextPage),

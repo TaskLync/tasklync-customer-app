@@ -1,8 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import { StyleSheet, View, RefreshControl } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList, ListRenderItemInfo } from '@shopify/flash-list';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { BookingDetails } from '../../types/booking.types';
 import { BookingCard } from './BookingCard';
 import { BookingCardSkeleton } from './BookingCardSkeleton';
@@ -34,7 +33,6 @@ export function BookingList({
 }: BookingListProps) {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
-  const insets = useSafeAreaInsets();
   const isFirstMount = useRef(true);
 
   // After first render of items, it's no longer first mount for stagger
@@ -50,8 +48,7 @@ export function BookingList({
     
     return (
       <Animated.View 
-        entering={FadeIn.delay(delay).duration(200)} 
-        exiting={FadeOut.duration(150)}
+        entering={FadeIn.delay(delay).duration(200)}
       >
         <BookingCard booking={item} />
       </Animated.View>
@@ -96,7 +93,8 @@ export function BookingList({
         estimatedItemSize={210}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: Math.max(insets.bottom, 16) + 96 },
+          // The tab bar sits below this list (not over it): no extra bottom inset needed.
+          { paddingBottom: 32 },
         ]}
         ListEmptyComponent={renderEmptyComponent}
         refreshControl={
@@ -115,11 +113,11 @@ export function BookingList({
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgApp,
+    backgroundColor: colors.canvasSubtle,
   },
   listContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 4,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   errorStateContainer: {
     paddingVertical: 40,

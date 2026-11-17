@@ -67,6 +67,7 @@ export function useCurrentLocation(): UseCurrentLocationReturn {
         granted: false,
         canAskAgain: true,
         servicesEnabled: false,
+        precision: 'unknown',
       };
     }
   }, [setIsServicesEnabled, setPermissionStatus]);

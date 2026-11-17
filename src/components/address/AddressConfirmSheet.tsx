@@ -28,8 +28,14 @@ import {
   Check,
 } from 'lucide-react-native';
 import { AddressLabelChips } from './AddressLabelChips';
-import { AddressNotesInput } from './AddressNotesInput';
+import { AddressDetailsFields } from './AddressDetailsFields';
 import { Address, ReverseGeocodeResult } from '../../types/address.types';
+import {
+  EMPTY_ADDRESS_DETAILS,
+  cleanDetails,
+  composeAddressLine,
+  type AddressDetailsInput,
+} from '../../utils/addressDetails';
 import { findNearbySavedAddress, formatAddressLine } from '../../utils/address';
 import { fontFamily, radius, fontSize, shadows } from '../../design';
 import {
@@ -49,18 +55,34 @@ export interface AddressConfirmSheetProps {
   initialLabel?: string | undefined;
   initialCustomLabel?: string | undefined;
   initialNotes?: string | undefined;
+  /** Structured parts / directions of the address being edited. */
+  initialDetails?: AddressDetailsInput | undefined;
+  /** e.g. "Pin is 240 m from your current location" — shown under the address. */
+  pinHint?: string | null | undefined;
+  /** Called on every details edit (the screen persists it as an unsaved draft). */
+  onDetailsChange?: ((details: AddressDetailsInput, label: string) => void) | undefined;
   isSaving?: boolean | undefined;
-  onSaveAddress: (data: {
-    label: string;
-    custom_label?: string | undefined;
-    notes?: string | undefined;
-    address_line: string;
-    city: string;
-    country?: string | undefined;
-    lat: number;
-    lng: number;
-  }) => void;
+  /**
+   * Resolve true ONLY once the backend confirmed the save. The sheet never shows "Saved!" before
+   * that (a failed save keeps the form exactly as the customer left it).
+   */
+  onSaveAddress: (data: AddressConfirmPayload) => Promise<boolean> | boolean | void;
   onDeleteAddress?: (() => void) | undefined;
+}
+
+export interface AddressConfirmPayload {
+  label: string;
+  custom_label?: string | undefined;
+  /** Directions for the professional (alias kept for older handlers). */
+  notes?: string | undefined;
+  address_line: string;
+  city: string;
+  country?: string | undefined;
+  lat: number;
+  lng: number;
+  details: Partial<Record<keyof AddressDetailsInput, string>>;
+  /** Geocoder text for this pin at confirm time (audit trail). */
+  geocoded_address?: string | undefined;
 }
 
 export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
@@ -73,6 +95,9 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
   initialLabel = 'Home',
   initialCustomLabel = '',
   initialNotes = '',
+  initialDetails,
+  pinHint,
+  onDetailsChange,
   isSaving = false,
   onSaveAddress,
   onDeleteAddress,
@@ -99,9 +124,39 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
   const [isExpanded, setIsExpanded] = useState<boolean>(isEditMode);
   const [selectedLabel, setSelectedLabel] = useState<string>(initialLabel);
   const [customLabel, setCustomLabel] = useState<string>(initialCustomLabel);
-  const [notes, setNotes] = useState<string>(initialNotes);
+  const [details, setDetails] = useState<AddressDetailsInput>(() => ({
+    ...EMPTY_ADDRESS_DETAILS,
+    ...(initialDetails ?? {}),
+    instructions: initialDetails?.instructions || initialNotes || '',
+  }));
+  // Society/area is prefilled from the geocoder for each new pin until the customer edits it.
+  const areaTouchedRef = useRef<boolean>(Boolean(initialDetails?.area));
   const [dismissDuplicateWarning, setDismissDuplicateWarning] = useState<boolean>(false);
   const [isSuccessFeedback, setIsSuccessFeedback] = useState<boolean>(false);
+  const isMountedRef = useRef<boolean>(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const handleDetailsChange = useCallback(
+    (next: AddressDetailsInput) => {
+      setDetails((prev) => {
+        if (next.area !== prev.area) areaTouchedRef.current = true;
+        return next;
+      });
+      onDetailsChange?.(next, selectedLabel);
+    },
+    [onDetailsChange, selectedLabel]
+  );
+
+  const geocodedArea = reverseGeocodeResult?.area || '';
+  useEffect(() => {
+    if (areaTouchedRef.current || !geocodedArea) return;
+    setDetails((prev) => (prev.area === geocodedArea ? prev : { ...prev, area: geocodedArea }));
+  }, [geocodedArea]);
 
   // Cross-fade opacity for reverse-geocoded address preview
   const textFadeOpacity = useSharedValue(1);
@@ -187,8 +242,20 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
   useEffect(() => {
     if (initialLabel) setSelectedLabel(initialLabel);
     if (initialCustomLabel) setCustomLabel(initialCustomLabel);
-    if (initialNotes) setNotes(initialNotes);
-  }, [initialLabel, initialCustomLabel, initialNotes]);
+  }, [initialLabel, initialCustomLabel]);
+
+  // Edit mode: the saved address loads after mount on a cold start — apply it once it arrives.
+  const initialDetailsKey = initialDetails ? JSON.stringify(initialDetails) : initialNotes;
+  useEffect(() => {
+    if (!initialDetails && !initialNotes) return;
+    if (initialDetails?.area) areaTouchedRef.current = true;
+    setDetails({
+      ...EMPTY_ADDRESS_DETAILS,
+      ...(initialDetails ?? {}),
+      instructions: initialDetails?.instructions || initialNotes || '',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialDetailsKey]);
 
   // Smooth cross-fade on address updates
   useEffect(() => {
@@ -260,27 +327,47 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
       (selectedLabel === 'Other' && customLabel.trim().length > 0) ||
       Boolean(selectedLabel && selectedLabel.trim().length > 0));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     Keyboard.dismiss();
     // Never save while the address for the current pin is still resolving (it would describe the previous spot)
     if (!isFormValid || !reverseGeocodeResult || !isServiceable || isSaving || isGeocoding) return;
 
-    setIsSuccessFeedback(true);
-
     const finalLabel =
       selectedLabel === 'Other' ? customLabel.trim() || 'Other' : selectedLabel;
 
-    onSaveAddress({
+    const cleaned = cleanDetails(details);
+    // Geocoder text is only a description of the pin; "Location (lat, lng)" is not an address line.
+    const geocodedLine = reverseGeocodeResult.source === 'coordinates' ? '' : reverseGeocodeResult.address_line;
+    const composed = composeAddressLine(cleaned, geocodedLine);
+
+    const confirmed = await onSaveAddress({
       label: finalLabel,
       custom_label: selectedLabel === 'Other' ? customLabel.trim() : undefined,
-      notes: notes.trim() || undefined,
-      address_line: reverseGeocodeResult.address_line || currentAddressText,
+      notes: cleaned.instructions,
+      address_line: composed || reverseGeocodeResult.address_line || currentAddressText,
       city: reverseGeocodeResult.city || '',
       country: reverseGeocodeResult.country || undefined,
       lat: reverseGeocodeResult.lat,
       lng: reverseGeocodeResult.lng,
+      details: cleaned,
+      geocoded_address: geocodedLine || undefined,
     });
+    // Only a backend-confirmed save gets the success state (never claim a save that failed).
+    if (confirmed === true && isMountedRef.current) setIsSuccessFeedback(true);
   };
+
+  const needsMoreDetail =
+    !!reverseGeocodeResult &&
+    (reverseGeocodeResult.source === 'coordinates' ||
+      reverseGeocodeResult.tier === 'locality' ||
+      reverseGeocodeResult.tier === 'city' ||
+      reverseGeocodeResult.approximate === true);
+  const attribution =
+    reverseGeocodeResult?.source === 'osm'
+      ? 'Address data © OpenStreetMap contributors'
+      : reverseGeocodeResult?.source === 'google' || reverseGeocodeResult?.source === 'search'
+      ? 'Address data: Google'
+      : null;
 
   const handleDelete = () => {
     if (!onDeleteAddress) return;
@@ -354,6 +441,11 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
                 >
                   {currentAddressText}
                 </Animated.Text>
+                {Boolean(pinHint) && (
+                  <Text style={styles.pinHintText} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+                    {pinHint}
+                  </Text>
+                )}
               </View>
               <View style={styles.expandChevronWrap}>
                 {isExpanded ? (
@@ -392,6 +484,22 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
               </View>
             )}
 
+            {/* Approximate / area-only result: the pin and details must carry the precision */}
+            {needsMoreDetail && (
+              <View style={styles.duplicateWarning}>
+                <AlertTriangle size={16} color={palette.warningDark} strokeWidth={2.2} />
+                <Text style={styles.duplicateWarningText} maxFontSizeMultiplier={1.3}>
+                  {reverseGeocodeResult?.approximate
+                    ? 'This is an approximate area. Move the map so the pin sits on your door, then add your house and street.'
+                    : 'We could only find the area for this pin. Add your house, street and a landmark so the professional can find you.'}
+                </Text>
+              </View>
+            )}
+
+            <Text style={styles.pinGuidanceText} maxFontSizeMultiplier={1.3}>
+              Place the pin on the gate or door the professional should come to.
+            </Text>
+
             {/* Label Chips (Home / Office / Other) */}
             <AddressLabelChips
               selectedLabel={selectedLabel}
@@ -402,13 +510,19 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
               onBlurCustomLabel={handleInputBlur}
             />
 
-            {/* Optional Delivery & Entry Notes */}
-            <AddressNotesInput
-              value={notes}
-              onChangeText={setNotes}
+            {/* House / street / block / society / landmark / directions */}
+            <AddressDetailsFields
+              value={details}
+              onChange={handleDetailsChange}
               onFocus={handleInputFocus}
               onBlur={handleInputBlur}
             />
+
+            {Boolean(attribution) && (
+              <Text style={styles.attributionText} maxFontSizeMultiplier={1.2}>
+                {attribution}
+              </Text>
+            )}
 
             {/* In Edit Mode: Destructive Delete Link */}
             {isEditMode && onDeleteAddress && (
@@ -528,7 +642,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -553,6 +667,28 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   expandChevronWrap: {
     padding: 6,
+  },
+  pinHintText: {
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 12,
+    lineHeight: 16,
+    color: palette.warningDark,
+    marginTop: 2,
+  },
+  pinGuidanceText: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.textMuted,
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  attributionText: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 10,
+    lineHeight: 14,
+    color: colors.textMuted,
+    marginTop: 4,
   },
   expandedScrollContent: {
     paddingTop: 4,
@@ -626,7 +762,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   saveButton: {
     height: 52,
     borderRadius: radius.pill,
-    backgroundColor: palette.green600,
+    backgroundColor: colors.buttonPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: palette.black,
@@ -636,7 +772,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     elevation: 4,
   },
   saveButtonPressed: {
-    backgroundColor: palette.green700,
+    backgroundColor: colors.buttonPrimaryPressed,
     transform: [{ scale: 0.98 }],
   },
   saveButtonDisabled: {

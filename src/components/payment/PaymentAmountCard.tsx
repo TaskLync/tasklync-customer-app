@@ -26,7 +26,7 @@ export const PaymentAmountCard: React.FC<PaymentAmountCardProps> = ({ total }) =
 
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     borderRadius: 16,
     paddingVertical: 28,
     paddingHorizontal: 20,

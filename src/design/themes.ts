@@ -24,6 +24,8 @@ import { buildCompanyTokens } from '../theme/companyTokens';
 export const darkPalette: Palette = {
   // Fixed
   pureWhite: '#FFFFFF',
+  green700Fixed: '#15803D',
+  green800Fixed: '#166534',
 
   // Surfaces
   elevated: '#1A1D22',

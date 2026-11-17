@@ -139,7 +139,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   radioCircleSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.buttonPrimary,
   },
   innerDot: {
     width: 10,

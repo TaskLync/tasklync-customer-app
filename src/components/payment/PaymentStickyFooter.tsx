@@ -101,7 +101,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     marginTop: 2,
   },
   ctaButton: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     height: 50,
     minWidth: 165,
     paddingHorizontal: 24,

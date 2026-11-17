@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Pressable, Keyboard } from 'react-native';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, Pressable, Keyboard } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Info } from 'lucide-react-native';
 
 import { AddressPickerMap, AddressPickerMapRef } from '../../../src/components/address/AddressPickerMap';
 import { MapErrorBoundary } from '../../../src/components/address/MapErrorBoundary';
@@ -12,19 +12,30 @@ export { RouteErrorBoundary as ErrorBoundary };
 import { AddressSearchInput } from '../../../src/components/address/AddressSearchInput';
 import { AddressSearchResultsList } from '../../../src/components/address/AddressSearchResultsList';
 import { UseMyLocationButton } from '../../../src/components/address/UseMyLocationButton';
-import { AddressConfirmSheet } from '../../../src/components/address/AddressConfirmSheet';
+import { AddressConfirmSheet, type AddressConfirmPayload } from '../../../src/components/address/AddressConfirmSheet';
 
 import { useAddresses } from '../../../src/hooks/useAddresses';
 import { useReverseGeocode } from '../../../src/hooks/useReverseGeocode';
 import { usePlacesAutocomplete } from '../../../src/hooks/usePlacesAutocomplete';
 import { useCurrentLocation } from '../../../src/hooks/useCurrentLocation';
-import { useLocationStore } from '../../../src/store/location.store';
+import { useLocationStore, ADDRESS_DRAFT_MAX_AGE_MS } from '../../../src/store/location.store';
 import { useBookingDraftStore } from '../../../src/store/bookingDraft.store';
 import { locationService } from '../../../src/services/location/location.service';
 import { createRequestGate } from '../../../src/utils/requestGate';
+import { pinShiftMeters, distanceM } from '../../../src/utils/locationConfidence';
+import {
+  deriveLocationSource,
+  detailsFromAddress,
+  type AddressDetailsInput,
+  type PinOrigin,
+} from '../../../src/utils/addressDetails';
+import { toBookingAddress } from '../../../src/utils/activeAddress';
+import { formatDistance } from '../../../src/utils/locationUtils';
+import { trackLocationEvent } from '../../../src/services/location/locationTelemetry';
 
 import { Address, PlacePrediction, MapRegion } from '../../../src/types/address.types';
-import { radius, shadows } from '../../../src/design';
+import type { VerifiedLocation } from '../../../src/types/location.types';
+import { radius, shadows, fontFamily } from '../../../src/design';
 import {
   validateServiceArea,
   SERVICE_UNAVAILABLE_MESSAGE,
@@ -35,20 +46,30 @@ import { ThemedStatusBar } from '../../../src/theme/ThemedStatusBar';
 import { showAlert } from '../../../src/components/feedback/AppAlert';
 
 const DEFAULT_REGION: MapRegion = FAISALABAD_DEFAULT_REGION;
+/** Above this, the pin is far enough from the live GPS fix to tell the customer. */
+const PIN_SHIFT_HINT_M = 50;
+
+interface PinOriginState {
+  origin: PinOrigin;
+  /** Where GPS / search / the saved address put the pin (null for a manual pan). */
+  point: { lat: number; lng: number } | null;
+  /** GPS radius when the origin is a GPS fix. */
+  accuracy: number | null;
+  placeId: string | null;
+}
 
 /**
  * Screen 2 — Add / Edit Address Map Picker (`addresses/add.tsx`)
  *
- * Implements Principal RN / UX Architecture:
- * - Jakob's Law: Fixed center pin with moving map underneath (Uber / Careem mental model)
- * - Hick's Law: 3 quick label choices with single-select radio behavior
- * - Fitts's Law: 48px GPS button & 52px sticky action button in thumb zone
- * - Peak-End Rule: Instant tactile feedback on save with seamless cache sync
- * - Session token billing management for Google Places Autocomplete
- * - Non-blocking duplicate address detection within 15m radius
+ * - Fixed centre pin with the map moving underneath; the map never waits for GPS.
+ * - GPS only MOVES the map: a precise fix pre-places the pin, a low-confidence fix just centres the
+ *   map with an "approximate" banner. The customer always confirms the pin (audit doc 05 §4).
+ * - Structured Pakistan-style details + directions are saved with the address and reach the worker.
+ * - Unsaved pin + details survive an app kill (restored for 30 minutes).
+ * - Session token billing management for Places Autocomplete; latest-request-wins everywhere.
  */
 export default function AddEditAddressScreen() {
-  const { colors } = useAppTheme();
+  const { colors, palette } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -67,21 +88,35 @@ export default function AddEditAddressScreen() {
   const {
     fetchLocation,
     acquireLocation,
+    verifiedLocation,
     isFetching: isFetchingGPS,
     error: gpsError,
   } = useCurrentLocation();
   // LIVE GPS only: the persisted "current_location" is hydrated from a previous session and can be
   // days old - it must never seed the pin as if it were where the customer is now.
   const liveLocation = useLocationStore((s) => s.liveLocation);
+  const permissionStatus = useLocationStore((s) => s.permissionStatus);
   const selectedAddress = useLocationStore((s) => s.selectedAddress);
   const setSelectedAddress = useLocationStore((s) => s.setSelectedAddress);
   const setCurrentCity = useLocationStore((s) => s.setCurrentCity);
   const setLastPickedCoords = useLocationStore((s) => s.setLastPickedCoords);
+  const setAddressDraft = useLocationStore((s) => s.setAddressDraft);
   const setBookingAddress = useBookingDraftStore((s) => s.setAddress);
+
+  // Unsaved draft from a previous (killed) session — read once.
+  const [restoredDraft] = useState(() => {
+    if (isEditMode) return null;
+    const d = useLocationStore.getState().addressDraft;
+    return d && Date.now() - d.at < ADDRESS_DRAFT_MAX_AGE_MS ? d : null;
+  });
 
   // Map & Location state
   const mapRef = useRef<AddressPickerMapRef | null>(null);
   const [currentRegion, setCurrentRegion] = useState<MapRegion>(DEFAULT_REGION);
+  /** Banner over the map (approximate centre / restored draft). Cleared when the user moves the map. */
+  const [mapBanner, setMapBanner] = useState<string | null>(
+    restoredDraft ? 'Restored your unsaved pin and details.' : null
+  );
 
   // Reverse Geocoding hook (500ms debounced)
   const {
@@ -112,9 +147,18 @@ export default function AddEditAddressScreen() {
     : undefined;
 
   // Track if user has manually interacted with the map or search before auto-GPS arrives
-  const userInteractedRef = useRef<boolean>(false);
+  const userInteractedRef = useRef<boolean>(Boolean(restoredDraft));
   const selectGateRef = useRef(createRequestGate());
   const isSubmittingRef = useRef(false);
+  const pinOriginRef = useRef<PinOriginState>({ origin: 'map', point: null, accuracy: null, placeId: null });
+  const draftDetailsRef = useRef<{ details?: AddressDetailsInput; label?: string }>({
+    ...(restoredDraft?.details ? { details: restoredDraft.details } : {}),
+    ...(restoredDraft?.label ? { label: restoredDraft.label } : {}),
+  });
+
+  const setPinOrigin = useCallback((next: PinOriginState) => {
+    pinOriginRef.current = next;
+  }, []);
 
   // Programmatic camera moves (initial centering, GPS, search pick) also fire region events;
   // they must not count as the user having picked a spot.
@@ -123,9 +167,25 @@ export default function AddEditAddressScreen() {
     programmaticUntilRef.current = Date.now() + duration + 1500;
     mapRef.current?.animateToRegion(region, duration);
   }, []);
+  const isUserGesture = useCallback(() => Date.now() > programmaticUntilRef.current, []);
   const markUserInteraction = useCallback(() => {
-    if (Date.now() > programmaticUntilRef.current) userInteractedRef.current = true;
-  }, []);
+    if (isUserGesture()) userInteractedRef.current = true;
+  }, [isUserGesture]);
+
+  /** A low-confidence fix: show the right part of the city, never pre-place the pin as "you". */
+  const centreOnApproximate = useCallback(
+    (loc: VerifiedLocation) => {
+      const coords = { lat: loc.lat, lng: loc.lng };
+      if (!validateServiceArea(coords).isServiceable) return;
+      const delta = loc.accuracy > 500 ? 0.03 : 0.012;
+      const region: MapRegion = { latitude: coords.lat, longitude: coords.lng, latitudeDelta: delta, longitudeDelta: delta };
+      setCurrentRegion(region);
+      animateTo(region, 450);
+      setPinOrigin({ origin: 'map', point: null, accuracy: null, placeId: null });
+      setMapBanner(`Approximate location (±${formatDistance(loc.accuracy) || `${Math.round(loc.accuracy)} m`}). Move the map so the pin sits on your door.`);
+    },
+    [animateTo, setPinOrigin]
+  );
 
   // Initial region setup (run once, as soon as the data it needs is available)
   const hasInitializedRef = useRef(false);
@@ -147,11 +207,13 @@ export default function AddEditAddressScreen() {
       setCurrentRegion(editRegion);
       animateTo(editRegion, 300);
       setLastPickedCoords({ lat: existingAddress.lat, lng: existingAddress.lng });
+      setPinOrigin({ origin: 'saved', point: { lat: existingAddress.lat, lng: existingAddress.lng }, accuracy: null, placeId: existingAddress.place_id ?? null });
       setGeocodeResult({
-        formatted_address: existingAddress.address_line,
-        address_line: existingAddress.address_line,
+        formatted_address: existingAddress.geocoded_address || existingAddress.address_line,
+        address_line: existingAddress.geocoded_address || existingAddress.address_line,
         city: existingAddress.city || '',
         country: existingAddress.country || '',
+        area: existingAddress.area,
         lat: existingAddress.lat,
         lng: existingAddress.lng,
       });
@@ -159,9 +221,19 @@ export default function AddEditAddressScreen() {
     }
 
     hasInitializedRef.current = true;
-    // Adding: centre on a GPS fix from THIS session if we have one. Otherwise show the service-area
-    // overview WITHOUT resolving an address for it - the default centre is not the customer's
-    // location, and a fresh GPS fix is requested below.
+
+    // 1. A pin the customer placed before the app was killed wins over everything.
+    if (restoredDraft && validateServiceArea(restoredDraft).isServiceable) {
+      const r: MapRegion = { latitude: restoredDraft.lat, longitude: restoredDraft.lng, latitudeDelta: 0.005, longitudeDelta: 0.005 };
+      setCurrentRegion(r);
+      animateTo(r, 300);
+      setLastPickedCoords({ lat: restoredDraft.lat, lng: restoredDraft.lng });
+      triggerGeocode(restoredDraft.lat, restoredDraft.lng);
+      return;
+    }
+
+    // 2. A GPS fix from THIS session. Otherwise the service-area overview WITHOUT resolving an
+    // address for it (the default centre is not the customer's location); a fresh fix follows.
     if (liveLocation && validateServiceArea(liveLocation).isServiceable) {
       const initialRegion: MapRegion = {
         latitude: liveLocation.lat,
@@ -172,20 +244,37 @@ export default function AddEditAddressScreen() {
       setCurrentRegion(initialRegion);
       animateTo(initialRegion, 300);
       setLastPickedCoords({ lat: liveLocation.lat, lng: liveLocation.lng });
+      setPinOrigin({ origin: 'gps', point: liveLocation, accuracy: null, placeId: null });
       triggerGeocode(liveLocation.lat, liveLocation.lng);
     }
-  }, [existingAddress, isEditMode, liveLocation, animateTo, setGeocodeResult, setLastPickedCoords, triggerGeocode]);
+  }, [existingAddress, isEditMode, liveLocation, restoredDraft, animateTo, setGeocodeResult, setLastPickedCoords, setPinOrigin, triggerGeocode]);
 
   // Adding: silently refresh to a verified GPS fix (never prompts; skipped if permission/GPS is off
-  // or the user has already started picking a spot).
+  // or the user has already started picking a spot). A low-confidence fix only centres the map.
   useEffect(() => {
     if (isEditMode) return;
     let cancelled = false;
     (async () => {
       const state = await locationService.checkLocationState();
       if (cancelled || !state.granted || !state.servicesEnabled) return;
+      if (!liveLocation && !userInteractedRef.current) {
+        // Instant, battery-free centring while the fresh fix converges.
+        const hint = await locationService.getMapCentreHint();
+        if (!cancelled && hint && !userInteractedRef.current && !useLocationStore.getState().liveLocation) {
+          centreOnApproximate(hint);
+        }
+      }
       const res = await locationService.acquireFreshGPSPosition({ mayShowUserSettingsDialog: false });
-      if (cancelled || !res.success) return;
+      if (cancelled) return;
+      trackLocationEvent('location_acquire', {
+        outcome: res.success ? 'ok' : res.error.code,
+        accuracy_m: res.success ? res.location.accuracy : res.error.accuracy ?? null,
+        precision: res.success ? res.precision ?? 'unknown' : state.precision,
+      });
+      if (!res.success) {
+        if (res.error.approximateLocation && !userInteractedRef.current) centreOnApproximate(res.error.approximateLocation);
+        return;
+      }
       const coords = { lat: res.location.lat, lng: res.location.lng };
       useLocationStore.getState().setLiveLocation(coords);
       if (userInteractedRef.current) return;
@@ -199,6 +288,8 @@ export default function AddEditAddressScreen() {
       setCurrentRegion(region);
       animateTo(region, 400);
       setLastPickedCoords(coords);
+      setPinOrigin({ origin: 'gps', point: coords, accuracy: res.location.accuracy, placeId: null });
+      setMapBanner(null);
       fetchImmediately(coords.lat, coords.lng);
     })();
     return () => {
@@ -207,12 +298,30 @@ export default function AddEditAddressScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode]);
 
-  // Clean up transient picked coordinates on unmount
+  // Clean up transient picked coordinates on unmount (the persisted draft is handled separately)
   useEffect(() => {
     return () => {
       setLastPickedCoords(null);
     };
   }, [setLastPickedCoords]);
+
+  /** Persist the unsaved pin + details so an app kill never loses them. */
+  const persistDraft = useCallback(
+    (lat: number, lng: number) => {
+      if (isEditMode) return;
+      setAddressDraft({ lat, lng, at: Date.now(), ...draftDetailsRef.current });
+    },
+    [isEditMode, setAddressDraft]
+  );
+
+  const handleDetailsChange = useCallback(
+    (details: AddressDetailsInput, label: string) => {
+      draftDetailsRef.current = { details, label };
+      const p = useLocationStore.getState().lastPickedCoords;
+      if (p) persistDraft(p.lat, p.lng);
+    },
+    [persistDraft]
+  );
 
   const handleRegionChange = useCallback(() => {
     markUserInteraction();
@@ -231,16 +340,20 @@ export default function AddEditAddressScreen() {
       ) {
         return;
       }
+      if (isUserGesture()) setMapBanner(null);
       markUserInteraction();
       setCurrentRegion(region);
       setLastPickedCoords({ lat: region.latitude, lng: region.longitude });
+      if (userInteractedRef.current) persistDraft(region.latitude, region.longitude);
       triggerGeocode(region.latitude, region.longitude);
     },
-    [markUserInteraction, setLastPickedCoords, triggerGeocode]
+    [isUserGesture, markUserInteraction, persistDraft, setLastPickedCoords, triggerGeocode]
   );
 
   const handleBack = () => {
     Keyboard.dismiss();
+    // Explicit exit: the customer chose to leave, so do not resurrect this pin next time.
+    if (!isEditMode) setAddressDraft(null);
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -275,19 +388,31 @@ export default function AddEditAddressScreen() {
     const targetRegion: MapRegion = {
       latitude: details.lat,
       longitude: details.lng,
-      latitudeDelta: 0.005,
-      longitudeDelta: 0.005,
+      latitudeDelta: details.approximate ? 0.01 : 0.005,
+      longitudeDelta: details.approximate ? 0.01 : 0.005,
     };
     setCurrentRegion(targetRegion);
     animateTo(targetRegion, 400);
     setLastPickedCoords({ lat: details.lat, lng: details.lng });
+    persistDraft(details.lat, details.lng);
+    setPinOrigin({
+      origin: details.approximate ? 'map' : 'search',
+      point: { lat: details.lat, lng: details.lng },
+      accuracy: null,
+      placeId: details.source === 'google' ? details.place_id : null,
+    });
+    setMapBanner(details.approximate ? 'Approximate match for your search. Move the map so the pin sits on your door.' : null);
     setGeocodeResult({
       formatted_address: details.formatted_address,
       address_line: details.formatted_address,
       city: details.city || '',
       country: details.country || '',
+      area: details.area,
       lat: details.lat,
       lng: details.lng,
+      source: details.source === 'google' ? 'search' : 'native',
+      approximate: details.approximate,
+      ...(details.source === 'google' ? { place_id: details.place_id } : {}),
     });
     resetSearch();
   };
@@ -310,112 +435,118 @@ export default function AddEditAddressScreen() {
     setCurrentRegion(gpsRegion);
     animateTo(gpsRegion, 500);
     setLastPickedCoords(coords);
+    persistDraft(coords.lat, coords.lng);
+    setPinOrigin({ origin: 'gps', point: coords, accuracy: accuracyOfFix(coords), placeId: null });
+    setMapBanner(null);
     fetchImmediately(coords.lat, coords.lng);
   };
 
-  // Save / Update Address Handler
-  const handleSaveAddress = async (payload: {
-    label: string;
-    custom_label?: string | undefined;
-    notes?: string | undefined;
-    address_line: string;
-    city: string;
-    country?: string | undefined;
-    lat: number;
-    lng: number;
-  }) => {
+  /** Accuracy of the verified fix behind `coords` (only when it is that exact fix). */
+  function accuracyOfFix(coords: { lat: number; lng: number }): number | null {
+    if (!verifiedLocation) return null;
+    return distanceM(verifiedLocation, coords) < 1 ? verifiedLocation.accuracy : null;
+  }
+
+  const handleApproximateFromButton = (loc: VerifiedLocation) => {
+    userInteractedRef.current = true;
+    centreOnApproximate(loc);
+  };
+
+  // "Pin is 240 m from your current location"
+  const pinHint = useMemo(() => {
+    if (!geocodeResult) return null;
+    const shift = pinShiftMeters(geocodeResult, liveLocation);
+    if (shift === null || shift < PIN_SHIFT_HINT_M) return null;
+    return `Pin is ${formatDistance(shift)} from your current location`;
+  }, [geocodeResult, liveLocation]);
+
+  // Save / Update Address Handler — resolves true ONLY when the backend confirmed the save.
+  const handleSaveAddress = async (payload: AddressConfirmPayload): Promise<boolean> => {
     const validation = validateServiceArea({ lat: payload.lat, lng: payload.lng });
     if (!validation.isServiceable) {
       showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
-      return;
+      return false;
     }
 
     // Double-tap guard: isSaving only flips after the next render, so two quick taps could
     // otherwise POST the same address twice.
-    if (isSubmittingRef.current) return;
+    if (isSubmittingRef.current) return false;
     isSubmittingRef.current = true;
+
+    // Provenance of the confirmed point (stored for quality analysis; never shown as precision).
+    const origin = pinOriginRef.current;
+    const movedFromOrigin = origin.point ? distanceM(origin.point, payload) : null;
+    const locationSource = deriveLocationSource(origin.origin, movedFromOrigin);
+    const shiftFromGps = pinShiftMeters(payload, liveLocation);
+    const meta = {
+      location_source: locationSource,
+      ...(origin.origin === 'gps' && origin.accuracy !== null && locationSource === 'gps_confirmed'
+        ? { gps_accuracy_m: origin.accuracy }
+        : {}),
+      ...(shiftFromGps !== null ? { pin_shift_m: shiftFromGps } : {}),
+      ...(origin.placeId && locationSource === 'search' ? { place_id: origin.placeId } : {}),
+      ...(payload.geocoded_address ? { geocoded_address: payload.geocoded_address } : {}),
+    };
+    const fields = {
+      label: payload.label,
+      custom_label: payload.custom_label,
+      address_line: payload.address_line,
+      city: payload.city,
+      country: payload.country,
+      lat: payload.lat,
+      lng: payload.lng,
+      ...payload.details,
+      ...meta,
+    };
 
     try {
       let savedAddressObj: Address;
 
       if (isEditMode && editingAddressId) {
-        await updateAddress({
+        const updated = await updateAddress({ id: editingAddressId, payload: fields });
+        savedAddressObj = updated ?? {
+          ...(existingAddress as Address),
+          ...fields,
           id: editingAddressId,
-          payload: {
-            label: payload.label,
-            custom_label: payload.custom_label,
-            address_line: payload.address_line,
-            city: payload.city,
-            country: payload.country,
-            lat: payload.lat,
-            lng: payload.lng,
-            notes: payload.notes,
-          },
-        });
-
-        savedAddressObj = {
-          id: editingAddressId,
-          ...payload,
           is_default: existingAddress?.is_default ?? false,
         };
 
         // If the edited address is the currently selected address, update it immediately in store
         if (selectedAddress?.id === editingAddressId) {
           setSelectedAddress(savedAddressObj);
-          setCurrentCity(payload.city);
+          setCurrentCity(savedAddressObj.city || payload.city);
         }
 
         // The booking draft holds its own COPY of the address: refresh it, otherwise a booking
         // would still be submitted with the pre-edit coordinates/text.
         if (useBookingDraftStore.getState().addressId === editingAddressId) {
-          setBookingAddress({
-            id: editingAddressId,
-            label: payload.label,
-            street: payload.address_line,
-            city: payload.city,
-            latitude: payload.lat,
-            longitude: payload.lng,
-            isDefault: savedAddressObj.is_default,
-          });
+          setBookingAddress(toBookingAddress(savedAddressObj));
         }
       } else {
-        const created = await addAddress({
-          label: payload.label,
-          custom_label: payload.custom_label,
-          address_line: payload.address_line,
-          city: payload.city,
-          country: payload.country,
-          lat: payload.lat,
-          lng: payload.lng,
-          notes: payload.notes,
-          is_default: addresses.length === 0,
-        });
-
-        savedAddressObj = {
-          id: (created as any)?.id || `addr-${Date.now()}`,
-          ...payload,
-          is_default: addresses.length === 0,
-        };
+        // The server decides the default (first address); the id is the server's — never a
+        // locally invented one that a booking would later fail on (audit LOC-007).
+        savedAddressObj = await addAddress({ ...fields, is_default: addresses.length === 0 });
 
         // Sync with booking draft store if returning to booking funnel
         if (params.returnToBooking === 'true') {
-          setBookingAddress({
-            id: savedAddressObj.id,
-            label: payload.label,
-            street: payload.address_line,
-            city: payload.city,
-            latitude: payload.lat,
-            longitude: payload.lng,
-            isDefault: addresses.length === 0,
-          });
+          setBookingAddress(toBookingAddress(savedAddressObj));
         }
 
         // Set the newly created address as the active address immediately across the app
         setSelectedAddress(savedAddressObj);
-        setCurrentCity(payload.city);
+        setCurrentCity(savedAddressObj.city || payload.city);
       }
 
+      trackLocationEvent('address_saved', {
+        source: locationSource,
+        accuracy_m: origin.accuracy,
+        pin_shift_m: shiftFromGps,
+        has_details: Object.keys(payload.details).length > 0,
+        edit: isEditMode,
+      });
+
       setLastPickedCoords(null);
+      setAddressDraft(null);
 
       // Smooth exit back to address list or booking
       setTimeout(() => {
@@ -424,12 +555,20 @@ export default function AddEditAddressScreen() {
         } else {
           router.replace(params.returnToBooking === 'true' ? '/(tabs)' : '/profile/addresses');
         }
-      }, 180);
-    } catch (_err) {
+      }, 450);
+      return true;
+    } catch (err: any) {
+      trackLocationEvent('address_save_failed', {
+        reason: err?.isNetworkError ? 'network' : err?.isTimeout ? 'timeout' : String(err?.status ?? 'unknown'),
+      });
+      // The pin and every typed field stay exactly as they are (and in the persisted draft).
       showAlert(
-        'Save Failed',
-        "Couldn't save address. Please check your connection and try again."
+        'Address not saved',
+        err?.isNetworkError || err?.isTimeout
+          ? "You're offline or the connection is slow. Your pin and details are kept — tap Save again when you're connected."
+          : err?.message || "Couldn't save the address. Your pin and details are kept — please try again."
       );
+      return false;
     } finally {
       isSubmittingRef.current = false;
     }
@@ -438,14 +577,8 @@ export default function AddEditAddressScreen() {
   const handleDeleteAddress = async () => {
     if (!editingAddressId) return;
     try {
+      // useAddresses clears the active selection / booking draft for a deleted address.
       await deleteAddress(editingAddressId);
-      if (selectedAddress?.id === editingAddressId) {
-        setSelectedAddress(null);
-      }
-      // Do not leave a deleted address as the booking destination
-      if (useBookingDraftStore.getState().addressId === editingAddressId) {
-        setBookingAddress(null);
-      }
       setLastPickedCoords(null);
       if (router.canGoBack()) {
         router.back();
@@ -458,6 +591,11 @@ export default function AddEditAddressScreen() {
   };
 
   const isSaving = isAdding || isUpdating;
+  const initialDetails = isEditMode
+    ? existingAddress
+      ? detailsFromAddress(existingAddress)
+      : undefined
+    : restoredDraft?.details;
 
   return (
     <View style={styles.container}>
@@ -470,6 +608,7 @@ export default function AddEditAddressScreen() {
           initialRegion={currentRegion}
           onRegionChange={handleRegionChange}
           onRegionChangeComplete={handleRegionChangeComplete}
+          showsUserLocation={permissionStatus === 'granted'}
         />
       </MapErrorBoundary>
 
@@ -515,6 +654,16 @@ export default function AddEditAddressScreen() {
             />
           </View>
         )}
+
+        {/* Approximate centre / restored draft notice (map stays fully interactive) */}
+        {Boolean(mapBanner) && predictions.length === 0 && query.trim().length < 2 && (
+          <View style={styles.mapBanner} pointerEvents="none" accessibilityLiveRegion="polite">
+            <Info size={14} color={palette.warningDark} strokeWidth={2.4} />
+            <Text style={styles.mapBannerText} maxFontSizeMultiplier={1.3}>
+              {mapBanner}
+            </Text>
+          </View>
+        )}
       </SafeAreaView>
 
       {/* Floating GPS Recenter Button (Above collapsed bottom sheet) */}
@@ -526,6 +675,7 @@ export default function AddEditAddressScreen() {
       >
         <UseMyLocationButton
           onLocationFound={handleGPSLocationFound}
+          onApproximateLocation={handleApproximateFromButton}
           acquireLocation={acquireLocation}
           fetchLocation={fetchLocation}
           isFetching={isFetchingGPS}
@@ -541,9 +691,12 @@ export default function AddEditAddressScreen() {
         savedAddresses={addresses}
         currentAddressId={editingAddressId}
         isEditMode={isEditMode}
-        initialLabel={existingAddress?.label || 'Home'}
+        initialLabel={existingAddress?.label || restoredDraft?.label || 'Home'}
         initialCustomLabel={existingAddress?.custom_label || ''}
-        initialNotes={existingAddress?.notes || ''}
+        initialNotes={existingAddress?.instructions || existingAddress?.notes || ''}
+        initialDetails={initialDetails}
+        pinHint={pinHint}
+        onDetailsChange={handleDetailsChange}
         isSaving={isSaving}
         onSaveAddress={handleSaveAddress}
         onDeleteAddress={isEditMode ? handleDeleteAddress : undefined}
@@ -592,6 +745,26 @@ const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
   searchResultsContainer: {
     marginTop: 4,
     paddingHorizontal: 2,
+  },
+  mapBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.md,
+    backgroundColor: palette.warningLight,
+    borderWidth: 1,
+    borderColor: palette.warning,
+    ...shadows.md,
+  },
+  mapBannerText: {
+    flex: 1,
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 12,
+    lineHeight: 16,
+    color: palette.warningDark,
   },
   floatingGPSContainer: {
     position: 'absolute',

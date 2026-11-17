@@ -106,9 +106,9 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     elevation: 1,
   },
   chipSelected: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
     borderWidth: 1,
-    borderColor: colors.primaryDark,
+    borderColor: colors.buttonPrimary,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,

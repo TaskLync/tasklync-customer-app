@@ -146,8 +146,8 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     backgroundColor: colors.bgCard,
   },
   boxOn: {
-    backgroundColor: colors.primaryDark,
-    borderColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
+    borderColor: colors.buttonPrimary,
   },
   rowText: { flex: 1, minWidth: 0 },
   name: {
@@ -184,7 +184,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
   },
   ctaDisabled: {
     backgroundColor: colors.textDisabled,

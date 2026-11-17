@@ -202,7 +202,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   optionCardSelected: {
     backgroundColor: palette.green50,
-    borderColor: colors.primary,
+    borderColor: colors.buttonPrimary,
   },
   optionCardPressed: {
     opacity: 0.85,
@@ -252,8 +252,8 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     backgroundColor: colors.bgCard,
   },
   radioCircleSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
+    borderColor: colors.buttonPrimary,
   },
   sortToggleRow: {
     flexDirection: 'row',
@@ -282,8 +282,8 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     backgroundColor: colors.bgCard,
   },
   checkboxCircleSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
+    borderColor: colors.buttonPrimary,
   },
   footer: {
     marginTop: 20,

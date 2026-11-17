@@ -8,7 +8,7 @@ import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 export default function FiltersScreen() {
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
-  const { filters, setFilters, resetFilters, total } = useSearch();
+  const { filters, setFilters } = useSearch();
 
   const handleApply = (newFilters: any) => {
     setFilters(newFilters);
@@ -19,23 +19,9 @@ export default function FiltersScreen() {
     }
   };
 
-  const handleReset = () => {
-    resetFilters();
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)/explore' as any);
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <FilterSheetContent
-        filters={filters}
-        onApply={handleApply}
-        onReset={handleReset}
-        resultCount={total}
-      />
+      <FilterSheetContent filters={filters} onApply={handleApply} />
     </SafeAreaView>
   );
 }

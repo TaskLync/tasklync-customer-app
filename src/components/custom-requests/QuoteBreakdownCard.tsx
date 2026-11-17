@@ -156,7 +156,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   codBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     padding: 10,
     borderRadius: 8,
     borderWidth: 1,

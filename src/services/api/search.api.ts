@@ -188,7 +188,9 @@ export const searchApi = {
    */
   searchWorkers: async (
     params: SearchWorkersParams,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    /** true: rethrow request failures so the caller can show an error state (default: empty result). */
+    options?: { throwOnError?: boolean }
   ): Promise<SearchResult> => {
     const queryParams = sanitizeSearchParams(params);
     const requestedPage = Number(queryParams.page) || 1;
@@ -230,7 +232,7 @@ export const searchApi = {
         meta,
       };
     } catch (error) {
-      if (isAbortError(error)) {
+      if (isAbortError(error) || options?.throwOnError) {
         throw error;
       }
       console.warn('[searchApi.searchWorkers] API error:', error);

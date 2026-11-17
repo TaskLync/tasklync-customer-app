@@ -140,7 +140,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.pill,
-    backgroundColor: palette.green600,
+    backgroundColor: colors.buttonPrimary,
   },
   unblockText: {
     fontFamily: fontFamily.jakarta.bold,

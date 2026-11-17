@@ -16,7 +16,9 @@ const MAX_SEARCH_RADIUS = 50_000; // search-service MAX_SEARCH_RADIUS_METERS
  * chose) is preserved: pages are appended in arrival order and nothing is re-sorted, prepended or
  * merged from other lists. See search-service/src/types/customer-discovery.contract.ts.
  */
-export const useInfiniteWorkers = (params: Partial<Omit<NearbyWorkersParams, 'page'>> = {}) => {
+export const useInfiniteWorkers = (
+  params: Partial<Omit<NearbyWorkersParams, 'page'>> & { minRate?: number } = {}
+) => {
   const queryClient = useQueryClient();
   // Same customer position as Nearby Workers. null = unknown (never a fixed city centre).
   const activeCoords = useCustomerCoords();
@@ -58,6 +60,7 @@ export const useInfiniteWorkers = (params: Partial<Omit<NearbyWorkersParams, 'pa
             : {}),
           ...(params.category ? { category: params.category } : {}),
           ...(params.minRating !== undefined ? { minRating: params.minRating } : {}),
+          ...(params.minRate ? { minRate: params.minRate } : {}),
           ...(params.maxRate ? { maxRate: params.maxRate } : {}),
           // sort only when the customer explicitly picked one; otherwise the backend ranking applies
           ...(params.sortBy ? { sortBy: params.sortBy as SearchSortOption } : {}),

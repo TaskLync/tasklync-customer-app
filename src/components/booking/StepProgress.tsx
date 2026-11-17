@@ -61,7 +61,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     backgroundColor: colors.border,
   },
   barActive: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
   },
   label: {
     marginTop: 8,

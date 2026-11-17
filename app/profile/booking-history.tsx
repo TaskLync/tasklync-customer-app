@@ -229,7 +229,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     height: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.xl,
     gap: spacing.xs,

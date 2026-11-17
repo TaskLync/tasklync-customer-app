@@ -23,9 +23,9 @@ interface CategoryWorkersListProps {
   categoryId: string;
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
+  minRate?: number;
   maxRate?: number;
   minRating?: number;
-  available?: 'any' | 'now' | 'today';
   radius?: number;
 }
 
@@ -35,6 +35,7 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
   categoryId,
   sortBy,
   onSortChange,
+  minRate = 0,
   maxRate = 0,
   minRating = 0,
   radius = 10000,
@@ -57,6 +58,7 @@ export const CategoryWorkersList: React.FC<CategoryWorkersListProps> = ({
     category: categoryId,
     radius,
     minRating,
+    minRate,
     maxRate,
     sortBy,
     limit: 10,

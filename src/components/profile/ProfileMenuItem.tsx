@@ -156,7 +156,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   badgePill: {
-    backgroundColor: colors.primaryBorderSubtle,
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 8,
     paddingVertical: 2.5,
     borderRadius: radius.pill,

@@ -168,7 +168,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     backgroundColor: palette.gray100,
   },
   fallbackContainer: {
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
@@ -196,7 +196,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,

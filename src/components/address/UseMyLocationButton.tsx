@@ -18,7 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Crosshair, MapPinOff, X } from 'lucide-react-native';
 import { fontFamily, radius, shadows, fontSize } from '../../design';
-import { FreshLocationResult, LocationError } from '../../types/location.types';
+import { FreshLocationResult, LocationError, VerifiedLocation } from '../../types/location.types';
 import { locationService } from '../../services/location/location.service';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 import { showAlert } from '../feedback/AppAlert';
@@ -30,6 +30,11 @@ export interface UseMyLocationButtonProps {
   isFetching?: boolean;
   error?: LocationError | null;
   onError?: (error: LocationError) => void;
+  /**
+   * Called with a real but low-confidence fix (approximate permission or a weak signal). The
+   * screen may CENTRE the map on it; it must not place or save an address with it.
+   */
+  onApproximateLocation?: (location: VerifiedLocation) => void;
 }
 
 export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
@@ -39,6 +44,7 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
   isFetching = false,
   error = null,
   onError,
+  onApproximateLocation,
 }) => {
   const { colors, palette } = useAppTheme();
   const styles = useThemedStyles(createStyles);
@@ -133,6 +139,9 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
       if (onError && locationError) {
         onError(locationError);
       }
+      if (locationError?.approximateLocation && onApproximateLocation) {
+        onApproximateLocation(locationError.approximateLocation);
+      }
 
       if (
         locationError?.code === 'PERMISSION_DENIED' ||
@@ -149,6 +158,24 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
             { text: 'Open Settings', onPress: openSystemSettings },
           ]
         );
+      } else if (locationError?.code === 'APPROXIMATE_PERMISSION') {
+        showAlert('Precise location is off', locationError.userMessage, [
+          { text: 'Not now', style: 'cancel' },
+          {
+            text: 'Allow precise',
+            onPress: async () => {
+              // Android 12+: re-requesting shows the "upgrade to precise" dialog. iOS and
+              // "don't ask again" cases can only be changed in Settings.
+              const res = await locationService.requestPermission();
+              if (!isMountedRef.current) return;
+              if (res.granted && res.precision === 'precise') {
+                void handlePress();
+              } else {
+                openSystemSettings();
+              }
+            },
+          },
+        ]);
       } else if (locationError?.code === 'MOCK_DETECTED') {
         showAlert(
           'Mock Location Detected',
@@ -267,8 +294,8 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     transform: [{ scale: 0.95 }],
   },
   buttonLocating: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
+    borderColor: colors.buttonPrimary,
+    backgroundColor: colors.buttonPrimary,
   },
   modalBackdrop: {
     flex: 1,
@@ -337,7 +364,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: radius.pill,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },

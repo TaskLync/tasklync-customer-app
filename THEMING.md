@@ -46,3 +46,15 @@ const createStyles = ({ colors, palette }: AppTheme) =>
 ## Verification
 
 `npm test` includes `__tests__/theme/themeContrast.test.ts`: token parity between themes, the unchanged Light identity, and WCAG contrast of text, status, brand and border tokens on every surface in both themes.
+
+## Buttons (single source of truth)
+
+One primary colour for every solid brand action, identical in Light and Dark: `colors.buttonPrimary` (#15803D, pressed `buttonPrimaryPressed`), label `buttonPrimaryText` (white, 5:1). Disabled is neutral grey (`buttonPrimaryDisabled*`), never a faded green.
+
+| Role | Tokens |
+| --- | --- |
+| Primary | `buttonPrimary`, `buttonPrimaryPressed`, `buttonPrimaryText` |
+| Secondary | `buttonSecondary`, `buttonSecondaryPressed`, `buttonSecondaryText`, `buttonSecondaryBorder` (neutral, never green) |
+| Destructive | `buttonDestructive`, `buttonDestructivePressed`, `buttonDestructiveText` (Delete, Cancel booking, Remove) |
+
+Use `<Button variant="primary|secondary|danger" />` (`src/components/ui/Button`). A hand-rolled button must read these tokens, not `primary`/`primaryDark`/`palette.green*`. Selected states (radio, checkbox, selected chip, focus ring) use `buttonPrimary` too, so there is one solid green. Green tints (`green50/100`) are reserved for functional states (selected, success, verified, applied); decorative icon circles, avatar fallbacks and info banners use `bgHover`/neutral surfaces. Guarded by `__tests__/theme/buttonTokens.test.ts`.

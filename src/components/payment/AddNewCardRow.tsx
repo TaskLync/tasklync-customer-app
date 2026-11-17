@@ -113,7 +113,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,

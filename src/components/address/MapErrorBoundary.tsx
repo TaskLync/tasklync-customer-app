@@ -160,7 +160,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: radius.pill,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
   },
   manualText: {
     fontFamily: fontFamily.jakarta.semiBold,

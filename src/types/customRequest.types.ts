@@ -175,10 +175,14 @@ export interface CreateBookingFromQuoteDto {
   quote_id: string;
   scheduled_at: string; // ISO-8601 UTC
   duration_hours: number;
-  address_id: string;
-  address_text: string;
-  latitude: number;
-  longitude: number;
+  /**
+   * Omit all four to book at the custom request's own (server-verified) address; send them only
+   * for a different SAVED address of the customer — the backend re-reads it from `address_id`.
+   */
+  address_id?: string | undefined;
+  address_text?: string | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
   payment_method: 'CASH_ON_DELIVERY';
 }
 

@@ -1,5 +1,6 @@
+import { SeeAllLink } from '../ui/Button/SeeAllLink';
 import { useMemo, useCallback } from 'react';
-import { View, StyleSheet, Text, Pressable, FlatList, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Text, FlatList, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
@@ -76,18 +77,7 @@ export const NearbyWorkersList = () => {
       {/* ── Section Header ── */}
       <View style={styles.headerRow}>
         <Text style={styles.title}>Nearby Workers</Text>
-        <Pressable
-          onPress={handleSeeAll}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          style={({ pressed }) => [
-            styles.actionButton,
-            pressed && { opacity: 0.7 },
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="See all nearby workers"
-        >
-          <Text style={styles.actionLabel}>See all →</Text>
-        </Pressable>
+        <SeeAllLink onPress={handleSeeAll} accessibilityLabel="See all nearby workers" />
       </View>
 
       {/* ── Content Area ── */}
@@ -160,17 +150,9 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   title: {
     fontFamily: 'Poppins-Bold',
     fontSize: 18,
+    lineHeight: 24,
     color: colors.textPrimary,
     letterSpacing: -0.3,
-  },
-  actionButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionLabel: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 13.5,
-    color: colors.primary, // Brand green accent color
   },
   listContainer: {
     height: 244,

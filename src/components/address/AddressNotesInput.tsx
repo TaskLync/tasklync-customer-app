@@ -7,13 +7,30 @@ export interface AddressNotesInputProps {
   onChangeText: (text: string) => void;
   onFocus?: (() => void) | undefined;
   onBlur?: (() => void) | undefined;
+  /** Defaults describe the "directions for the professional" field. */
+  label?: string | undefined;
+  placeholder?: string | undefined;
+  maxLength?: number | undefined;
+  optional?: boolean | undefined;
+  accessibilityLabel?: string | undefined;
+  accessibilityHint?: string | undefined;
 }
 
+/**
+ * Single-line address input with the sheet's input styling. Used for the directions field and
+ * the structured address parts (house / street / block / landmark).
+ */
 export const AddressNotesInput: React.FC<AddressNotesInputProps> = ({
   value,
   onChangeText,
   onFocus,
   onBlur,
+  label = 'Directions for the professional',
+  placeholder = 'e.g. Blue gate opposite the mosque, 2nd floor, ring twice',
+  maxLength = 300,
+  optional = true,
+  accessibilityLabel,
+  accessibilityHint = 'Optional directions to help the professional find your door',
 }) => {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
@@ -22,11 +39,13 @@ export const AddressNotesInput: React.FC<AddressNotesInputProps> = ({
     <View style={styles.container}>
       <View style={styles.labelRow}>
         <Text style={[styles.label]} maxFontSizeMultiplier={1.3}>
-          Delivery & Entry Notes
+          {label}
         </Text>
-        <Text style={[styles.optionalText]} maxFontSizeMultiplier={1.3}>
-          Optional
-        </Text>
+        {optional && (
+          <Text style={[styles.optionalText]} maxFontSizeMultiplier={1.3}>
+            Optional
+          </Text>
+        )}
       </View>
       <TextInput
         style={[styles.input]}
@@ -34,15 +53,15 @@ export const AddressNotesInput: React.FC<AddressNotesInputProps> = ({
         onChangeText={onChangeText}
         onFocus={onFocus}
         onBlur={onBlur}
-        placeholder="e.g. Flat 3B, blue gate, near the mosque"
+        placeholder={placeholder}
         placeholderTextColor={colors.placeholder}
-        maxLength={120}
+        maxLength={maxLength}
         multiline={false}
         returnKeyType="done"
         onSubmitEditing={() => Keyboard.dismiss()}
         maxFontSizeMultiplier={1.3}
-        accessibilityLabel="Delivery and entry notes"
-        accessibilityHint="Optional specific details to help the worker find your door"
+        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityHint={accessibilityHint}
       />
     </View>
   );
@@ -83,4 +102,3 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderColor: palette.gray200,
   },
 });
-

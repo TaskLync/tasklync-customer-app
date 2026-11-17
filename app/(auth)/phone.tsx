@@ -250,7 +250,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 28,

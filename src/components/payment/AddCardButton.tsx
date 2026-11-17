@@ -48,7 +48,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.base,
     ...shadows.sm,

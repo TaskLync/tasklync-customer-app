@@ -1,8 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '../services/api/user.api';
 import { useAuthStore } from '../store/auth.store';
+import { useLocationStore } from '../store/location.store';
+import { useBookingDraftStore } from '../store/bookingDraft.store';
 import { Address, CreateAddressDTO, UpdateAddressDTO } from '../types/address.types';
+import type { CreateAddressPayload, UpdateAddressPayload } from '../types/user.types';
 import { generateUUID } from '../utils/uuid';
+import { mapServerAddress, toAddressRequestBody } from '../utils/addressDetails';
+import { reconcileActiveAddress, toBookingAddress } from '../utils/activeAddress';
 
 const ADDRESSES_QUERY_KEY = ['user-addresses'];
 const ADDRESS_MUTATION_KEY = ['user-addresses', 'mutation'];
@@ -16,6 +21,29 @@ function sortAddressesWithDefaultFirst(items: Address[]): Address[] {
     if (!a.is_default && b.is_default) return 1;
     return 0;
   });
+}
+
+/**
+ * Keep the app's two copies of "the address the customer means" (location store selection and the
+ * booking draft) in step with the server list: a deleted address stops being active, an edited one
+ * is refreshed (audit LOC-006/017).
+ */
+function syncActiveAddressCopies(list: Address[]): void {
+  const loc = useLocationStore.getState();
+  const draft = useBookingDraftStore.getState();
+
+  const sel = reconcileActiveAddress(list, loc.selectedAddress?.id ?? null);
+  if (sel.action === 'clear') loc.setSelectedAddress(null);
+  else if (sel.action === 'refresh' && sel.address && JSON.stringify(sel.address) !== JSON.stringify(loc.selectedAddress)) {
+    loc.setSelectedAddress(sel.address);
+  }
+
+  const d = reconcileActiveAddress(list, draft.addressId);
+  if (d.action === 'clear') draft.setAddress(null);
+  else if (d.action === 'refresh' && d.address) {
+    const next = toBookingAddress(d.address);
+    if (JSON.stringify(next) !== JSON.stringify(draft.address)) draft.setAddress(next);
+  }
 }
 
 /**
@@ -34,20 +62,12 @@ export function useAddresses() {
       const raw = await userApi.getAddresses();
       if (!raw || !Array.isArray(raw)) return [];
       // The API may serialise DECIMAL columns as strings; coerce, and drop rows with unusable
-      // coordinates rather than letting NaN/0 reach maps, service-area checks or bookings.
-      const mapped: Address[] = raw
-        .map((addr) => ({
-          id: addr.id || generateUUID(),
-          label: addr.label || 'Home',
-          address_line: addr.address_line,
-          city: addr.city || '',
-          country: addr.country || '',
-          lat: Number(addr.lat),
-          lng: Number(addr.lng),
-          is_default: Boolean(addr.is_default),
-        }))
-        .filter((addr) => Number.isFinite(addr.lat) && Number.isFinite(addr.lng));
-      return sortAddressesWithDefaultFirst(mapped);
+      // coordinates or no id rather than letting NaN/0 or a fabricated id reach maps or bookings.
+      const mapped = raw.map(mapServerAddress).filter((a): a is Address => a !== null);
+      const sorted = sortAddressesWithDefaultFirst(mapped);
+      // Authoritative list from the server: reconcile what the app currently treats as active.
+      syncActiveAddressCopies(sorted);
+      return sorted;
     },
     staleTime: 60_000,
     retry: 1,
@@ -57,31 +77,24 @@ export function useAddresses() {
   const addMutation = useMutation({
     mutationKey: ADDRESS_MUTATION_KEY,
     mutationFn: async (payload: CreateAddressDTO) => {
-      const created = await userApi.createAddress({
-        label: payload.label,
-        address_line: payload.address_line,
-        city: payload.city,
-        country: payload.country,
-        lat: payload.lat,
-        lng: payload.lng,
-        is_default: payload.is_default,
-      });
-      return created;
+      // Send EVERY field the API accepts — the previous version dropped notes / details here.
+      const created = await userApi.createAddress(toAddressRequestBody(payload) as unknown as CreateAddressPayload);
+      const mapped = mapServerAddress(created);
+      if (!mapped) {
+        // Never treat an unconfirmed save as saved (no id = nothing the booking can reference).
+        throw new Error('The server did not confirm the saved address.');
+      }
+      return mapped;
     },
     onMutate: async (newAddressPayload) => {
       await queryClient.cancelQueries({ queryKey: ADDRESSES_QUERY_KEY });
       const previousAddresses = queryClient.getQueryData<Address[]>(ADDRESSES_QUERY_KEY) || [];
 
       const optimisticItem: Address = {
-        id: generateUUID(),
-        label: newAddressPayload.label,
-        custom_label: newAddressPayload.custom_label,
-        address_line: newAddressPayload.address_line,
+        ...newAddressPayload,
+        id: `optimistic-${generateUUID()}`,
         city: newAddressPayload.city || '',
         country: newAddressPayload.country || '',
-        lat: newAddressPayload.lat,
-        lng: newAddressPayload.lng,
-        notes: newAddressPayload.notes,
         is_default: Boolean(newAddressPayload.is_default ?? previousAddresses.length === 0),
       };
 
@@ -117,8 +130,8 @@ export function useAddresses() {
   const updateMutation = useMutation({
     mutationKey: ADDRESS_MUTATION_KEY,
     mutationFn: async ({ id, payload }: { id: string; payload: UpdateAddressDTO }) => {
-      const updated = await userApi.updateAddress(id, payload);
-      return updated;
+      const updated = await userApi.updateAddress(id, toAddressRequestBody(payload) as UpdateAddressPayload);
+      return mapServerAddress(updated);
     },
     onMutate: async ({ id, payload }) => {
       await queryClient.cancelQueries({ queryKey: ADDRESSES_QUERY_KEY });
@@ -152,8 +165,6 @@ export function useAddresses() {
       }
     },
     onSettled: () => {
-      // Refetch only after the LAST in-flight address mutation; an earlier refetch would return
-      // server state that predates the others and make the optimistic UI flicker back.
       if (queryClient.isMutating({ mutationKey: ADDRESS_MUTATION_KEY }) <= 1) {
         queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
       }
@@ -178,14 +189,20 @@ export function useAddresses() {
 
       return { previousAddresses };
     },
+    onSuccess: (_data, deletedId) => {
+      // Whichever screen deleted it, a deleted address must stop being the active / booking
+      // address (audit LOC-006: the list screen used to leave it selected and bookable).
+      const loc = useLocationStore.getState();
+      if (loc.selectedAddress?.id === deletedId) loc.setSelectedAddress(null);
+      const draft = useBookingDraftStore.getState();
+      if (draft.addressId === deletedId) draft.setAddress(null);
+    },
     onError: (_err, _variables, context) => {
       if (context?.previousAddresses) {
         queryClient.setQueryData(ADDRESSES_QUERY_KEY, context.previousAddresses);
       }
     },
     onSettled: () => {
-      // Refetch only after the LAST in-flight address mutation; an earlier refetch would return
-      // server state that predates the others and make the optimistic UI flicker back.
       if (queryClient.isMutating({ mutationKey: ADDRESS_MUTATION_KEY }) <= 1) {
         queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
       }
@@ -221,8 +238,6 @@ export function useAddresses() {
       }
     },
     onSettled: () => {
-      // Refetch only after the LAST in-flight address mutation; an earlier refetch would return
-      // server state that predates the others and make the optimistic UI flicker back.
       if (queryClient.isMutating({ mutationKey: ADDRESS_MUTATION_KEY }) <= 1) {
         queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
       }

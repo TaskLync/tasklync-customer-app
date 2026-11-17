@@ -52,7 +52,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   indicatorLine: {
     width: '60%',
     height: '100%',
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     borderRadius: 2,
   },
 });

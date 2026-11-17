@@ -152,12 +152,12 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   replacePressed: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimaryPressed,
   },
   replaceText: {
     fontFamily: typography.fontFamily.jakarta.semiBold,

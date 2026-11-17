@@ -93,7 +93,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   },
   chipSelected: {
     backgroundColor: colors.primaryTint,
-    borderColor: colors.primaryDark,
+    borderColor: colors.buttonPrimary,
   },
   chipPressed: {
     opacity: 0.8,

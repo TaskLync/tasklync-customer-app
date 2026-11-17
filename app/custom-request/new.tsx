@@ -45,7 +45,7 @@ import { validateServiceArea, SERVICE_UNAVAILABLE_MESSAGE } from '../../src/conf
 import { AddAddressBottomSheet, AddAddressBottomSheetRef } from '../../src/components/address/AddAddressBottomSheet';
 import { useCustomRequestMediaUpload } from '../../src/hooks/custom-requests/useCustomRequestMediaUpload';
 import { useCreateCustomRequest } from '../../src/hooks/custom-requests/useCreateCustomRequest';
-import { userApi } from '../../src/services/api/user.api';
+import { resolveBookingLocation } from '../../src/utils/activeAddress';
 import { CreateCustomRequestDto, CustomServiceRequestMediaInput } from '../../src/types/customRequest.types';
 import { normalizeDateToYYYYMMDD } from '../../src/utils/timezone';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
@@ -137,9 +137,6 @@ export default function NewCustomRequestScreen() {
 
   // Addresses query & location store
   const { addresses } = useAddresses();
-  // Live GPS only: a hydrated last-session position must not become the job location
-  const currentLocation = useLocationStore((s) => s.liveLocation);
-  const currentCity = useLocationStore((s) => s.currentCity);
   const storeSelectedAddress = useLocationStore((s) => s.selectedAddress);
 
   // Media upload hook
@@ -173,34 +170,25 @@ export default function NewCustomRequestScreen() {
     return () => subscription.remove();
   }, [step]);
 
-  // Initialize selected address from saved default, first address, or current location
+  // Initialize selected address from the saved default / first saved address / the app's active
+  // saved address. A custom request needs a confirmed, SAVED address: a raw GPS point with the text
+  // "<city>, Pakistan" gave the worker no street at all (audit LOC-013), so there is no GPS default.
   useEffect(() => {
     if (selectedAddress) return;
 
     const defaultAddr = addresses.find((a) => a.is_default) || addresses[0] || storeSelectedAddress;
-
-    if (defaultAddr) {
+    if (defaultAddr && Number.isFinite(defaultAddr.lat) && Number.isFinite(defaultAddr.lng)) {
       setSelectedAddress({
         id: defaultAddr.id,
         label: defaultAddr.label || 'Home',
-        street: (defaultAddr as any).address_line || (defaultAddr as any).street || '',
-        city: defaultAddr.city || 'Faisalabad',
-        latitude: (defaultAddr as any).lat ?? (defaultAddr as any).latitude ?? 31.4187,
-        longitude: (defaultAddr as any).lng ?? (defaultAddr as any).longitude ?? 73.0791,
+        street: defaultAddr.address_line || '',
+        city: defaultAddr.city || '',
+        latitude: defaultAddr.lat,
+        longitude: defaultAddr.lng,
         is_default: Boolean(defaultAddr.is_default),
       });
-    } else if (currentLocation) {
-      setSelectedAddress({
-        id: 'current_loc',
-        label: 'Current Location',
-        street: currentCity ? `${currentCity}, Pakistan` : 'Faisalabad, Pakistan',
-        city: currentCity || 'Faisalabad',
-        latitude: currentLocation.lat,
-        longitude: currentLocation.lng,
-        is_default: true,
-      });
     }
-  }, [addresses, storeSelectedAddress, currentLocation, currentCity, selectedAddress]);
+  }, [addresses, storeSelectedAddress, selectedAddress]);
 
   // Back navigation handler
   const handleNavBack = () => {
@@ -280,23 +268,20 @@ export default function NewCustomRequestScreen() {
   const handleSubmit = async () => {
     const errors: Record<string, string> = {};
 
-    if (!selectedAddress) {
-      errors.address = 'Please select a service address.';
-    } else if (selectedAddress.latitude && selectedAddress.longitude) {
-      const areaCheck = validateServiceArea({
-        lat: selectedAddress.latitude,
-        lng: selectedAddress.longitude,
-      });
-      if (!areaCheck.isServiceable) {
-        if (__DEV__) {
-          console.warn('[validateForm] Outside service area in DEV, using fallback');
-        } else {
-          errors.address = SERVICE_UNAVAILABLE_MESSAGE;
-        }
-      }
+    // The job site must be one of the customer's SAVED, map-confirmed addresses. No demo address,
+    // no placeholder id, no auto-created "<city>, Pakistan" default, no dev-only bypass of the
+    // service area (audit LOC-007/013/025). The backend re-reads point, text and directions from it.
+    const location = resolveBookingLocation(selectedAddress?.id, selectedAddress);
+    if (!location.ok) {
+      errors.address =
+        location.reason === 'UNSAVED_ADDRESS'
+          ? 'Please confirm your address on the map first.'
+          : 'Please select a service address.';
+    } else if (!validateServiceArea({ lat: location.lat, lng: location.lng }).isServiceable) {
+      errors.address = SERVICE_UNAVAILABLE_MESSAGE;
     }
 
-    if (Object.keys(errors).length > 0) {
+    if (Object.keys(errors).length > 0 || !location.ok || !selectedAddress) {
       setValidationErrors(errors);
       return;
     }
@@ -307,42 +292,11 @@ export default function NewCustomRequestScreen() {
     }
 
     const categoryId = initialCategoryId || worker?.categories?.[0] || 'general';
-
-    const currentAddr: NormalizedAddress = selectedAddress || {
-      id: '4a7b5d2e-1c3f-4e5a-8b9d-0f1e2d3c4b5a',
-      label: 'Home',
-      street: 'D-Ground, Peoples Colony No. 1',
-      city: 'Faisalabad',
-      latitude: 31.4187,
-      longitude: 73.0791,
-      is_default: true,
-    };
-
-    const addressText = `${currentAddr.street || 'D-Ground'}${currentAddr.city ? `, ${currentAddr.city}` : ', Faisalabad'}`;
-
-    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    let resolvedAddressId = '4a7b5d2e-1c3f-4e5a-8b9d-0f1e2d3c4b5a';
-
-    if (currentAddr.id && UUID_REGEX.test(currentAddr.id)) {
-      resolvedAddressId = currentAddr.id;
-    } else if (currentAddr) {
-      try {
-        const createdAddr = await userApi.createAddress({
-          label: currentAddr.label || 'Home',
-          address_line: currentAddr.street || 'Faisalabad, Pakistan',
-          city: currentAddr.city || 'Faisalabad',
-          country: 'Pakistan',
-          lat: currentAddr.latitude || 31.4187,
-          lng: currentAddr.longitude || 73.0791,
-          is_default: true,
-        });
-        if (createdAddr?.id && UUID_REGEX.test(createdAddr.id)) {
-          resolvedAddressId = createdAddr.id;
-        }
-      } catch (_err) {
-        // Fallback to canonical UUID
-      }
-    }
+    const currentAddr: NormalizedAddress = selectedAddress;
+    const addressText = `${currentAddr.street}${
+      currentAddr.city && !currentAddr.street.includes(currentAddr.city) ? `, ${currentAddr.city}` : ''
+    }`;
+    const resolvedAddressId = location.addressId;
 
     // Media payload formatted cleanly
     const formattedMedia: CustomServiceRequestMediaInput[] = slots
@@ -369,8 +323,8 @@ export default function NewCustomRequestScreen() {
       description: description.trim(),
       address_id: resolvedAddressId,
       address_text: addressText,
-      latitude: currentAddr.latitude || 31.4187,
-      longitude: currentAddr.longitude || 73.0791,
+      latitude: location.lat,
+      longitude: location.lng,
     };
 
     const prefDate = computePreferredDate();
@@ -1099,9 +1053,10 @@ export default function NewCustomRequestScreen() {
                         id: addr.id,
                         label: addr.label || 'Home',
                         street,
-                        city: addr.city || 'Faisalabad',
-                        latitude: (addr as any).lat ?? (addr as any).latitude ?? 31.4187,
-                        longitude: (addr as any).lng ?? (addr as any).longitude ?? 73.0791,
+                        city: addr.city || '',
+                        // useAddresses only yields rows with finite coordinates
+                        latitude: addr.lat,
+                        longitude: addr.lng,
                         is_default: Boolean(addr.is_default),
                       });
                       if (validationErrors.address) {
@@ -1253,13 +1208,15 @@ export default function NewCustomRequestScreen() {
       <AddAddressBottomSheet
         ref={addAddressSheetRef}
         onAddressCreated={(newAddr) => {
+          // A new address without its own point is not a job site (no city-centre substitute).
+          if (typeof newAddr.latitude !== 'number' || typeof newAddr.longitude !== 'number') return;
           setSelectedAddress({
             id: newAddr.id,
             label: newAddr.label || 'Home',
             street: newAddr.street,
-            city: newAddr.city || 'Faisalabad',
-            latitude: newAddr.latitude || 31.4187,
-            longitude: newAddr.longitude || 73.0791,
+            city: newAddr.city || '',
+            latitude: newAddr.latitude,
+            longitude: newAddr.longitude,
             is_default: false,
           });
           if (validationErrors.address) {
@@ -1327,7 +1284,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   progressBarFill: {
     height: 2,
-    backgroundColor: palette.green600,
+    backgroundColor: colors.buttonPrimary,
   },
 
   // Scroll Body
@@ -1468,7 +1425,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   inputFocused: {
     backgroundColor: palette.white,
-    borderColor: palette.green600,
+    borderColor: colors.buttonPrimary,
   },
   inputError: {
     borderColor: palette.red500,
@@ -1616,7 +1573,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -1668,7 +1625,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   chipSelected: {
     backgroundColor: palette.green50,
-    borderColor: palette.green600,
+    borderColor: colors.buttonPrimary,
   },
   chipText: {
     fontFamily: fontFamily.jakarta.medium || 'PlusJakartaSans-Medium',
@@ -1699,7 +1656,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   timeSlotChipSelected: {
     backgroundColor: palette.green50,
-    borderColor: palette.green600,
+    borderColor: colors.buttonPrimary,
   },
   timeSlotText: {
     fontFamily: fontFamily.jakarta.medium || 'PlusJakartaSans-Medium',
@@ -1745,7 +1702,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   primaryButton: {
     height: 50,
-    backgroundColor: palette.green600,
+    backgroundColor: colors.buttonPrimary,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1804,7 +1761,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -1946,7 +1903,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     marginVertical: 2,
   },
   calendarDayCellSelected: {
-    backgroundColor: palette.green600,
+    backgroundColor: colors.buttonPrimary,
   },
   calendarDayCellToday: {
     borderWidth: 1,

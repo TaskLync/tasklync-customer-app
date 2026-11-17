@@ -68,7 +68,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,

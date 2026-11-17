@@ -297,7 +297,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderColor: palette.gray200,
   },
   reasonRowSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.buttonPrimary,
     backgroundColor: palette.green50,
   },
   reasonRowPressed: {
@@ -318,7 +318,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
   },
   reasonTextWrap: {
     flex: 1,

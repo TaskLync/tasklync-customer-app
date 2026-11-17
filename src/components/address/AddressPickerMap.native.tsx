@@ -8,6 +8,7 @@ import {
 } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Platform,
   AccessibilityInfo,
@@ -24,6 +25,8 @@ import { MapRegion } from '../../types/address.types';
 import { FAISALABAD_DEFAULT_REGION } from '../../config/serviceArea.config';
 import { DARK_MAP_STYLE, LIGHT_MAP_STYLE } from '../../design/mapStyles';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { fontFamily } from '../../design';
+import { trackLocationEvent } from '../../services/location/locationTelemetry';
 
 export interface AddressPickerMapRef {
   animateToRegion: (region: MapRegion, duration?: number) => void;
@@ -34,16 +37,44 @@ export interface AddressPickerMapProps {
   initialRegion?: MapRegion | undefined;
   onRegionChange?: ((region: MapRegion) => void) | undefined;
   onRegionChangeComplete: (region: MapRegion) => void;
+  /**
+   * Show the platform "you are here" dot (with its accuracy circle) so the customer can see how
+   * far the pin is from their real position. Only when location permission is granted.
+   */
+  showsUserLocation?: boolean | undefined;
 }
 
 const DEFAULT_REGION: MapRegion = FAISALABAD_DEFAULT_REGION;
+/** No tiles after this long usually means no connectivity / key or billing problem. */
+const MAP_LOAD_TIMEOUT_MS = 12_000;
 
 export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMapProps>(
-  ({ initialRegion = DEFAULT_REGION, onRegionChange, onRegionChangeComplete }, ref) => {
+  ({ initialRegion = DEFAULT_REGION, onRegionChange, onRegionChangeComplete, showsUserLocation = false }, ref) => {
     const { colors, isDark } = useAppTheme();
     const styles = useThemedStyles(createStyles);
     const mapRef = useRef<MapView | null>(null);
     const isMapReadyRef = useRef<boolean>(false);
+    const [tilesFailed, setTilesFailed] = useState(false);
+    const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Tiles never loading must be explained, not shown as a blank map. The pin, search and "use my
+    // location" keep working; the overlay disappears as soon as the map renders.
+    useEffect(() => {
+      loadTimerRef.current = setTimeout(() => {
+        if (isMountedRef.current) {
+          setTilesFailed(true);
+          trackLocationEvent('map_load_timeout', { ms: MAP_LOAD_TIMEOUT_MS });
+        }
+      }, MAP_LOAD_TIMEOUT_MS);
+      return () => {
+        if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+      };
+    }, []);
+
+    const handleMapLoaded = useCallback(() => {
+      if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+      setTilesFailed(false);
+    }, []);
     const pendingAnimateRegionRef = useRef<{ region: MapRegion; duration: number } | null>(null);
     const isDraggingRef = useRef<boolean>(false);
     const isMountedRef = useRef<boolean>(true);
@@ -189,9 +220,10 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
           userInterfaceStyle={isDark ? 'dark' : 'light'}
           initialRegion={initialRegion}
           onMapReady={handleMapReady}
+          onMapLoaded={handleMapLoaded}
           onRegionChange={handleRegionChange}
           onRegionChangeComplete={handleRegionChangeComplete}
-          showsUserLocation={false}
+          showsUserLocation={showsUserLocation}
           showsMyLocationButton={false}
           showsCompass={false}
           showsBuildings={true}
@@ -199,8 +231,20 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
           toolbarEnabled={false}
           rotateEnabled={false}
           pitchEnabled={false}
-          loadingEnabled={Platform.OS === 'ios'}
+          loadingEnabled
         />
+
+        {tilesFailed && (
+          <View style={styles.tilesFailedOverlay} pointerEvents="none" accessibilityLiveRegion="polite">
+            <Text style={styles.tilesFailedTitle} maxFontSizeMultiplier={1.3}>
+              Map couldn&apos;t load
+            </Text>
+            <Text style={styles.tilesFailedText} maxFontSizeMultiplier={1.3}>
+              Check your internet connection. You can still search for your area or use your location — the pin
+              in the centre is what will be saved.
+            </Text>
+          </View>
+        )}
 
         {/* Fixed Absolutely-Positioned Center Pin Overlay */}
         <View style={styles.centerPinContainer} pointerEvents="none">
@@ -222,7 +266,32 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
 
 AddressPickerMap.displayName = 'AddressPickerMap';
 
-const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
+const createStyles = ({ palette, colors }: AppTheme) => StyleSheet.create({
+  tilesFailedOverlay: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    top: '30%',
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: colors.bottomSheetBackground,
+    borderWidth: 1,
+    borderColor: palette.gray200,
+    zIndex: 5,
+  },
+  tilesFailedTitle: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  tilesFailedText: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.textSecondary,
+  },
   container: {
     flex: 1,
     position: 'relative',

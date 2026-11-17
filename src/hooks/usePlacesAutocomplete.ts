@@ -4,6 +4,7 @@ import {
   autocompletePlaces,
   getPlaceDetails,
   generatePlacesSessionToken,
+  isPlaceSearchDegraded,
 } from '../services/maps/places.service';
 import { geocodingService } from '../services/maps/geocoding.service';
 import { PlacePrediction, PlaceDetails } from '../types/address.types';
@@ -15,6 +16,9 @@ export function usePlacesAutocomplete(debounceMs: number = 350) {
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
+  /** No real place provider reachable: results are approximate area matches only. */
+  const [isDegraded, setIsDegraded] = useState<boolean>(false);
+  const selectAbortRef = useRef<AbortController | null>(null);
 
   const sessionTokenRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -61,6 +65,7 @@ export function usePlacesAutocomplete(debounceMs: number = 350) {
         const results = await autocompletePlaces(trimmed, token, controller.signal);
         if (!searchGateRef.current.isLatest(ticket)) return;
         setPredictions(results);
+        setIsDegraded(isPlaceSearchDegraded());
       } catch (_err) {
         if (!searchGateRef.current.isLatest(ticket)) return; // superseded / aborted: not an error
         setIsError(true);
@@ -104,12 +109,16 @@ export function usePlacesAutocomplete(debounceMs: number = 350) {
       abortRef.current?.abort();
       searchGateRef.current.invalidate();
       const ticket = selectGateRef.current.next();
+      selectAbortRef.current?.abort();
+      const selectController = new AbortController();
+      selectAbortRef.current = selectController;
       setIsLoading(true);
       try {
         const token = sessionTokenRef.current || undefined;
-        let details = await getPlaceDetails(prediction.place_id, token);
+        let details = await getPlaceDetails(prediction.place_id, token, selectController.signal);
 
-        // Fallback forward geocode if details API returned null
+        // Fallback forward geocode if details API returned null. This is an AREA match for the
+        // prediction text, so it is flagged approximate: the pin must be adjusted by the customer.
         if (!details && prediction.description) {
           try {
             const localizedQuery = prediction.description.toLowerCase().includes('faisalabad')
@@ -130,6 +139,8 @@ export function usePlacesAutocomplete(debounceMs: number = 350) {
                 lng: first.longitude,
                 city: reverseInfo?.city || '',
                 country: reverseInfo?.country || 'Pakistan',
+                source: 'native',
+                approximate: true,
               };
             }
           } catch (_e) {}
@@ -170,6 +181,7 @@ export function usePlacesAutocomplete(debounceMs: number = 350) {
         clearTimeout(timerRef.current);
       }
       abortRef.current?.abort();
+      selectAbortRef.current?.abort();
     };
   }, []);
 
@@ -179,6 +191,7 @@ export function usePlacesAutocomplete(debounceMs: number = 350) {
     predictions,
     isLoading,
     isError,
+    isDegraded,
     recentSearches,
     selectPlace,
     clearRecentSearches,

@@ -84,7 +84,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     color: colors.textPrimary,
   },
   badgePill: {
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,

@@ -26,6 +26,8 @@ interface RangeSliderProps {
   suffix?: string;
   trackColor?: string;
   disabled?: boolean;
+  /** Custom value label (e.g. "Rs 15,000+" at an open-ended bound). Overrides prefix/suffix. */
+  formatLabel?: (value: number, thumb: 'min' | 'max') => string;
 }
 
 export const RangeSlider: React.FC<RangeSliderProps> = ({
@@ -38,6 +40,7 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
   suffix = '',
   trackColor: trackColorProp,
   disabled = false,
+  formatLabel,
 }) => {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
@@ -199,14 +202,10 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
     <View style={styles.container}>
       <View style={styles.labelRow}>
         <Text style={styles.valueLabel}>
-          {prefix}
-          {formatPrice(localMin)}
-          {suffix}
+          {formatLabel ? formatLabel(localMin, 'min') : `${prefix}${formatPrice(localMin)}${suffix}`}
         </Text>
         <Text style={styles.valueLabel}>
-          {prefix}
-          {formatPrice(localMax)}
-          {suffix}
+          {formatLabel ? formatLabel(localMax, 'max') : `${prefix}${formatPrice(localMax)}${suffix}`}
         </Text>
       </View>
 

@@ -1,15 +1,16 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
-const GOOGLE_MAPS_API_KEY =
-  process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ||
-  process.env.GOOGLE_MAPS_KEY ||
-  'AIzaSyAacbf9vAzo8hluo0LbBx9Cz55CyuP9iPU';
+// Maps SDK key for the native map only (restrict it to the Android package + SHA-1 and the iOS
+// bundle id in Google Cloud). Provided by the environment / EAS environment variables — never
+// committed. Geocoding & Places are called through the backend proxy, so the app needs no
+// web-service key (audit LOC-003).
+const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY || process.env.GOOGLE_MAPS_KEY || '';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Tasklync',
-  slug: 'tasklync-user',
-  owner: 'uzairsarwar3423',
+  slug: 'tasklync',
+  owner: 'rankstops910s-team',
   version: '1.0.0',
   scheme: 'tasklync',
   orientation: 'portrait',
@@ -27,8 +28,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // Universal Links: requires https://tasklync.pk/.well-known/apple-app-site-association
     associatedDomains: ['applinks:tasklync.pk'],
     infoPlist: {
-      NSLocationWhenInUseUsageDescription: 'Tasklync uses your location to find nearby service workers.',
-      NSLocationAlwaysAndWhenInUseUsageDescription: 'Tasklync uses your location to find nearby service workers even when the app is in background.',
+      // Foreground ("While Using") only — the app never tracks location in the background (audit LOC-021).
+      NSLocationWhenInUseUsageDescription:
+        'Tasklync uses your location while you use the app to find nearby professionals and to place your service address on the map.',
       NSCameraUsageDescription: 'Tasklync needs access to your camera to take profile photos.',
       NSPhotoLibraryUsageDescription: 'Tasklync needs access to your photo library to select profile photos.',
       NSPhotoLibraryAddUsageDescription: 'Tasklync needs access to save photos.',
@@ -84,7 +86,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-location',
       {
-        locationAlwaysAndWhenInUsePermission: 'Allow $(PRODUCT_NAME) to use your location.',
+        locationWhenInUsePermission:
+          'Tasklync uses your location while you use the app to find nearby professionals and to place your service address on the map.',
+        // `false` removes the "Always" usage strings (expo-location plugin → IOSConfig.Permissions).
+        locationAlwaysAndWhenInUsePermission: false,
+        locationAlwaysPermission: false,
+        isIosBackgroundLocationEnabled: false,
+        isAndroidBackgroundLocationEnabled: false,
       },
     ],
     [
@@ -120,7 +128,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     apiBaseUrl: process.env.API_BASE_URL,
     googleMapsKey: GOOGLE_MAPS_API_KEY,
      "eas": {
-        "projectId": "daf33c8f-d27a-42d8-af25-f68ce0abbbe0"
+        "projectId": "97f76505-cbf1-4499-89b5-0250bb73cd69"
       }
   },
  

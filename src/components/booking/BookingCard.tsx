@@ -81,6 +81,7 @@ export function BookingCard({ booking }: BookingCardProps) {
         pressed && styles.cardPressed
       ]}
       onPress={handlePress}
+      accessibilityRole="button"
     >
       <View style={styles.header}>
         <BookingStatusBadge status={booking.status} />
@@ -113,14 +114,19 @@ export function BookingCard({ booking }: BookingCardProps) {
 }
 
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
+  // Rounded card on the grey list canvas. Pressed = soft neutral fill on the same rounded surface
+  // (no opacity fade or ripple, so nothing flashes white or leaks past the corners).
   card: {
-    backgroundColor: colors.bgCard,
-    paddingVertical: 18,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    backgroundColor: colors.cardRaised,
+    borderRadius: 16,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderLight,
+    padding: 16,
+    marginBottom: 12,
   },
   cardPressed: {
-    backgroundColor: colors.bgSection,
+    backgroundColor: colors.bgHover,
   },
   header: {
     flexDirection: 'row',

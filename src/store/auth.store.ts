@@ -4,6 +4,7 @@ import { AuthUser } from '../types/auth.types';
 import { clearSession, loadSession, saveSession } from '../services/auth/tokenStorage';
 import { computeAccessExpiresAt, sessionCorrelationId } from '../services/auth/sessionCore';
 import { recordAuthEvent } from '../services/auth/authEvents';
+import { useLocationStore } from './location.store';
 
 // non-secret profile cache (the tokens are in the secure store, see tokenStorage.ts)
 const storage = createMMKV();
@@ -106,6 +107,11 @@ export const useAuthStore = create<AuthStoreState>((set, get) => {
   const clearLocal = (authState: AuthState, sessionEndReason: string | null) => {
     storage.remove('user');
     void clearSession();
+    // Covers logout, server-ended sessions and account deletion alike: the next customer on this
+    // device must never inherit the previous one's selected address, drafts or searches.
+    try {
+      useLocationStore.getState().resetAccountScoped();
+    } catch (_e) {}
     setAuth({
       user: null,
       accessToken: null,

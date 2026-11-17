@@ -141,10 +141,10 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
   },
   iconApplied: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
   },
   body: {
     flex: 1,
@@ -166,7 +166,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 999,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
   },
   valueText: {
     fontFamily: fontFamily.jakarta.bold,
@@ -210,7 +210,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
   },
   applyDisabled: {
     backgroundColor: colors.textMuted,
@@ -227,7 +227,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     height: 28,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
   },
   appliedText: {
     fontFamily: fontFamily.jakarta.bold,

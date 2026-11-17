@@ -112,7 +112,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   inputWrapperFocused: {
     backgroundColor: colors.bgCard,
-    borderColor: colors.primaryDark,
+    borderColor: colors.buttonPrimary,
   },
   inputWrapperDisabled: {
     backgroundColor: palette.gray100,

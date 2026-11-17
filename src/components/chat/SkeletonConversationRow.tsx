@@ -1,21 +1,25 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SkeletonCircle, SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
+import { CONVERSATION_ROW } from './ConversationRow';
 
 /**
- * Mirrors ConversationRow: 20px gutters, 14px vertical padding, 50px avatar, then
- * name (16/22) + timestamp, category line (13/17) and the last-message preview (14/19).
+ * Mirrors ConversationRow line for line: 52pt avatar, then name (16/22) + time,
+ * preview (14.5/20) and the category · status line (13/17), same gutters and spacing.
  */
-export const SkeletonConversationRow: React.FC = () => (
+export const SkeletonConversationRow: React.FC<{ nameWidth?: number; previewWidth?: `${number}%` }> = ({
+  nameWidth = 132,
+  previewWidth = '82%',
+}) => (
   <SkeletonGroup style={styles.row} accessibilityLabel="Loading conversation">
-    <SkeletonCircle size={50} style={styles.avatar} />
-    <View style={styles.content}>
-      <View style={styles.topRow}>
-        <SkeletonText fontSize={16} lineHeight={22} width={128} />
-        <SkeletonText fontSize={12} lineHeight={16} width={40} />
+    <SkeletonCircle size={CONVERSATION_ROW.avatar} style={styles.avatar} />
+    <View style={styles.body}>
+      <View style={styles.line}>
+        <SkeletonText fontSize={16} lineHeight={22} width={nameWidth} />
+        <SkeletonText fontSize={12.5} lineHeight={16} width={44} />
       </View>
-      <SkeletonText fontSize={13} lineHeight={17} width={92} style={styles.meta} />
-      <SkeletonText fontSize={14} lineHeight={19} width="84%" />
+      <SkeletonText fontSize={14.5} lineHeight={20} width={previewWidth} style={styles.preview} />
+      <SkeletonText fontSize={13} lineHeight={17} width={118} style={styles.meta} />
     </View>
   </SkeletonGroup>
 );
@@ -23,23 +27,26 @@ export const SkeletonConversationRow: React.FC = () => (
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+    alignItems: 'flex-start',
+    paddingHorizontal: CONVERSATION_ROW.gutter,
     paddingVertical: 14,
   },
   avatar: {
-    marginRight: 14,
+    marginRight: CONVERSATION_ROW.avatarGap,
+    marginTop: 1,
   },
-  content: {
+  body: {
     flex: 1,
   },
-  topRow: {
+  line: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 2,
+  },
+  preview: {
+    marginTop: 2,
   },
   meta: {
-    marginBottom: 4,
+    marginTop: 6,
   },
 });

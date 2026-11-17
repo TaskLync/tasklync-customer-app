@@ -1,34 +1,57 @@
-import { useRef, useCallback } from 'react';
-import { View, StyleSheet, Text, ScrollView } from 'react-native';
+import { useRef, useCallback, useEffect, useState } from 'react';
+import { View, StyleSheet, Text, ScrollView, Pressable, Keyboard } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
-import { useSharedValue } from 'react-native-reanimated';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import Animated, { FadeIn, useSharedValue } from 'react-native-reanimated';
+import { X } from 'lucide-react-native';
 import { SearchHeader } from '../../src/components/home/SearchHeader';
 import { BottomSheet, BottomSheetRef } from '../../src/components/layout/BottomSheet';
 import { FilterSheetContent } from '../../src/components/search/FilterSheetContent';
 import { RecentSearchesSection } from '../../src/components/search/RecentSearchesSection';
-import { TrendingSearchChips } from '../../src/components/search/TrendingSearchChips';
 import { AutocompleteDropdown } from '../../src/components/search/AutocompleteDropdown';
+import { SearchChip } from '../../src/components/search/SearchChip';
+import type { SearchBarRef } from '../../src/components/search/SearchBar';
 import { WorkerListRow, WorkerListRowSkeleton } from '../../src/components/worker/WorkerListRow';
 import { SkeletonGroup } from '../../src/components/ui/Skeleton';
-import { ChipGroup, Chip } from '../../src/components/ui/Chip';
-import { ProviderTypeFilterChips } from '../../src/components/search/ProviderTypeFilterChips';
+import { Chip } from '../../src/components/ui/Chip';
 import { EmptyState } from '../../src/components/feedback/EmptyState';
 import { useSearch } from '../../src/hooks/useSearch';
 import { useRecentSearches } from '../../src/hooks/useRecentSearches';
 import { useCategories } from '../../src/hooks/useCategories';
+import { useCustomerCoords } from '../../src/hooks/useCustomerCoords';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { typography } from '../../src/design/typography';
 import { AutocompleteSuggestion, DEFAULT_FILTERS, FilterState } from '../../src/types/search.types';
-import { X } from 'lucide-react-native';
+import type { WorkerNearby } from '../../src/types/worker.types';
 import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
+import { DEFAULT_RADIUS, SORT_LABELS, describePriceRange, formatDistance } from '../../src/utils/searchFilters';
 
+/**
+ * Explore: one list, two modes.
+ *  - Browse (no query, no filters): recent searches, trending, categories, then professionals near
+ *    the customer from the same search endpoint, so the screen is never an empty white page.
+ *  - Results (query >= 2 chars or any filter): category row, applied filters, count, results.
+ * Query and filters are independent state in useSearch: opening / closing filters never touches
+ * the query, and filters are sent as structured params, never folded into the text.
+ */
 export default function ExploreScreen() {
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { isOffline } = useNetworkStatus();
   const scrollY = useSharedValue(0);
   const filterSheetRef = useRef<BottomSheetRef>(null);
+  const hasLocation = useCustomerCoords() !== null;
+
+  // Arriving from the Home search bar (`focus=1`): put the cursor in the field once, then drop
+  // the param so later visits to this tab don't pop the keyboard again.
+  const searchRef = useRef<SearchBarRef>(null);
+  const { focus } = useLocalSearchParams<{ focus?: string }>();
+  useEffect(() => {
+    if (focus !== '1') return;
+    const t = setTimeout(() => searchRef.current?.focus(), 120);
+    router.setParams({ focus: undefined } as any);
+    return () => clearTimeout(t);
+  }, [focus, router]);
 
   const {
     query,
@@ -42,45 +65,43 @@ export default function ExploreScreen() {
     trendingTerms,
     workers,
     total,
+    isTotalPartial,
     isLoading,
     isLoadingMore,
+    isPlaceholderData,
     isError,
     refetch,
     hasMore,
     loadMore,
     clearSearch,
     hasSearchIntent,
-  } = useSearch();
+  } = useSearch({ browseWhenIdle: true });
 
   const { searches, addSearch, removeSearch, clearAll } = useRecentSearches();
   const { categories: fetchedCategories } = useCategories();
+  const categories = Array.isArray(fetchedCategories) ? fetchedCategories.filter((c) => c?.name) : [];
 
-  const categoryChipOptions =
-    Array.isArray(fetchedCategories) && fetchedCategories.length > 0
-      ? fetchedCategories.slice(0, 8).map((c) => ({ label: c.name, value: c.id || c.name }))
-      : [];
-
-  const handleSelectRecent = useCallback(
+  const runSearch = useCallback(
     (term: string) => {
       setQuery(term);
       addSearch(term);
+      Keyboard.dismiss();
     },
     [setQuery, addSearch]
   );
 
-  const handleSelectTrending = useCallback(
-    (term: string) => {
-      setQuery(term);
-      addSearch(term);
-    },
-    [setQuery, addSearch]
-  );
+  const handleSubmit = useCallback(() => {
+    const term = query.trim();
+    if (term.length >= 2) addSearch(term);
+    Keyboard.dismiss();
+  }, [query, addSearch]);
 
   const onSelectSuggestion = useCallback(
     (item: AutocompleteSuggestion) => {
       if (item.type === 'category') {
         handleSelectSuggestion(item);
         addSearch(item.label);
+        Keyboard.dismiss();
       } else if (item.type === 'worker' && item.worker_id) {
         addSearch(item.label);
         router.push(`/worker/${item.worker_id}` as any);
@@ -88,6 +109,26 @@ export default function ExploreScreen() {
     },
     [handleSelectSuggestion, addSearch, router]
   );
+
+  const isCategorySelected = (c: { id?: string; name: string }) =>
+    (Boolean(c.id) && filters.categoryId === c.id) || (!filters.categoryId && filters.categories[0] === c.name);
+
+  const toggleCategory = (c: { id?: string; name: string }) => {
+    if (isCategorySelected(c)) {
+      setFilters((prev) => ({ ...prev, categoryId: undefined, categoryLabel: undefined, categories: [] }));
+    } else {
+      setFilters((prev) => ({ ...prev, categoryId: c.id || undefined, categoryLabel: c.name, categories: [c.name] }));
+    }
+  };
+
+  // Remounting the sheet per open seeds its draft from the APPLIED filters. Nothing reaches the
+  // search until "Apply Filters"; the text query is untouched either way.
+  const [filterSheetKey, setFilterSheetKey] = useState(0);
+  const openFilters = useCallback(() => {
+    Keyboard.dismiss();
+    setFilterSheetKey((k) => k + 1);
+    filterSheetRef.current?.open();
+  }, []);
 
   const handleFilterApply = useCallback(
     (newFilters: FilterState) => {
@@ -97,203 +138,171 @@ export default function ExploreScreen() {
     [setFilters]
   );
 
-  const handleFilterReset = useCallback(() => {
-    resetFilters();
-    filterSheetRef.current?.close();
-  }, [resetFilters]);
-
-  const removeFilter = (key: keyof FilterState, value?: string) => {
-    if (key === 'categories' && value) {
-      setFilters((prev) => ({
-        ...prev,
-        categories: prev.categories.filter((c) => c !== value),
-        categoryId: undefined,
-        categoryLabel: undefined,
-      }));
-    } else if (key === 'categoryId') {
-      setFilters((prev) => ({
-        ...prev,
-        categoryId: undefined,
-        categoryLabel: undefined,
-        categories: [],
-      }));
-    } else {
-      setFilters((prev) => ({
-        ...prev,
-        [key]: DEFAULT_FILTERS[key],
-      }));
-    }
+  const removeFilter = (key: keyof FilterState | 'price') => {
+    if (key === 'price') setFilters((prev) => ({ ...prev, minRate: 0, maxRate: 0 }));
+    else setFilters((prev) => ({ ...prev, [key]: DEFAULT_FILTERS[key as keyof FilterState] }));
   };
 
-  const renderActiveFilters = () => {
-    if (activeFilterCount === 0) return null;
+  /* ─────────────── Header pieces ─────────────── */
 
-    const safeCategories = filters.categories || [];
+  const renderAppliedFilters = () => {
+    const priceLabel = describePriceRange(filters);
+    const items: { key: keyof FilterState | 'price'; label: string }[] = [];
+    if (filters.available === 'now') items.push({ key: 'available', label: 'Available now' });
+    if ((filters.radius ?? DEFAULT_RADIUS) !== DEFAULT_RADIUS)
+      items.push({ key: 'radius', label: `Within ${formatDistance(filters.radius ?? DEFAULT_RADIUS)}` });
+    if (filters.minRating > 0) items.push({ key: 'minRating', label: `${filters.minRating}★ & up` });
+    if (priceLabel) items.push({ key: 'price', label: priceLabel });
+    if (filters.sortBy !== 'relevance') items.push({ key: 'sortBy', label: SORT_LABELS[filters.sortBy] });
+    if (filters.provider_type && filters.provider_type !== 'ALL' && filters.provider_type !== 'ANY')
+      items.push({ key: 'provider_type', label: filters.provider_type === 'COMPANY' ? 'Agencies' : 'Solo craftsmen' });
+    if (items.length === 0) return null;
 
     return (
-      <View style={styles.activeFiltersContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.activeFiltersScroll}
-        >
-          {filters.categoryLabel ? (
-            <Chip
-              key="cat-id"
-              label={`Category: ${filters.categoryLabel}`}
-              variant="tag"
-              size="sm"
-              trailingIcon={X}
-              onTrailingPress={() => removeFilter('categoryId')}
-              style={styles.activeFilterChip}
-            />
-          ) : (
-            safeCategories.map((cat) => (
-              <Chip
-                key={cat}
-                label={`Category: ${cat}`}
-                variant="tag"
-                size="sm"
-                trailingIcon={X}
-                onTrailingPress={() => removeFilter('categories', cat)}
-                style={styles.activeFilterChip}
-              />
-            ))
-          )}
-
-          {filters.city && (
-            <Chip
-              key="city"
-              label={`City: ${filters.city}`}
-              variant="tag"
-              size="sm"
-              trailingIcon={X}
-              onTrailingPress={() => removeFilter('city')}
-              style={styles.activeFilterChip}
-            />
-          )}
-
-          {filters.minRating > 0 && (
-            <Chip
-              key="rating"
-              label={`${filters.minRating}★ & up`}
-              variant="tag"
-              size="sm"
-              trailingIcon={X}
-              onTrailingPress={() => removeFilter('minRating')}
-              style={styles.activeFilterChip}
-            />
-          )}
-
-          {filters.maxRate > 0 && (
-            <Chip
-              key="price"
-              label={`Under Rs ${filters.maxRate.toLocaleString()}`}
-              variant="tag"
-              size="sm"
-              trailingIcon={X}
-              onTrailingPress={() => removeFilter('maxRate')}
-              style={styles.activeFilterChip}
-            />
-          )}
-
-          {filters.sortBy !== 'relevance' && (
-            <Chip
-              key="sort"
-              label={`Sort: ${filters.sortBy === 'distance' ? 'Nearest' : filters.sortBy === 'rating' ? 'Top Rated' : 'Price'}`}
-              variant="tag"
-              size="sm"
-              trailingIcon={X}
-              onTrailingPress={() => removeFilter('sortBy')}
-              style={styles.activeFilterChip}
-            />
-          )}
-
-          {filters.provider_type && filters.provider_type !== 'ALL' && (
-            <Chip
-              key="provider"
-              label={filters.provider_type === 'COMPANY' ? 'Agencies only' : 'Solo Handymen'}
-              variant="tag"
-              size="sm"
-              trailingIcon={X}
-              onTrailingPress={() => removeFilter('provider_type')}
-              style={styles.activeFilterChip}
-            />
-          )}
-        </ScrollView>
-      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll} style={styles.appliedRow}>
+        {items.map((i) => (
+          <Chip
+            key={i.key}
+            label={i.label}
+            variant="tag"
+            size="sm"
+            trailingIcon={X}
+            onTrailingPress={() => removeFilter(i.key)}
+            style={styles.appliedChip}
+          />
+        ))}
+      </ScrollView>
     );
   };
 
-  const renderEmptyQueryState = () => {
-    return (
-      <View style={styles.emptyQueryContainer}>
-        {/* 1. Recent Searches */}
-        <RecentSearchesSection
-          searches={searches}
-          onSelect={handleSelectRecent}
-          onRemove={removeSearch}
-          onClearAll={clearAll}
-        />
+  const renderBrowseHeader = () => (
+    <Animated.View entering={FadeIn.duration(180)}>
+      <RecentSearchesSection searches={searches} onSelect={runSearch} onRemove={removeSearch} onClearAll={clearAll} />
 
-        {/* 2. Trending Searches from Search Service */}
-        <TrendingSearchChips
-          terms={trendingTerms}
-          onSelect={handleSelectTrending}
-        />
-
-        {/* 3. Browse by Category */}
-        {categoryChipOptions.length > 0 && (
-          <View style={styles.browseSection}>
-            <Text style={styles.sectionTitle}>Browse by Category</Text>
-            <ChipGroup
-              options={categoryChipOptions}
-              selected={filters.categoryLabel || ''}
-              onSelect={(cat) => {
-                const matched = fetchedCategories.find((c) => c.name === cat || c.id === cat);
-                if (matched) {
-                  setFilters((prev) => ({
-                    ...prev,
-                    categoryId: matched.id,
-                    categoryLabel: matched.name,
-                    categories: [matched.name],
-                  }));
-                } else {
-                  setQuery(cat);
-                }
-                addSearch(cat);
-              }}
-              multiSelect={false}
-              scrollable={false}
-              chipTone="neutral"
-            />
+      {trendingTerms.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Trending
+          </Text>
+          <View style={styles.wrap}>
+            {trendingTerms.slice(0, 8).map((t, i) => (
+              <SearchChip key={`${t.term}-${i}`} label={t.term} onPress={() => runSearch(t.term)} accessibilityLabel={`Search for ${t.term}`} />
+            ))}
           </View>
+        </View>
+      )}
+
+      {categories.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Browse by category
+          </Text>
+          <View style={styles.wrap}>
+            {categories.map((c) => (
+              <SearchChip key={c.id || c.name} label={c.name} selected={isCategorySelected(c)} onPress={() => toggleCategory(c)} />
+            ))}
+          </View>
+        </View>
+      )}
+
+      <View style={[styles.section, styles.listTitleRow]}>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          {hasLocation ? 'Professionals near you' : 'Popular professionals'}
+        </Text>
+      </View>
+    </Animated.View>
+  );
+
+  const renderResultsHeader = () => (
+    <Animated.View entering={FadeIn.duration(180)}>
+      {categories.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll} style={styles.categoryRow}>
+          {categories.map((c) => (
+            <SearchChip key={c.id || c.name} label={c.name} selected={isCategorySelected(c)} onPress={() => toggleCategory(c)} />
+          ))}
+        </ScrollView>
+      )}
+      {renderAppliedFilters()}
+      {!isLoading && !isError && workers.length > 0 && (
+        <Text style={styles.count} maxFontSizeMultiplier={1.3}>
+          {isPlaceholderData
+            ? 'Updating results…'
+            : filters.available === 'now'
+            ? `${total}${isTotalPartial ? '+' : ''} available now`
+            : `${total} ${total === 1 ? 'professional' : 'professionals'}`}
+        </Text>
+      )}
+    </Animated.View>
+  );
+
+  /* ─────────────── Body states ─────────────── */
+
+  const renderEmpty = () => {
+    if (isLoading) {
+      return (
+        <SkeletonGroup accessibilityLabel="Loading professionals">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <WorkerListRowSkeleton key={i} />
+          ))}
+        </SkeletonGroup>
+      );
+    }
+    if (isError) {
+      return (
+        <EmptyState
+          type={isOffline ? 'no-internet' : 'server-error'}
+          title={isOffline ? 'You’re offline' : 'Couldn’t load professionals'}
+          description={isOffline ? 'Check your connection and try again.' : 'Something went wrong on our side. Please try again.'}
+          onAction={() => void refetch()}
+          actionLabel="Try again"
+          actionVariant="neutral"
+          style={styles.emptyState}
+        />
+      );
+    }
+    if (!hasSearchIntent) {
+      return (
+        <EmptyState
+          type="no-workers"
+          title="No professionals nearby yet"
+          description="Search for a service or pick a category above."
+          showAction={false}
+          style={styles.emptyState}
+        />
+      );
+    }
+    const filtered = activeFilterCount > 0;
+    return (
+      <View style={styles.emptyState}>
+        <EmptyState
+          type="no-workers"
+          title={filtered ? 'No matching professionals found' : 'No results'}
+          description={
+            filtered
+              ? 'Try adjusting your filters to discover more professionals.'
+              : 'Try a different word, like a service or a worker’s name.'
+          }
+          actionVariant="neutral"
+          actionLabel={filtered ? 'Adjust filters' : 'Clear search'}
+          onAction={filtered ? openFilters : clearSearch}
+        />
+        {filtered && (
+          <Pressable onPress={resetFilters} hitSlop={10} style={styles.clearFiltersLink} accessibilityRole="button">
+            <Text style={styles.clearFiltersText}>Clear all filters</Text>
+          </Pressable>
         )}
       </View>
     );
   };
 
-  const renderEmptyResults = () => {
-    if (isLoading) return null;
-    return (
-      <View style={styles.emptyResultsContainer}>
-        <EmptyState
-          type="no-workers"
-          title="No service providers found"
-          description="Try adjusting your search or filters to find available providers."
-          actionVariant="neutral"
-          actionLabel={activeFilterCount > 0 ? 'Reset Filters' : 'Clear Search'}
-          onAction={() => {
-            if (activeFilterCount > 0) {
-              resetFilters();
-            } else {
-              clearSearch();
-            }
-          }}
-        />
+  const renderItem = useCallback(
+    ({ item, index }: { item: WorkerNearby; index: number }) => (
+      <View style={isPlaceholderData ? styles.stale : undefined}>
+        <WorkerListRow worker={item} isLast={index === workers.length - 1 && !isLoadingMore} />
       </View>
-    );
-  };
+    ),
+    [isPlaceholderData, styles.stale, workers.length, isLoadingMore]
+  );
 
   const showSuggestionsDropdown = query.trim().length >= 2 && suggestions.length > 0;
 
@@ -302,219 +311,128 @@ export default function ExploreScreen() {
       <SearchHeader
         value={query}
         onChangeText={setQuery}
-        onClear={clearSearch}
+        onClear={() => setQuery('')}
+        onSubmit={handleSubmit}
         activeFilterCount={activeFilterCount}
-        onFilterPress={() => filterSheetRef.current?.open()}
+        onFilterPress={openFilters}
         scrollY={scrollY}
-        placeholder="Search electrician, AC repair, mistri..."
+        searchRef={searchRef}
       />
 
-      {/* Autocomplete Dropdown */}
       {showSuggestionsDropdown && (
-        <AutocompleteDropdown
-          suggestions={suggestions}
-          onSelect={onSelectSuggestion}
-          visible={showSuggestionsDropdown}
-        />
+        <AutocompleteDropdown suggestions={suggestions} onSelect={onSelectSuggestion} visible={showSuggestionsDropdown} />
       )}
 
-      {renderActiveFilters()}
-
-      {!hasSearchIntent ? (
-        <ScrollView
-          style={styles.listContainer}
+      <View style={styles.listContainer}>
+        <FlashList
+          data={isLoading || isError ? [] : workers}
+          extraData={isPlaceholderData}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          // @ts-ignore FlashList v1 prop, ignored by v2
+          estimatedItemSize={88}
+          contentContainerStyle={styles.listContent}
           onScroll={(e) => {
             scrollY.value = e.nativeEvent.contentOffset.y;
           }}
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
-        >
-          {renderEmptyQueryState()}
-        </ScrollView>
-      ) : (
-        <View style={styles.listContainer}>
-          <FlashList
-            data={workers}
-            renderItem={({ item, index }) => (
-              <WorkerListRow worker={item} isLast={index === workers.length - 1 && !isLoadingMore} />
-            )}
-            keyExtractor={(item) => item.id}
-            // @ts-ignore
-            estimatedItemSize={88}
-            contentContainerStyle={styles.flashListContent}
-            onScroll={(e) => {
-              scrollY.value = e.nativeEvent.contentOffset.y;
-            }}
-            onEndReached={() => {
-              if (hasMore && !isLoadingMore) loadMore();
-            }}
-            onEndReachedThreshold={0.7}
-            ListHeaderComponent={
-              !isLoading ? (
-                <View style={styles.resultsHeader}>
-                  <ProviderTypeFilterChips
-                    selected={(filters.provider_type as any) || 'ALL'}
-                    onSelect={(val) => setFilters((prev) => ({ ...prev, provider_type: val }))}
-                  />
-                  <Text style={styles.resultsCount}>
-                    {total} {total === 1 ? 'provider' : 'providers'} found
-                  </Text>
-                  <View style={styles.sortRow}>
-                    <ChipGroup
-                      options={[
-                        { label: 'Recommended', value: 'relevance' },
-                        { label: 'Nearest', value: 'distance' },
-                        { label: 'Top Rated', value: 'rating' },
-                        { label: 'Lowest Price', value: 'price_low' },
-                      ]}
-                      selected={filters.sortBy}
-                      onSelect={(val) =>
-                        setFilters((prev) => ({ ...prev, sortBy: val as any }))
-                      }
-                      scrollable
-                      paddingH={0}
-                      chipSize="sm"
-                      chipTone="neutral"
-                    />
-                  </View>
-                </View>
-              ) : null
-            }
-            ListEmptyComponent={
-              isLoading ? (
-                <SkeletonGroup style={styles.skeletonContainer} accessibilityLabel="Loading results">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <WorkerListRowSkeleton key={i} />
-                  ))}
-                </SkeletonGroup>
-              ) : isError ? (
-                <EmptyState
-                  type={isOffline ? 'no-internet' : 'server-error'}
-                  title={isOffline ? 'No Internet Connection' : "Couldn't load search results"}
-                  description={
-                    isOffline
-                      ? 'Please check your connection and tap retry.'
-                      : 'An unexpected error occurred while loading search results. Please try again.'
-                  }
-                  onAction={refetch}
-                  actionLabel="Retry"
-                  style={{ paddingVertical: 40 }}
-                />
-              ) : (
-                renderEmptyResults()
-              )
-            }
-            ListFooterComponent={
-              isLoadingMore ? (
-                <SkeletonGroup style={styles.skeletonContainer} accessibilityLabel="Loading results">
-                  {[1, 2].map((i) => (
-                    <WorkerListRowSkeleton key={i} />
-                  ))}
-                </SkeletonGroup>
-              ) : null
-            }
-          />
-        </View>
-      )}
-
-      {/* Filter Bottom Sheet */}
-      <BottomSheet
-        ref={filterSheetRef}
-        snapPoints={['88%']}
-        contentPadding={false}
-      >
-        <FilterSheetContent
-          filters={filters}
-          onApply={handleFilterApply}
-          onReset={handleFilterReset}
-          resultCount={total}
+          keyboardDismissMode="on-drag"
+          onEndReached={() => {
+            if (hasMore && !isLoadingMore) loadMore();
+          }}
+          onEndReachedThreshold={0.7}
+          ListHeaderComponent={hasSearchIntent ? renderResultsHeader() : renderBrowseHeader()}
+          ListEmptyComponent={renderEmpty()}
+          ListFooterComponent={
+            isLoadingMore ? (
+              <SkeletonGroup accessibilityLabel="Loading more professionals">
+                {[1, 2].map((i) => (
+                  <WorkerListRowSkeleton key={i} />
+                ))}
+              </SkeletonGroup>
+            ) : null
+          }
         />
+      </View>
+
+      <BottomSheet ref={filterSheetRef} snapPoints={['88%']} contentPadding={false}>
+        <FilterSheetContent key={filterSheetKey} filters={filters} onApply={handleFilterApply} />
       </BottomSheet>
     </View>
   );
 }
 
-const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgApp,
-  },
-  activeFiltersContainer: {
-    backgroundColor: colors.bgCard,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  activeFiltersScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  activeFilterChip: {
-    backgroundColor: colors.bgSection,
-  },
-  listContainer: {
-    flex: 1,
-  },
-  emptyQueryContainer: {
-    paddingBottom: 40,
-  },
-  browseSection: {
-    paddingHorizontal: 16,
-    paddingTop: 18,
-  },
-  sectionTitle: {
-    fontFamily: typography.fontFamily.poppins.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-    marginBottom: 12,
-  },
-  flashListContent: {
-    paddingTop: 16,
-    paddingBottom: 40,
-  },
-  resultsHeader: {
-    marginBottom: 6,
-    paddingHorizontal: 16,
-  },
-  resultsCount: {
-    fontFamily: typography.fontFamily.inter.medium,
-    fontSize: 13,
-    color: colors.textMuted,
-    marginVertical: 10,
-  },
-  sortRow: {
-    marginBottom: 4,
-  },
-  skeletonContainer: {
-  },
-  emptyResultsContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 36,
-    paddingBottom: 48,
-    paddingHorizontal: 32,
-  },
-  emptyIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.bgSection,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontFamily: typography.fontFamily.poppins.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  emptySub: {
-    fontFamily: typography.fontFamily.jakarta.regular,
-    fontSize: 13.5,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 19,
-  },
-});
+const createStyles = ({ colors }: AppTheme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bgCard,
+    },
+    listContainer: {
+      flex: 1,
+    },
+    listContent: {
+      paddingBottom: 32,
+    },
+    section: {
+      paddingHorizontal: 20,
+      paddingTop: 24,
+    },
+    sectionTitle: {
+      fontFamily: typography.fontFamily.jakarta.semiBold,
+      fontSize: 15.5,
+      color: colors.textPrimary,
+      marginBottom: 12,
+    },
+    listTitleRow: {
+      paddingTop: 28,
+    },
+    wrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    hScroll: {
+      paddingHorizontal: 20,
+      gap: 8,
+    },
+    categoryRow: {
+      paddingTop: 4,
+      flexGrow: 0,
+    },
+    appliedRow: {
+      paddingTop: 10,
+      flexGrow: 0,
+    },
+    appliedChip: {
+      backgroundColor: colors.bgSection,
+    },
+    count: {
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 4,
+      fontFamily: typography.fontFamily.jakarta.medium,
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    stale: {
+      opacity: 0.45,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingTop: 32,
+      paddingBottom: 48,
+      paddingHorizontal: 32,
+    },
+    clearFiltersLink: {
+      marginTop: 4,
+      paddingVertical: 8,
+    },
+    clearFiltersText: {
+      fontFamily: typography.fontFamily.jakarta.semiBold,
+      fontSize: 13.5,
+      color: colors.textSecondary,
+      textDecorationLine: 'underline',
+    },
+  });

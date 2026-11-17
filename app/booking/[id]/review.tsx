@@ -604,7 +604,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   editWindowBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     borderRadius: radius.md,
     padding: 12,
     marginBottom: spacing.md,
@@ -672,7 +672,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   },
   submitButton: {
     height: 50,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -686,7 +686,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     opacity: 0.85,
   },
   submitButtonPressed: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimaryPressed,
     transform: [{ scale: 0.99 }],
   },
   submitButtonText: {
@@ -795,7 +795,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     marginBottom: spacing.md,
   },
   tagDisplayChip: {
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: radius.pill,
@@ -836,7 +836,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   },
   primaryPillBtn: {
     height: 48,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',

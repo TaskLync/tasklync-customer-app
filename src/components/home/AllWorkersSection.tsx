@@ -1,7 +1,8 @@
+import { SeeAllLink } from '../ui/Button/SeeAllLink';
 import React, { useCallback, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronRight, ChevronDown } from 'lucide-react-native';
+import { ChevronDown } from 'lucide-react-native';
 
 import { WorkerListRow, WorkerListRowSkeleton } from '../worker/WorkerListRow';
 import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
@@ -70,16 +71,7 @@ export const AllWorkersSection: React.FC<AllWorkersSectionProps> = ({ category }
           </Text>
         )}
       </View>
-      <Pressable
-        onPress={handleSeeAll}
-        hitSlop={12}
-        style={({ pressed }) => [styles.seeAll, pressed && styles.pressedText]}
-        accessibilityRole="link"
-        accessibilityLabel="See all workers"
-      >
-        <Text style={styles.seeAllText}>See all</Text>
-        <ChevronRight size={15} color={colors.primaryDark} strokeWidth={2.4} />
-      </Pressable>
+      <SeeAllLink onPress={handleSeeAll} accessibilityLabel="See all workers" />
     </View>
   );
 
@@ -164,9 +156,10 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   },
   subtitle: {
     fontFamily: typography.fontFamily.jakarta.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 1,
+    fontSize: 12.5,
+    lineHeight: 17,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   seeAll: {
     flexDirection: 'row',

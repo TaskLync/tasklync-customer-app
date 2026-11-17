@@ -319,7 +319,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   buttonBase: {
     height: 40,
     paddingHorizontal: 22,
-    borderRadius: radius.pill,
+    borderRadius: radius.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -330,24 +330,19 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: '100%',
   },
   primaryButton: {
-    backgroundColor: colors.primary, // #22C55E
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    elevation: 3,
+    backgroundColor: colors.buttonPrimary,
   },
   primaryButtonPressed: {
-    backgroundColor: colors.primaryDark, // #16A34A
+    backgroundColor: colors.buttonPrimaryPressed,
     transform: [{ scale: 0.98 }],
   },
   secondaryButton: {
-    backgroundColor: colors.primaryTint, // #F0FDF4
-    borderWidth: 1.5,
-    borderColor: colors.primaryBorder, // #BBF7D0
+    backgroundColor: colors.buttonSecondary,
+    borderWidth: 1,
+    borderColor: colors.buttonSecondaryBorder,
   },
   secondaryButtonPressed: {
-    backgroundColor: colors.primaryBorderSubtle, // #DCFCE7
+    backgroundColor: colors.buttonSecondaryPressed,
     transform: [{ scale: 0.98 }],
   },
   neutralButton: {
@@ -374,6 +369,6 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     color: palette.pureWhite,
   },
   secondaryButtonText: {
-    color: colors.primaryDark,
+    color: colors.buttonSecondaryText,
   },
 });

@@ -148,7 +148,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   defaultBorder: {
     borderWidth: 1.2,
-    borderColor: palette.green500,
+    borderColor: colors.buttonPrimary,
   },
   iconContainer: {
     marginRight: spacing.md,

@@ -156,7 +156,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   heroBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     borderRadius: radius.xl,
     padding: spacing.base,
     borderWidth: 1,
@@ -168,7 +168,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: palette.green100,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,

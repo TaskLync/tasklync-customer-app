@@ -6,6 +6,7 @@ import { Coordinates } from '../types/location.types';
 import { Address } from '../types/address.types';
 import { validateServiceArea } from '../config/serviceArea.config';
 import { resolveCurrentAddress, addressMatchesLocation } from '../services/location/currentAddress';
+import { startLocationBootstrap } from '../services/location/locationBootstrap';
 
 export interface UseLocationOptions {
   autoFetch?: boolean;
@@ -79,7 +80,10 @@ export const useLocation = (options?: UseLocationOptions) => {
               lat: freshResult.location.lat,
               lng: freshResult.location.lng,
             };
-            store.setLiveLocation(coords);
+            store.setLiveLocation(coords, {
+              accuracy: freshResult.location.accuracy,
+              timestamp: freshResult.location.timestamp,
+            });
 
             // Resolve the readable address in the background without blocking acquisition
             void resolveCurrentAddress(coords);
@@ -91,22 +95,10 @@ export const useLocation = (options?: UseLocationOptions) => {
           }
         }
 
-        const coords = await locationService.getCurrentPosition({
-          enableHighAccuracy,
-          timeoutMs: 8000,
-          useCacheFirst: true,
-        });
-
-        if (coords) {
-          store.setLiveLocation(coords);
-
-          // Resolve the readable address in the background without blocking acquisition
-          void resolveCurrentAddress(coords);
-
-          return coords;
-        }
-
-        return store.currentLocation;
+        // Shared, deduplicated pipeline: instant OS-cached fix (flagged as cached, not live), then a
+        // fresh GPS fix + address resolution, all off the UI's critical path.
+        await startLocationBootstrap();
+        return useLocationStore.getState().currentLocation;
       } catch (err: any) {
         console.warn('[useLocation] Failed to fetch position:', err);
         setError(err?.message || 'Failed to detect location');
@@ -144,10 +136,15 @@ export const useLocation = (options?: UseLocationOptions) => {
    * Switch to GPS mode and fetch fresh coordinates
    */
   const refreshLocation = useCallback(async (): Promise<Coordinates | null> => {
-    const store = useLocationStore.getState();
-    store.setLocationMode('gps');
-    store.setSelectedAddress(null);
-    return getCurrentPosition(true);
+    // Switch away from the customer's chosen saved address ONLY once a fresh fix exists: a failed
+    // attempt (indoors, permission, timeout) must not leave them with no location at all.
+    const coords = await getCurrentPosition(true);
+    if (coords) {
+      const store = useLocationStore.getState();
+      store.setSelectedAddress(null);
+      store.setLocationMode('gps');
+    }
+    return coords;
   }, [getCurrentPosition]);
 
   /**
@@ -232,6 +229,11 @@ export const useLocation = (options?: UseLocationOptions) => {
           if (isInitial && !hasAutoFetchedRef.current) {
             hasAutoFetchedRef.current = true;
             await getCurrentPosition(false);
+          } else if (!isInitial && (!store.currentLocation || store.permissionStatus !== 'granted' || !store.isServicesEnabled)) {
+            // (`store` is the snapshot from before this check, so these are the OLD values)
+            // Back from Settings after enabling GPS / granting permission: locate now instead of
+            // leaving the home screen without a position. Deduplicated by the bootstrap.
+            await getCurrentPosition(false);
           }
         }
       } catch (err) {
@@ -245,7 +247,7 @@ export const useLocation = (options?: UseLocationOptions) => {
       if (nextAppState === 'active') {
         const store = useLocationStore.getState();
         // Only re-check on foreground if permission was not granted or location is missing
-        if (store.locationMode === 'gps' && (store.permissionStatus !== 'granted' || !store.currentLocation)) {
+        if (store.locationMode === 'gps' && (store.permissionStatus !== 'granted' || !store.isServicesEnabled || !store.currentLocation)) {
           checkAndSync(false);
         }
       }

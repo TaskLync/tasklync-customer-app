@@ -1,15 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
 import { useCartStore } from '../store/cart.store';
 import { useBookingDraftStore } from '../store/bookingDraft.store';
-import { useLocationStore } from '../store/location.store';
 import { useAuthStore } from '../store/auth.store';
 import { bookingApi } from '../services/api/booking.api';
-import { userApi } from '../services/api/user.api';
-import { resolveAddress } from '../services/maps/addressResolver';
 import { BookingDetails, CreateBookingPayload } from '../types/booking.types';
 import { slotToUTCISO, normalizeDateToYYYYMMDD } from '../utils/timezone';
 import { cartDurationHours } from '../utils/bookingDuration';
-import { isValidUUID, CANONICAL_FALLBACK_UUIDS } from '../utils/uuid';
+import { isValidUUID } from '../utils/uuid';
+import { resolveBookingLocation } from '../utils/activeAddress';
 import { invalidateAvailability, classifyBookingFailure, type BookingFailure } from '../utils/availabilityEvents';
 import { classifyCreateDiscountFailure, discountErrorMessage, trimCode } from '../utils/offers';
 import {
@@ -51,7 +49,6 @@ export function useCreateBooking() {
 
   const cartItems = useCartStore((s) => s.items);
   const cartWorker = useCartStore((s) => s.worker);
-  const liveLocation = useLocationStore((s) => s.liveLocation);
   const token = useAuthStore((s) => s.accessToken);
 
   const {
@@ -62,7 +59,6 @@ export function useCreateBooking() {
     addressId,
     address,
     note,
-    setAddress,
   } = useBookingDraftStore();
 
   // Each successful create consumes a use of a code: a second tap must never start a second request.
@@ -125,32 +121,24 @@ export function useCreateBooking() {
         timeStr = '10:00 AM';
       }
 
-      let addrText = address
-        ? `${address.street}${address.city ? ', ' + address.city : ''}`
-        : '';
-      let addrCity = address?.city || '';
-      let addrCountry: string | undefined;
-
-      const lat = address?.latitude ?? liveLocation?.lat;
-      const lng = address?.longitude ?? liveLocation?.lng;
-
-      if (typeof lat !== 'number' || typeof lng !== 'number') {
-        const err = 'Please select a valid delivery address within the service area.';
+      // The destination is ONE saved address: its id and ITS coordinates. No GPS mixing, no
+      // auto-created addresses, no shared placeholder ids (audit LOC-007/014/016). The backend
+      // re-reads the saved point, text and directions from that id.
+      const location = resolveBookingLocation(addressId, address);
+      if (!location.ok) {
+        const err =
+          location.reason === 'UNSAVED_ADDRESS'
+            ? 'Please confirm your address on the map so the professional can find you.'
+            : location.reason === 'NO_COORDINATES'
+            ? 'Please re-select your address — its map location is missing.'
+            : 'Please select or add a delivery address before confirming.';
         setError(err);
         return { booking: null, error: err };
       }
-
-      // No saved address: describe the actual delivery coordinates (resolved, or an honest coordinates label)
-      if (!address) {
-        try {
-          const resolved = await resolveAddress(lat, lng);
-          addrText = resolved.address_line;
-          addrCity = resolved.city || '';
-          addrCountry = resolved.country || undefined;
-        } catch {
-          addrText = `Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
-        }
-      }
+      const { lat, lng, addressId: resolvedAddressId } = location;
+      const addrText = address
+        ? `${address.street}${address.city && !address.street.includes(address.city) ? ', ' + address.city : ''}`
+        : '';
 
       // Validate that the delivery destination is inside the active service area (Faisalabad)
       const serviceValidation = validateServiceArea({ lat, lng });
@@ -158,44 +146,6 @@ export function useCreateBooking() {
         const err = SERVICE_UNAVAILABLE_MESSAGE;
         setError(err);
         return { booking: null, error: err };
-      }
-
-      // Resolve address_id: Ensure it is always a valid server-side UUID
-      let resolvedAddressId: string = CANONICAL_FALLBACK_UUIDS.ADDRESS_HOME;
-
-      if (isValidUUID(addressId)) {
-        resolvedAddressId = addressId;
-      } else if (isValidUUID(address?.id)) {
-        resolvedAddressId = address.id;
-      } else if (token) {
-        // User is logged in but address is not yet saved to server; create it dynamically
-        try {
-          const createdAddr = await userApi.createAddress({
-            label: address?.label || 'Home',
-            address_line: addrText,
-            city: addrCity,
-            ...(addrCountry ? { country: addrCountry } : {}),
-            lat,
-            lng,
-            is_default: true,
-          });
-
-          if (createdAddr?.id && isValidUUID(createdAddr.id)) {
-            resolvedAddressId = createdAddr.id;
-            setAddress({
-              id: createdAddr.id,
-              label: createdAddr.label || 'Home',
-              street: createdAddr.address_line,
-              city: createdAddr.city || '',
-              latitude: createdAddr.lat,
-              longitude: createdAddr.lng,
-              isDefault: Boolean(createdAddr.is_default),
-            });
-          }
-        } catch (_addrErr) {
-          // Fallback to canonical UUID if server address creation fails
-          resolvedAddressId = CANONICAL_FALLBACK_UUIDS.ADDRESS_HOME;
-        }
       }
 
       // Convert date + time slot in Pakistan Time (Asia/Karachi, UTC+5) to standard ISO-8601 UTC timestamp
@@ -288,9 +238,7 @@ export function useCreateBooking() {
     addressId,
     address,
     note,
-    liveLocation,
     token,
-    setAddress,
   ]);
 
   return {

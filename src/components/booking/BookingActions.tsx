@@ -74,9 +74,9 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     marginLeft: 10,
   },
   buttonPrimary: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     borderWidth: 1,
-    borderColor: colors.primaryDark,
+    borderColor: colors.buttonPrimary,
   },
   buttonSecondary: {
     backgroundColor: 'transparent',

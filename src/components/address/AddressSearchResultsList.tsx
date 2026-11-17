@@ -159,11 +159,32 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
           );
         })}
       </ScrollView>
+
+      {/* Google Places terms: attribution when results are shown (iOS shows them over Apple Maps). */}
+      {!isShowingRecents && itemsToRender.some((p) => p.source === 'google') && (
+        <Text style={styles.attributionText} maxFontSizeMultiplier={1.2}>
+          Powered by Google
+        </Text>
+      )}
+      {!isShowingRecents && itemsToRender.length > 0 && itemsToRender.every((p) => p.approximate) && (
+        <Text style={styles.attributionText} maxFontSizeMultiplier={1.2}>
+          Search is limited right now — results are approximate areas. Move the map to place the pin exactly.
+        </Text>
+      )}
     </View>
   );
 };
 
 const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
+  attributionText: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 10,
+    lineHeight: 14,
+    color: colors.textMuted,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    textAlign: 'right',
+  },
   card: {
     backgroundColor: palette.white,
     borderRadius: radius.lg,

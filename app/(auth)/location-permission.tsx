@@ -1,29 +1,38 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, router as globalRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  MapPin,
-  MapPinOff,
-  X,
-  AlertTriangle,
-  Navigation,
-} from 'lucide-react-native';
+import { MapPin, MapPinOff, X, Navigation } from 'lucide-react-native';
 
 import { Screen } from '@components/layout/Screen';
 import { Button } from '@components/ui/Button';
 import { fontFamily, radius, shadows } from '@design/index';
 import { useLocationStore, useUIStore, useAuthStore } from '@store/index';
 import { locationService } from '../../src/services/location/location.service';
+import { startLocationBootstrap } from '../../src/services/location/locationBootstrap';
 import { validateServiceArea } from '../../src/config/serviceArea.config';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 import { showAlert } from '../../src/components/feedback/AppAlert';
+import type { VerifiedLocation } from '../../src/types/location.types';
 
-interface UnserviceableLocationState {
-  visible: boolean;
-  cityName: string;
-  lat: number;
-  lng: number;
+/**
+ * Runs after the customer is already on the home screen, once the background GPS fix lands.
+ * Honest, non-blocking notice when they are physically outside the service area: never pretends
+ * they are in Faisalabad, never blocks browsing.
+ */
+function notifyIfOutsideServiceArea(fix: VerifiedLocation) {
+  const store = useLocationStore.getState();
+  // They already chose a saved address meanwhile: the GPS position is no longer what they use.
+  if (store.locationMode === 'address') return;
+  if (validateServiceArea({ lat: fix.lat, lng: fix.lng }).isServiceable) return;
+  showAlert(
+    'We currently operate only in Faisalabad',
+    'You appear to be outside our service area. You can still explore services and workers, but bookings can only be placed for a Faisalabad address.',
+    [
+      { text: 'Keep exploring', style: 'cancel' },
+      { text: 'Set a Faisalabad address', onPress: () => globalRouter.push('/profile/addresses/add' as any) },
+    ]
+  );
 }
 
 export default function LocationPermissionScreen() {
@@ -33,30 +42,32 @@ export default function LocationPermissionScreen() {
   const insets = useSafeAreaInsets();
 
   const setPermissionStatus = useLocationStore((state) => state.setPermissionStatus);
-  const setCurrentLocation = useLocationStore((state) => state.setCurrentLocation);
-  const setCurrentCity = useLocationStore((state) => state.setCurrentCity);
   const setIsServicesEnabled = useLocationStore((state) => state.setIsServicesEnabled);
   const showToast = useUIStore((state) => state.showToast);
   const user = useAuthStore((state) => state.user);
 
   const [isLoading, setIsLoading] = useState(false);
   const [showBlockedModal, setShowBlockedModal] = useState(false);
-  const [unserviceableState, setUnserviceableState] = useState<UnserviceableLocationState>({
-    visible: false,
-    cityName: '',
-    lat: 0,
-    lng: 0,
-  });
+  // Synchronous guards: state updates are async, so a fast double tap could otherwise slip through.
+  const inFlightRef = useRef(false);
+  const hasNavigatedRef = useRef(false);
 
   const navigateToHome = (withWelcome = true) => {
+    if (hasNavigatedRef.current) return;
+    hasNavigatedRef.current = true;
     router.replace('/(tabs)/' as any);
     if (withWelcome) {
       showToast({ type: 'success', title: `Welcome, ${user?.name || 'there'}! 👋` });
     }
   };
 
+  /**
+   * Only the OS permission prompt is awaited here. GPS acquisition, reverse geocoding and the
+   * service-area check all continue in the background after navigation (locationBootstrap).
+   */
   const handleAllow = async () => {
-    if (isLoading) return;
+    if (inFlightRef.current || hasNavigatedRef.current) return;
+    inFlightRef.current = true;
     setIsLoading(true);
 
     try {
@@ -73,7 +84,6 @@ export default function LocationPermissionScreen() {
 
       // Handle user denial / blocked permission
       if (!permState.granted) {
-        setIsLoading(false);
         if (!permState.canAskAgain) {
           setShowBlockedModal(true);
         } else {
@@ -83,9 +93,8 @@ export default function LocationPermissionScreen() {
         return;
       }
 
-      // 2. Hardware GPS disabled check
+      // 2. Hardware GPS disabled check (needs the customer's decision, so it is the one prompt kept)
       if (!permState.servicesEnabled) {
-        setIsLoading(false);
         if (Platform.OS === 'web') {
           showToast({
             type: 'info',
@@ -111,110 +120,24 @@ export default function LocationPermissionScreen() {
         return;
       }
 
-      // 3. Acquire fresh, verified high-accuracy GPS coordinates (never cached / stale / IP-based)
-      const freshResult = await locationService.acquireFreshGPSPosition({
-        timeoutMs: 9000,
-        targetAccuracyMeters: 20,
-        maxAcceptableAccuracyMeters: 45,
-        maxAgeMs: 10000,
-        allowMock: false,
-      });
-
-      if (!freshResult.success) {
-        setIsLoading(false);
-        const { error } = freshResult;
-
-        if (Platform.OS === 'web') {
-          showToast({
-            type: 'info',
-            title: error.userMessage || 'Could not acquire precise GPS signal.',
-          });
-          navigateToHome(true);
-          return;
-        }
-
-        if (error.code === 'SERVICES_DISABLED') {
-          showAlert(
-            'Location Services Off',
-            error.userMessage || 'Please turn on GPS to detect your location.',
-            [
-              { text: 'Later', style: 'cancel', onPress: () => navigateToHome(true) },
-              { text: 'Open Settings', onPress: locationService.openSettings },
-            ]
-          );
-          return;
-        }
-
-        // Weak GPS or timeout: inform user and allow manual choice without faking Faisalabad
-        showAlert(
-          'GPS Signal Weak',
-          error.userMessage ||
-            'Unable to acquire a high-confidence GPS lock. You can continue to explore or retry.',
-          [
-            { text: 'Continue to App', style: 'cancel', onPress: () => navigateToHome(true) },
-            { text: 'Retry', onPress: handleAllow },
-          ]
-        );
-        return;
-      }
-
-      // 4. GPS lock acquired: store real coordinates
-      const coords = {
-        lat: freshResult.location.lat,
-        lng: freshResult.location.lng,
-      };
-      setCurrentLocation(coords);
-
-      // 5. Reverse-geocode verified GPS coordinates to determine the real city (e.g. Toba Tek Singh)
-      const geo = await locationService.reverseGeocode(coords);
-      const detectedCity =
-        geo?.cityName && geo.cityName !== 'Current Area' ? geo.cityName : 'Your Location';
-      setCurrentCity(detectedCity);
-
-      // 6. Validate the detected coordinates against the Faisalabad service boundary/geofence
-      const validation = validateServiceArea(coords);
-
-      setIsLoading(false);
-
-      if (validation.isServiceable) {
-        // User is physically in Faisalabad
-        showToast({ type: 'success', title: 'Location verified: Faisalabad' });
-        navigateToHome(true);
-      } else {
-        // User is physically outside Faisalabad (e.g. Toba Tek Singh)
-        // Show clear "Outside Service Area" state — NEVER pretend they are in Faisalabad
-        setUnserviceableState({
-          visible: true,
-          cityName: detectedCity,
-          lat: coords.lat,
-          lng: coords.lng,
-        });
-      }
-    } catch (_err) {
-      setIsLoading(false);
-      // Gracefully proceed without corrupting location store with a fake city
+      // 3. Permission granted + GPS on: start the background pipeline (instant OS-cached fix, then
+      //    a fresh GPS fix, address resolution and the service-area check) and enter the app NOW.
+      //    The home screen's location header joins this same run instead of starting another one.
+      void startLocationBootstrap({ onFreshFix: notifyIfOutsideServiceArea });
       navigateToHome(true);
+    } catch (_err) {
+      // Never strand the customer here; home shows an honest "Select location" state.
+      navigateToHome(true);
+    } finally {
+      inFlightRef.current = false;
+      setIsLoading(false);
     }
   };
 
   const handleNotNow = () => {
-    if (isLoading) return;
+    if (inFlightRef.current) return;
     setPermissionStatus('denied');
     navigateToHome(true);
-  };
-
-  const handleContinueFromUnserviceable = () => {
-    setUnserviceableState((prev) => ({ ...prev, visible: false }));
-    showToast({
-      type: 'info',
-      title: `Browsing from ${unserviceableState.cityName || 'Outside Area'}`,
-    });
-    router.replace('/(tabs)/' as any);
-  };
-
-  const handleSetFaisalabadAddress = () => {
-    setUnserviceableState((prev) => ({ ...prev, visible: false }));
-    router.replace('/profile/addresses/add' as any);
   };
 
   return (
@@ -253,7 +176,7 @@ export default function LocationPermissionScreen() {
             disabled={isLoading}
             loading={isLoading}
             icon={Navigation}
-            label={isLoading ? 'Finding your location...' : 'Share Current Location'}
+            label="Share Current Location"
             style={styles.primaryBtn}
           />
 
@@ -269,72 +192,6 @@ export default function LocationPermissionScreen() {
           </Pressable>
         </View>
       </View>
-
-      {/* Modal: Outside Service Area (e.g. User is in Toba Tek Singh) */}
-      <Modal
-        visible={unserviceableState.visible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleContinueFromUnserviceable}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <View style={[styles.modalIconWrap, styles.amberIconWrap]}>
-                <AlertTriangle size={22} color={palette.amberDark} strokeWidth={2.4} />
-              </View>
-              <Pressable
-                onPress={handleContinueFromUnserviceable}
-                style={styles.closeBtn}
-                accessibilityRole="button"
-                accessibilityLabel="Close"
-                hitSlop={8}
-              >
-                <X size={18} color={palette.gray500} />
-              </Pressable>
-            </View>
-
-            <View style={styles.cityBadge}>
-              <MapPin size={12} color={palette.amberDark} />
-              <Text style={styles.cityBadgeText} numberOfLines={1}>
-                Detected: {unserviceableState.cityName}
-              </Text>
-            </View>
-
-            <Text style={styles.modalTitle}>We Currently Operate Only in Faisalabad</Text>
-            <Text style={styles.modalDescription}>
-              TaskLync is currently serving customers exclusively within the Faisalabad metropolitan region.
-              {'\n\n'}
-              We detected you are located in{' '}
-              <Text style={styles.boldText}>{unserviceableState.cityName}</Text>. You can still explore all our services and workers, but orders and bookings can only be placed for delivery in Faisalabad.
-            </Text>
-
-            <View style={styles.unserviceableActions}>
-              <Button
-                variant="primary"
-                size="md"
-                fullWidth
-                label="Explore Faisalabad Services"
-                onPress={handleContinueFromUnserviceable}
-              />
-              <Pressable
-                onPress={handleSetFaisalabadAddress}
-                style={styles.secondaryActionBtn}
-                accessibilityRole="button"
-              >
-                <Text style={styles.secondaryActionText}>Set a Faisalabad Address</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleAllow}
-                style={styles.retryBtn}
-                accessibilityRole="button"
-              >
-                <Text style={styles.retryBtnText}>Retry Location Detection</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Modal: Location permission permanently blocked in OS settings */}
       <Modal
@@ -423,7 +280,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     borderWidth: 1.5,
     borderColor: palette.green100,
     alignItems: 'center',
@@ -503,10 +360,6 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderErrorLight,
   },
-  amberIconWrap: {
-    backgroundColor: colors.warningLight,
-    borderColor: colors.warningBorder,
-  },
   closeBtn: {
     width: 32,
     height: 32,
@@ -514,24 +367,6 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     backgroundColor: palette.gray100,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  cityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: colors.warningLight,
-    borderWidth: 1,
-    borderColor: colors.warningBorder,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-    marginBottom: 12,
-    gap: 5,
-  },
-  cityBadgeText: {
-    fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 12,
-    color: colors.textWarning,
   },
   modalTitle: {
     fontFamily: fontFamily.poppins.semiBold,
@@ -546,36 +381,6 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     lineHeight: 19,
     color: colors.textSecondary,
     marginBottom: 18,
-  },
-  boldText: {
-    fontFamily: fontFamily.jakarta.bold,
-    color: colors.textPrimary,
-  },
-  unserviceableActions: {
-    gap: 10,
-  },
-  secondaryActionBtn: {
-    height: 46,
-    borderRadius: radius.pill,
-    backgroundColor: palette.iceGray,
-    borderWidth: 1,
-    borderColor: palette.softGray,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryActionText: {
-    fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 13.5,
-    color: palette.gray800,
-  },
-  retryBtn: {
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  retryBtnText: {
-    fontFamily: fontFamily.jakarta.medium,
-    fontSize: 12.5,
-    color: colors.textMuted,
   },
   modalActions: {
     flexDirection: 'row',
@@ -600,7 +405,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: radius.pill,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,6 +1,7 @@
 /**
  * User & Profile Service Specification Interfaces (Day 35)
  */
+import type { AddressDetailFields } from './address.types';
 
 export interface UserPreferences {
   push_enabled: boolean;
@@ -9,7 +10,7 @@ export interface UserPreferences {
   preferred_currency: 'PKR' | 'USD';
 }
 
-export interface UserAddress {
+export interface UserAddress extends AddressDetailFields {
   id: string;
   label: string;
   address_line: string;
@@ -65,7 +66,8 @@ export interface UpdatePreferencesPayload {
   preferred_currency?: 'PKR' | 'USD' | undefined;
 }
 
-export interface CreateAddressPayload {
+/** POST /users/me/addresses body. Detail fields require user-service migration 004 (ignored before). */
+export interface CreateAddressPayload extends AddressDetailFields {
   label: string;
   address_line: string;
   city?: string | undefined;

@@ -22,16 +22,16 @@ export const SecurePaymentNotice: React.FC<SecurePaymentNoticeProps> = ({
   );
 };
 
-const createStyles = ({ palette }: AppTheme) => StyleSheet.create({
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
     borderWidth: 1,
-    borderColor: palette.green200,
+    borderColor: colors.border,
   },
   icon: {
     marginRight: spacing.sm,

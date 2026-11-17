@@ -109,7 +109,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     left: PADDING,
     bottom: PADDING,
     width: PILL_WIDTH,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     borderRadius: radius.pill,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },

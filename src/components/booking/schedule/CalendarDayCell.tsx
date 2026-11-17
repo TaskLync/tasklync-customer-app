@@ -106,7 +106,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderColor: palette.green200,
   },
   cellSelected: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
   },
   cellDisabled: {
     backgroundColor: 'transparent',
@@ -137,6 +137,6 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: 12,
     height: 2,
     borderRadius: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
   },
 });

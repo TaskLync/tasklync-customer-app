@@ -5,73 +5,47 @@ import { NotificationBell } from '../home/NotificationBell';
 import { fontFamily } from '../../design/typography';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
-interface MessagesHeaderProps {
-  totalUnreadCount?: number;
-}
-
-export const MessagesHeader: React.FC<MessagesHeaderProps> = ({ totalUnreadCount = 0 }) => {
+/**
+ * Large-title header: one typographic element and one action. The unread-message count lives on
+ * the "Unread" filter and the Messages tab, so the title stays clean.
+ */
+export const MessagesHeader: React.FC = () => {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 14) + 6 }]}>
-      <View style={styles.titleRow}>
-        <Text style={styles.title} maxFontSizeMultiplier={1.2}>
-          Messages
-        </Text>
-        {totalUnreadCount > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadBadgeText}>
-              {totalUnreadCount}
-            </Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.actionWrap}>
-        <NotificationBell size={38} iconSize={20} />
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) + 10 }]}>
+      <Text style={styles.title} accessibilityRole="header" maxFontSizeMultiplier={1.2} numberOfLines={1}>
+        Messages
+      </Text>
+      <View style={styles.action}>
+        <NotificationBell size={44} iconSize={22} tone="neutral" />
       </View>
     </View>
   );
 };
 
-const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    backgroundColor: colors.bgCard,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  title: {
-    fontFamily: fontFamily.jakarta.bold,
-    fontSize: 28,
-    lineHeight: 34,
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  unreadBadge: {
-    backgroundColor: colors.primaryTint,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.primaryBorderSubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  unreadBadgeText: {
-    fontFamily: fontFamily.jakarta.bold,
-    fontSize: 12,
-    color: colors.primaryDark,
-  },
-  actionWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const createStyles = ({ colors }: AppTheme) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingLeft: 20,
+      // The bell's 44pt hit area carries its own padding; align its glyph with the 20pt gutter.
+      paddingRight: 8,
+      paddingBottom: 14,
+      backgroundColor: colors.neutralBg,
+    },
+    title: {
+      flexShrink: 1,
+      fontFamily: fontFamily.jakarta.bold,
+      fontSize: 30,
+      lineHeight: 36,
+      letterSpacing: -0.8,
+      color: colors.neutralInk,
+    },
+    action: {
+      marginRight: 2,
+    },
+  });

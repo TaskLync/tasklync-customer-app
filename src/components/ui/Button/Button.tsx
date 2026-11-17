@@ -53,7 +53,7 @@ export const Button = ({
   haptic = 'none',
   numberOfLines = 1,
 }: ButtonProps) => {
-  const { colors, palette } = useAppTheme();
+  const { colors } = useAppTheme();
   const scale = useSharedValue(1.0);
   const isPressed = useSharedValue(false);
   const [fixedWidth, setFixedWidth] = useState<number | null>(null);
@@ -110,22 +110,23 @@ export const Button = ({
   }[size];
 
   // Colors based on variant & state
+  // All values come from the shared button tokens (src/design/colors.ts): one primary colour app-wide.
   const getColors = () => {
     if (disabled) {
       switch (variant) {
-        case 'primary': return { bg: colors.primaryBorder, text: colors.textPrimary, border: 'transparent' };
-        case 'secondary': return { bg: 'transparent', text: colors.primaryBorder, border: colors.primaryBorder };
-        case 'ghost': return { bg: colors.bgInput, text: colors.textPrimary, border: 'transparent', opacity: 0.5 };
-        case 'danger': return { bg: palette.red300, text: colors.textOnGreen, border: 'transparent' };
+        case 'primary': return { bg: colors.buttonPrimaryDisabled, text: colors.buttonPrimaryDisabledText, border: 'transparent' };
+        case 'secondary': return { bg: 'transparent', text: colors.textDisabled, border: colors.border };
+        case 'ghost': return { bg: colors.buttonPrimaryDisabled, text: colors.buttonPrimaryDisabledText, border: 'transparent' };
+        case 'danger': return { bg: colors.buttonPrimaryDisabled, text: colors.buttonPrimaryDisabledText, border: 'transparent' };
         case 'text': return { bg: 'transparent', text: colors.textGreen, border: 'transparent', opacity: 0.4 };
       }
     }
 
     switch (variant) {
-      case 'primary': return { idleBg: colors.primaryDark, pressedBg: palette.green700, text: colors.textOnGreen, border: 'transparent' };
-      case 'secondary': return { idleBg: 'transparent', pressedBg: colors.primaryTint, text: colors.textGreen, border: colors.primaryDark }; // Using primaryDark for border to be visible or green600 as per spec (#16A34A)
-      case 'ghost': return { idleBg: colors.bgInput, pressedBg: palette.gray100, text: colors.textPrimary, border: 'transparent' };
-      case 'danger': return { idleBg: colors.danger, pressedBg: colors.dangerMedium, text: colors.textOnGreen, border: 'transparent' };
+      case 'primary': return { idleBg: colors.buttonPrimary, pressedBg: colors.buttonPrimaryPressed, text: colors.buttonPrimaryText, border: 'transparent' };
+      case 'secondary': return { idleBg: 'transparent', pressedBg: colors.buttonSecondaryPressed, text: colors.buttonSecondaryText, border: colors.buttonSecondaryBorder };
+      case 'ghost': return { idleBg: colors.buttonSecondary, pressedBg: colors.buttonSecondaryPressed, text: colors.buttonSecondaryText, border: 'transparent' };
+      case 'danger': return { idleBg: colors.buttonDestructive, pressedBg: colors.buttonDestructivePressed, text: colors.buttonDestructiveText, border: 'transparent' };
       case 'text': return { idleBg: 'transparent', pressedBg: 'transparent', text: colors.textGreen, border: 'transparent' };
     }
     return { idleBg: 'transparent', pressedBg: 'transparent', text: colors.textPrimary, border: 'transparent' };
@@ -177,20 +178,15 @@ export const Button = ({
   const containerBaseStyle: ViewStyle = {
     height: sizeStyles.height,
     paddingHorizontal: sizeStyles.paddingHorizontal,
-    borderRadius: size === 'sm' ? 10 : 12,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     width: fullWidth ? '100%' : undefined,
     alignSelf: fullWidth ? 'stretch' : 'center',
-    borderWidth: variant === 'secondary' ? 1.5 : 0,
+    borderWidth: variant === 'secondary' ? 1 : 0,
     borderColor: variant === 'secondary' ? colorConfig.border : 'transparent',
     opacity: (colorConfig as any).opacity || 1,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: ['primary', 'danger'].includes(variant) && !disabled ? 0.05 : 0,
-    shadowRadius: 2,
-    elevation: ['primary', 'danger'].includes(variant) && !disabled ? 1 : 0,
   };
 
   // If loading and fullWidth is false, lock width to prevent jitter

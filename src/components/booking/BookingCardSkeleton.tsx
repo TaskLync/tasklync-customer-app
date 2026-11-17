@@ -44,9 +44,12 @@ export function BookingCardSkeleton() {
 
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
-    paddingVertical: 18,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    backgroundColor: colors.cardRaised,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderLight,
+    padding: 16,
+    marginBottom: 12,
   },
   header: {
     flexDirection: 'row',

@@ -164,7 +164,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   mediaArea: {
     width: '100%',
     height: 170,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: radius.lg,
@@ -216,7 +216,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: radius.md,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,

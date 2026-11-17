@@ -61,7 +61,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     paddingHorizontal: 7,
     height: 20,
     borderRadius: 6,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
   },
   pillText: {
     fontFamily: fontFamily.inter.semiBold,

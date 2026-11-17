@@ -155,8 +155,8 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     marginRight: spacing.sm,
   },
   radioCircleSelected: {
-    backgroundColor: colors.primaryDark,
-    borderColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
+    borderColor: colors.buttonPrimary,
   },
   reasonLabel: {
     flex: 1,
@@ -173,7 +173,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   continueBtn: {
     height: 52,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonDestructive,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',

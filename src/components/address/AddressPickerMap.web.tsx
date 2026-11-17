@@ -31,6 +31,8 @@ export interface AddressPickerMapProps {
   initialRegion?: MapRegion | undefined;
   onRegionChange?: ((region: MapRegion) => void) | undefined;
   onRegionChangeComplete: (region: MapRegion) => void;
+  /** Native only (blue "you are here" dot); accepted for prop parity. */
+  showsUserLocation?: boolean | undefined;
 }
 
 const DEFAULT_REGION: MapRegion = FAISALABAD_DEFAULT_REGION;

@@ -387,7 +387,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     minWidth: 64,
   },
   saveButtonActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -465,7 +465,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   textInputFocused: {
     backgroundColor: colors.bgCard,
-    borderColor: colors.primaryDark,
+    borderColor: colors.buttonPrimary,
   },
   disabledInput: {
     height: 48,

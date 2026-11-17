@@ -131,7 +131,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   optionCardSelected: {
     backgroundColor: palette.green50,
-    borderColor: colors.primary,
+    borderColor: colors.buttonPrimary,
   },
   optionCardPressed: {
     opacity: 0.85,
@@ -151,13 +151,13 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     marginTop: 2,
   },
   radioOuterSelected: {
-    borderColor: colors.primaryDark,
+    borderColor: colors.buttonPrimary,
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
   },
   textCol: {
     flex: 1,

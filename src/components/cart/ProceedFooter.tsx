@@ -129,7 +129,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     paddingHorizontal: 20,
   },
   enabledButton: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,

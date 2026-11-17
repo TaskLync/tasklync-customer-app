@@ -179,7 +179,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 18,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.buttonSecondary,
     marginRight: 8,
   },
   pressed: {

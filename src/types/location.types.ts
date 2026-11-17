@@ -26,8 +26,11 @@ export type LocationErrorCode =
   | 'TIMEOUT' // GPS lock timed out before acquiring adequate fix
   | 'LOW_ACCURACY' // GPS lock acquired but accuracy radius exceeds acceptable threshold
   | 'MOCK_DETECTED' // mock / spoofed location detected and rejected
+  | 'APPROXIMATE_PERMISSION' // user granted only approximate (coarse / reduced) location
   | 'HARDWARE_UNAVAILABLE'
   | 'UNKNOWN';
+
+export type LocationPrecision = 'precise' | 'approximate' | 'unknown';
 
 export interface LocationError {
   code: LocationErrorCode;
@@ -35,10 +38,15 @@ export interface LocationError {
   userMessage: string;
   accuracy?: number | null;
   canAskAgain?: boolean;
+  /**
+   * A real but low-confidence fix (≤150 m, or an approximate-permission fix). Good for CENTRING the
+   * map only — never for pre-placing an address pin or saving.
+   */
+  approximateLocation?: VerifiedLocation | undefined;
 }
 
 export type FreshLocationResult =
-  | { success: true; location: VerifiedLocation }
+  | { success: true; location: VerifiedLocation; precision?: LocationPrecision }
   | { success: false; error: LocationError };
 
 export interface FreshLocationOptions {

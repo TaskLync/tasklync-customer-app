@@ -5,7 +5,15 @@ import { localStorage } from '../storage/local.storage';
 import { useAuthStore } from '../../store/auth.store';
 import { useCartStore } from '../../store/cart.store';
 import { formatCategoryName } from '../../utils/formatters';
-import { isValidUUID, CANONICAL_FALLBACK_UUIDS } from '../../utils/uuid';
+import { isValidUUID } from '../../utils/uuid';
+import { isValidCoordinate } from '../../utils/locationUtils';
+
+/** Booking job site from any response shape; undefined (not a guessed point) when absent/invalid. */
+function normalizeJobSite(b: any): { lat: number; lng: number } | undefined {
+  const src = b?.job_site_location ?? { lat: b?.latitude ?? b?.lat, lng: b?.longitude ?? b?.lng };
+  const point = { lat: Number(src?.lat), lng: Number(src?.lng) };
+  return isValidCoordinate(point) ? point : undefined;
+}
 import { bookingItemDiscount, normalizeDiscountFields, toNumber } from '../../utils/offers';
 import {
   BookingStatus,
@@ -434,12 +442,18 @@ export const bookingApi = {
       throw new Error('Selected professional is not valid. Please choose an active verified professional.');
     }
 
+    // Never substitute a shared placeholder address either: the job site would be someone else's /
+    // nobody's, and the worker would be routed to the wrong place (audit LOC-007).
+    if (!isValidUUID(payload.address_id)) {
+      throw new Error('Please confirm your address on the map before booking.');
+    }
+
     const sanitizedPayload: CreateBookingPayload = {
       ...payload,
       // Never substitute a shared placeholder worker: it would book (and block) the wrong worker's calendar.
       worker_id: payload.worker_id,
       ...(isValidUUID(payload.service_id) ? { service_id: payload.service_id } : {}),
-      address_id: isValidUUID(payload.address_id) ? payload.address_id : CANONICAL_FALLBACK_UUIDS.ADDRESS_HOME,
+      address_id: payload.address_id,
     };
 
     // Cache cart worker profile in MMKV if present
@@ -587,10 +601,9 @@ export const bookingApi = {
           expires_at: b.expires_at || b.expiresAt || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
           address_id: b.address_id || b.addressId || '',
           address_text: b.address_text || b.addressText || b.address || '',
-          job_site_location: b.job_site_location || {
-            lat: Number(b.latitude || b.lat || 31.4187),
-            lng: Number(b.longitude || b.lng || 73.0791),
-          },
+          // Missing coordinates stay missing — never a fabricated city-centre point on the map.
+          job_site_location: normalizeJobSite(b),
+          address_instructions: b.address_instructions ?? null,
           base_price: Number(b.base_price ?? b.basePrice ?? b.estimated_total ?? 0),
           urgency_multiplier: Number(b.urgency_multiplier || 1),
           demand_multiplier: Number(b.demand_multiplier || 1),
@@ -690,10 +703,8 @@ export const bookingApi = {
           expires_at: raw.expires_at || raw.expiresAt || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
           address_id: raw.address_id || raw.addressId || '',
           address_text: raw.address_text || raw.addressText || raw.address || '',
-          job_site_location: raw.job_site_location || {
-            lat: Number(raw.latitude || raw.lat || 31.4187),
-            lng: Number(raw.longitude || raw.lng || 73.0791),
-          },
+          job_site_location: normalizeJobSite(raw),
+          address_instructions: raw.address_instructions ?? null,
           base_price: Number(raw.base_price ?? raw.basePrice ?? raw.estimated_total ?? 0),
           urgency_multiplier: Number(raw.urgency_multiplier || 1),
           demand_multiplier: Number(raw.demand_multiplier || 1),

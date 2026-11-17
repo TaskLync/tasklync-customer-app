@@ -1,5 +1,6 @@
+import { SeeAllLink } from '../ui/Button/SeeAllLink';
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { fontFamily } from '../../design/typography';
 import { layout } from '../../design/spacing';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -30,16 +31,7 @@ export const Section: React.FC<SectionProps> = ({
         <Text style={styles.title}>{title}</Text>
         
         {actionLabel && (
-          <Pressable 
-            onPress={onAction} 
-            hitSlop={12}
-            style={({ pressed }) => [
-              styles.actionButton,
-              pressed && { opacity: 0.7 }
-            ]}
-          >
-            <Text style={styles.actionLabel}>{actionLabel}</Text>
-          </Pressable>
+          <SeeAllLink onPress={onAction} label={actionLabel} />
         )}
       </View>
       
@@ -69,17 +61,9 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   title: {
     fontFamily: fontFamily.poppins.bold,
     fontSize: 18,
+    lineHeight: 24,
     color: colors.textPrimary,
     letterSpacing: -0.3,
-  },
-  actionButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionLabel: {
-    fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 13.5,
-    color: colors.primary,
   },
   content: {
     width: '100%',

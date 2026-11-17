@@ -1,22 +1,18 @@
 import React from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { ChevronLeft, SlidersHorizontal } from 'lucide-react-native';
-import Animated, {
-  SharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SearchInput } from '../ui/Input/SearchInput';
 import { IconButton } from '../ui/Button/IconButton';
+import { SearchBar, SEARCH_BAR, type SearchBarRef } from '../search/SearchBar';
 import { typography } from '../../design/typography';
-import { timingConfig } from '../../design/animations';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface SearchHeaderProps {
   value: string;
   onChangeText: (text: string) => void;
   onClear: () => void;
+  onSubmit?: () => void;
   placeholder?: string;
   showFilterButton?: boolean;
   activeFilterCount?: number;
@@ -24,14 +20,22 @@ interface SearchHeaderProps {
   showBackButton?: boolean;
   onBackPress?: () => void;
   scrollY?: SharedValue<number>;
+  /** Imperative focus (e.g. arriving from the Home search bar). */
+  searchRef?: React.Ref<SearchBarRef>;
 }
 
-const AnimatedView = Animated.createAnimatedComponent(View);
+const FIELD_H = SEARCH_BAR.height;
 
+/**
+ * Explore search header: the shared SearchBar (same as Home) and a matching soft-square filter button.
+ * Focus is handled by SearchBar (faint green ring); a hairline appears under the header
+ * only once content scrolls beneath it.
+ */
 export const SearchHeader: React.FC<SearchHeaderProps> = ({
   value,
   onChangeText,
   onClear,
+  onSubmit,
   placeholder,
   showFilterButton = true,
   activeFilterCount = 0,
@@ -39,126 +43,124 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
   showBackButton = false,
   onBackPress,
   scrollY,
+  searchRef,
 }) => {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
-  
-  // Shadow appears after scrollY > 10
-  const headerAnimatedStyle = useAnimatedStyle(() => {
-    if (!scrollY) return {};
-    return {
-      shadowOpacity: withTiming(scrollY.value > 10 ? 0.08 : 0, { duration: timingConfig.fast }),
-      elevation: withTiming(scrollY.value > 10 ? 4 : 0, { duration: timingConfig.fast }),
-    };
-  });
+  const hairlineStyle = useAnimatedStyle(() => ({
+    opacity: scrollY ? withTiming(scrollY.value > 8 ? 1 : 0, { duration: 160 }) : 0,
+  }));
+
+  const filterScale = useSharedValue(1);
+  const filterStyle = useAnimatedStyle(() => ({ transform: [{ scale: filterScale.value }] }));
 
   return (
-    <AnimatedView
-      style={[
-        styles.container,
-        { paddingTop: insets.top || 16 },
-        headerAnimatedStyle,
-      ]}
-    >
-      <View style={styles.innerRow}>
+    <View style={[styles.container, { paddingTop: (insets.top || 16) + 8 }]}>
+      <View style={styles.row}>
         {showBackButton && (
-          <View style={styles.backButtonContainer}>
-            <IconButton
-              icon={ChevronLeft}
-              onPress={() => onBackPress?.()}
-              size={36}
-              bg="transparent"
-              accessibilityLabel="Back"
-            />
+          <View style={styles.back}>
+            <IconButton icon={ChevronLeft} onPress={() => onBackPress?.()} size={40} bg="transparent" accessibilityLabel="Back" />
           </View>
         )}
 
-        <SearchInput
-          value={value}
-          onChangeText={onChangeText}
-          onClear={onClear}
-          {...(placeholder !== undefined && { placeholder })}
-          autoFocus={false} // Don't auto-focus in header generally unless specified
-          tone="neutral"
-          height={48}
-        />
+        <View style={styles.fieldWrap}>
+          <SearchBar
+            ref={searchRef}
+            value={value}
+            onChangeText={onChangeText}
+            onClear={onClear}
+            {...(onSubmit ? { onSubmit } : {})}
+            {...(placeholder ? { placeholder } : {})}
+          />
+        </View>
 
         {showFilterButton && (
-          <View style={styles.filterContainer}>
+          <Animated.View style={[styles.filterWrap, filterStyle]}>
             <Pressable
-              style={({ pressed }) => [
-                styles.filterButton,
-                pressed && styles.filterButtonPressed,
-              ]}
               onPress={onFilterPress}
+              onPressIn={() => (filterScale.value = withSpring(0.92, { damping: 18, stiffness: 420 }))}
+              onPressOut={() => (filterScale.value = withSpring(1, { damping: 14, stiffness: 320 }))}
+              style={({ pressed }) => [styles.filterButton, pressed && styles.filterButtonPressed]}
               hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel={activeFilterCount > 0 ? `Filters, ${activeFilterCount} applied` : 'Filters'}
             >
-              <SlidersHorizontal size={20} color={colors.textPrimary} />
-              
+              <SlidersHorizontal size={SEARCH_BAR.iconSize - 1} strokeWidth={2} color={colors.textPrimary} />
               {activeFilterCount > 0 && (
-                <View style={styles.badgeContainer}>
-                  <Text style={styles.badgeText}>
+                <View style={styles.badge} pointerEvents="none">
+                  <Text style={styles.badgeText} maxFontSizeMultiplier={1.1}>
                     {activeFilterCount > 9 ? '9+' : activeFilterCount}
                   </Text>
                 </View>
               )}
             </Pressable>
-          </View>
+          </Animated.View>
         )}
       </View>
-    </AnimatedView>
+      <Animated.View style={[styles.hairline, hairlineStyle]} pointerEvents="none" />
+    </View>
   );
 };
 
-const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
-  container: {
-    backgroundColor: colors.bgCard,
-    paddingBottom: 10,
-    paddingHorizontal: 16,
-    zIndex: 10,
-    // Base shadow config, opacity driven by animation
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-  },
-  innerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButtonContainer: {
-    marginRight: 8,
-  },
-  filterContainer: {
-    marginLeft: 12,
-  },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.bgInput,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterButtonPressed: {
-    backgroundColor: colors.border,
-  },
-  badgeContainer: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.bgCard, // To cut out background
-  },
-  badgeText: {
-    fontFamily: typography.fontFamily.inter.bold,
-    fontSize: 9,
-    color: '#FFFFFF',
-  },
-});
+const createStyles = ({ colors }: AppTheme) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colors.bgCard,
+      paddingHorizontal: 20,
+      paddingBottom: 12,
+      zIndex: 10,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    back: {
+      marginLeft: -8,
+    },
+    fieldWrap: {
+      flex: 1,
+    },
+    filterWrap: {},
+    filterButton: {
+      width: FIELD_H,
+      height: FIELD_H,
+      borderRadius: SEARCH_BAR.radius,
+      borderCurve: 'continuous',
+      backgroundColor: colors.searchFieldBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    filterButtonPressed: {
+      backgroundColor: colors.buttonSecondaryPressed,
+    },
+    badge: {
+      position: 'absolute',
+      top: 2,
+      right: 2,
+      minWidth: 18,
+      height: 18,
+      paddingHorizontal: 4,
+      borderRadius: 9,
+      backgroundColor: colors.buttonPrimary,
+      borderWidth: 2,
+      borderColor: colors.bgCard,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badgeText: {
+      fontFamily: typography.fontFamily.inter.bold,
+      fontSize: 9.5,
+      color: colors.buttonPrimaryText,
+      includeFontPadding: false,
+    },
+    hairline: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+    },
+  });

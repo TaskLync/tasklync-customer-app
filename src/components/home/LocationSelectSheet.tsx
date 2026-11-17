@@ -531,7 +531,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     marginBottom: 12,
   },
   actionRowActive: {
-    borderColor: colors.primary,
+    borderColor: colors.buttonPrimary,
     backgroundColor: palette.green50 || '#F0FDF4',
   },
   actionRowPressed: {
@@ -599,7 +599,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     fontFamily: fontFamily.inter.semiBold,
     fontSize: 11,
     color: colors.primaryDark,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 10,
@@ -654,7 +654,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderColor: palette.gray200,
   },
   addressCardActive: {
-    borderColor: colors.primary,
+    borderColor: colors.buttonPrimary,
     backgroundColor: palette.green50 || '#F0FDF4',
   },
   addressCardPressed: {

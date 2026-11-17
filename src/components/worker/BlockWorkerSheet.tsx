@@ -286,8 +286,8 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     marginRight: spacing.sm,
   },
   radioCircleSelected: {
-    backgroundColor: colors.primaryDark,
-    borderColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
+    borderColor: colors.buttonPrimary,
   },
   reasonLabel: {
     flex: 1,

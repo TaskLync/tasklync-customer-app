@@ -294,7 +294,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     gap: spacing.xs + 2,
     padding: spacing.sm,
     borderRadius: radius.md,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     marginBottom: spacing.md,
   },
   discountNoticeWarning: {
@@ -327,7 +327,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   reasonItemSelected: {
     backgroundColor: palette.green50,
-    borderColor: palette.green500,
+    borderColor: colors.buttonPrimary,
   },
   reasonItemPressed: {
     backgroundColor: palette.gray50,
@@ -352,13 +352,13 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     backgroundColor: palette.white,
   },
   radioSelected: {
-    borderColor: palette.green600,
+    borderColor: colors.buttonPrimary,
   },
   radioInner: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: palette.green600,
+    backgroundColor: colors.buttonPrimary,
   },
   customInput: {
     backgroundColor: palette.gray50,
@@ -398,7 +398,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   cancelBtn: {
-    backgroundColor: colors.textDanger,
+    backgroundColor: colors.buttonDestructive,
   },
   btnLoading: {
     opacity: 0.85,

@@ -124,7 +124,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     marginHorizontal: 16,
     borderWidth: 1.5,
     borderColor: colors.primaryBorder,
-    backgroundColor: colors.bgSuccess,
+    backgroundColor: colors.bgHover,
     borderRadius: radius.lg,
     paddingHorizontal: 14,
     paddingVertical: 12,

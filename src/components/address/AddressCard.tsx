@@ -199,6 +199,6 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderColor: palette.gray300,
   },
   radioOuterSelected: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
   },
 });

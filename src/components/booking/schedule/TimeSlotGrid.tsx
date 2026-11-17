@@ -148,7 +148,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 7,
     borderRadius: radius.pill,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',

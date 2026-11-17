@@ -86,7 +86,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: '100%',
     height: 56,
     borderRadius: 16,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.black,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Search, X } from 'lucide-react-native';
+import { Clock, X } from 'lucide-react-native';
 import { typography } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -23,21 +23,27 @@ export const RecentSearchesSection: React.FC<RecentSearchesSectionProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Recent Searches</Text>
-      
+      <View style={styles.headerRow}>
+        <Text style={styles.header} accessibilityRole="header" maxFontSizeMultiplier={1.3}>
+          Recent
+        </Text>
+        <Pressable onPress={onClearAll} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear recent searches">
+          <Text style={styles.clearAllText} maxFontSizeMultiplier={1.3}>
+            Clear all
+          </Text>
+        </Pressable>
+      </View>
+
       {searches.map((term, index) => (
         <Pressable
           key={`${term}-${index}`}
-          style={({ pressed }) => [
-            styles.row,
-            pressed && styles.rowPressed,
-          ]}
-          onPress={() => {
-            onSelect(term);
-          }}
+          style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+          onPress={() => onSelect(term)}
+          accessibilityRole="button"
+          accessibilityLabel={`Search for ${term}`}
         >
-          <Search size={16} color={colors.textMuted} />
-          <Text style={styles.term} numberOfLines={1}>
+          <Clock size={16} strokeWidth={2} color={colors.textMuted} />
+          <Text style={styles.term} numberOfLines={1} maxFontSizeMultiplier={1.3}>
             {term}
           </Text>
           <Pressable
@@ -47,64 +53,56 @@ export const RecentSearchesSection: React.FC<RecentSearchesSectionProps> = ({
               onRemove(term);
             }}
             style={styles.removeBtn}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${term} from recent searches`}
           >
-            <X size={16} color={colors.textMuted} />
+            <X size={15} color={colors.textMuted} />
           </Pressable>
         </Pressable>
       ))}
-
-      <Pressable
-        style={styles.clearAllBtn}
-        onPress={() => {
-          onClearAll();
-        }}
-        hitSlop={8}
-      >
-        <Text style={styles.clearAllText}>Clear all</Text>
-      </Pressable>
     </View>
   );
 };
 
-const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
-  container: {
-    paddingVertical: 16,
-  },
-  header: {
-    fontFamily: typography.fontFamily.poppins.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 48,
-    paddingHorizontal: 16,
-  },
-  rowPressed: {
-    backgroundColor: colors.bgSection,
-  },
-  term: {
-    flex: 1,
-    fontFamily: typography.fontFamily.jakarta.semiBold,
-    fontSize: 14,
-    color: colors.textPrimary,
-    marginLeft: 12,
-  },
-  removeBtn: {
-    padding: 4,
-  },
-  clearAllBtn: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginTop: 4,
-  },
-  clearAllText: {
-    fontFamily: typography.fontFamily.jakarta.medium,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-});
+const createStyles = ({ colors }: AppTheme) =>
+  StyleSheet.create({
+    container: {
+      paddingTop: 20,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      marginBottom: 4,
+    },
+    header: {
+      fontFamily: typography.fontFamily.jakarta.semiBold,
+      fontSize: 15.5,
+      color: colors.textPrimary,
+    },
+    clearAllText: {
+      fontFamily: typography.fontFamily.jakarta.medium,
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: 46,
+      paddingHorizontal: 20,
+      gap: 12,
+    },
+    rowPressed: {
+      backgroundColor: colors.bgHover,
+    },
+    term: {
+      flex: 1,
+      fontFamily: typography.fontFamily.jakarta.regular,
+      fontSize: 15,
+      color: colors.textPrimary,
+    },
+    removeBtn: {
+      padding: 4,
+    },
+  });

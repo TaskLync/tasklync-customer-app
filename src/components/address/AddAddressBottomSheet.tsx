@@ -9,7 +9,6 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useQueryClient } from '@tanstack/react-query';
 import {
   MapPin,
   Navigation,
@@ -25,7 +24,7 @@ import { BottomSheet, BottomSheetRef } from '../layout/BottomSheet/BottomSheet';
 import { BottomSheetScrollView } from '../layout/BottomSheet/BottomSheetScrollView';
 import { DefaultAddressBadge } from './DefaultAddressBadge';
 import { ErrorBoundary } from '../feedback/ErrorBoundary';
-import { userApi } from '../../services/api/user.api';
+import { toBookingAddress } from '../../utils/activeAddress';
 import { useAddresses } from '../../hooks/useAddresses';
 import { useBookingDraftStore, BookingAddress } from '../../store/bookingDraft.store';
 import { useAuthStore } from '../../store/auth.store';
@@ -33,7 +32,6 @@ import { useLocationStore } from '../../store/location.store';
 import { Address } from '../../types/address.types';
 import { labelToIcon } from '../../utils/address';
 import { fontFamily, radius } from '../../design';
-import { generateUUID, isValidUUID } from '../../utils/uuid';
 import {
   validateServiceArea,
   SERVICE_UNAVAILABLE_MESSAGE,
@@ -61,7 +59,6 @@ export const AddAddressBottomSheet = forwardRef<
   const styles = useThemedStyles(createStyles);
   const bottomSheetRef = useRef<BottomSheetRef>(null);
   const streetInputRef = useRef<TextInput>(null);
-  const queryClient = useQueryClient();
 
   const token = useAuthStore((s) => s.accessToken);
   const draftAddressId = useBookingDraftStore((s) => s.addressId);
@@ -76,6 +73,7 @@ export const AddAddressBottomSheet = forwardRef<
     isLoading: isAddressesLoading,
     isError: isAddressesError,
     refetch: refetchAddresses,
+    addAddress,
   } = useAddresses();
 
   const isCurrentServiceable = Boolean(
@@ -95,25 +93,22 @@ export const AddAddressBottomSheet = forwardRef<
   const [isSaving, setIsSaving] = useState(false);
   const isSubmittingRef = useRef(false);
   const router = useRouter();
-  // True only when lat/lng come from a real GPS fix. The Faisalabad centre used as a visual default
-  // is NOT the address the customer typed, so it must never be saved as its coordinates.
-  const [coordsVerified, setCoordsVerified] = useState<boolean>(isCurrentServiceable);
+  // True only after the customer EXPLICITLY tapped "Use Current GPS Location" in this sheet. A GPS
+  // fix that merely exists (from another screen) is not the address being typed: silently attaching
+  // it saved a typed home street with the office's coordinates (audit LOC-002).
+  const [coordsVerified, setCoordsVerified] = useState<boolean>(false);
+  const gpsAccuracyRef = useRef<number | null>(null);
 
   useImperativeHandle(ref, () => ({
     open: () => {
       setStreet('');
       setLabel('Home');
-      if (isCurrentServiceable && currentLocation) {
-        setLat(currentLocation.lat);
-        setLng(currentLocation.lng);
-        setCoordsVerified(true);
-        if (currentCity) setCity(currentCity);
-      } else {
-        setLat(FAISALABAD_CENTER.lat);
-        setLng(FAISALABAD_CENTER.lng);
-        setCoordsVerified(false);
-        setCity('Faisalabad');
-      }
+      // Visual default only — never saved as this address's coordinates.
+      setLat(FAISALABAD_CENTER.lat);
+      setLng(FAISALABAD_CENTER.lng);
+      setCoordsVerified(false);
+      gpsAccuracyRef.current = null;
+      setCity(isCurrentServiceable && currentCity ? currentCity : 'Faisalabad');
       bottomSheetRef.current?.open();
     },
     close: () => {
@@ -128,27 +123,19 @@ export const AddAddressBottomSheet = forwardRef<
   // Select an existing saved address directly from the sheet
   const handleSelectSavedAddress = (addr: Address) => {
     if (!addr) return;
+    // A saved address without its own point cannot be a destination (no city-centre substitute).
+    if (!Number.isFinite(addr.lat) || !Number.isFinite(addr.lng)) {
+      showAlert('Address needs a map location', 'Please edit this address and confirm its pin on the map.');
+      return;
+    }
 
-    const coords = {
-      lat: typeof addr.lat === 'number' ? addr.lat : FAISALABAD_CENTER.lat,
-      lng: typeof addr.lng === 'number' ? addr.lng : FAISALABAD_CENTER.lng,
-    };
-
-    const validation = validateServiceArea(coords);
+    const validation = validateServiceArea({ lat: addr.lat, lng: addr.lng });
     if (!validation.isServiceable) {
       showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
       return;
     }
 
-    const bookingAddr: BookingAddress = {
-      id: addr.id,
-      label: addr.custom_label || addr.label || 'Home',
-      street: addr.address_line,
-      city: addr.city || 'Faisalabad',
-      latitude: coords.lat,
-      longitude: coords.lng,
-      isDefault: Boolean(addr.is_default),
-    };
+    const bookingAddr: BookingAddress = toBookingAddress(addr);
 
     setAddressStore(bookingAddr);
 
@@ -218,6 +205,7 @@ export const AddAddressBottomSheet = forwardRef<
         setLat(coords.lat);
         setLng(coords.lng);
         setCoordsVerified(true);
+        gpsAccuracyRef.current = freshResult.location.accuracy;
         useLocationStore.getState().setLiveLocation(coords);
 
         const geo = await locationService.reverseGeocode(coords);
@@ -281,6 +269,37 @@ export const AddAddressBottomSheet = forwardRef<
       return;
     }
 
+    if (!token) {
+      // A locally invented address id can never be booked; the server must own it (audit LOC-007).
+      showAlert('Sign in required', 'Please sign in to save an address for your booking.');
+      return;
+    }
+
+    // The pin is the customer's CURRENT position: make that explicit before attaching it to the
+    // typed text. Anything else belongs on the map picker.
+    const accuracy = gpsAccuracyRef.current;
+    const confirmed = await new Promise<boolean>((resolve) => {
+      showAlert(
+        'Is the professional coming here?',
+        `We'll save "${street.trim()}" at your current location${
+          accuracy ? ` (±${Math.round(accuracy)} m)` : ''
+        }. If the job is somewhere else, place the pin on the map instead.`,
+        [
+          {
+            text: 'Pick on map',
+            style: 'cancel',
+            onPress: () => {
+              resolve(false);
+              bottomSheetRef.current?.close();
+              router.push({ pathname: '/profile/addresses/add', params: { returnToBooking: 'true' } } as any);
+            },
+          },
+          { text: "Yes, I'm here", onPress: () => resolve(true) },
+        ]
+      );
+    });
+    if (!confirmed) return;
+
     if (isSubmittingRef.current) return; // double-tap guard (state updates are async)
     isSubmittingRef.current = true;
     setIsSaving(true);
@@ -289,60 +308,25 @@ export const AddAddressBottomSheet = forwardRef<
     const addressCity = city.trim() || 'Faisalabad';
 
     try {
-      let createdId = generateUUID();
-      let createdAddress: BookingAddress;
+      // Server-confirmed save only; the id is the server's. The first address becomes the default,
+      // a later one never silently replaces the customer's default (audit LOC-014).
+      const saved = await addAddress({
+        label,
+        address_line: addressText,
+        city: addressCity,
+        country: 'Pakistan',
+        lat,
+        lng,
+        is_default: safeAddressList.length === 0,
+        location_source: 'gps_confirmed',
+        ...(accuracy !== null ? { gps_accuracy_m: accuracy } : {}),
+      });
 
-      if (token) {
-        const res = await userApi.createAddress({
-          label,
-          address_line: addressText,
-          city: addressCity,
-          country: 'Pakistan',
-          lat,
-          lng,
-          is_default: true,
-        });
-
-        if (res?.id && isValidUUID(res.id)) {
-          createdId = res.id;
-        }
-
-        createdAddress = {
-          id: createdId,
-          label: res?.label || label,
-          street: res?.address_line || addressText,
-          city: res?.city || addressCity,
-          latitude: res?.lat || lat,
-          longitude: res?.lng || lng,
-          isDefault: true,
-        };
-
-        queryClient.invalidateQueries({ queryKey: ['user-addresses'] });
-      } else {
-        createdAddress = {
-          id: createdId,
-          label,
-          street: addressText,
-          city: addressCity,
-          latitude: lat,
-          longitude: lng,
-          isDefault: true,
-        };
-      }
-
+      const createdAddress = toBookingAddress(saved);
       setAddressStore(createdAddress);
 
       const { setSelectedAddress, setCurrentCity: setStoreCity } = useLocationStore.getState();
-      setSelectedAddress({
-        id: createdAddress.id,
-        label: createdAddress.label || label,
-        address_line: createdAddress.street,
-        city: createdAddress.city,
-        country: 'Pakistan',
-        lat: createdAddress.latitude ?? lat,
-        lng: createdAddress.longitude ?? lng,
-        is_default: true,
-      });
+      setSelectedAddress(saved);
       setStoreCity(createdAddress.city);
 
       if (onAddressCreated) {
@@ -352,7 +336,12 @@ export const AddAddressBottomSheet = forwardRef<
       bottomSheetRef.current?.close();
       setStreet('');
     } catch (err: any) {
-      showAlert('Error', err?.message || 'Failed to save address. Please try again.');
+      showAlert(
+        'Address not saved',
+        err?.isNetworkError || err?.isTimeout
+          ? "You're offline or the connection is slow. Your details are kept — tap Save again when you're connected."
+          : err?.message || 'Failed to save address. Please try again.'
+      );
     } finally {
       isSubmittingRef.current = false;
       setIsSaving(false);
@@ -681,7 +670,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -730,7 +719,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   gpsCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     borderWidth: 1,
     borderColor: palette.green200,
     borderRadius: radius.md,
@@ -776,7 +765,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     letterSpacing: 0.6,
   },
   countBadge: {
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 7,
     paddingVertical: 1,
     borderRadius: 10,
@@ -889,7 +878,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderColor: palette.gray200,
   },
   savedCardSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.buttonPrimary,
     backgroundColor: palette.green50,
   },
   savedCardPressed: {
@@ -966,8 +955,8 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderColor: palette.gray200,
   },
   presetChipSelected: {
-    backgroundColor: colors.primaryDark,
-    borderColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
+    borderColor: colors.buttonPrimary,
   },
   presetText: {
     fontFamily: fontFamily.jakarta.medium,
@@ -990,7 +979,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     marginBottom: 14,
   },
   inputWrapperFocused: {
-    borderColor: colors.primaryDark,
+    borderColor: colors.buttonPrimary,
     borderWidth: 1.5,
   },
   inputWrapperReadonly: {
@@ -1013,7 +1002,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     marginLeft: 6,
   },
   serviceAreaTag: {
-    backgroundColor: palette.green50,
+    backgroundColor: colors.bgHover,
     borderWidth: 1,
     borderColor: palette.green200,
     paddingHorizontal: 8,
@@ -1035,7 +1024,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   saveButton: {
     height: 52,
     borderRadius: 14,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },

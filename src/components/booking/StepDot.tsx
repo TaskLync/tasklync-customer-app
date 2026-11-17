@@ -101,7 +101,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     height: 32,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: colors.buttonPrimary,
     opacity: 0.4,
   },
   dot: {

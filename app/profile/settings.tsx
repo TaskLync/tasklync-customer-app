@@ -35,7 +35,7 @@ import { useThemeStore } from '../../src/store/theme.store';
  * 1. Three clearly segregated grouped cards: Preferences, Notifications, and About & Legal.
  * 2. Visual Hierarchy: Clean typography, uniform 18px neutral icons, and aligned dividers.
  * 3. Modern Segmented Controls: Pill-style active state with consistent dimensions.
- * 4. Native Notification Switches: Pure white thumb on brand-green active track, full row touch target.
+ * 4. Notification Switches: Tasklync Switch (white thumb, brand-green ON track, animated), full row touch target.
  * 5. Full Persistence: MMKV storage cache + background sync with graceful error handling.
  */
 export default function SettingsScreen() {

@@ -14,5 +14,6 @@ export { ConversationRow } from './ConversationRow';
 export { SkeletonConversationRow } from './SkeletonConversationRow';
 export { ConversationEmptyState } from './ConversationEmptyState';
 export { ConversationTabs } from './ConversationTabs';
+export { ConversationSearchBar } from './ConversationSearchBar';
 export { MessagesHeader } from './MessagesHeader';
 export { LoadingOlder, EmptyConversation } from './ChatListStates';

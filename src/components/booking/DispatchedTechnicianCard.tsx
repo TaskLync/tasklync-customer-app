@@ -453,7 +453,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4.5,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 6.5,
     paddingVertical: 2,
     borderRadius: 4,
@@ -567,14 +567,14 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     color: colors.textInverse,
   },
   whatsappButton: {
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.buttonSecondary,
     borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    borderColor: colors.buttonSecondaryBorder,
   },
   whatsappButtonText: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 13,
-    color: colors.textGreen,
+    color: colors.buttonSecondaryText,
   },
 
   // Safety Guidance

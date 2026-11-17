@@ -169,7 +169,7 @@ export function AppAlertHost() {
                     styles.button,
                     !stacked && buttons.length > 1 && styles.buttonFlex,
                     isPrimary
-                      ? [styles.buttonPrimary, isDestructive && { backgroundColor: colors.danger }]
+                      ? [styles.buttonPrimary, isDestructive && { backgroundColor: colors.buttonDestructive }]
                       : styles.buttonSecondary,
                     pressed && styles.pressed,
                   ]}
@@ -247,10 +247,10 @@ const createStyles = ({ colors, palette }: AppTheme) =>
       alignSelf: 'stretch',
     },
     buttonFlex: { flex: 1 },
-    buttonPrimary: { backgroundColor: colors.primaryDark },
+    buttonPrimary: { backgroundColor: colors.buttonPrimary },
     buttonSecondary: { backgroundColor: colors.bgSubtle, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
     buttonText: { fontSize: 15, fontWeight: '600', textAlign: 'center' },
-    buttonTextPrimary: { color: '#FFFFFF' },
+    buttonTextPrimary: { color: colors.buttonPrimaryText },
     buttonTextSecondary: { color: colors.textPrimary },
     pressed: { opacity: 0.8 },
   });

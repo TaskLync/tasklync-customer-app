@@ -290,7 +290,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     fontFamily: typography.fontFamily.jakarta.semiBold,
     fontSize: 11.5,
     color: colors.textGreen,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 4,

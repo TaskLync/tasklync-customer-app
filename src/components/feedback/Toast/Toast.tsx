@@ -219,8 +219,8 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     lineHeight: 18,
   },
   actionButton: {
-    backgroundColor: palette.green50,
-    borderColor: palette.green300,
+    backgroundColor: colors.buttonSecondary,
+    borderColor: colors.buttonSecondaryBorder,
     borderWidth: 1,
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -232,7 +232,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   actionButtonPressed: {
     transform: [{ scale: 0.97 }],
-    backgroundColor: palette.green100,
+    backgroundColor: colors.buttonSecondaryPressed,
   },
   actionText: {
     fontFamily: fontFamily.jakarta.semiBold,

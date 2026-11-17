@@ -504,8 +504,8 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
+    borderColor: colors.buttonPrimary,
   },
   checkboxLabel: {
     fontFamily: fontFamily.jakarta.medium,
@@ -517,7 +517,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   submitBtn: {
     height: 52,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',

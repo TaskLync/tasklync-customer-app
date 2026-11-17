@@ -53,7 +53,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 6,
     borderRadius: 12,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     borderWidth: 1,
     borderColor: colors.primaryBorder,
     borderStyle: 'dashed',

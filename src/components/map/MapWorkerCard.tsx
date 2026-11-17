@@ -201,7 +201,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -266,7 +266,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   bookButton: {
     height: 44, // Fitts's Law: min 44px height tap target even inside small card container
     paddingHorizontal: 16,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -278,7 +278,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     shadowRadius: 4,
   },
   bookButtonPressed: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimaryPressed,
     transform: [{ scale: 0.96 }],
   },
   bookButtonText: {

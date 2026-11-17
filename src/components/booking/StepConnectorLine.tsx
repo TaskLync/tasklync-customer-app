@@ -45,7 +45,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   fill: {
     height: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
     borderRadius: 2,
   },
 });

@@ -189,7 +189,7 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: colors.primary,
+    borderColor: colors.buttonPrimary,
   },
   chipText: {
     fontFamily: fontFamily.jakarta.bold,

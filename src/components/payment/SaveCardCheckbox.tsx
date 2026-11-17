@@ -63,7 +63,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     backgroundColor: palette.white,
   },
   checkboxChecked: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.buttonPrimary,
   },
   label: {
     fontFamily: fontFamily.jakarta.medium,

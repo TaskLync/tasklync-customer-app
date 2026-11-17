@@ -81,11 +81,11 @@ export const BookNowButton: React.FC<BookNowButtonProps> = ({
       };
     }
     return {
-      bg: palette.green700, // light #15803D (5:1 with white text) / dark #4ADE80 (with dark text)
-      pressedBg: isDark ? palette.green600 : palette.green800,
-      text: colors.textOnGreen,
-      disabledBg: colors.bgHover,
-      disabledText: colors.textDisabled,
+      bg: colors.buttonPrimary,
+      pressedBg: colors.buttonPrimaryPressed,
+      text: colors.buttonPrimaryText,
+      disabledBg: colors.buttonPrimaryDisabled,
+      disabledText: colors.buttonPrimaryDisabledText,
     };
   })();
 

@@ -135,7 +135,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   bookButton: {
     flex: 2,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: colors.buttonPrimary,
   },
   bookPressed: {
     opacity: 0.88,

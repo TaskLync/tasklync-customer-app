@@ -152,7 +152,7 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   chipSelected: {
     backgroundColor: palette.green100,
     borderWidth: 1.5,
-    borderColor: palette.green600,
+    borderColor: colors.buttonPrimary,
   },
   chipText: {
     fontFamily: fontFamily.jakarta.medium,

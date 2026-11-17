@@ -1,3 +1,4 @@
+import { SeeAllLink } from '../ui/Button/SeeAllLink';
 import React, { useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -93,18 +94,7 @@ export const CompanyRow: React.FC = () => {
           <Text style={styles.subtitle}>Explore trusted service providers</Text>
         </View>
 
-        <Pressable
-          onPress={handleSeeAll}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          style={({ pressed }) => [
-            styles.actionButton,
-            pressed && { opacity: 0.7 },
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="See all service companies"
-        >
-          <Text style={styles.actionLabel}>See all →</Text>
-        </Pressable>
+        <SeeAllLink onPress={handleSeeAll} accessibilityLabel="See all service companies" />
       </View>
 
       {/* ── Single Horizontal Row ── */}
@@ -115,7 +105,7 @@ export const CompanyRow: React.FC = () => {
           <View style={styles.emptyContainer}>
             <View style={styles.emptyCard}>
               <View style={styles.emptyIconWrapper}>
-                <Building2 size={20} color={colors.primary} strokeWidth={2} />
+                <Building2 size={20} color={colors.textGreen} strokeWidth={1.8} />
               </View>
               <View style={styles.emptyTextWrapper}>
                 <Text style={styles.emptyTitle}>
@@ -172,7 +162,8 @@ const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create(
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    // Pin "See all" to the title line (title lineHeight === SeeAllLink height), not the title+subtitle block.
+    alignItems: 'flex-start',
     paddingHorizontal: 16,
     marginBottom: 12,
   },
@@ -183,23 +174,16 @@ const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create(
   title: {
     fontFamily: 'Poppins-Bold',
     fontSize: 18,
+    lineHeight: 24,
     color: colors.textPrimary,
     letterSpacing: -0.3,
   },
   subtitle: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12.5,
+    lineHeight: 17,
     color: colors.textSecondary,
     marginTop: 2,
-  },
-  actionButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionLabel: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 13.5,
-    color: colors.primary,
   },
   contentContainer: {
     width: '100%',
@@ -213,19 +197,18 @@ const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create(
     alignItems: 'center',
     backgroundColor: colors.bgCard,
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
     gap: 12,
   },
+  // Quiet brand accent: the faintest green tint, no border, so the card itself stays white + grey.
   emptyIconWrapper: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: colors.primaryTint,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.primarySubtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -234,15 +217,16 @@ const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create(
   },
   emptyTitle: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 13.5,
+    fontSize: 14,
     color: colors.textPrimary,
-    lineHeight: 18,
+    lineHeight: 19,
+    letterSpacing: -0.1,
   },
   emptySubtitle: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
+    fontSize: 12.5,
     color: colors.textSecondary,
-    lineHeight: 16,
+    lineHeight: 17,
     marginTop: 2,
   },
   listContent: {
@@ -271,13 +255,13 @@ const createStyles = ({ colors, companyTokens }: AppTheme) => StyleSheet.create(
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: colors.primaryTint,
+    backgroundColor: colors.bgHover,
     borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    borderColor: colors.border,
   },
   retryText: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 12,
-    color: colors.primary,
+    color: colors.textGreen,
   },
 });

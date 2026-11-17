@@ -7,6 +7,9 @@
 export const lightPalette = {
   // Fixed colours: identical in every theme. Use for text/icons ON brand or photo surfaces.
   pureWhite: '#FFFFFF',
+  // The single primary-button fill (and its pressed shade). Same in every theme on purpose.
+  green700Fixed: '#15803D',
+  green800Fixed: '#166534',
 
   // Overlay surfaces and inverse (high-contrast chip) pair
   elevated: '#FFFFFF', // modals, bottom sheets, popovers
@@ -162,6 +165,44 @@ export const buildColors = (palette: Palette, mode: ThemeMode) => ({
   tabBarActive: mode === 'light' ? '#374151' : '#E5E7EB',
   tabBarInactive: mode === 'light' ? '#6B7280' : '#7C8593',
   tabBarBorder: mode === 'light' ? '#E5E7EB' : '#2A2F36',
+  // ── Neutral grayscale UI (Messages inbox, bottom-nav selection). No brand colour by design. ──
+  // Contrast on neutralBg: ink light 18.6:1 / dark 16:1; inkSecondary light 4.62:1 / dark 7.1:1 (AA body text).
+  // neutralInkTertiary is ~2.5:1: decorative marks only (separators, status shapes), never readable text.
+  neutralBg: mode === 'light' ? '#FFFFFF' : '#121417',
+  neutralFill: mode === 'light' ? '#F4F5F7' : '#1C1F23',
+  neutralFillPressed: mode === 'light' ? '#ECEDF0' : '#25292E',
+  neutralDivider: mode === 'light' ? '#F0F1F3' : '#1F2226',
+  neutralInk: mode === 'light' ? '#111318' : '#F0F2F5',
+  neutralInkSecondary: mode === 'light' ? '#71757E' : '#9CA2AC', // spec #737780 is 4.49:1, one step darker clears AA
+  neutralInkTertiary: mode === 'light' ? '#A0A5AE' : '#5F6570',
+  /** Text/icons on a `neutralInk` fill (badges): white in light, near-black in dark. */
+  neutralOnInk: mode === 'light' ? '#FFFFFF' : '#121417',
+  /** Borderless search field / round icon-button fill: a whisper of neutral on the white header. */
+  searchFieldBg: mode === 'light' ? '#F3F4F6' : '#1E2125',
+  /** Soft grey list canvas under white cards (Bookings): separation without borders. */
+  canvasSubtle: mode === 'light' ? '#F6F7F9' : '#0F1114',
+  /** Card surface on canvasSubtle: white in light, lifted in dark. */
+  cardRaised: mode === 'light' ? '#FFFFFF' : '#1A1D22',
+  /** Selected segment of a segmented control (sits on searchFieldBg). */
+  segmentThumb: mode === 'light' ? '#FFFFFF' : '#2B3036',
+  /** Switch OFF track: soft neutral, light enough to stay quiet, dark enough for a white thumb. */
+  switchTrackOff: mode === 'light' ? '#E1E4E8' : '#3A3F46',
+  // ── Buttons: ONE primary colour for every solid brand action, identical in both themes. ──
+  // #15803D with white text is 5.0:1 (WCAG AA); on the dark base surface it is ~3.4:1 (UI component >= 3:1).
+  buttonPrimary: palette.green700Fixed,
+  buttonPrimaryPressed: palette.green800Fixed,
+  buttonPrimaryText: palette.pureWhite,
+  buttonPrimaryDisabled: palette.gray100,
+  buttonPrimaryDisabledText: palette.gray400,
+  // Secondary: quiet neutral fill, strong text. Never brand green.
+  buttonSecondary: palette.gray100,
+  buttonSecondaryPressed: palette.gray200,
+  buttonSecondaryText: palette.gray900,
+  buttonSecondaryBorder: palette.softGray,
+  // Destructive: red, never the brand colour.
+  buttonDestructive: '#DC2626', // white label 4.8:1 in both themes
+  buttonDestructivePressed: '#B91C1C',
+  buttonDestructiveText: palette.pureWhite,
   iconPrimary: palette.gray900,
   iconSecondary: palette.gray600,
   inverseSurface: palette.inverse,
@@ -198,7 +239,7 @@ export const buildColors = (palette: Palette, mode: ThemeMode) => ({
   textSecondary: palette.gray600, // #475569
   textMuted: palette.gray400, // #94A3B8
   textDisabled: palette.gray300, // #CBD5E1
-  textOnGreen: palette.white,
+  textOnGreen: palette.pureWhite, // white on brand fills in BOTH themes (palette.white is a dark surface in Dark)
   textGreen: palette.green700, // #15803D
   textGreenDark: palette.green900, // #14532D
   textDanger: palette.red600, // #DC2626
