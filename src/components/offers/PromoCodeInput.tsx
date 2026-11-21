@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated';
-import { AlertCircle, ChevronDown, Ticket } from 'lucide-react-native';
+import { AlertCircleIcon, ChevronDownIcon, CouponIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { CODE_MAX_LENGTH, formatLockoutRemaining, isCodeInputValid } from '../../utils/offers';
 import { AppliedDiscountChip } from './AppliedDiscountChip';
@@ -62,10 +62,10 @@ export const PromoCodeInput: React.FC<PromoCodeInputProps> = ({ promo, workerNam
           accessibilityLabel="Add a promo code"
         >
           <View style={styles.leading}>
-            <Ticket size={18} color={colors.textPrimary} strokeWidth={2} />
+            <CouponIcon size={18} color={colors.textPrimary} strokeWidth={2} />
             <Text style={styles.collapsedText}>Have a promo code?</Text>
           </View>
-          <ChevronDown size={18} color={colors.textMuted} />
+          <ChevronDownIcon size={18} color={colors.textMuted} />
         </Pressable>
       </Animated.View>
     );
@@ -90,7 +90,7 @@ export const PromoCodeInput: React.FC<PromoCodeInputProps> = ({ promo, workerNam
           isLocked && styles.fieldDisabled,
         ]}
       >
-        <Ticket size={18} color={colors.textMuted} strokeWidth={2} />
+        <CouponIcon size={18} color={colors.textMuted} strokeWidth={2} />
         <TextInput
           ref={inputRef}
           style={styles.input}
@@ -135,7 +135,7 @@ export const PromoCodeInput: React.FC<PromoCodeInputProps> = ({ promo, workerNam
 
       {hasError ? (
         <Animated.View entering={FadeIn.duration(160)} style={styles.errorRow} accessibilityRole="alert">
-          <AlertCircle size={14} color={colors.textDanger} style={styles.errorIcon} />
+          <AlertCircleIcon size={14} color={colors.textDanger} style={styles.errorIcon} />
           <View style={styles.errorTextWrap}>
             <Text style={styles.errorText}>{message}</Text>
             {isLocked ? (

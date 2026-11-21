@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { Clock, Check, CheckCheck, AlertCircle } from 'lucide-react-native';
+import { AlertCircleIcon, CheckDoubleIcon, CheckIcon, ClockIcon } from '../ui/Icon/icons';
 import { NETWORK_CONFIG } from '../../config/networkConfig';
 import { useAppTheme } from '../../theme/useAppTheme';
 
@@ -55,7 +55,7 @@ export const MessageStatusIcon: React.FC<MessageStatusIconProps> = React.memo(
         case 'read':
           return 'Read';
         case 'failed':
-          return 'Failed to send';
+          return 'Not sent';
         default:
           return 'Message status';
       }
@@ -68,17 +68,17 @@ export const MessageStatusIcon: React.FC<MessageStatusIconProps> = React.memo(
 
       switch (status) {
         case 'sending':
-          return <Clock size={size} color={defaultMuted} strokeWidth={2.2} />;
+          return <ClockIcon size={size} color={defaultMuted} strokeWidth={2.2} />;
         case 'sent':
-          return <Check size={size} color={defaultMuted} strokeWidth={2.5} />;
+          return <CheckIcon size={size} color={defaultMuted} strokeWidth={2.5} />;
         case 'delivered':
-          return <CheckCheck size={size + 1} color={defaultMuted} strokeWidth={2.2} />;
+          return <CheckDoubleIcon size={size + 1} color={defaultMuted} strokeWidth={2.2} />;
         case 'read':
-          return <CheckCheck size={size + 1} color={readGreen} strokeWidth={2.2} />;
+          return <CheckDoubleIcon size={size + 1} color={readGreen} strokeWidth={2.2} />;
         case 'failed':
-          return <AlertCircle size={size} color={dangerRed} strokeWidth={2.2} />;
+          return <AlertCircleIcon size={size} color={dangerRed} strokeWidth={2.2} />;
         default:
-          return <Check size={size} color={defaultMuted} strokeWidth={2.2} />;
+          return <CheckIcon size={size} color={defaultMuted} strokeWidth={2.2} />;
       }
     };
 

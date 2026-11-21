@@ -6,14 +6,14 @@ import {
   Platform,
 } from 'react-native';
 import {
-  Zap,
-  Droplet,
-  Wind,
-  Sparkles,
-  Hammer,
-  Paintbrush,
-  Grid,
-} from 'lucide-react-native';
+  AcIcon,
+  DropletIcon,
+  FlashIcon,
+  GridIcon,
+  HammerIcon,
+  PainterIcon,
+  SparklesIcon,
+} from '../ui/Icon/icons';
 import { Category } from '../../types/category.types';
 import { Chip } from '../ui/Chip/Chip';
 
@@ -26,12 +26,12 @@ interface CategoryRowProps {
 }
 
 const CATEGORY_ICON_MAP: Record<string, any> = {
-  electrician: Zap,
-  plumber: Droplet,
-  ac_repair: Wind,
-  cleaning: Sparkles,
-  carpenter: Hammer,
-  painter: Paintbrush,
+  electrician: FlashIcon,
+  plumber: DropletIcon,
+  ac_repair: AcIcon,
+  cleaning: SparklesIcon,
+  carpenter: HammerIcon,
+  painter: PainterIcon,
 };
 
 export const CategoryRow: React.FC<CategoryRowProps> = ({
@@ -66,12 +66,12 @@ export const CategoryRow: React.FC<CategoryRowProps> = ({
           size="md"
           variant="filter"
           showCheckmark={false}
-          icon={Grid}
+          icon={GridIcon}
         />
       )}
 
       {categories.map((category) => {
-        const IconComponent = CATEGORY_ICON_MAP[category.id] || Grid;
+        const IconComponent = CATEGORY_ICON_MAP[category.id] || GridIcon;
         return (
           <Chip
             key={category.id}

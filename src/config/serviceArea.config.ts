@@ -35,7 +35,7 @@ export interface ServiceAreaValidationResult {
  * falls outside the supported operating area.
  */
 export const SERVICE_UNAVAILABLE_MESSAGE =
-  'This service is currently available only in Faisalabad.';
+  'Tasklync is currently available only in Faisalabad.';
 
 /**
  * Faisalabad City Center & Default Region Configuration

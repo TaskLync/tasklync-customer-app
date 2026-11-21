@@ -107,7 +107,8 @@ export default function RootLayout() {
               <Stack.Screen name="booking/schedule" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
               <Stack.Screen name="booking/address" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
               <Stack.Screen name="booking/summary" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
-              <Stack.Screen name="booking/payment" options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+              {/* Booking already exists here: no swipe-back (useNavigationLock blocks every other way back). */}
+              <Stack.Screen name="booking/payment" options={{ animation: 'slide_from_right', gestureEnabled: false }} />
               <Stack.Screen name="booking/[id]/chat" options={{ animation: 'slide_from_right' }} />
               <Stack.Screen name="booking/success" options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
               <Stack.Screen name="booking/[id]/track" options={{ animation: 'slide_from_bottom' }} />

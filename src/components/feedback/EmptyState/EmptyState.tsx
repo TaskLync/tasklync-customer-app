@@ -10,7 +10,7 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { RefreshCw } from 'lucide-react-native';
+import { RefreshIcon } from '../../ui/Icon/icons';
 import { fontFamily } from '../../../design/typography';
 import { radius } from '../../../design/radius';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
@@ -62,18 +62,18 @@ const EMPTY_STATE_IMAGES: Record<EmptyStateType, ImageSourcePropType> = {
 const DEFAULT_STRINGS: Record<EmptyStateType, { title: string; description: string; actionLabel?: string }> = {
   'no-workers': {
     title: 'No Workers Available',
-    description: 'There are currently no service providers available in this area or category. Try expanding your search or checking back later.',
-    actionLabel: 'Explore Services',
+    description: 'No workers are available here right now. Try a bigger area or check again later.',
+    actionLabel: 'Explore services',
   },
   'no-internet': {
     title: 'No Internet Connection',
     description: 'Please check your connection or Wi-Fi settings and try again.',
-    actionLabel: 'Try Again',
+    actionLabel: 'Try again',
   },
   'server-error': {
     title: 'Something Went Wrong',
     description: 'We encountered an unexpected server issue. Please try again in a few moments.',
-    actionLabel: 'Try Again',
+    actionLabel: 'Try again',
   },
   'no-data': {
     title: 'No Data Available',
@@ -205,7 +205,7 @@ export const EmptyState: React.FC<EmptyStateProps> = React.memo(({
             ) : (
               <>
                 {isErrorType && (
-                  <RefreshCw
+                  <RefreshIcon
                     size={15}
                     color={resolvedVariant === 'primary' ? palette.pureWhite : colors.primaryDark}
                     strokeWidth={2.4}

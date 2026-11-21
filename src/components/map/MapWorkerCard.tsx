@@ -5,10 +5,13 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { Star, MapPin, Clock } from 'lucide-react-native';
+import { ClockIcon, LocationIcon, StarIcon } from '../ui/Icon/icons';
 import { useRouter } from 'expo-router';
 import { WorkerNearby } from '../../types/worker.types';
 import { WorkerMarkerBadge } from './WorkerMarkerBadge';
+import { WorkerProfileLink } from '../worker/WorkerProfileLink';
+
+const AVATAR_SIZE = 52;
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -91,8 +94,14 @@ export const MapWorkerCard: FC<MapWorkerCardProps> = ({
       accessibilityRole="none"
       accessibilityLabel={`Worker ${worker.name}, Rating ${worker.avgRating}, Distance ${formattedDistance}`}
     >
-      {/* Avatar Container */}
-      <View style={styles.avatarWrapper}>
+      {/* The card selects the worker on the map; the avatar opens their profile */}
+      <WorkerProfileLink
+        workerId={worker.id}
+        isCompany={Boolean(worker.isCompany || worker.providerType === 'COMPANY')}
+        workerName={worker.name}
+        size={AVATAR_SIZE}
+        style={styles.avatarWrapper}
+      >
         {worker.avatarUrl ? (
           <Image
             source={{ uri: worker.avatarUrl }}
@@ -109,7 +118,7 @@ export const MapWorkerCard: FC<MapWorkerCardProps> = ({
         <View style={styles.badgeContainer}>
           <WorkerMarkerBadge category={primaryCategory || ''} size={16} />
         </View>
-      </View>
+      </WorkerProfileLink>
 
       {/* Main Info */}
       <View style={styles.infoContainer}>
@@ -121,7 +130,7 @@ export const MapWorkerCard: FC<MapWorkerCardProps> = ({
         {/* Rating & Distance (Inter numbers) */}
         <View style={styles.metaRow}>
           <View style={styles.metaBadge}>
-            <Star size={12} color="#F59E0B" fill="#F59E0B" />
+            <StarIcon size={12} color="#F59E0B" fill="#F59E0B" />
             <Text style={styles.ratingText}>
               {worker.avgRating ? worker.avgRating.toFixed(1) : '4.9'}
             </Text>
@@ -130,14 +139,14 @@ export const MapWorkerCard: FC<MapWorkerCardProps> = ({
           <View style={styles.dotSeparator} />
 
           <View style={styles.metaBadge}>
-            <MapPin size={11} color={colors.textMuted} />
+            <LocationIcon size={11} color={colors.textMuted} />
             <Text style={styles.distanceText}>{formattedDistance}</Text>
           </View>
         </View>
 
         {/* Response Time or Price */}
         <View style={styles.subMetaRow}>
-          <Clock size={11} color={colors.textMuted} />
+          <ClockIcon size={11} color={colors.textMuted} />
           <Text style={styles.responseTimeText}>
             {worker.responseTimeMins
               ? `~${worker.responseTimeMins} mins response`
@@ -187,8 +196,8 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     elevation: 8,
   },
   avatarWrapper: {
-    width: 52,
-    height: 52,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
     position: 'relative',
   },
   avatar: {

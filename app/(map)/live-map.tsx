@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MapPin } from 'lucide-react-native';
+import { LocationIcon } from '../../src/components/ui/Icon/icons';
 import {
   validateServiceArea,
   SERVICE_UNAVAILABLE_MESSAGE,
@@ -153,21 +153,21 @@ export default function LiveMapScreen() {
       if (freshCoords) {
         const validation = validateServiceArea(freshCoords);
         if (!validation.isServiceable) {
-          showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+          showAlert('Outside service area', SERVICE_UNAVAILABLE_MESSAGE);
           recenter(FAISALABAD_CENTER);
         } else {
           recenter(freshCoords, undefined, 'street');
         }
       } else {
         showAlert(
-          'Location Error',
-          'Unable to acquire a high-confidence GPS position. Please check your GPS signal and settings.'
+          "Couldn't get your location",
+          "Couldn't get an accurate location. Check your GPS signal and try again."
         );
       }
     } catch (_err) {
       showAlert(
-        'Location Error',
-        'An error occurred while acquiring your GPS position. Please try again.'
+        "Couldn't get your location",
+        'Please try again.'
       );
     } finally {
       setIsRecentering(false);
@@ -214,7 +214,7 @@ export default function LiveMapScreen() {
           accessibilityRole="button"
           accessibilityLabel="Location disabled. Tap to enable"
         >
-          <MapPin size={13} color={palette.pureWhite} />
+          <LocationIcon size={13} color={palette.pureWhite} />
           <Text style={styles.locationBannerText}>
             {!isServicesEnabled
               ? 'GPS is turned off. Tap to open settings'

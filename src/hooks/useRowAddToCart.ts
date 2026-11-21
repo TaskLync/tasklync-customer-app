@@ -36,7 +36,7 @@ export function useRowAddToCart(item: RowCartItem) {
     [item]
   );
 
-  /** Adds the service once; a service already in the cart is left to its quantity stepper. */
+  /** Adds the service once; a service already in the cart stays as it is (each service is booked once). */
   const addFromRow = useCallback(() => {
     const cart = useCartStore.getState();
     if (cart.items.some((i) => i.serviceId === item.serviceId)) return;

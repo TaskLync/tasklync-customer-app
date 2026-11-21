@@ -1,16 +1,16 @@
 import { FC } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
-  Zap,
-  Wrench,
-  AirVent,
-  Sparkles,
-  Palette,
-  Hammer,
-  Car,
-  Scissors,
-  HelpCircle,
-} from 'lucide-react-native';
+  AcIcon,
+  CarIcon,
+  FlashIcon,
+  HammerIcon,
+  HelpCircleIcon,
+  PainterIcon,
+  ScissorsIcon,
+  SparklesIcon,
+  WrenchIcon,
+} from '../ui/Icon/icons';
 import { useAppTheme, type AppTheme } from '../../theme/useAppTheme';
 import { useThemedStyles } from '../../theme/useAppTheme';
 
@@ -23,31 +23,31 @@ export const getCategoryMeta = (category: string | undefined, { colors, palette 
   const normalized = (category || '').toLowerCase();
 
   if (normalized.includes('electr')) {
-    return { icon: Zap, bg: palette.amber100, color: colors.warningMedium, label: 'Electrician' };
+    return { icon: FlashIcon, bg: palette.amber100, color: colors.warningMedium, label: 'Electrician' };
   }
   if (normalized.includes('plumb')) {
-    return { icon: Wrench, bg: palette.sky100, color: palette.sky600, label: 'Plumber' };
+    return { icon: WrenchIcon, bg: palette.sky100, color: palette.sky600, label: 'Plumber' };
   }
   if (normalized.includes('ac') || normalized.includes('air') || normalized.includes('hvac')) {
-    return { icon: AirVent, bg: palette.blue100, color: palette.blue700, label: 'AC Repair' };
+    return { icon: AcIcon, bg: palette.blue100, color: palette.blue700, label: 'AC Repair' };
   }
   if (normalized.includes('clean')) {
-    return { icon: Sparkles, bg: colors.primaryLight, color: colors.primaryDark, label: 'Cleaner' };
+    return { icon: SparklesIcon, bg: colors.primaryLight, color: colors.primaryDark, label: 'Cleaner' };
   }
   if (normalized.includes('paint')) {
-    return { icon: Palette, bg: palette.pink100, color: palette.pink600, label: 'Painter' };
+    return { icon: PainterIcon, bg: palette.pink100, color: palette.pink600, label: 'Painter' };
   }
   if (normalized.includes('carpent') || normalized.includes('wood')) {
-    return { icon: Hammer, bg: palette.orange100, color: palette.orange600, label: 'Carpenter' };
+    return { icon: HammerIcon, bg: palette.orange100, color: palette.orange600, label: 'Carpenter' };
   }
   if (normalized.includes('mechanic') || normalized.includes('auto')) {
-    return { icon: Car, bg: palette.purple100, color: palette.purple600, label: 'Mechanic' };
+    return { icon: CarIcon, bg: palette.purple100, color: palette.purple600, label: 'Mechanic' };
   }
   if (normalized.includes('barber') || normalized.includes('salon') || normalized.includes('beauty')) {
-    return { icon: Scissors, bg: palette.rose100, color: palette.rose600, label: 'Salon' };
+    return { icon: ScissorsIcon, bg: palette.rose100, color: palette.rose600, label: 'Salon' };
   }
 
-  return { icon: HelpCircle, bg: colors.canvasGray, color: colors.textMuted, label: 'Handyman' };
+  return { icon: HelpCircleIcon, bg: colors.canvasGray, color: colors.textMuted, label: 'Handyman' };
 };
 
 export const WorkerMarkerBadge: FC<WorkerMarkerBadgeProps> = ({

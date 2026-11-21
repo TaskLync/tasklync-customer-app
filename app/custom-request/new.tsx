@@ -17,25 +17,26 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import {
-  ArrowLeft,
-  Camera,
-  Image as ImageIcon,
-  Video as VideoIcon,
-  MapPin,
-  Calendar,
-  Check,
-  X,
-  AlertCircle,
-  UploadCloud,
-  ChevronRight,
-  ChevronLeft,
-  ShieldCheck,
-  Star,
-  Plus,
-} from 'lucide-react-native';
+  AlertCircleIcon,
+  ArrowLeftIcon,
+  CalendarIcon,
+  CameraIcon,
+  CheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  CloudUploadIcon,
+  ImageIcon,
+  LocationIcon,
+  PlusIcon,
+  ShieldCheckIcon,
+  StarIcon,
+  VideoIcon,
+} from '../../src/components/ui/Icon/icons';
 
 import { fontFamily } from '../../src/design';
 import { WorkerAvatar } from '../../src/components/worker/WorkerAvatar';
+import { WorkerProfileLink } from '../../src/components/worker/WorkerProfileLink';
 import { SkeletonCircle, SkeletonGroup, SkeletonText } from '../../src/components/ui/Skeleton';
 import { useWorkerProfile } from '../../src/hooks/useWorkerProfile';
 import { isAgencyProvider, providerTypeHint } from '../../src/utils/providerHint';
@@ -50,6 +51,7 @@ import { CreateCustomRequestDto, CustomServiceRequestMediaInput } from '../../sr
 import { normalizeDateToYYYYMMDD } from '../../src/utils/timezone';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 import { showAlert } from '../../src/components/feedback/AppAlert';
+const PRO_AVATAR_SIZE = 52;
 
 // Normalized address interface supporting all address structures in the app
 interface NormalizedAddress {
@@ -287,7 +289,7 @@ export default function NewCustomRequestScreen() {
     }
 
     if (!workerId) {
-      showAlert('Worker Required', 'No professional was selected for this quote request.');
+      showAlert('Choose a worker', 'Select a worker to send your request to.');
       return;
     }
 
@@ -447,7 +449,7 @@ export default function NewCustomRequestScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={20} color={palette.gray900} strokeWidth={2.2} />
+          <ArrowLeftIcon size={20} color={palette.gray900} strokeWidth={2.2} />
         </TouchableOpacity>
 
         <View style={styles.navCenter}>
@@ -489,7 +491,7 @@ export default function NewCustomRequestScreen() {
             {/* 2. Professional Summary (Compact horizontal row) */}
             {isWorkerLoading ? (
               <View style={styles.proRow}>
-                <SkeletonGroup style={styles.proSkeleton} accessibilityLabel="Loading professional">
+                <SkeletonGroup style={styles.proSkeleton} accessibilityLabel="Loading worker">
                   <SkeletonCircle size={52} />
                   <View style={styles.proMeta}>
                     <SkeletonText fontSize={14} lineHeight={20} width="55%" />
@@ -499,11 +501,18 @@ export default function NewCustomRequestScreen() {
               </View>
             ) : worker ? (
               <View style={styles.proRow}>
-                <WorkerAvatar
-                  uri={worker.avatarUrl || (worker as any)?.avatar || (worker as any)?.avatar_url}
-                  name={providerDisplayName || worker.name}
-                  size={52}
-                />
+                <WorkerProfileLink
+                  workerId={workerId}
+                  isCompany={isAgency}
+                  workerName={providerDisplayName || worker.name}
+                  size={PRO_AVATAR_SIZE}
+                >
+                  <WorkerAvatar
+                    uri={worker.avatarUrl || (worker as any)?.avatar || (worker as any)?.avatar_url}
+                    name={providerDisplayName || worker.name}
+                    size={PRO_AVATAR_SIZE}
+                  />
+                </WorkerProfileLink>
                 <View style={styles.proMeta}>
                   <View style={styles.proNameLine}>
                     <Text style={styles.proName} numberOfLines={1}>
@@ -516,7 +525,7 @@ export default function NewCustomRequestScreen() {
                     )}
                     {worker.isVerified && (
                       <View style={styles.verifiedTag}>
-                        <ShieldCheck size={12} color={palette.green700} />
+                        <ShieldCheckIcon size={12} color={palette.green700} />
                         <Text style={styles.verifiedTagText}>Verified</Text>
                       </View>
                     )}
@@ -527,7 +536,7 @@ export default function NewCustomRequestScreen() {
                   {/* Rating displayed ONLY when meaningful reviews exist */}
                   {hasMeaningfulReviews && (
                     <View style={styles.proRatingRow}>
-                      <Star size={12} color={palette.amber500} fill={palette.amber500} />
+                      <StarIcon size={12} color={palette.amber500} fill={palette.amber500} />
                       <Text style={styles.proRatingText}>
                         {worker.avgRating.toFixed(1)} ({worker.totalReviews})
                       </Text>
@@ -574,7 +583,7 @@ export default function NewCustomRequestScreen() {
               />
               {validationErrors.title ? (
                 <View style={styles.inlineErrorRow}>
-                  <AlertCircle size={13} color={palette.red500} />
+                  <AlertCircleIcon size={13} color={palette.red500} />
                   <Text style={styles.inlineErrorText}>{validationErrors.title}</Text>
                 </View>
               ) : null}
@@ -612,7 +621,7 @@ export default function NewCustomRequestScreen() {
               />
               {validationErrors.description ? (
                 <View style={styles.inlineErrorRow}>
-                  <AlertCircle size={13} color={palette.red500} />
+                  <AlertCircleIcon size={13} color={palette.red500} />
                   <Text style={styles.inlineErrorText}>{validationErrors.description}</Text>
                 </View>
               ) : null}
@@ -636,7 +645,7 @@ export default function NewCustomRequestScreen() {
                   onPress={() => setMediaPickerVisible(true)}
                   activeOpacity={0.7}
                 >
-                  <UploadCloud size={18} color={palette.green600} />
+                  <CloudUploadIcon size={18} color={palette.green600} />
                   <Text style={styles.compactAddMediaText}>Add media</Text>
                 </TouchableOpacity>
               ) : (
@@ -658,7 +667,7 @@ export default function NewCustomRequestScreen() {
 
                       {slot.status === 'success' && (
                         <View style={styles.mediaSuccessBadge}>
-                          <Check size={10} color={palette.pureWhite} strokeWidth={3} />
+                          <CheckIcon size={10} color={palette.pureWhite} strokeWidth={3} />
                         </View>
                       )}
 
@@ -674,7 +683,7 @@ export default function NewCustomRequestScreen() {
                           style={styles.mediaErrorOverlay}
                           onPress={() => retrySlot(slot.id)}
                         >
-                          <AlertCircle size={16} color={palette.pureWhite} />
+                          <AlertCircleIcon size={16} color={palette.pureWhite} />
                           <Text style={styles.mediaRetryText}>Retry</Text>
                         </TouchableOpacity>
                       )}
@@ -685,7 +694,7 @@ export default function NewCustomRequestScreen() {
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         accessibilityLabel="Remove media"
                       >
-                        <X size={12} color={palette.pureWhite} strokeWidth={2.5} />
+                        <CloseIcon size={12} color={palette.pureWhite} strokeWidth={2.5} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -697,7 +706,7 @@ export default function NewCustomRequestScreen() {
                       disabled={isUploadingAny}
                       activeOpacity={0.7}
                     >
-                      <Plus size={18} color={palette.green600} />
+                      <PlusIcon size={18} color={palette.green600} />
                       <Text style={styles.mediaInlineAddText}>Add</Text>
                     </TouchableOpacity>
                   )}
@@ -706,7 +715,7 @@ export default function NewCustomRequestScreen() {
 
               {validationErrors.media || firstErrorMessage ? (
                 <View style={styles.inlineErrorRow}>
-                  <AlertCircle size={13} color={palette.red500} />
+                  <AlertCircleIcon size={13} color={palette.red500} />
                   <Text style={styles.inlineErrorText}>
                     {validationErrors.media || firstErrorMessage}
                   </Text>
@@ -735,7 +744,7 @@ export default function NewCustomRequestScreen() {
 
               <View style={styles.addressRow}>
                 <View style={styles.addressPinWrap}>
-                  <MapPin size={18} color={palette.green600} />
+                  <LocationIcon size={18} color={palette.green600} />
                 </View>
 
                 <View style={styles.addressTextColumn}>
@@ -773,7 +782,7 @@ export default function NewCustomRequestScreen() {
 
               {validationErrors.address ? (
                 <View style={styles.inlineErrorRow}>
-                  <AlertCircle size={13} color={palette.red500} />
+                  <AlertCircleIcon size={13} color={palette.red500} />
                   <Text style={styles.inlineErrorText}>{validationErrors.address}</Text>
                 </View>
               ) : null}
@@ -846,7 +855,7 @@ export default function NewCustomRequestScreen() {
                   onPress={() => setDatePickerVisible(true)}
                   activeOpacity={0.7}
                 >
-                  <Calendar
+                  <CalendarIcon
                     size={14}
                     color={
                       preferredDateOption === 'custom'
@@ -902,9 +911,9 @@ export default function NewCustomRequestScreen() {
 
             {/* Reassurance notice banner */}
             <View style={styles.noticeRow}>
-              <ShieldCheck size={16} color={palette.green600} />
+              <ShieldCheckIcon size={16} color={palette.green600} />
               <Text style={styles.noticeText}>
-                The professional will review your request and send an itemized quote before confirming.
+                The worker will review your request and send an itemized quote before confirming.
               </Text>
             </View>
           </ScrollView>
@@ -939,7 +948,7 @@ export default function NewCustomRequestScreen() {
             {createMutation.isPending ? (
               <ActivityIndicator size="small" color={palette.pureWhite} />
             ) : (
-              <Text style={styles.primaryButtonText}>Submit Request</Text>
+              <Text style={styles.primaryButtonText}>Submit request</Text>
             )}
           </TouchableOpacity>
         )}
@@ -973,13 +982,13 @@ export default function NewCustomRequestScreen() {
               }}
             >
               <View style={styles.sheetIconBox}>
-                <Camera size={18} color={palette.green600} />
+                <CameraIcon size={18} color={palette.green600} />
               </View>
               <View style={styles.sheetOptionTextColumn}>
                 <Text style={styles.sheetOptionTitle}>Take photo</Text>
                 <Text style={styles.sheetOptionSubtitle}>Capture with camera</Text>
               </View>
-              <ChevronRight size={18} color={palette.gray400} />
+              <ChevronRightIcon size={18} color={palette.gray400} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -996,7 +1005,7 @@ export default function NewCustomRequestScreen() {
                 <Text style={styles.sheetOptionTitle}>Choose from gallery</Text>
                 <Text style={styles.sheetOptionSubtitle}>Upload images or short clip</Text>
               </View>
-              <ChevronRight size={18} color={palette.gray400} />
+              <ChevronRightIcon size={18} color={palette.gray400} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -1033,7 +1042,7 @@ export default function NewCustomRequestScreen() {
                 onPress={() => setAddressPickerVisible(false)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <X size={18} color={palette.gray500} />
+                <CloseIcon size={18} color={palette.gray500} />
               </TouchableOpacity>
             </View>
 
@@ -1065,7 +1074,7 @@ export default function NewCustomRequestScreen() {
                       setAddressPickerVisible(false);
                     }}
                   >
-                    <MapPin
+                    <LocationIcon
                       size={18}
                       color={isCurrent ? palette.green600 : palette.gray500}
                     />
@@ -1075,7 +1084,7 @@ export default function NewCustomRequestScreen() {
                         {street}
                       </Text>
                     </View>
-                    {isCurrent && <Check size={18} color={palette.green600} />}
+                    {isCurrent && <CheckIcon size={18} color={palette.green600} />}
                   </TouchableOpacity>
                 );
               })}
@@ -1088,7 +1097,7 @@ export default function NewCustomRequestScreen() {
                 addAddressSheetRef.current?.open();
               }}
             >
-              <Plus size={16} color={palette.green600} />
+              <PlusIcon size={16} color={palette.green600} />
               <Text style={styles.sheetAddNewAddressText}>Add new address</Text>
             </TouchableOpacity>
           </View>
@@ -1127,7 +1136,7 @@ export default function NewCustomRequestScreen() {
                   disabled={!canGoPrevMonth}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <ChevronLeft
+                  <ChevronLeftIcon
                     size={20}
                     color={canGoPrevMonth ? palette.gray800 : palette.gray300}
                   />
@@ -1142,7 +1151,7 @@ export default function NewCustomRequestScreen() {
                   disabled={!canGoNextMonth}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <ChevronRight
+                  <ChevronRightIcon
                     size={20}
                     color={canGoNextMonth ? palette.gray800 : palette.gray300}
                   />

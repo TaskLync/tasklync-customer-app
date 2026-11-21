@@ -32,7 +32,11 @@ import { ImageViewer } from '@components/common/ImageViewer';
 import { BlockWorkerSheet } from '../../src/components/worker/BlockWorkerSheet';
 import { useBlockWorker } from '../../src/hooks/useBlockWorker';
 import { getPersistedBookings } from '../../src/services/api/booking.api';
-import { ArrowLeft, ChevronRight, FilePen } from 'lucide-react-native';
+import {
+  ArrowLeftIcon,
+  ChevronRightIcon,
+  DocumentEditIcon,
+} from '../../src/components/ui/Icon/icons';
 
 import {
   SkeletonWorkerProfileHero,
@@ -131,7 +135,7 @@ export default function WorkerProfileScreen() {
 
   const handleReport = () => {
     setOptionsVisible(false);
-    showAlert('Report Worker', 'Thank you for reporting. Our safety team will review this profile immediately.');
+    showAlert('Report sent', 'Thanks for letting us know. Our safety team will review this profile.');
   };
 
   const handleBlock = () => {
@@ -155,8 +159,8 @@ export default function WorkerProfileScreen() {
       } as any);
     } else {
       showAlert(
-        'Direct Chat',
-        `Direct chat with ${worker?.name || 'this worker'} is enabled once you book a service.`
+        'Chat after booking',
+        `You can chat with ${worker?.name || 'this worker'} once you book a service.`
       );
     }
   };
@@ -181,7 +185,7 @@ export default function WorkerProfileScreen() {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+            <ArrowLeftIcon size={20} color={colors.textPrimary} strokeWidth={2.2} />
           </Pressable>
         </View>
         {/* One SkeletonGroup = one animated node for the whole page. */}
@@ -212,8 +216,8 @@ export default function WorkerProfileScreen() {
         <EmptyState
           type="no-workers"
           title="Worker Profile Not Found"
-          description="This service professional is unavailable or does not exist."
-          actionLabel="Try Again"
+          description="This service worker is unavailable or does not exist."
+          actionLabel="Try again"
           onAction={() => refetch()}
         />
       </SafeAreaView>
@@ -236,7 +240,6 @@ export default function WorkerProfileScreen() {
         worker={worker}
         scrollY={scrollY}
         onBack={handleBack}
-        onBookNow={handleBookNow}
       />
 
       {/* Main Scroll Content */}
@@ -309,13 +312,13 @@ export default function WorkerProfileScreen() {
                 accessibilityRole="button"
               >
                 <View style={styles.customQuoteIcon}>
-                  <FilePen size={16} color={colors.primaryDark} strokeWidth={2.2} />
+                  <DocumentEditIcon size={16} color={colors.primaryDark} strokeWidth={2.2} />
                 </View>
                 <View style={styles.customQuoteTextCol}>
                   <Text style={styles.customQuoteTitle}>Need something else?</Text>
                   <Text style={styles.customQuoteSubtitle}>Request a custom quote</Text>
                 </View>
-                <ChevronRight size={18} color={colors.textMuted} />
+                <ChevronRightIcon size={18} color={colors.textMuted} />
               </Pressable>
             }
           />

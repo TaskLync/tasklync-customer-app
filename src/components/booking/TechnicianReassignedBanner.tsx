@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { UserCheck, X } from 'lucide-react-native';
+import { CloseIcon, UserCheckIcon } from '../ui/Icon/icons';
 import { springConfig } from '../../design/animations';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -47,11 +47,11 @@ export const TechnicianReassignedBanner: React.FC<TechnicianReassignedBannerProp
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
       <View style={styles.iconCircle}>
-        <UserCheck size={18} color={colors.warningMedium} strokeWidth={2.4} />
+        <UserCheckIcon size={18} color={colors.warningMedium} strokeWidth={2.4} />
       </View>
 
       <View style={styles.textGroup}>
-        <Text style={styles.title}>Technician Reassigned by Agency</Text>
+        <Text style={styles.title}>Worker Reassigned by Agency</Text>
         <Text style={styles.body}>
           Your service has been reassigned to <Text style={styles.boldName}>{newTechnicianName}</Text>
           {reason ? ` (${reason})` : ''}.
@@ -60,7 +60,7 @@ export const TechnicianReassignedBanner: React.FC<TechnicianReassignedBannerProp
 
       {onDismiss && (
         <Pressable onPress={handleDismiss} hitSlop={10} style={styles.closeButton}>
-          <X size={16} color={colors.textWarning} />
+          <CloseIcon size={16} color={colors.textWarning} />
         </Pressable>
       )}
     </Animated.View>

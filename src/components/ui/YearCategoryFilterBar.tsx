@@ -8,7 +8,7 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
-import { ChevronDown, Check, X } from 'lucide-react-native';
+import { CheckIcon, ChevronDownIcon, CloseIcon } from './Icon/icons';
 import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -82,7 +82,7 @@ export const YearCategoryFilterBar: React.FC<YearCategoryFilterBarProps> = ({
           >
             {yearLabel}
           </Text>
-          <ChevronDown
+          <ChevronDownIcon
             size={14}
             color={selectedYear !== 'all' ? colors.primaryDark : colors.textMuted}
           />
@@ -103,7 +103,7 @@ export const YearCategoryFilterBar: React.FC<YearCategoryFilterBarProps> = ({
           >
             {categoryLabel}
           </Text>
-          <ChevronDown
+          <ChevronDownIcon
             size={14}
             color={selectedCategory !== 'all' ? colors.primaryDark : colors.textMuted}
           />
@@ -121,7 +121,7 @@ export const YearCategoryFilterBar: React.FC<YearCategoryFilterBarProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Reset all filters"
           >
-            <X size={13} color={colors.textSecondary} />
+            <CloseIcon size={13} color={colors.textSecondary} />
             <Text style={styles.clearBtnText}>Reset</Text>
           </TouchableOpacity>
         )}
@@ -144,7 +144,7 @@ export const YearCategoryFilterBar: React.FC<YearCategoryFilterBarProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Close"
               >
-                <X size={18} color={colors.textSecondary} />
+                <CloseIcon size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -156,7 +156,7 @@ export const YearCategoryFilterBar: React.FC<YearCategoryFilterBarProps> = ({
               <Text style={[styles.optionText, selectedYear === 'all' && styles.optionTextSelected]}>
                 All Years
               </Text>
-              {selectedYear === 'all' && <Check size={18} color={colors.primaryDark} strokeWidth={2.5} />}
+              {selectedYear === 'all' && <CheckIcon size={18} color={colors.primaryDark} strokeWidth={2.5} />}
             </TouchableOpacity>
 
             {availableYears.map((year) => {
@@ -171,7 +171,7 @@ export const YearCategoryFilterBar: React.FC<YearCategoryFilterBarProps> = ({
                   <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                     {year}
                   </Text>
-                  {isSelected && <Check size={18} color={colors.primaryDark} strokeWidth={2.5} />}
+                  {isSelected && <CheckIcon size={18} color={colors.primaryDark} strokeWidth={2.5} />}
                 </TouchableOpacity>
               );
             })}
@@ -196,7 +196,7 @@ export const YearCategoryFilterBar: React.FC<YearCategoryFilterBarProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Close"
               >
-                <X size={18} color={colors.textSecondary} />
+                <CloseIcon size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -213,7 +213,7 @@ export const YearCategoryFilterBar: React.FC<YearCategoryFilterBarProps> = ({
                     <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                       {cat.name}
                     </Text>
-                    {isSelected && <Check size={18} color={colors.primaryDark} strokeWidth={2.5} />}
+                    {isSelected && <CheckIcon size={18} color={colors.primaryDark} strokeWidth={2.5} />}
                   </TouchableOpacity>
                 );
               })}

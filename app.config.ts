@@ -6,6 +6,9 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 // web-service key (audit LOC-003).
 const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY || process.env.GOOGLE_MAPS_KEY || '';
 
+/** TaskLync brand green (#16A34A, the app's `primaryDark`): launcher icon, splash and Android accent. */
+const BRAND_GREEN = '#16A34A';
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Tasklync',
@@ -16,12 +19,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   icon: './assets/images/icon.png',
   userInterfaceStyle: 'automatic',
-  // @ts-ignore
-  splash: {
-    image: './assets/images/splash-icon.png',
-    resizeMode: 'contain',
-    backgroundColor: '#16A34A',
-  },
+  // Android `colorPrimary`. Without it Expo writes its template default (#023c69).
+  primaryColor: BRAND_GREEN,
+  // The launch splash is configured on the `expo-splash-screen` plugin below. SDK 57 no longer reads a
+  // top-level `splash` key, so it must not be reintroduced here (it would silently do nothing).
   ios: {
     bundleIdentifier: 'com.tasklync.user',
     supportsTablet: false,
@@ -60,7 +61,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     adaptiveIcon: {
       foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundColor: '#16A34A',
+      // Android 13+ themed (monochrome) launcher icons use this silhouette instead of a generated one.
+      monochromeImage: './assets/images/android-icon-monochrome.png',
+      backgroundColor: BRAND_GREEN,
     },
     config: {
       googleMaps: {
@@ -105,7 +108,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-notifications',
       {
         icon: './assets/images/android-icon-monochrome.png',
-        color: '#16A34A',
+        color: BRAND_GREEN,
         defaultChannel: 'tasklync_general_notifications',
         sounds: [
           './assets/sounds/receive_message.mp3',
@@ -115,7 +118,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     'expo-secure-store',
     'expo-image',
-    'expo-splash-screen',
+    [
+      // Must be configured: listed without options this plugin is a no-op, and the APK then ships the
+      // native template's placeholder `splashscreen_logo` as the launch window background (the
+      // non-TaskLync graphic seen on Android 11 and older / slower devices).
+      'expo-splash-screen',
+      {
+        backgroundColor: BRAND_GREEN,
+        image: './assets/images/splash-icon.png',
+        resizeMode: 'contain',
+        // dp. The TL mark fills ~80% x 56% of the source, so its diagonal (~156dp) stays inside the
+        // 192dp circle Android 12+ shows on the 288dp splash canvas: no clipping of the T or L corners.
+        imageWidth: 160,
+      },
+    ],
     'expo-status-bar',
     'expo-web-browser',
     'expo-asset',

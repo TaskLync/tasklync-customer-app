@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle, ImageStyle } from 'react-native';
 import { Image, ImageContentFit } from 'expo-image';
-import { User, Building2 } from 'lucide-react-native';
+import { BuildingIcon, UserIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -173,9 +173,9 @@ export const WorkerAvatar: React.FC<WorkerAvatarProps> = React.memo(({
               {initials}
             </Text>
           ) : isCompany ? (
-            <Building2 size={iconSize} color={palette.blue600} strokeWidth={2} />
+            <BuildingIcon size={iconSize} color={palette.blue600} strokeWidth={2} />
           ) : (
-            <User size={iconSize} color={palette.gray500} strokeWidth={2} />
+            <UserIcon size={iconSize} color={palette.gray500} strokeWidth={2} />
           )}
         </View>
       )}

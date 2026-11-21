@@ -49,7 +49,7 @@ export default function AddressScreen() {
     if (address?.latitude && address?.longitude) {
       const validation = validateServiceArea({ lat: address.latitude, lng: address.longitude });
       if (!validation.isServiceable) {
-        showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+        showAlert('Outside service area', SERVICE_UNAVAILABLE_MESSAGE);
         return;
       }
     }
@@ -90,7 +90,7 @@ export default function AddressScreen() {
 
         {/* Sticky Continue Footer CTA */}
         <BookingFooterCTA
-          label="Next: Review →"
+          label="Next: review →"
           subtext={subtext}
           enabled={isEnabled}
           onPress={handleContinue}

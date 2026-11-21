@@ -30,7 +30,7 @@ export type EnclosureVariant = keyof typeof iconEnclosures.variants;
 export type EnclosureSizeTier = keyof typeof iconEnclosures.sizes;
 
 export interface PremiumIconProps {
-  /** Lucide icon or custom SVG icon component */
+  /** App icon (ui/Icon/icons) or custom SVG icon component */
   icon: React.ElementType;
   /** Size token or exact numeric pixel value (defaults to 'action' = 20px) */
   size?: IconSizeKey | number;

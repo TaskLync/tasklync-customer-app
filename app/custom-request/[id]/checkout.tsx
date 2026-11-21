@@ -10,16 +10,13 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  ArrowLeft,
-  Calendar as CalendarIcon,
-  Clock,
-  MapPin,
-  Banknote,
-  ShieldCheck,
-  AlertTriangle,
-  ChevronRight,
-  Check,
-} from 'lucide-react-native';
+  ArrowLeftIcon,
+  CalendarIcon,
+  CashIcon,
+  CheckIcon,
+  LocationIcon,
+  WarningIcon,
+} from '../../../src/components/ui/Icon/icons';
 
 import { typography } from '../../../src/design';
 import { useCustomRequestDetail } from '../../../src/hooks/custom-requests/useCustomRequestDetail';
@@ -35,6 +32,7 @@ import { AddAddressBottomSheet, AddAddressBottomSheetRef } from '../../../src/co
 import { normalizeDateToYYYYMMDD } from '../../../src/utils/timezone';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
 import { showAlert } from '../../../src/components/feedback/AppAlert';
+import { platformFeeLabel, platformFeeValue, taxAmountOf, taxLabel } from '../../../src/utils/feeDisplay';
 
 export default function QuoteCheckoutScreen() {
   const { colors, palette } = useAppTheme();
@@ -63,20 +61,20 @@ export default function QuoteCheckoutScreen() {
 
     if (!checkout.selectedDate) {
       checkout.setValidationError('Please select an appointment date from the calendar.');
-      showAlert('Date Required', 'Please select an appointment date from the calendar.');
+      showAlert('Choose a date', 'Please pick a date from the calendar.');
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
 
     if (!checkout.selectedSlot) {
       checkout.setValidationError('Please choose an arrival time slot above.');
-      showAlert('Time Slot Required', 'Please choose an available arrival time slot above.');
+      showAlert('Choose a time', 'Please pick an arrival time.');
       return;
     }
 
     if (!checkout.selectedAddress) {
       checkout.setValidationError('Please select or add a service delivery address.');
-      showAlert('Address Required', 'Please select or add a service delivery address.');
+      showAlert('Add an address', 'Please select or add the address for this job.');
       addAddressSheetRef.current?.open();
       return;
     }
@@ -129,7 +127,7 @@ export default function QuoteCheckoutScreen() {
   if (!request || !activeQuote) {
     return (
       <SafeAreaView style={styles.centerContainer} edges={['top']}>
-        <AlertTriangle size={48} color={palette.red500} />
+        <WarningIcon size={48} color={palette.red500} />
         <Text style={styles.errorTitle}>Quote Not Available</Text>
         <Text style={styles.errorSubtitle}>
           This quote could not be loaded or is no longer valid for checkout.
@@ -153,7 +151,7 @@ export default function QuoteCheckoutScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
-          <ArrowLeft size={22} color={palette.gray900} />
+          <ArrowLeftIcon size={22} color={palette.gray900} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>Confirm Appointment</Text>
@@ -173,7 +171,7 @@ export default function QuoteCheckoutScreen() {
             <Text style={styles.sectionHeaderTitle}>Select Date & Arrival Window</Text>
           </View>
           <Text style={styles.sectionSubtext}>
-            Choose an arrival slot for {request.provider_name || request.worker_name || 'your professional'}.
+            Choose an arrival slot for {request.provider_name || request.worker_name || 'your worker'}.
           </Text>
 
           <CalendarHeader
@@ -216,7 +214,7 @@ export default function QuoteCheckoutScreen() {
         {/* Step 2: Service Location */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeaderRow}>
-            <MapPin size={18} color={palette.green600} />
+            <LocationIcon size={18} color={palette.green600} />
             <Text style={styles.sectionHeaderTitle}>Service Address</Text>
             <TouchableOpacity
               style={styles.changeLink}
@@ -229,7 +227,7 @@ export default function QuoteCheckoutScreen() {
           {checkout.selectedAddress ? (
             <View style={styles.addressBox}>
               <View style={styles.addressIconWrap}>
-                <MapPin size={18} color={palette.green600} />
+                <LocationIcon size={18} color={palette.green600} />
               </View>
               <View style={styles.addressTextWrap}>
                 <Text style={styles.addressLabel}>{checkout.selectedAddress.label || 'Home'}</Text>
@@ -238,7 +236,7 @@ export default function QuoteCheckoutScreen() {
                   {checkout.selectedAddress.city ? `, ${checkout.selectedAddress.city}` : ''}
                 </Text>
               </View>
-              <Check size={18} color={palette.green600} />
+              <CheckIcon size={18} color={palette.green600} />
             </View>
           ) : (
             <TouchableOpacity
@@ -253,13 +251,13 @@ export default function QuoteCheckoutScreen() {
         {/* Step 3: Payment Method (Locked to Cash on Delivery) */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeaderRow}>
-            <Banknote size={18} color={palette.green600} />
+            <CashIcon size={18} color={palette.green600} />
             <Text style={styles.sectionHeaderTitle}>Payment Method</Text>
           </View>
 
           <View style={styles.paymentMethodBox}>
             <View style={styles.codIconWrap}>
-              <Banknote size={22} color={colors.textGreen} />
+              <CashIcon size={22} color={colors.textGreen} />
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.codTitle}>Cash on Delivery (COD)</Text>
@@ -268,7 +266,7 @@ export default function QuoteCheckoutScreen() {
               </Text>
             </View>
             <View style={styles.checkedCircle}>
-              <Check size={14} color={colors.pureWhite} />
+              <CheckIcon size={14} color={colors.pureWhite} />
             </View>
           </View>
         </View>
@@ -291,12 +289,20 @@ export default function QuoteCheckoutScreen() {
             </View>
           )}
 
+          {/* Fee and tax come from the quote's frozen snapshot: never a hardcoded percentage. */}
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Platform Fee (5%)</Text>
+            <Text style={styles.summaryLabel}>{platformFeeLabel(activeQuote.customer_fee_percent)}</Text>
             <Text style={styles.summaryValue}>
-              PKR {Number(activeQuote.customer_platform_fee).toLocaleString()}
+              {platformFeeValue(activeQuote.customer_platform_fee, (n) => `PKR ${n.toLocaleString()}`)}
             </Text>
           </View>
+
+          {taxAmountOf(activeQuote) > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>{taxLabel(activeQuote.tax_label, activeQuote.tax_percent)}</Text>
+              <Text style={styles.summaryValue}>PKR {taxAmountOf(activeQuote).toLocaleString()}</Text>
+            </View>
+          )}
 
           <View style={styles.divider} />
 

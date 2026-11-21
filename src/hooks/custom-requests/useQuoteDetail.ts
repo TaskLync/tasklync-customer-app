@@ -34,7 +34,7 @@ export function useQuoteDetail(requestId: string) {
       router.push(`/custom-request/${requestId}/checkout` as any);
     },
     onError: (err: any) => {
-      showAlert('Acceptance Error', err?.message || 'Could not accept quote. Please try again.');
+      showAlert("Couldn't accept quote", err?.message || 'Please try again.');
     },
   });
 
@@ -44,10 +44,10 @@ export function useQuoteDetail(requestId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custom-requests', requestId] });
       queryClient.invalidateQueries({ queryKey: ['custom-requests', requestId, 'quotes'] });
-      showAlert('Quote Declined', 'The professional has been notified. They may issue an updated quote.');
+      showAlert('Quote declined', "We've let the worker know. They may send you a new quote.");
     },
     onError: (err: any) => {
-      showAlert('Decline Error', err?.message || 'Could not decline quote. Please try again.');
+      showAlert("Couldn't decline quote", err?.message || 'Please try again.');
     },
   });
 

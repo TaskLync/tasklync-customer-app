@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Check } from 'lucide-react-native';
+import { CheckIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -35,7 +35,7 @@ export const SaveCardCheckbox: React.FC<SaveCardCheckboxProps> = ({
           checked ? styles.checkboxChecked : styles.checkboxUnchecked,
         ]}
       >
-        {checked && <Check size={12} color={palette.pureWhite} strokeWidth={3} />}
+        {checked && <CheckIcon size={12} color={palette.pureWhite} strokeWidth={3} />}
       </View>
       <Text style={styles.label}>{label}</Text>
     </Pressable>

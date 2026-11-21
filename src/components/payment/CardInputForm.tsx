@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { CreditCard, Calendar, Lock } from 'lucide-react-native';
+import { CalendarIcon, CreditCardIcon, LockIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -71,7 +71,7 @@ export const CardInputForm: React.FC<CardInputFormProps> = ({ onCardChange }) =>
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>CARD NUMBER</Text>
         <View style={styles.iconInputRow}>
-          <CreditCard size={18} color={colors.textMuted} style={styles.inputIcon} />
+          <CreditCardIcon size={18} color={colors.textMuted} style={styles.inputIcon} />
           <TextInput
             style={styles.textInputWithIcon}
             value={cardNumber}
@@ -89,7 +89,7 @@ export const CardInputForm: React.FC<CardInputFormProps> = ({ onCardChange }) =>
         <View style={[styles.inputGroup, styles.halfWidth]}>
           <Text style={styles.inputLabel}>EXPIRY DATE</Text>
           <View style={styles.iconInputRow}>
-            <Calendar size={16} color={colors.textMuted} style={styles.inputIcon} />
+            <CalendarIcon size={16} color={colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.textInputWithIcon}
               value={expiry}
@@ -105,7 +105,7 @@ export const CardInputForm: React.FC<CardInputFormProps> = ({ onCardChange }) =>
         <View style={[styles.inputGroup, styles.halfWidth]}>
           <Text style={styles.inputLabel}>CVC / CVV</Text>
           <View style={styles.iconInputRow}>
-            <Lock size={16} color={colors.textMuted} style={styles.inputIcon} />
+            <LockIcon size={16} color={colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.textInputWithIcon}
               value={cvc}

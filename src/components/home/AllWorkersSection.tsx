@@ -2,7 +2,7 @@ import { SeeAllLink } from '../ui/Button/SeeAllLink';
 import React, { useCallback, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronDown } from 'lucide-react-native';
+import { ChevronDownIcon } from '../ui/Icon/icons';
 
 import { WorkerListRow, WorkerListRowSkeleton } from '../worker/WorkerListRow';
 import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
@@ -120,7 +120,7 @@ export const AllWorkersSection: React.FC<AllWorkersSectionProps> = ({ category }
           accessibilityRole="button"
         >
           <Text style={styles.showMoreLabel}>Show more workers</Text>
-          <ChevronDown size={16} color={colors.textPrimary} strokeWidth={2.2} />
+          <ChevronDownIcon size={16} color={colors.textPrimary} strokeWidth={2.2} />
         </Pressable>
       )}
 

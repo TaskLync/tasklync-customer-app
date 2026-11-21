@@ -5,16 +5,18 @@ import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface CartTotalRowProps {
   total: number;
+  /** Defaults to "Total Payable". */
+  label?: string;
 }
 
-export const CartTotalRow: FC<CartTotalRowProps> = ({ total }) => {
+export const CartTotalRow: FC<CartTotalRowProps> = ({ total, label = 'Total Payable' }) => {
   const styles = useThemedStyles(createStyles);
   const formattedTotal = `Rs. ${total.toLocaleString()}`;
 
   return (
     <View style={styles.totalRow}>
       {/* Plus Jakarta Sans for Total label */}
-      <Text style={styles.totalLabel}>Total Payable</Text>
+      <Text style={styles.totalLabel}>{label}</Text>
 
       {/* Inter Bold for green total amount (Von Restorff Effect) */}
       <Text style={styles.totalAmount}>{formattedTotal}</Text>

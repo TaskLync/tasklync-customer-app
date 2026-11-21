@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ChevronDownIcon, ChevronUpIcon } from '../../ui/Icon/icons';
 import { fontFamily } from '../../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
@@ -40,15 +40,23 @@ export const DescriptionInput: React.FC<DescriptionInputProps> = ({
 
   return (
     <View style={styles.card}>
-      <Pressable onPress={toggleExpand} style={styles.headerRow}>
+      <Pressable
+        onPress={toggleExpand}
+        style={styles.headerRow}
+        hitSlop={{ top: 8, bottom: 8 }}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: isExpanded }}
+        accessibilityLabel="Note for provider, optional"
+      >
         <View style={styles.leftGroup}>
-          <Text style={styles.headerTitle}>Notes for provider (optional)</Text>
+          <Text style={styles.headerTitle}>Note for provider</Text>
+          <Text style={styles.optional}>Optional</Text>
         </View>
 
         {isExpanded ? (
-          <ChevronUp size={18} color={colors.textMuted} />
+          <ChevronUpIcon size={18} color={colors.textMuted} />
         ) : (
-          <ChevronDown size={18} color={colors.textMuted} />
+          <ChevronDownIcon size={18} color={colors.textMuted} />
         )}
       </Pressable>
 
@@ -58,7 +66,7 @@ export const DescriptionInput: React.FC<DescriptionInputProps> = ({
             style={styles.textInput}
             value={value}
             onChangeText={onChangeText}
-            placeholder="e.g. Please bring extra extension cord, ring doorbell twice..."
+            placeholder="e.g. Ring the doorbell twice"
             placeholderTextColor={palette.gray400}
             multiline
             numberOfLines={3}
@@ -72,13 +80,9 @@ export const DescriptionInput: React.FC<DescriptionInputProps> = ({
   );
 };
 
-const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
-    backgroundColor: palette.white,
-    paddingVertical: 16,
-    marginBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    width: '100%',
   },
   headerRow: {
     flexDirection: 'row',
@@ -87,14 +91,20 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   },
   leftGroup: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    alignItems: 'baseline',
+    gap: 8,
   },
   headerTitle: {
-    fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 14,
-    lineHeight: 18,
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 15,
+    lineHeight: 21,
     color: colors.textPrimary,
+  },
+  optional: {
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 13,
+    lineHeight: 21,
+    color: colors.textMuted,
   },
   inputWrapper: {
     overflow: 'hidden',
@@ -102,12 +112,13 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   textInput: {
     backgroundColor: colors.bgInput,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    padding: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontFamily: fontFamily.jakarta.regular,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
     color: colors.textPrimary,
     minHeight: 70,
   },

@@ -24,7 +24,6 @@ export default function CartScreen() {
   const worker = useCartStore((state) => state.worker);
   const note = useCartStore((state) => state.note);
 
-  const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const setNote = useCartStore((state) => state.setNote);
   const hydrate = useCartStore((state) => state.hydrate);
@@ -37,20 +36,6 @@ export default function CartScreen() {
   // Derived price calculation hook
   const totals = useCartTotals();
   const hasItems = items.length > 0;
-
-  const handleIncrement = (serviceId: string) => {
-    const item = items.find((i) => i.serviceId === serviceId);
-    if (item) {
-      updateQuantity(serviceId, item.quantity + 1);
-    }
-  };
-
-  const handleDecrement = (serviceId: string) => {
-    const item = items.find((i) => i.serviceId === serviceId);
-    if (item) {
-      updateQuantity(serviceId, item.quantity - 1);
-    }
-  };
 
   return (
     <View style={[styles.screenContainer, { paddingTop: insets.top }]}>
@@ -70,12 +55,7 @@ export default function CartScreen() {
             <CartWorkerCard worker={worker} />
 
             {/* 3. Item List with Swipe-to-delete */}
-            <CartItemList
-              items={items}
-              onIncrement={handleIncrement}
-              onDecrement={handleDecrement}
-              onRemoveItem={removeItem}
-            />
+            <CartItemList items={items} onRemoveItem={removeItem} />
 
             {/* 4. Add More Services Link */}
             <AddMoreServicesLink workerId={worker?.id} />
@@ -88,7 +68,7 @@ export default function CartScreen() {
           </ScrollView>
 
           {/* 7. Sticky Bottom Booking Footer CTA */}
-          <ProceedFooter total={totals.total} itemCount={totals.itemCount} />
+          <ProceedFooter total={totals.subtotal} itemCount={totals.itemCount} />
         </View>
       ) : (
         /* Empty Cart State */

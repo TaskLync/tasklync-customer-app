@@ -3,13 +3,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { bookingApi } from '../services/api/booking.api';
 import { BookingDetails, CancelBookingData } from '../types/booking.types';
 import { computeRefundPolicy } from '../utils/refundPolicy';
+import { usePricingConfig } from './usePricingConfig';
 
 export function useCancelBooking(booking?: Partial<BookingDetails> | null) {
   const queryClient = useQueryClient();
+  // Cancellation fee settings come from the admin dashboard (via the server), never from the app.
+  const { data: pricingConfig } = usePricingConfig();
+  const terms = pricingConfig?.cancellation ?? null;
 
   const refundPolicy = useMemo(() => {
-    return computeRefundPolicy(booking);
-  }, [booking]);
+    return computeRefundPolicy(booking, terms);
+  }, [booking, terms]);
 
   const mutation = useMutation<CancelBookingData, Error, { bookingId: string; reason: string }>({
     mutationFn: async ({ bookingId, reason }) => {

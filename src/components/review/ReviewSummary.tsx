@@ -1,5 +1,5 @@
 import { View, StyleSheet, Text, ViewStyle, Pressable } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRightIcon } from '../ui/Icon/icons';
 import { ReviewSummaryData, WorkerRatingSummary } from '../../types/review.types';
 import { ReviewStarRow } from './ReviewStarRow';
 import { fontFamily as fonts } from '../../design/typography';
@@ -62,7 +62,7 @@ export const ReviewSummary = ({
         {onViewAll && totalReviews > 0 && (
           <Pressable onPress={onViewAll} hitSlop={8} style={styles.seeAllBtn}>
             <Text style={styles.seeAllText}>See all</Text>
-            <ChevronRight size={13} color={colors.primaryDark} strokeWidth={2.4} />
+            <ChevronRightIcon size={13} color={colors.primaryDark} strokeWidth={2.4} />
           </Pressable>
         )}
       </View>
@@ -95,7 +95,7 @@ export const ReviewSummary = ({
             accessibilityLabel={`See all ${totalReviews} reviews`}
           >
             <Text style={styles.seeAllText}>See all</Text>
-            <ChevronRight size={14} color={colors.primaryDark} strokeWidth={2.4} />
+            <ChevronRightIcon size={14} color={colors.primaryDark} strokeWidth={2.4} />
           </Pressable>
         )}
       </View>

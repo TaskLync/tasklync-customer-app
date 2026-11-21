@@ -2,11 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { fontFamily, fontSize, spacing } from '../../design';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { platformFeeLabel, platformFeeValue, taxLabel } from '../../utils/feeDisplay';
 
 export interface InvoiceFeeBreakdownProps {
   subtotal: number;
   platformFee: number;
-  urgencyFee?: number | undefined;
+  platformFeePercent?: number | null | undefined;
+  taxAmount?: number | undefined;
+  taxName?: string | null | undefined;
+  taxPercent?: number | null | undefined;
   discount?: number | undefined;
   total: number;
   currency?: string;
@@ -22,7 +26,10 @@ export interface InvoiceFeeBreakdownProps {
 export const InvoiceFeeBreakdown: React.FC<InvoiceFeeBreakdownProps> = ({
   subtotal,
   platformFee,
-  urgencyFee,
+  platformFeePercent,
+  taxAmount,
+  taxName,
+  taxPercent,
   discount,
   total,
   currency = 'PKR',
@@ -38,20 +45,20 @@ export const InvoiceFeeBreakdown: React.FC<InvoiceFeeBreakdownProps> = ({
         </Text>
       </View>
 
-      {/* Platform Fee */}
+      {/* Platform Fee: "FREE" only because the booking's snapshot recorded 0 */}
       <View style={styles.row}>
-        <Text style={styles.label}>Platform Escrow Fee</Text>
+        <Text style={styles.label}>{platformFeeLabel(platformFeePercent)}</Text>
         <Text style={styles.value}>
-          {currency} {platformFee.toLocaleString()}
+          {platformFeeValue(platformFee, (n) => `${currency} ${n.toLocaleString()}`)}
         </Text>
       </View>
 
-      {/* Urgency Fee if applicable */}
-      {urgencyFee && urgencyFee > 0 ? (
+      {/* Tax: shown only when the booking was charged tax */}
+      {taxAmount && taxAmount > 0 ? (
         <View style={styles.row}>
-          <Text style={styles.label}>Urgent Dispatch Fee</Text>
+          <Text style={styles.label}>{taxLabel(taxName, taxPercent)}</Text>
           <Text style={styles.value}>
-            {currency} {urgencyFee.toLocaleString()}
+            {currency} {taxAmount.toLocaleString()}
           </Text>
         </View>
       ) : null}

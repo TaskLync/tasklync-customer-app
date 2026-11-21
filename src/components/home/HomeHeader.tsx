@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
-import { MapPin, ChevronDown } from 'lucide-react-native';
+import { ChevronDownIcon, LocationIcon } from '../ui/Icon/icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Text } from '../ui/Text/Text';
@@ -121,7 +121,7 @@ export const HomeHeader = () => {
           accessibilityLabel={`Location: ${displayLocation}. Tap to change location`}
           accessibilityHint="Opens location selector"
         >
-          <MapPin
+          <LocationIcon
             size={20}
             color="#16A05D"
             strokeWidth={2.2}
@@ -135,7 +135,7 @@ export const HomeHeader = () => {
               {displayLocation}
             </Text>
           )}
-          <ChevronDown size={14} color={palette.gray400} strokeWidth={2.2} style={styles.chevron} />
+          <ChevronDownIcon size={14} color={palette.gray400} strokeWidth={2.2} style={styles.chevron} />
         </Pressable>
       </View>
 

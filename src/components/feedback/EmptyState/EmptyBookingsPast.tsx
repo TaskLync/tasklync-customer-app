@@ -10,7 +10,7 @@ export function EmptyBookingsPast() {
       type="no-data"
       title="No past bookings yet"
       description="Your completed services will appear here for easy reference and re-booking."
-      actionLabel="Explore Services"
+      actionLabel="Explore services"
       onAction={() => router.push('/(tabs)/explore' as any)}
     />
   );

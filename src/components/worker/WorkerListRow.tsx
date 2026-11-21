@@ -2,7 +2,7 @@ import React, { memo, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { BadgeCheck, Star } from 'lucide-react-native';
+import { StarIcon, VerifiedIcon } from '../ui/Icon/icons';
 import { WorkerNearby } from '../../types/worker.types';
 import { typography } from '../../design/typography';
 import { pushOnce } from '../../utils/navigationGuard';
@@ -132,7 +132,7 @@ const WorkerListRowBase: React.FC<WorkerListRowProps> = ({ worker, isLast = fals
             {displayName}
           </Text>
           {isVerified ? (
-            <BadgeCheck size={15} color={colors.pureWhite} fill={colors.primaryDark} strokeWidth={2.4} />
+            <VerifiedIcon size={15} color={colors.pureWhite} fill={colors.primaryDark} strokeWidth={2.4} />
           ) : null}
           {isCompany && <CompanyBadge variant="micro" />}
         </View>
@@ -146,7 +146,7 @@ const WorkerListRowBase: React.FC<WorkerListRowProps> = ({ worker, isLast = fals
         <View style={styles.metaRow}>
           {hasRating ? (
             <>
-              <Star size={12} color={colors.warning} fill={colors.warning} />
+              <StarIcon size={12} color={colors.warning} fill={colors.warning} />
               <Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
               <Text style={styles.metaText}>({reviews})</Text>
             </>

@@ -59,7 +59,7 @@ export function mapVerificationError(error: any): VerificationErrorState {
     normalizedMsg.includes('not eligible')
   ) {
     return {
-      message: 'Verification code becomes active when your professional is confirmed.',
+      message: 'Verification code becomes active when your worker is confirmed.',
       isFatal: false,
       isExpired: false,
       isRateLimited: false,
@@ -145,7 +145,7 @@ export function mapVerificationError(error: any): VerificationErrorState {
 
   // 8. General fallback
   return {
-    message: 'Unable to retrieve your verification code. Tap to retry.',
+    message: "Couldn't load your verification code. Tap to retry.",
     isFatal: false,
     isExpired: false,
     isRateLimited: false,

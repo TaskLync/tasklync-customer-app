@@ -15,7 +15,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { Star } from 'lucide-react-native';
+import { StarIcon } from '../Icon/icons';
 import { useAppTheme } from '../../../theme/useAppTheme';
 
 export type RatingSizeVariant = 'sm' | 'md' | 'lg';
@@ -176,7 +176,7 @@ const StarItem: React.FC<{
       accessibilityLabel={`${index} star${index > 1 ? 's' : ''}`}
     >
       <Animated.View style={animatedStyle}>
-        <Star
+        <StarIcon
           size={size}
           color={isFilled ? palette.warning : palette.gray300}
           fill={isFilled ? palette.warning : 'transparent'}

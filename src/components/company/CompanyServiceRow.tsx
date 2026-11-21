@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRightIcon } from '../ui/Icon/icons';
 import { ServicePriceTag } from '../service/ServicePriceTag';
 import { AddToCartButton } from '../cart/AddToCartButton';
 import { WorkerServiceOffering } from '../../types/worker.types';
@@ -80,7 +80,7 @@ export const CompanyServiceRow: React.FC<CompanyServiceRowProps> = React.memo(
         </View>
 
         {isQuote ? (
-          <ChevronRight size={18} color={colors.textMuted} />
+          <ChevronRightIcon size={18} color={colors.textMuted} />
         ) : (
           <AddToCartButton
             serviceId={service.id}

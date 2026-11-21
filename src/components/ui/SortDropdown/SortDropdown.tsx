@@ -5,7 +5,7 @@ import {
   Pressable,
   ViewStyle,
 } from 'react-native';
-import { ChevronDown, MapPin, Star, ArrowDownAZ } from 'lucide-react-native';
+import { ChevronDownIcon, LocationIcon, SortIcon, StarIcon } from '../Icon/icons';
 import { typography } from '../../../design/typography';
 import { ActionSheet, ActionItem } from '../../layout/ActionSheet/ActionSheet';
 import { SortOption } from '../../../types/search.types';
@@ -33,9 +33,9 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({
       case 'distance':
         return 'Distance';
       case 'rating':
-        return 'Top Rated';
+        return 'Top rated';
       case 'price_low':
-        return 'Lowest Price';
+        return 'Lowest price';
       case 'price_high':
         return 'Highest Price';
       default:
@@ -59,22 +59,22 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({
   const actions: ActionItem[] = [
     {
       label: 'Recommended',
-      icon: Star,
+      icon: StarIcon,
       onPress: () => handleSelectSort('relevance'),
     },
     {
       label: 'Nearest first',
-      icon: MapPin,
+      icon: LocationIcon,
       onPress: () => handleSelectSort('distance'),
     },
     {
       label: 'Highest rated',
-      icon: Star,
+      icon: StarIcon,
       onPress: () => handleSelectSort('rating'),
     },
     {
       label: 'Lowest price',
-      icon: ArrowDownAZ,
+      icon: SortIcon,
       onPress: () => handleSelectSort('price_low'),
     },
   ];
@@ -90,7 +90,7 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({
       >
         <Text style={styles.prefixText}>Sort: </Text>
         <Text style={styles.labelText}>{getSortLabel(currentSort)}</Text>
-        <ChevronDown
+        <ChevronDownIcon
           size={12}
           color={colors.primary}
           style={styles.icon}

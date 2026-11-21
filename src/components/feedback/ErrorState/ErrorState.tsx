@@ -26,7 +26,7 @@ export const ErrorState: React.FC<ErrorStateProps> = React.memo(({
   title,
   subtitle,
   onRetry,
-  retryButtonText = 'Try Again',
+  retryButtonText = 'Try again',
   isRetrying = false,
   style,
 }) => {

@@ -9,8 +9,14 @@ export interface SummarySectionCardProps {
   title: string;
   children: ReactNode;
   rightAction?: ReactNode;
+  /** Kept for API compatibility; sections no longer draw dividers. */
+  last?: boolean;
 }
 
+/**
+ * One review section: a quiet label sitting close to its content. No card, no icon, no divider:
+ * the screen separates sections with whitespace (label→content 8, section→section 32).
+ */
 export const SummarySectionCard: React.FC<SummarySectionCardProps> = ({
   title,
   children,
@@ -18,9 +24,9 @@ export const SummarySectionCard: React.FC<SummarySectionCardProps> = ({
 }) => {
   const styles = useThemedStyles(createStyles);
   return (
-    <View style={styles.section}>
+    <View>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title} accessibilityRole="header">{title}</Text>
         {rightAction ? <View>{rightAction}</View> : null}
       </View>
       <View style={styles.body}>{children}</View>
@@ -29,24 +35,19 @@ export const SummarySectionCard: React.FC<SummarySectionCardProps> = ({
 };
 
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
-  section: {
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   title: {
     fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 12,
+    fontSize: 11.5,
     lineHeight: 16,
     color: colors.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
   },
   body: {
     width: '100%',

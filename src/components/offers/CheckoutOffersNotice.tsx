@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Info } from 'lucide-react-native';
+import { InfoIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { formatOfferValue } from '../../utils/offers';
 import type { PublicWorkerOffer } from '../../types/offers.types';
@@ -31,7 +31,7 @@ export const CheckoutOffersNotice: React.FC<CheckoutOffersNoticeProps> = ({ offe
 
   return (
     <View style={styles.row} accessible accessibilityLabel={text}>
-      <Info size={14} color={colors.textMuted} style={styles.icon} />
+      <InfoIcon size={14} color={colors.textMuted} style={styles.icon} />
       <Text style={styles.text}>{text}</Text>
     </View>
   );

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import Animated from 'react-native-reanimated';
-import { ShieldCheck, Zap } from 'lucide-react-native';
+import { FlashIcon, ShieldCheckIcon } from '../ui/Icon/icons';
 import { WorkerNearby } from '../../types/worker.types';
 import { typography } from '../../design/typography';
 import { usePressScale } from '../../hooks/usePressScale';
@@ -140,7 +140,7 @@ export const WorkerSearchCard: React.FC<WorkerSearchCardProps> = ({ worker }) =>
           </Text>
           {isCompany && <CompanyBadge variant="micro" />}
           {isBackgroundVerified && (
-            <ShieldCheck size={14} color={colors.primary} />
+            <ShieldCheckIcon size={14} color={colors.primary} />
           )}
         </View>
 
@@ -175,7 +175,7 @@ export const WorkerSearchCard: React.FC<WorkerSearchCardProps> = ({ worker }) =>
             <>
               <Text style={styles.separator}>·</Text>
               <View style={styles.responseRow}>
-                <Zap size={11} color={palette.green600} />
+                <FlashIcon size={11} color={palette.green600} />
                 <Text style={styles.responseText}>~{worker.responseTimeMins}m</Text>
               </View>
             </>

@@ -169,13 +169,13 @@ export function useCustomRequestMediaUpload() {
       options?: AddMediaOptions
     ) => {
       if (!localUri || typeof localUri !== 'string' || localUri.trim().length === 0) {
-        showAlert('Invalid File', 'The selected file is invalid or unreadable.');
+        showAlert("Can't use this file", "This file can't be opened. Please choose another one.");
         return;
       }
 
       if (slotsRef.current.length >= MAX_CUSTOM_REQUEST_MEDIA) {
         showAlert(
-          'Limit Reached',
+          'Attachment limit reached',
           `You can attach up to ${MAX_CUSTOM_REQUEST_MEDIA} photos or videos.`
         );
         return;
@@ -189,15 +189,15 @@ export function useCustomRequestMediaUpload() {
       // Validate file format
       const formatCheck = resolveMimeAndValidateFormat(localUri, mediaType, options?.mimeType);
       if (!formatCheck.valid) {
-        showAlert('Unsupported Format', formatCheck.message || 'Unsupported media format.');
+        showAlert('Unsupported file type', formatCheck.message || 'Please choose a photo or video.');
         return;
       }
 
       // Validate pre-compression video size or raw image size
       if (mediaType === 'VIDEO' && options?.fileSize && options.fileSize > MAX_CUSTOM_REQUEST_VIDEO_BYTES) {
         showAlert(
-          'Video Too Large',
-          'Videos must be 30 MB or smaller. Please select a shorter clip.'
+          'Video too large',
+          'Videos must be 30 MB or smaller. Please choose a shorter clip.'
         );
         return;
       }
@@ -219,14 +219,14 @@ export function useCustomRequestMediaUpload() {
           processedUri = compressed.uri;
           resolvedMime = 'image/jpeg';
         } catch {
-          showAlert('Invalid Image', 'Unable to process the selected image. It may be corrupted.');
+          showAlert("Can't use this photo", "This photo couldn't be processed. Please choose another one.");
           return;
         }
 
         if (resolvedSize && resolvedSize > MAX_CUSTOM_REQUEST_IMAGE_BYTES * 2) {
           showAlert(
-            'Image Too Large',
-            'Images must be 8 MB or smaller. Please choose another photo.'
+            'Photo too large',
+            'Photos must be 8 MB or smaller. Please choose another one.'
           );
           return;
         }
@@ -235,7 +235,7 @@ export function useCustomRequestMediaUpload() {
       // Re-check slot limit after async compression
       if (slotsRef.current.length >= MAX_CUSTOM_REQUEST_MEDIA) {
         showAlert(
-          'Limit Reached',
+          'Attachment limit reached',
           `You can attach up to ${MAX_CUSTOM_REQUEST_MEDIA} photos or videos.`
         );
         return;
@@ -262,7 +262,7 @@ export function useCustomRequestMediaUpload() {
     if (isPickingRef.current) return;
     if (slotsRef.current.length >= MAX_CUSTOM_REQUEST_MEDIA) {
       showAlert(
-        'Limit Reached',
+        'Attachment limit reached',
         `You can attach up to ${MAX_CUSTOM_REQUEST_MEDIA} photos or videos.`
       );
       return;
@@ -273,8 +273,8 @@ export function useCustomRequestMediaUpload() {
       const { granted } = await ImagePicker.requestCameraPermissionsAsync();
       if (!granted) {
         showAlert(
-          'Camera Permission Required',
-          'Please enable camera access in your device settings.'
+          'Camera access needed',
+          'Allow camera access in Settings to take photos.'
         );
         return;
       }
@@ -295,7 +295,7 @@ export function useCustomRequestMediaUpload() {
         });
       }
     } catch (err: any) {
-      showAlert('Camera Error', err?.message || 'Unable to access camera.');
+      showAlert("Couldn't open the camera", err?.message || 'Please try again.');
     } finally {
       isPickingRef.current = false;
     }
@@ -306,7 +306,7 @@ export function useCustomRequestMediaUpload() {
     const remainingSlots = MAX_CUSTOM_REQUEST_MEDIA - slotsRef.current.length;
     if (remainingSlots <= 0) {
       showAlert(
-        'Limit Reached',
+        'Attachment limit reached',
         `You can attach up to ${MAX_CUSTOM_REQUEST_MEDIA} photos or videos.`
       );
       return;
@@ -317,8 +317,8 @@ export function useCustomRequestMediaUpload() {
       const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!granted) {
         showAlert(
-          'Library Permission Required',
-          'Please enable photo library access in your device settings.'
+          'Photo access needed',
+          'Allow photo access in Settings to attach photos.'
         );
         return;
       }
@@ -342,7 +342,7 @@ export function useCustomRequestMediaUpload() {
         }
       }
     } catch (err: any) {
-      showAlert('Library Error', err?.message || 'Unable to open media library.');
+      showAlert("Couldn't open your photos", err?.message || 'Please try again.');
     } finally {
       isPickingRef.current = false;
     }

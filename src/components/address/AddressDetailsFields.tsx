@@ -24,7 +24,7 @@ export const AddressDetailsFields: React.FC<AddressDetailsFieldsProps> = ({ valu
         <View style={styles.half}>
           <AddressNotesInput
             {...common}
-            label="House / Flat / Shop"
+            label="House / flat / shop"
             placeholder="e.g. House 123"
             value={value.house_unit}
             onChangeText={set('house_unit')}
@@ -35,7 +35,7 @@ export const AddressDetailsFields: React.FC<AddressDetailsFieldsProps> = ({ valu
         <View style={styles.half}>
           <AddressNotesInput
             {...common}
-            label="Street / Lane"
+            label="Street / lane"
             placeholder="e.g. Street 5"
             value={value.street}
             onChangeText={set('street')}
@@ -48,7 +48,7 @@ export const AddressDetailsFields: React.FC<AddressDetailsFieldsProps> = ({ valu
         <View style={styles.half}>
           <AddressNotesInput
             {...common}
-            label="Block / Phase"
+            label="Block / phase"
             placeholder="e.g. Block A"
             value={value.block_phase}
             onChangeText={set('block_phase')}
@@ -59,7 +59,7 @@ export const AddressDetailsFields: React.FC<AddressDetailsFieldsProps> = ({ valu
         <View style={styles.half}>
           <AddressNotesInput
             {...common}
-            label="Society / Area"
+            label="Society / area"
             placeholder="e.g. Madina Town"
             value={value.area}
             onChangeText={set('area')}

@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { normalizeFeeFields } from '../../utils/feeDisplay';
 import { isValidUUID } from '../../utils/uuid';
 import { isCodeInputValid, normalizeLines, toNumber, trimCode, unwrapEnvelope } from '../../utils/offers';
 import type {
@@ -21,6 +22,7 @@ const toPricingView = (raw: any): PricingView => ({
   discount_on_subtotal: toNumber(raw?.discount_on_subtotal),
   platform_fee: toNumber(raw?.platform_fee),
   estimated_total: toNumber(raw?.estimated_total),
+  ...normalizeFeeFields(raw),
 });
 
 const toDecision = (raw: any): DiscountDecisionView => {

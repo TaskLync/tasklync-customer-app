@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Plus, ChevronRight } from 'lucide-react-native';
+import { ChevronRightIcon, PlusIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -32,12 +32,12 @@ export const AddNewAddressRow: React.FC<AddNewAddressRowProps> = ({ onAdd, onPre
     >
       <View style={styles.leftGroup}>
         <View style={styles.plusCircle}>
-          <Plus size={18} color={colors.primaryDark} strokeWidth={2.4} />
+          <PlusIcon size={18} color={colors.primaryDark} strokeWidth={2.4} />
         </View>
         <Text style={styles.titleText}>Add new address</Text>
       </View>
 
-      <ChevronRight size={18} color={colors.textMuted} strokeWidth={2} />
+      <ChevronRightIcon size={18} color={colors.textMuted} strokeWidth={2} />
     </Pressable>
   );
 };

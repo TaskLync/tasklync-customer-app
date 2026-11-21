@@ -97,7 +97,7 @@ export function useEvidenceUpload(bookingId?: string | null) {
         if (source === 'camera') {
           const permission = await ImagePicker.requestCameraPermissionsAsync();
           if (!permission.granted) {
-            showAlert('Camera access is required to capture evidence photos.');
+            showAlert('Camera access needed', 'Allow camera access in Settings to take photos of the issue.');
             return;
           }
 
@@ -109,7 +109,7 @@ export function useEvidenceUpload(bookingId?: string | null) {
         } else {
           const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (!permission.granted) {
-            showAlert('Gallery access is required to select evidence photos.');
+            showAlert('Photo access needed', 'Allow photo access in Settings to attach photos of the issue.');
             return;
           }
 

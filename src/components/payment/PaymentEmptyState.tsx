@@ -13,7 +13,7 @@ export const PaymentEmptyState: React.FC<PaymentEmptyStateProps> = ({ onAddPress
         type="no-data"
         title="No payment methods yet"
         description="Add your JazzCash, EasyPaisa wallet or Debit/Credit card to book and pay for home services with 1-tap ease."
-        actionLabel="Add Payment Method"
+        actionLabel="Add payment method"
         onAction={onAddPress}
       />
     </View>

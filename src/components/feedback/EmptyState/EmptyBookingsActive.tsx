@@ -10,7 +10,7 @@ export function EmptyBookingsActive() {
       type="no-data"
       title="No active bookings"
       description="You don't have any upcoming or ongoing services right now."
-      actionLabel="Browse Services"
+      actionLabel="Browse services"
       onAction={() => router.push('/(tabs)' as any)}
     />
   );

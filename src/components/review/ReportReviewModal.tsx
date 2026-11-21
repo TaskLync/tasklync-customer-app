@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { X, Flag } from 'lucide-react-native';
+import { CloseIcon, FlagIcon } from '../ui/Icon/icons';
 import { ReportReason, REPORT_REASONS, ReportReviewPayload } from '../../types/review.types';
 import { reviewApi, extractReviewErrorMessage } from '../../services/api/review.api';
 import { fontFamily, fontSize, radius, spacing } from '../../design';
@@ -65,8 +65,8 @@ export const ReportReviewModal: React.FC<ReportReviewModalProps> = ({
       await reviewApi.reportReview(reviewId, payload);
 
       showAlert(
-        'Report Submitted',
-        'Thank you for bringing this to our attention. Our trust and safety moderation team will review this report promptly.',
+        'Report submitted',
+        'Thanks for letting us know. Our safety team will look into it.',
         [
           {
             text: 'OK',
@@ -110,7 +110,7 @@ export const ReportReviewModal: React.FC<ReportReviewModalProps> = ({
             <View style={styles.sheetHeader}>
               <View style={styles.headerTitleRow}>
                 <View style={styles.flagIconCircle}>
-                  <Flag size={16} color={colors.textDanger} strokeWidth={2.4} />
+                  <FlagIcon size={16} color={colors.textDanger} strokeWidth={2.4} />
                 </View>
                 <Text style={styles.title}>Report Review</Text>
               </View>
@@ -122,7 +122,7 @@ export const ReportReviewModal: React.FC<ReportReviewModalProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Close"
               >
-                <X size={20} color={colors.textSecondary} />
+                <CloseIcon size={20} color={colors.textSecondary} />
               </Pressable>
             </View>
 
@@ -218,7 +218,7 @@ export const ReportReviewModal: React.FC<ReportReviewModalProps> = ({
                 {isSubmitting ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitBtnText}>Submit Report</Text>
+                  <Text style={styles.submitBtnText}>Submit report</Text>
                 )}
               </Pressable>
             </View>

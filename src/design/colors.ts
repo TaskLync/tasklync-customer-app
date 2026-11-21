@@ -125,6 +125,15 @@ export const lightPalette = {
   info: '#3B82F6',
   infoDark: '#1E40AF',
 
+  // Neutral (untinted) greys for minimal, typography-led surfaces such as code entry
+  neutralText: '#17191C',
+  neutralTextMuted: '#6B727B', // 4.8:1 on white (the #8A9099 reference is 3.2:1, below AA for body text)
+  neutralSurface: '#F3F4F5',
+  neutralSurfaceRaised: '#FFFFFF',
+  neutralBorder: '#E8EAED',
+  neutralBorderStrong: '#C9CDD2',
+  neutralIcon: '#525A63',
+
   // Overlays
   overlay: 'rgba(15, 23, 42, 0.55)',
   overlayDark: 'rgba(0, 0, 0, 0.7)',
@@ -205,6 +214,14 @@ export const buildColors = (palette: Palette, mode: ThemeMode) => ({
   buttonDestructiveText: palette.pureWhite,
   iconPrimary: palette.gray900,
   iconSecondary: palette.gray600,
+  // Neutral field tokens: borderless inputs and quiet icon tiles (no slate tint, no brand colour)
+  textStrong: palette.neutralText,
+  textSubtle: palette.neutralTextMuted,
+  fieldSurface: palette.neutralSurface,
+  fieldSurfaceActive: palette.neutralSurfaceRaised,
+  fieldBorder: palette.neutralBorder,
+  fieldBorderActive: palette.neutralBorderStrong,
+  iconSubtle: palette.neutralIcon,
   inverseSurface: palette.inverse,
   onBrand: palette.pureWhite,
   pureWhite: palette.pureWhite,

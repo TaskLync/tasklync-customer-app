@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { Star } from 'lucide-react-native';
+import { StarIcon } from '../Icon/icons';
 import { typography } from '../../../design/typography';
 import { springConfig } from '../../../design/animations';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
@@ -116,7 +116,7 @@ const StarItem: React.FC<{
       hitSlop={8}
       style={[styles.starButton, animatedStyle]}
     >
-      <Star
+      <StarIcon
         size={size}
         color={isSelected ? '#F59E0B' : colors.border}
         fill={isSelected ? '#F59E0B' : 'transparent'}

@@ -3,22 +3,17 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from 'r
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  ArrowLeft,
-  FileText,
-  ShieldCheck,
-  Globe,
-  DollarSign,
-  Info,
-  Moon,
-} from 'lucide-react-native';
+  ArrowLeftIcon,
+  DocumentIcon,
+  InfoIcon,
+  MoonIcon,
+  ShieldCheckIcon,
+} from '../../src/components/ui/Icon/icons';
 
-import { useAppPreferences } from '../../src/hooks/useAppPreferences';
 import { useNotificationPreferences } from '../../src/hooks/useNotificationPreferences';
 import {
   SettingsSection,
   SettingsRow,
-  LanguageToggle,
-  CurrencyToggle,
   ThemeToggle,
   NotificationPreferenceGroup,
   AppVersionRow,
@@ -32,7 +27,7 @@ import { useThemeStore } from '../../src/store/theme.store';
  * SettingsScreen (Uber / Foodpanda / Careem Minimalist Standard)
  *
  * Architecture & UX:
- * 1. Three clearly segregated grouped cards: Preferences, Notifications, and About & Legal.
+ * 1. Three clearly segregated grouped cards: Appearance, Notifications, and About & Legal.
  * 2. Visual Hierarchy: Clean typography, uniform 18px neutral icons, and aligned dividers.
  * 3. Modern Segmented Controls: Pill-style active state with consistent dimensions.
  * 4. Notification Switches: Tasklync Switch (white thumb, brand-green ON track, animated), full row touch target.
@@ -44,7 +39,6 @@ export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { language, currency, setLanguage, setCurrency } = useAppPreferences();
   const themePreference = useThemeStore((s) => s.preference);
   const setThemePreference = useThemeStore((s) => s.setPreference);
   const { preferences, togglePreference } = useNotificationPreferences();
@@ -73,7 +67,7 @@ export default function SettingsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2} />
+          <ArrowLeftIcon size={20} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3}>
@@ -90,30 +84,11 @@ export default function SettingsScreen() {
           { paddingBottom: insets.bottom + 40 },
         ]}
       >
-        {/* 1. Preferences Section (Language & Currency) */}
-        <SettingsSection title="Preferences">
-          <SettingsRow
-            label="App Language"
-            icon={<Globe size={18} color={palette.gray500} />}
-            rightElement={
-              <LanguageToggle value={language} onChange={setLanguage} />
-            }
-          />
-
-          <SettingsRow
-            label="Display Currency"
-            icon={<DollarSign size={18} color={palette.gray500} />}
-            rightElement={
-              <CurrencyToggle value={currency} onChange={setCurrency} />
-            }
-          />
-        </SettingsSection>
-
-        {/* Appearance: follows the device by default */}
+        {/* 1. Appearance: follows the device by default */}
         <SettingsSection title="Appearance">
           <SettingsRow
             label="Theme"
-            icon={<Moon size={18} color={palette.gray500} />}
+            icon={<MoonIcon size={18} color={palette.gray500} />}
             rightElement={<ThemeToggle value={themePreference} onChange={setThemePreference} />}
           />
         </SettingsSection>
@@ -129,15 +104,15 @@ export default function SettingsScreen() {
         {/* 3. About & Legal Section */}
         <SettingsSection title="About & Legal">
           <SettingsRow
-            label="Terms of Service"
-            icon={<FileText size={18} color={palette.gray500} />}
+            label="Terms of service"
+            icon={<DocumentIcon size={18} color={palette.gray500} />}
             showChevron={true}
             onPress={() => handleOpenLegal('https://tasklync.pk/terms')}
           />
 
           <SettingsRow
-            label="Privacy Policy"
-            icon={<ShieldCheck size={18} color={palette.gray500} />}
+            label="Privacy policy"
+            icon={<ShieldCheckIcon size={18} color={palette.gray500} />}
             showChevron={true}
             onPress={() => handleOpenLegal('https://tasklync.pk/privacy')}
           />
@@ -145,7 +120,7 @@ export default function SettingsScreen() {
           <AppVersionRow
             version="v1.0.0"
             buildNumber="Build 37"
-            icon={<Info size={18} color={palette.gray500} />}
+            icon={<InfoIcon size={18} color={palette.gray500} />}
           />
         </SettingsSection>
       </ScrollView>

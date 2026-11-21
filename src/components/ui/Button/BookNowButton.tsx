@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { ArrowRight } from 'lucide-react-native';
+import { ArrowRightIcon } from '../Icon/icons';
 
 import { radius } from '../../../design/radius';
 import { fontFamily } from '../../../design/typography';
@@ -39,7 +39,7 @@ export interface BookNowButtonProps {
 export const BookNowButton: React.FC<BookNowButtonProps> = ({
   onPress,
   variant = 'brand',
-  label = 'Book Now',
+  label = 'Book now',
   showArrow = false,
   loading = false,
   disabled = false,
@@ -119,7 +119,7 @@ export const BookNowButton: React.FC<BookNowButtonProps> = ({
           {label}
         </Text>
         {showArrow ? (
-          <ArrowRight size={14} color={disabled ? tone.disabledText : tone.text} strokeWidth={2.2} style={styles.arrow} />
+          <ArrowRightIcon size={14} color={disabled ? tone.disabledText : tone.text} strokeWidth={2.2} style={styles.arrow} />
         ) : null}
       </View>
       {loading ? (

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, StyleSheet, Pressable, TextInput as RNTextInput } from 'react-native';
 import { Text } from '@components/ui/Text';
 import { radius } from '@design/index';
-import { ChevronDown } from 'lucide-react-native';
+import { ChevronDownIcon } from '../Icon/icons';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 interface PhoneInputProps {
@@ -50,7 +50,7 @@ export const PhoneInput = ({
         >
           <Text style={styles.flag}>{countryFlag}</Text>
           <Text style={styles.code}>{countryCode}</Text>
-          <ChevronDown size={14} color={colors.textMuted} />
+          <ChevronDownIcon size={14} color={colors.textMuted} />
         </Pressable>
         <View style={styles.divider} />
         <RNTextInput

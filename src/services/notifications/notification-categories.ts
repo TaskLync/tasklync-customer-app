@@ -25,7 +25,7 @@ export const ANDROID_CHANNELS: AndroidChannelConfig[] = [
   {
     channelId: 'tasklync_job_alerts',
     name: 'Job & Booking Alerts',
-    description: 'Urgent alerts for new booking requests, acceptance, and worker dispatch',
+    description: 'Important alerts when your booking is accepted or a worker is on the way',
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: colors.primaryDark,
@@ -48,7 +48,7 @@ export const ANDROID_CHANNELS: AndroidChannelConfig[] = [
   {
     channelId: 'tasklync_chat_notifications',
     name: 'Chat & Messages',
-    description: 'Real-time messages from service professionals',
+    description: 'Real-time messages from service workers',
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 200, 100, 200],
     sound: 'default',
@@ -59,7 +59,7 @@ export const ANDROID_CHANNELS: AndroidChannelConfig[] = [
   },
   {
     channelId: 'tasklync_booking_alerts',
-    name: 'Booking Updates',
+    name: 'Booking updates',
     description: 'Status changes, worker arrival, and job progress updates',
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 250, 250, 250],
@@ -71,7 +71,7 @@ export const ANDROID_CHANNELS: AndroidChannelConfig[] = [
   },
   {
     channelId: 'tasklync_payment_alerts',
-    name: 'Payments & Receipts',
+    name: 'Payments & receipts',
     description: 'Payment confirmations, receipts, refunds, and invoice notifications',
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 200, 100, 200],
@@ -83,7 +83,7 @@ export const ANDROID_CHANNELS: AndroidChannelConfig[] = [
   },
   {
     channelId: 'tasklync_marketing_notifications',
-    name: 'Offers & Promotions',
+    name: 'Offers & promotions',
     description: 'Seasonal discounts, promotions, and tips',
     importance: Notifications.AndroidImportance.LOW,
     sound: null,
@@ -93,7 +93,7 @@ export const ANDROID_CHANNELS: AndroidChannelConfig[] = [
   // 2. Short-Form Standard Channels (Legacy / Client Routing)
   {
     channelId: 'booking',
-    name: 'Booking Updates',
+    name: 'Booking updates',
     description: 'Critical notifications for booking acceptance and arrival',
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 250, 250, 250],
@@ -105,7 +105,7 @@ export const ANDROID_CHANNELS: AndroidChannelConfig[] = [
   },
   {
     channelId: 'chat',
-    name: 'Chat Messages',
+    name: 'Chat messages',
     description: 'Real-time messages from assigned workers',
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 200, 100, 200],

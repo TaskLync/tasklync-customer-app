@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronLeftIcon, ChevronRightIcon } from '../../ui/Icon/icons';
 import { fontFamily } from '../../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
@@ -43,7 +43,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           accessibilityLabel="Previous Month"
           accessibilityState={{ disabled: !canGoPrev }}
         >
-          <ChevronLeft
+          <ChevronLeftIcon
             size={20}
             color={canGoPrev ? colors.textPrimary : palette.gray300}
             strokeWidth={2.2}
@@ -58,7 +58,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Next Month"
         >
-          <ChevronRight size={20} color={colors.textPrimary} strokeWidth={2.2} />
+          <ChevronRightIcon size={20} color={colors.textPrimary} strokeWidth={2.2} />
         </Pressable>
       </View>
     </View>

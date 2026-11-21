@@ -165,7 +165,7 @@ export function useCurrentLocation(): UseCurrentLocationReturn {
         const fallbackError: LocationError = {
           code: 'UNKNOWN',
           message: err?.message || 'Failed to acquire fresh GPS location.',
-          userMessage: 'Unable to detect your GPS position. Please try again.',
+          userMessage: "Couldn't get your location. Please try again.",
         };
         if (isMountedRef.current) {
           setError(fallbackError);

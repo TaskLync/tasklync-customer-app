@@ -8,7 +8,7 @@ import {
   Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Camera, Image as ImageIcon, Plus, X } from 'lucide-react-native';
+import { CameraIcon, CloseIcon, ImageIcon, PlusIcon } from '../ui/Icon/icons';
 import { fontFamily, fontSize, radius, spacing } from '../../design';
 import { ReviewImageModal } from './ReviewImageModal';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -80,7 +80,7 @@ export const ReviewPhotoUpload: React.FC<ReviewPhotoUploadProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel={`Remove photo ${index + 1}`}
               >
-                <X size={12} color="#FFFFFF" strokeWidth={3} />
+                <CloseIcon size={12} color="#FFFFFF" strokeWidth={3} />
               </Pressable>
             )}
           </View>
@@ -103,7 +103,7 @@ export const ReviewPhotoUpload: React.FC<ReviewPhotoUploadProps> = ({
             accessibilityLabel="Add review photo"
           >
             <View style={styles.addIconCircle}>
-              <Plus size={18} color={colors.primary} strokeWidth={2.5} />
+              <PlusIcon size={18} color={colors.primary} strokeWidth={2.5} />
             </View>
             <Text style={styles.addPhotoText}>Add Photo</Text>
           </Pressable>
@@ -144,7 +144,7 @@ export const ReviewPhotoUpload: React.FC<ReviewPhotoUploadProps> = ({
                 accessibilityLabel="Take a photo with camera"
               >
                 <View style={[styles.optionIconCircle, { backgroundColor: palette.green50 }]}>
-                  <Camera size={20} color={colors.primary} strokeWidth={2.2} />
+                  <CameraIcon size={20} color={colors.primary} strokeWidth={2.2} />
                 </View>
                 <View style={styles.optionTextWrap}>
                   <Text style={styles.optionLabel}>Take Photo</Text>

@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { StyleSheet, View, Text, Pressable, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeftIcon } from '../../src/components/ui/Icon/icons';
 import { typography } from '@design/typography';
 import { useCategoryById } from '@hooks/useCategories';
 import { CategoryFilterBar, CategoryWorkersList, DistanceSheetContent } from '@components/category';
@@ -110,7 +110,7 @@ export default function CategoryScreen() {
           accessibilityRole="button"
           accessibilityLabel="Back"
         >
-          <ChevronLeft
+          <ChevronLeftIcon
             size={24}
             color={colors.primary}
           />

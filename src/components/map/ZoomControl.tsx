@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { StyleSheet, View, Pressable, Platform } from 'react-native';
-import { Plus, Minus } from 'lucide-react-native';
+import { MinusIcon, PlusIcon } from '../ui/Icon/icons';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface ZoomControlProps {
@@ -35,7 +35,7 @@ export const ZoomControl: FC<ZoomControlProps> = ({
         accessibilityLabel="Zoom map in"
         accessibilityRole="button"
       >
-        <Plus size={20} color={colors.textPrimary} />
+        <PlusIcon size={20} color={colors.textPrimary} />
       </Pressable>
 
       <View style={styles.divider} />
@@ -51,7 +51,7 @@ export const ZoomControl: FC<ZoomControlProps> = ({
         accessibilityLabel="Zoom map out"
         accessibilityRole="button"
       >
-        <Minus size={20} color={colors.textPrimary} />
+        <MinusIcon size={20} color={colors.textPrimary} />
       </Pressable>
     </View>
   );

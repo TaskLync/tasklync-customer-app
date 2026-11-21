@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Text, ViewStyle } from 'react-native';
-import { Users } from 'lucide-react-native';
+import { UsersIcon } from '../ui/Icon/icons';
 import { fontFamily as fonts } from '@design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -28,7 +28,7 @@ export const WorkerSocialProof = ({
 
   return (
     <View style={[styles.container, style]}>
-      <Users size={16} color={colors.primary} />
+      <UsersIcon size={16} color={colors.primary} />
       <Text style={styles.textContainer}>
         <Text style={styles.mutedText}>Trusted by </Text>
         <Text style={styles.highlightText}>{formattedCount}</Text>

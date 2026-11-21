@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { CalendarDays, ChevronRight } from 'lucide-react-native';
+import { CalendarDaysIcon, ChevronRightIcon } from '../ui/Icon/icons';
 import { CustomServiceRequest, CustomRequestStatus } from '../../types/customRequest.types';
 import { requestStatusBadge, type BadgeTone } from '../../utils/customRequestFilters';
 import { typography } from '../../design/typography';
@@ -35,8 +35,8 @@ export const CustomRequestCard = React.memo(function CustomRequestCard({ request
 
   const badge = requestStatusBadge(request.status);
   const toneStyle = toneStyles(badge.tone, colors, palette);
-  const provider = request.provider_name || request.worker_name || 'Assigned Technician';
-  const providerKind = request.provider_type === 'COMPANY' ? 'Agency' : 'Professional';
+  const provider = request.provider_name || request.worker_name || 'Assigned Worker';
+  const providerKind = request.provider_type === 'COMPANY' ? 'Agency' : 'Worker';
   const category = request.category_name || request.category_id || 'Custom request';
   const quote = request.active_quote;
   const dateStr = formatDate(request.created_at);
@@ -73,7 +73,7 @@ export const CustomRequestCard = React.memo(function CustomRequestCard({ request
 
       <View style={styles.bottomRow}>
         <View style={styles.date}>
-          <CalendarDays size={14} strokeWidth={2} color={colors.textMuted} />
+          <CalendarDaysIcon size={14} strokeWidth={2} color={colors.textMuted} />
           <Text style={styles.dateText} maxFontSizeMultiplier={1.3}>
             {dateStr}
           </Text>
@@ -89,7 +89,7 @@ export const CustomRequestCard = React.memo(function CustomRequestCard({ request
               View details
             </Text>
           )}
-          <ChevronRight size={16} strokeWidth={2} color={isQuoteReady ? palette.green700 : colors.textMuted} />
+          <ChevronRightIcon size={16} strokeWidth={2} color={isQuoteReady ? palette.green700 : colors.textMuted} />
         </View>
       </View>
     </Pressable>

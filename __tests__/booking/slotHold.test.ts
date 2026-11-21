@@ -86,11 +86,14 @@ describe('checkout slot hold', () => {
 });
 
 describe('one booking duration for slots, hold and create', () => {
-  test('sums lines x quantity and clamps to the backend bounds (0.5..12 h)', () => {
+  test('sums each selected service once and clamps to the backend bounds (0.5..12 h)', () => {
     assert.strictEqual(cartDurationHours([]), 0.5);
     assert.strictEqual(cartDurationHours([{ durationMins: 20 }]), 0.5);          // below 0.5 h -> 0.5
-    assert.strictEqual(cartDurationHours([{ durationHours: 1, quantity: 2 }, { durationMins: 30 }]), 2.5);
-    assert.strictEqual(cartDurationHours([{ durationHours: 8, quantity: 2 }]), 12);
+    // Different services add up.
+    assert.strictEqual(cartDurationHours([{ durationHours: 1 }, { durationMins: 30 }]), 1.5);
+    assert.strictEqual(cartDurationHours([{ durationHours: 8 }, { durationHours: 6 }]), 12); // clamped
+    // A stale quantity (older saved cart) no longer stretches the slot: one service, once.
+    assert.strictEqual(cartDurationHours([{ durationHours: 1, quantity: 44 }]), 1);
     assert.strictEqual(cartDurationHours([{}]), 0.5);
   });
 });

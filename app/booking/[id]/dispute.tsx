@@ -2,7 +2,13 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, CheckCircle2, ShieldCheck, Clock, AlertCircle } from 'lucide-react-native';
+import {
+  AlertCircleIcon,
+  ArrowLeftIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  ShieldCheckIcon,
+} from '../../../src/components/ui/Icon/icons';
 
 import { useBookingDetails } from '../../../src/hooks/useBookingDetails';
 import { useDispute } from '../../../src/hooks/useDispute';
@@ -101,7 +107,7 @@ export default function DisputeScreen() {
       const finalDescription =
         trimmedDesc.length > 0
           ? trimmedDesc
-          : `Dispute filed for ${reasonLabel}. The service professional did not complete the job satisfactorily.`;
+          : `Dispute filed for ${reasonLabel}. The service worker did not complete the job satisfactorily.`;
 
       try {
         setLocalError(null);
@@ -115,7 +121,7 @@ export default function DisputeScreen() {
 
         setIsSubmittedSuccess(true);
       } catch (err: any) {
-        setLocalError(err?.message || 'Failed to submit dispute. Please try again.');
+        setLocalError(err?.message || "Couldn't submit your report. Please try again.");
         setIsDeferredWaiting(false);
       }
     },
@@ -151,21 +157,21 @@ export default function DisputeScreen() {
         <ThemedStatusBar />
         <View style={styles.successContainer}>
           <View style={styles.successIconCircle}>
-            <ShieldCheck size={56} color={colors.primaryDark} strokeWidth={2.2} />
+            <ShieldCheckIcon size={56} color={colors.primaryDark} strokeWidth={2.2} />
           </View>
 
-          <Text style={styles.successTitle}>Dispute Lodged Successfully</Text>
+          <Text style={styles.successTitle}>Report submitted</Text>
           <Text style={styles.successSubtitle}>
-            Our Trust & Safety team has received your report. Your payment remains securely locked in escrow while our specialists review the provided details.
+            Our support team has your report and will review the details. We'll keep you updated on the outcome.
           </Text>
 
           <View style={styles.timelineCard}>
             <View style={styles.timelineRow}>
-              <Clock size={18} color={palette.infoDark} />
+              <ClockIcon size={18} color={palette.infoDark} />
               <Text style={styles.timelineText}>Expected Review Time: Within 24 Hours</Text>
             </View>
             <View style={styles.timelineRow}>
-              <CheckCircle2 size={18} color={colors.primaryDark} />
+              <CheckCircleIcon size={18} color={colors.primaryDark} />
               <Text style={styles.timelineText}>Support Notification: We will update you via SMS & Email</Text>
             </View>
           </View>
@@ -188,7 +194,7 @@ export default function DisputeScreen() {
     );
   }
 
-  const workerName = booking?.worker_name || 'Service Professional';
+  const workerName = booking?.worker_name || 'Service Worker';
   const categoryName = booking?.category_name || 'Home Service';
   const totalAmount = booking?.estimated_total
     ? `${booking.currency || 'PKR'} ${booking.estimated_total.toLocaleString()}`
@@ -207,7 +213,7 @@ export default function DisputeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={colors.textPrimary} />
+          <ArrowLeftIcon size={22} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Raise a Dispute</Text>
@@ -313,7 +319,7 @@ export default function DisputeScreen() {
               {/* Error Banner if any */}
               {localError || apiError ? (
                 <View style={styles.errorBanner}>
-                  <AlertCircle size={18} color={colors.textDanger} style={{ marginRight: 6 }} />
+                  <AlertCircleIcon size={18} color={colors.textDanger} style={{ marginRight: 6 }} />
                   <Text style={styles.errorText}>{localError || apiError}</Text>
                 </View>
               ) : null}
@@ -351,7 +357,7 @@ export default function DisputeScreen() {
                     <Text style={styles.submitButtonText}>Finishing photo upload...</Text>
                   </View>
                 ) : (
-                  <Text style={styles.submitButtonText}>Submit Dispute</Text>
+                  <Text style={styles.submitButtonText}>Submit dispute</Text>
                 )}
               </TouchableOpacity>
             </View>

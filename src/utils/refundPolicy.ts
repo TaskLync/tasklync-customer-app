@@ -1,45 +1,43 @@
-import { BookingDetails, RefundPolicyResult } from '../types/booking.types';
+import type { BookingDetails, RefundPolicyResult } from '../types/booking.types';
+import type { CancellationTerms } from './feeDisplay';
 
 /**
- * Pure function: Computes the refund policy according to Tasklync Payment & Cancellation Architecture.
+ * Pure function: the refund the customer can expect if they cancel now. A preview only: booking-service
+ * decides the real refund with the same rules.
  *
- * Policy Matrix:
- * 1. PENDING (before worker accepts): 100% refund, no platform fees.
- * 2. ACCEPTED and >24 hours before scheduled appointment: 90% refund (10% platform processing fee).
- * 3. ACCEPTED and <=24 hours before appointment: 50% refund (50% fee to compensate reserved worker time).
- * 4. IN_PROGRESS / COMPLETED / COMPLETED_BY_WORKER: 0% standard refund (Dispute-only path).
- * 5. CANCELLED / REFUNDED: Already terminated.
+ * The cancellation fee percentages are NOT fixed in the app. They come from the admin's Pricing & Commission
+ * settings (GET /bookings/pricing-config → `terms`). When the fee is 0 the customer sees a full refund.
+ *
+ * 1. PENDING (worker has not accepted): always a full refund.
+ * 2. ACCEPTED: full refund minus the configured fee for the timing (more than 24h / 24h or less / worker on site).
+ * 3. IN_PROGRESS / COMPLETED: no standard refund (report a problem instead).
+ * 4. CANCELLED / REFUNDED: already closed.
+ *
+ * Returns null while the fee settings are not known yet (never guesses a fee).
  */
 export function computeRefundPolicy(
   booking?: Partial<BookingDetails> | null,
+  terms?: CancellationTerms | null,
   referenceNow: Date = new Date()
-): RefundPolicyResult {
-  if (!booking) {
-    return {
-      percentage: 100,
-      label: 'Full Refund (100%)',
-      headline: "You'll receive a full 100% refund",
-      reason: 'No cancellation penalty applies.',
-      eligibleForRefund: true,
-      isDisputeOnly: false,
-      estimatedRefundAmount: 0,
-    };
-  }
+): RefundPolicyResult | null {
+  const totalAmount = Number(booking?.estimated_total || booking?.base_price || 0);
+  const full = (reason: string): RefundPolicyResult => ({
+    percentage: 100,
+    label: 'Full refund (100%)',
+    headline: "You'll get a full refund",
+    reason,
+    eligibleForRefund: true,
+    isDisputeOnly: false,
+    estimatedRefundAmount: totalAmount,
+  });
+
+  if (!booking) return full('There is no cancellation fee.');
 
   const status = (booking.status || 'PENDING').toUpperCase();
-  const totalAmount = Number(booking.estimated_total || booking.base_price || 0);
 
   // 1. Before worker accepts
   if (status === 'PENDING') {
-    return {
-      percentage: 100,
-      label: 'Full Refund (100%)',
-      headline: "You'll receive a 100% full refund",
-      reason: 'The service professional has not yet accepted this booking. Zero cancellation fees apply.',
-      eligibleForRefund: true,
-      isDisputeOnly: false,
-      estimatedRefundAmount: totalAmount,
-    };
+    return full('The worker has not accepted this booking yet, so there is no cancellation fee.');
   }
 
   // 2. Active ongoing or completed work (Dispute-only)
@@ -52,9 +50,9 @@ export function computeRefundPolicy(
   ) {
     return {
       percentage: 0,
-      label: 'No Standard Refund (0%)',
+      label: 'No standard refund (0%)',
       headline: 'Job is active or completed',
-      reason: 'Standard cancellation is unavailable once a job has commenced. If you experienced poor service, an overcharge, or an incomplete job, please raise a dispute.',
+      reason: 'You cannot cancel after the job has started. If the work was poor, unfinished or you were overcharged, please report a problem.',
       eligibleForRefund: false,
       isDisputeOnly: true,
       estimatedRefundAmount: 0,
@@ -65,7 +63,7 @@ export function computeRefundPolicy(
   if (status === 'CANCELLED' || status === 'REFUNDED' || status === 'REJECTED') {
     return {
       percentage: 0,
-      label: 'Booking Closed',
+      label: 'Booking closed',
       headline: 'Booking is already cancelled or closed',
       reason: 'No further cancellation actions can be applied to this booking.',
       eligibleForRefund: false,
@@ -74,62 +72,36 @@ export function computeRefundPolicy(
     };
   }
 
-  // 4. ACCEPTED status: compute timing window
-  const scheduledTimeStr = booking.scheduled_at;
-  if (!scheduledTimeStr) {
-    // Default safe fallback if no scheduled timestamp is parseable
-    const refundAmount = Math.round((totalAmount * 90) / 100);
-    return {
-      percentage: 90,
-      label: '90% Refund',
-      headline: "You'll receive a 90% refund",
-      reason: 'Standard cancellation after worker confirmation. 10% platform fee deducted.',
-      eligibleForRefund: true,
-      isDisputeOnly: false,
-      estimatedRefundAmount: refundAmount,
-    };
-  }
+  // 4. ACCEPTED: the fee depends on timing and on the admin's settings.
+  if (!terms) return null;
 
-  const scheduledDate = new Date(scheduledTimeStr);
-  const nowTime = referenceNow.getTime();
-  const scheduledTime = scheduledDate.getTime();
-  const diffHours = (scheduledTime - nowTime) / (1000 * 60 * 60);
+  let feePercent: number;
+  let when: string;
+  const arrivedAt = (booking as { arrived_at?: string | null }).arrived_at;
+  const scheduledMs = booking.scheduled_at ? new Date(booking.scheduled_at).getTime() : NaN;
+  const diffHours = (scheduledMs - referenceNow.getTime()) / (1000 * 60 * 60);
 
-  if (diffHours > 24) {
-    // More than 24 hours prior to appointment
-    const refundAmount = Math.round((totalAmount * 90) / 100);
-    return {
-      percentage: 90,
-      label: '90% Refund',
-      headline: "You'll receive a 90% refund",
-      reason: 'Cancelled more than 24 hours prior to appointment time. A 10% platform booking fee is deducted.',
-      eligibleForRefund: true,
-      isDisputeOnly: false,
-      estimatedRefundAmount: refundAmount,
-    };
-  } else if (diffHours > 0) {
-    // Within 24 hours of appointment
-    const refundAmount = Math.round((totalAmount * 50) / 100);
-    return {
-      percentage: 50,
-      label: '50% Refund',
-      headline: "You'll receive a 50% refund",
-      reason: 'Cancelled within 24 hours of scheduled time. 50% is retained to compensate the professional for reserved time.',
-      eligibleForRefund: true,
-      isDisputeOnly: false,
-      estimatedRefundAmount: refundAmount,
-    };
+  if (arrivedAt) {
+    feePercent = terms.afterArrivalPercent;
+    when = 'The worker has already reached your address.';
+  } else if (!Number.isFinite(diffHours) || diffHours > 24) {
+    feePercent = terms.over24hPercent;
+    when = 'You are cancelling more than 24 hours before the booking time.';
   } else {
-    // Past scheduled time but not marked in progress yet
-    const refundAmount = Math.round((totalAmount * 50) / 100);
-    return {
-      percentage: 50,
-      label: '50% Refund',
-      headline: "You'll receive a 50% refund",
-      reason: 'Cancelled past scheduled start time. 50% compensation applies.',
-      eligibleForRefund: true,
-      isDisputeOnly: false,
-      estimatedRefundAmount: refundAmount,
-    };
+    feePercent = terms.within24hPercent;
+    when = 'You are cancelling less than 24 hours before the booking time.';
   }
+
+  if (feePercent <= 0) return full('There is no cancellation fee.');
+
+  const refundPercent = Math.round((100 - feePercent) * 100) / 100;
+  return {
+    percentage: refundPercent,
+    label: `${refundPercent}% refund`,
+    headline: `You'll get a ${refundPercent}% refund`,
+    reason: `${when} A ${feePercent}% cancellation fee applies.`,
+    eligibleForRefund: refundPercent > 0,
+    isDisputeOnly: false,
+    estimatedRefundAmount: Math.round((totalAmount * refundPercent) / 100),
+  };
 }

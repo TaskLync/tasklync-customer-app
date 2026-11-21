@@ -9,29 +9,18 @@ import { SkeletonGroup } from '../ui/Skeleton/Skeleton';
 interface CartItemListProps {
   items: CartItemType[];
   isLoading?: boolean;
-  onIncrement: (serviceId: string) => void;
-  onDecrement: (serviceId: string) => void;
   onRemoveItem: (serviceId: string) => void;
 }
 
-export const CartItemList: FC<CartItemListProps> = ({
-  items,
-  isLoading = false,
-  onIncrement,
-  onDecrement,
-  onRemoveItem,
-}) => {
+/** The selected services, one row each. Swipe left or tap Remove to take one out. */
+export const CartItemList: FC<CartItemListProps> = ({ items, isLoading = false, onRemoveItem }) => {
   const renderItem = useCallback(
     ({ item }: { item: CartItemType }) => (
       <SwipeToDeleteRow onDelete={() => onRemoveItem(item.serviceId)}>
-        <CartItem
-          item={item}
-          onIncrement={onIncrement}
-          onDecrement={onDecrement}
-        />
+        <CartItem item={item} onRemove={onRemoveItem} />
       </SwipeToDeleteRow>
     ),
-    [onIncrement, onDecrement, onRemoveItem]
+    [onRemoveItem]
   );
 
   if (isLoading) {

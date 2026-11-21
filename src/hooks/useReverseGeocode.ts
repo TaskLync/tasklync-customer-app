@@ -79,7 +79,7 @@ export function useReverseGeocode(options?: UseReverseGeocodeOptions) {
         resolvedCoordsRef.current = null;
         setResultState(null);
         setIsError(true);
-        setErrorMessage(err?.message || "Couldn't determine address — try adjusting the pin");
+        setErrorMessage(err?.message || "Couldn't find this address. Try moving the pin.");
       } finally {
         if (gateRef.current.isLatest(ticket)) setIsLoading(false);
       }

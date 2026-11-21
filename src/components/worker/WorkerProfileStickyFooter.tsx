@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, Pressable, ActivityIndicator, ViewStyle } from 'react-native';
-import { MessageCircle } from 'lucide-react-native';
+import { ChatBubbleIcon } from '../ui/Icon/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fontFamily } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -62,7 +62,7 @@ export const WorkerProfileStickyFooter: React.FC<WorkerProfileStickyFooterProps>
         accessibilityRole="button"
         accessibilityLabel={workerName ? `Chat with ${workerName}` : 'Chat with worker'}
       >
-        <MessageCircle size={18} color={colors.textPrimary} strokeWidth={2.2} />
+        <ChatBubbleIcon size={18} color={colors.textPrimary} strokeWidth={2.2} />
         <Text style={[styles.chatText]}>Chat</Text>
       </Pressable>
 
@@ -78,12 +78,12 @@ export const WorkerProfileStickyFooter: React.FC<WorkerProfileStickyFooterProps>
         ]}
         accessibilityRole="button"
         accessibilityState={{ disabled: isStarting, busy: isStarting }}
-        accessibilityLabel={workerName ? `Book Now with ${workerName}` : 'Book Now'}
+        accessibilityLabel={workerName ? `Book now with ${workerName}` : 'Book now'}
       >
         {isStarting ? (
           <ActivityIndicator size="small" color={colors.pureWhite} />
         ) : (
-          <Text style={styles.bookText}>{isWorkerAvailable ? 'Book Now' : 'Unavailable'}</Text>
+          <Text style={styles.bookText}>{isWorkerAvailable ? 'Book now' : 'Unavailable'}</Text>
         )}
       </Pressable>
     </View>

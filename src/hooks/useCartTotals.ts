@@ -1,29 +1,22 @@
 import { useMemo } from 'react';
 import { useCartStore } from '../store/cart.store';
 
+/**
+ * Cart sums only. The platform fee and tax are NOT calculated in the app: the server prices the
+ * booking at checkout (admin-controlled fee / tax), and the cart shows the active setting as a label.
+ * Each service is in the cart once, so the subtotal is the sum of the selected services' prices.
+ */
 export interface CartTotals {
   subtotal: number;
-  platformFee: number;
-  total: number;
+  /** Number of selected services. */
   itemCount: number;
 }
-
-const PLATFORM_FEE_RATE = 0.05; // 5% customer platform fee
 
 export const useCartTotals = (): CartTotals => {
   const items = useCartStore((state) => state.items);
 
   return useMemo(() => {
-    const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
-    const platformFee = Math.round(subtotal * PLATFORM_FEE_RATE);
-    const total = subtotal + platformFee;
-
-    return {
-      subtotal,
-      platformFee,
-      total,
-      itemCount,
-    };
+    const subtotal = items.reduce((acc, item) => acc + item.price, 0);
+    return { subtotal, itemCount: items.length };
   }, [items]);
 };

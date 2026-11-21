@@ -3,21 +3,20 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import {
-  ShieldCheck,
-  QrCode,
-  Copy,
-  Check,
-  RefreshCw,
-  Clock,
-  AlertCircle,
-} from 'lucide-react-native';
-import { radius, spacing } from '../../design';
+  AlertCircleIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  CopyIcon,
+  QrCodeIcon,
+  RefreshIcon,
+  ShieldCheckIcon,
+} from '../ui/Icon/icons';
 import { formatRemainingTime } from '../../utils/verificationState.util';
 import { useBookingVerificationOtp } from '../../hooks/useBookingVerification';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -28,6 +27,10 @@ interface BookingVerificationCardProps {
   onOpenQr: () => void;
 }
 
+/**
+ * Job verification: the six-digit start code and the contactless QR alternative, as one card.
+ * Presentation only; the code lifecycle (fetch, expiry, regenerate) lives in useBookingVerificationOtp.
+ */
 export const BookingVerificationCard: React.FC<BookingVerificationCardProps> = ({
   bookingId,
   isEligible,
@@ -51,7 +54,6 @@ export const BookingVerificationCard: React.FC<BookingVerificationCardProps> = (
     return null;
   }
 
-  // Handle Copy to Clipboard
   const handleCopy = async () => {
     if (!otp) return;
     await Clipboard.setStringAsync(otp);
@@ -64,54 +66,58 @@ export const BookingVerificationCard: React.FC<BookingVerificationCardProps> = (
 
   return (
     <View style={styles.card}>
-      {/* Header with verification badge */}
+      {/* Header */}
       <View style={styles.headerRow}>
         <View style={styles.shieldBadge}>
-          <ShieldCheck size={18} color={colors.primaryDark} strokeWidth={2.4} />
+          <ShieldCheckIcon size={18} color={colors.primaryDark} strokeWidth={2} />
         </View>
         <View style={styles.headerTextCol}>
-          <Text style={styles.title}>Your Job Verification Code</Text>
+          <Text style={styles.title}>Job verification code</Text>
           <Text style={styles.subtitle}>
-            Share this code with your worker when they arrive to start the service.
+            Share this code with your worker when they arrive to start the job.
           </Text>
         </View>
       </View>
 
-      {/* Main OTP Container */}
+      {/* Code */}
       <View style={styles.otpSection}>
         {isLoading && !otp ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={colors.primaryDark} />
-            <Text style={styles.loadingText}>Retrieving secure code...</Text>
+          <View style={styles.stateBox}>
+            <ActivityIndicator size="small" color={colors.textSecondary} />
+            <Text style={styles.stateText}>Retrieving secure code…</Text>
           </View>
         ) : error && !otp ? (
-          <View style={styles.errorContainer}>
-            <AlertCircle size={18} color={colors.danger} />
-            <Text style={styles.errorText}>{error.message}</Text>
-            <TouchableOpacity
-              style={styles.retryBtn}
+          <View style={styles.stateBoxColumn}>
+            <View style={styles.inlineRow}>
+              <AlertCircleIcon size={16} color={colors.danger} />
+              <Text style={styles.errorText}>{error.message}</Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.ghostBtn, pressed && styles.ghostBtnPressed]}
               onPress={refreshOtp}
               disabled={isRefetching}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading verification code"
             >
               {isRefetching ? (
-                <ActivityIndicator size="small" color={colors.primaryDark} />
+                <ActivityIndicator size="small" color={colors.textSecondary} />
               ) : (
                 <>
-                  <RefreshCw size={13} color={colors.primaryDark} />
-                  <Text style={styles.retryBtnText}>Retry</Text>
+                  <RefreshIcon size={13} color={colors.textPrimary} />
+                  <Text style={styles.ghostBtnText}>Retry</Text>
                 </>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         ) : isExpired ? (
-          <View style={styles.expiredContainer}>
-            <View style={styles.expiredBanner}>
-              <AlertCircle size={16} color={palette.amber700} />
-              <Text style={styles.expiredText}>Code expired for security</Text>
+          <View style={styles.stateBoxColumn}>
+            <View style={styles.inlineRow}>
+              <AlertCircleIcon size={16} color={palette.amber700} />
+              <Text style={styles.expiredText}>Code expired for your security</Text>
             </View>
-            <TouchableOpacity
-              style={styles.refreshPrimaryBtn}
+            <Pressable
+              style={({ pressed }) => [styles.primaryBtn, pressed && styles.primaryBtnPressed]}
               onPress={refreshOtp}
               disabled={isRefetching}
               accessibilityRole="button"
@@ -121,14 +127,18 @@ export const BookingVerificationCard: React.FC<BookingVerificationCardProps> = (
                 <ActivityIndicator size="small" color={colors.pureWhite} />
               ) : (
                 <>
-                  <RefreshCw size={15} color={colors.pureWhite} />
-                  <Text style={styles.refreshPrimaryBtnText}>Generate New Code</Text>
+                  <RefreshIcon size={15} color={colors.pureWhite} />
+                  <Text style={styles.primaryBtnText}>Generate new code</Text>
                 </>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         ) : digits.length > 0 ? (
-          <View style={styles.digitsRow}>
+          <View
+            style={styles.digitsRow}
+            accessible
+            accessibilityLabel={`Verification code ${digits.join(' ')}`}
+          >
             {digits.map((digit, index) => (
               <View key={`otp-${index}`} style={styles.digitBox}>
                 <Text
@@ -143,379 +153,339 @@ export const BookingVerificationCard: React.FC<BookingVerificationCardProps> = (
             ))}
           </View>
         ) : (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={colors.primaryDark} />
-            <Text style={styles.loadingText}>Retrieving secure code...</Text>
+          <View style={styles.stateBox}>
+            <ActivityIndicator size="small" color={colors.textSecondary} />
+            <Text style={styles.stateText}>Retrieving secure code…</Text>
           </View>
         )}
       </View>
 
-      {/* Expiry status & Copy action row (only when active OTP is present) */}
+      {/* Validity + actions (only while a live code is shown) */}
       {Boolean(otp) && !isExpired && (
         <View style={styles.metaRow}>
-          <View style={styles.timerBadge}>
-            <Clock size={13} color={colors.textSecondary} />
+          <View style={styles.timerRow}>
+            <ClockIcon size={13} color={colors.textMuted} />
             <Text style={styles.timerText}>
               Valid for {formatRemainingTime(remainingSeconds)}
             </Text>
           </View>
 
           <View style={styles.metaActions}>
-            <TouchableOpacity
-              style={styles.iconRefreshBtn}
+            <Pressable
+              style={({ pressed }) => [styles.ghostBtn, pressed && styles.ghostBtnPressed]}
               onPress={refreshOtp}
               disabled={isRefetching}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               accessibilityRole="button"
-              accessibilityLabel="Refresh verification code"
+              accessibilityLabel="Generate a new verification code"
             >
-              <RefreshCw
-                size={14}
-                color={colors.textSecondary}
-                style={isRefetching ? styles.rotatingIcon : undefined}
-              />
-            </TouchableOpacity>
+              {isRefetching ? (
+                <ActivityIndicator size="small" color={colors.textSecondary} />
+              ) : (
+                <RefreshIcon size={14} color={colors.textSecondary} />
+              )}
+              <Text style={styles.ghostBtnMutedText}>New code</Text>
+            </Pressable>
 
-            <TouchableOpacity
-              style={[styles.copyBtn, copied && styles.copyBtnSuccess]}
+            <Pressable
+              style={({ pressed }) => [
+                styles.copyBtn,
+                copied && styles.copyBtnSuccess,
+                pressed && !copied && styles.copyBtnPressed,
+              ]}
               onPress={handleCopy}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               accessibilityRole="button"
               accessibilityLabel={copied ? 'Code copied' : 'Copy verification code'}
             >
               {copied ? (
                 <>
-                  <Check size={13} color={colors.textGreen} strokeWidth={2.5} />
+                  <CheckIcon size={14} color={colors.textGreen} strokeWidth={2.5} />
                   <Text style={styles.copyTextSuccess}>Copied</Text>
                 </>
               ) : (
                 <>
-                  <Copy size={13} color={colors.textSecondary} />
-                  <Text style={styles.copyText}>Copy Code</Text>
+                  <CopyIcon size={14} color={colors.textPrimary} />
+                  <Text style={styles.copyText}>Copy code</Text>
                 </>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       )}
 
-      {/* Subtle Separator */}
-      <View style={styles.divider} />
-
-      {/* Secondary Alternative Action: Show QR Code */}
-      <TouchableOpacity
-        style={styles.qrActionRow}
+      {/* Contactless alternative: integrated inset row, opens the QR sheet */}
+      <Pressable
+        style={({ pressed }) => [styles.qrRow, pressed && styles.qrRowPressed]}
         onPress={onOpenQr}
-        activeOpacity={0.75}
         accessibilityRole="button"
-        accessibilityLabel="Show QR code for worker to scan"
+        accessibilityLabel="Show QR code for your worker to scan"
       >
-        <View style={styles.qrActionLeft}>
-          <View style={styles.qrIconWrap}>
-            <QrCode size={18} color={palette.gray800} strokeWidth={2} />
-          </View>
-          <View style={styles.qrTextCol}>
-            <Text style={styles.qrActionTitle}>Prefer contactless scan?</Text>
-            <Text style={styles.qrActionSubtitle}>Show QR Code to your worker</Text>
-          </View>
+        <View style={styles.qrIconWrap}>
+          <QrCodeIcon size={18} color={colors.textPrimary} strokeWidth={1.9} />
         </View>
-        <View style={styles.qrActionPill}>
-          <Text style={styles.qrActionPillText}>Show QR</Text>
+        <View style={styles.qrTextCol}>
+          <Text style={styles.qrTitle}>Contactless check-in</Text>
+          <Text style={styles.qrSubtitle} numberOfLines={2}>
+            Let your worker scan a QR code instead
+          </Text>
         </View>
-      </TouchableOpacity>
+        <View style={styles.qrCta}>
+          <Text style={styles.qrCtaText}>Show QR</Text>
+          <ChevronRightIcon size={14} color={colors.textSecondary} />
+        </View>
+      </Pressable>
     </View>
   );
 };
 
 const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   card: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.xl,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.base,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: palette.gray200,
-    ...Platform.select({
-      ios: {
-        shadowColor: palette.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 1.5,
-      },
-    }),
+    backgroundColor: colors.cardRaised,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: spacing.md,
+    gap: 12,
   },
   shieldBadge: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: colors.bgHover,
-    borderWidth: 1,
-    borderColor: colors.primaryBorderSubtle,
+    backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
-    marginTop: 2,
   },
   headerTextCol: {
     flex: 1,
+    minWidth: 0,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 15.5,
     letterSpacing: -0.2,
-    marginBottom: 3,
+    color: colors.textPrimary,
   },
   subtitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 13,
-    color: colors.textSecondary,
     lineHeight: 18,
-  },
-  otpSection: {
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.lg,
-    gap: spacing.sm,
-  },
-  loadingText: {
-    fontSize: 13,
     color: colors.textSecondary,
+    marginTop: 2,
   },
-  errorContainer: {
-    alignItems: 'center',
+
+  // Code
+  otpSection: {
+    marginTop: 16,
+    minHeight: 58,
     justifyContent: 'center',
-    paddingVertical: spacing.md,
-    gap: spacing.xs,
-  },
-  errorText: {
-    fontSize: 13,
-    color: colors.danger,
-    textAlign: 'center',
-    paddingHorizontal: spacing.sm,
-  },
-  retryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: colors.buttonSecondary,
-    marginTop: spacing.xs,
-  },
-  retryBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.buttonSecondaryText,
-  },
-  expiredContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    width: '100%',
-  },
-  expiredBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: palette.amber50,
-    borderWidth: 1,
-    borderColor: palette.amber200,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radius.md,
-    marginBottom: spacing.sm,
-  },
-  expiredText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: palette.amber800,
-  },
-  refreshPrimaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.buttonPrimary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radius.lg,
-  },
-  refreshPrimaryBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.pureWhite,
   },
   digitsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    width: '100%',
-    paddingVertical: spacing.xs,
+    gap: 8,
   },
   digitBox: {
     flex: 1,
-    maxWidth: 46,
-    minWidth: 32,
-    height: 50,
-    borderRadius: 10,
-    backgroundColor: palette.gray50,
-    borderWidth: 1.5,
-    borderColor: palette.gray200,
+    maxWidth: 50,
+    height: 58,
+    borderRadius: 12,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
   },
   digitText: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 24,
     color: colors.textPrimary,
-    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
     textAlign: 'center',
     includeFontPadding: false,
+    fontVariant: ['tabular-nums'],
   },
+  stateBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 18,
+    borderRadius: 12,
+    backgroundColor: colors.bgHover,
+  },
+  stateBoxColumn: {
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: colors.bgHover,
+  },
+  stateText: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  inlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
+  errorText: {
+    flexShrink: 1,
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 13,
+    color: colors.textDanger,
+  },
+  expiredText: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 13,
+    color: palette.amber800,
+  },
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.buttonPrimary,
+    paddingHorizontal: 18,
+    height: 42,
+    borderRadius: 12,
+  },
+  primaryBtnPressed: {
+    backgroundColor: colors.buttonPrimaryPressed,
+  },
+  primaryBtnText: {
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 14,
+    color: colors.pureWhite,
+  },
+
+  // Validity + actions
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
+    rowGap: 8,
+    columnGap: 8,
+    marginTop: 12,
   },
-  timerBadge: {
+  timerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-    borderRadius: radius.full,
-    backgroundColor: palette.gray50,
-    flexShrink: 1,
   },
   timerText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textSecondary,
+    fontFamily: 'Inter-Medium',
+    fontSize: 12.5,
+    color: colors.textMuted,
     fontVariant: ['tabular-nums'],
   },
   metaActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    flexShrink: 0,
+    gap: 4,
+    marginLeft: 'auto',
   },
-  iconRefreshBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: radius.full,
-    backgroundColor: palette.gray50,
-    borderWidth: 1,
-    borderColor: palette.gray200,
+  ghostBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 5,
+    height: 34,
+    paddingHorizontal: 10,
+    borderRadius: 10,
   },
-  rotatingIcon: {
-    opacity: 0.5,
+  ghostBtnPressed: {
+    backgroundColor: colors.bgHover,
+  },
+  ghostBtnText: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 13,
+    color: colors.textPrimary,
+  },
+  ghostBtnMutedText: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 13,
+    color: colors.textSecondary,
   },
   copyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: spacing.md,
-    height: 30,
-    borderRadius: radius.full,
-    backgroundColor: palette.gray50,
-    borderWidth: 1,
-    borderColor: palette.gray200,
-    justifyContent: 'center',
+    gap: 6,
+    height: 34,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: colors.bgHover,
+  },
+  copyBtnPressed: {
+    backgroundColor: colors.buttonSecondaryPressed,
   },
   copyBtnSuccess: {
     backgroundColor: colors.primaryTint,
-    borderColor: colors.primaryBorderSubtle,
   },
   copyText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 13,
+    color: colors.textPrimary,
   },
   copyTextSuccess: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 13,
     color: colors.textGreen,
   },
-  divider: {
-    height: 1,
-    backgroundColor: palette.gray100,
-    marginVertical: spacing.md,
-  },
-  qrActionRow: {
+
+  // QR alternative
+  qrRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: palette.gray50,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: palette.gray200,
-    gap: spacing.sm,
+    gap: 12,
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: colors.bgHover,
   },
-  qrActionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
-    minWidth: 0,
+  qrRowPressed: {
+    backgroundColor: colors.buttonSecondaryPressed,
   },
   qrIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: palette.gray200,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: colors.cardRaised,
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
   },
   qrTextCol: {
     flex: 1,
     minWidth: 0,
   },
-  qrActionTitle: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  qrActionSubtitle: {
-    fontSize: 13,
-    fontWeight: '600',
+  qrTitle: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 13.5,
     color: colors.textPrimary,
   },
-  qrActionPill: {
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: palette.gray200,
-    flexShrink: 0,
+  qrSubtitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12.5,
+    lineHeight: 17,
+    color: colors.textSecondary,
+    marginTop: 1,
   },
-  qrActionPillText: {
-    fontSize: 12,
-    fontWeight: '700',
+  qrCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingLeft: 10,
+    paddingRight: 6,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: colors.cardRaised,
+  },
+  qrCtaText: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 13,
     color: colors.textPrimary,
   },
 });

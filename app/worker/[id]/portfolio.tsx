@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, Pressable, Platform, useWindowDimensions } from
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeftIcon } from '../../../src/components/ui/Icon/icons';
 
 import { useWorkerPortfolio } from '../../../src/hooks/useWorkerPortfolio';
 import { useWorkerProfile } from '../../../src/hooks/useWorkerProfile';
@@ -75,7 +75,7 @@ export default function WorkerPortfolioScreen() {
           hitSlop={12} 
           style={styles.iconButton}
         >
-          <ArrowLeft size={24} color={colors.textPrimary} />
+          <ArrowLeftIcon size={24} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {worker?.name ? `${worker.name}'s Work` : 'Portfolio'}

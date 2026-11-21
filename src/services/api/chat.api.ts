@@ -283,7 +283,7 @@ export const chatApi = {
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message;
-      throw new Error(apiMsg || 'Failed to open clarification chat.');
+      throw new Error(apiMsg || "Couldn't open the chat. Please try again.");
     }
   },
 };

@@ -59,7 +59,7 @@ export interface BookNowInput {
 }
 
 export function unavailableMessage(name: string, status: WorkerAvailabilityStatus): string {
-  const who = name || 'This professional';
+  const who = name || 'This worker';
   switch (status) {
     case 'BUSY':
       return `${who} is on a job right now. Try again a little later.`;
@@ -86,8 +86,8 @@ export function resolveBookNow(i: BookNowInput): BookNowDecision {
       kind: 'NO_SERVICES',
       canRequestQuote: true,
       message: hasQuote
-        ? `${i.workerName || 'This professional'} prices jobs by quote. Request a custom quote to continue.`
-        : `${i.workerName || 'This professional'} has no bookable services yet. You can request a custom quote.`,
+        ? `${i.workerName || 'This worker'} prices jobs by quote. Request a custom quote to continue.`
+        : `${i.workerName || 'This worker'} has no bookable services yet. You can request a custom quote.`,
     };
   }
   if (bookable.length === 1) return { kind: 'ADD', service: bookable[0]! };

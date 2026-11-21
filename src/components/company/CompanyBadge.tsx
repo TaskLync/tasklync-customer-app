@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { ShieldCheck, Building2, CheckCircle2 } from 'lucide-react-native';
+import { BuildingIcon, CheckCircleIcon, ShieldCheckIcon } from '../ui/Icon/icons';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export type CompanyBadgeVariant = 'micro' | 'pill' | 'banner';
@@ -23,7 +23,7 @@ export const CompanyBadge: React.FC<CompanyBadgeProps> = ({
   if (variant === 'micro') {
     return (
       <View style={[styles.microContainer, style]}>
-        <Building2 size={11} color={companyTokens.colors.verifiedBlue} strokeWidth={2.4} />
+        <BuildingIcon size={11} color={companyTokens.colors.verifiedBlue} strokeWidth={2.4} />
         <Text style={styles.microText} numberOfLines={1}>
           {label || 'Agency'}
         </Text>
@@ -34,7 +34,7 @@ export const CompanyBadge: React.FC<CompanyBadgeProps> = ({
   if (variant === 'banner') {
     return (
       <View style={[styles.bannerContainer, style]}>
-        <ShieldCheck size={16} color={companyTokens.colors.verifiedBlue} strokeWidth={2.2} />
+        <ShieldCheckIcon size={16} color={companyTokens.colors.verifiedBlue} strokeWidth={2.2} />
         <View style={styles.bannerTextGroup}>
           <Text style={styles.bannerTitle}>
             {label || 'Verified Service Agency'}
@@ -49,7 +49,7 @@ export const CompanyBadge: React.FC<CompanyBadgeProps> = ({
             </Text>
           )}
         </View>
-        <CheckCircle2 size={16} color={companyTokens.colors.escrowGreen} strokeWidth={2.4} />
+        <CheckCircleIcon size={16} color={companyTokens.colors.escrowGreen} strokeWidth={2.4} />
       </View>
     );
   }
@@ -57,7 +57,7 @@ export const CompanyBadge: React.FC<CompanyBadgeProps> = ({
   // Default 'pill' variant
   return (
     <View style={[styles.pillContainer, style]}>
-      <ShieldCheck size={12} color={companyTokens.colors.verifiedBlue} strokeWidth={2.4} />
+      <ShieldCheckIcon size={12} color={companyTokens.colors.verifiedBlue} strokeWidth={2.4} />
       <Text style={styles.pillText} numberOfLines={1}>
         {label || (ntnNumber ? `NTN Verified` : 'Verified Agency')}
       </Text>

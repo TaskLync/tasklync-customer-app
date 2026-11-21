@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { X, ShieldAlert, Check, AlertCircle } from 'lucide-react-native';
+import { AlertCircleIcon, CheckIcon, CloseIcon, ShieldAlertIcon } from '../ui/Icon/icons';
 import { BottomSheet, BottomSheetScrollView } from '../layout/BottomSheet';
 import { BlockReason, BlockReasonOption } from '../../types/moderation.types';
 import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
@@ -54,7 +54,7 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
       await onBlock(workerId, selectedReason || undefined);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to block worker. Please try again.');
+      setErrorMsg(err?.message || "Couldn't block this worker. Please try again.");
     }
   };
 
@@ -69,7 +69,7 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
         {/* Sheet Header */}
         <View style={styles.headerRow}>
           <View style={styles.headerTitleBox}>
-            <ShieldAlert size={20} color={palette.danger} style={styles.shieldIcon} />
+            <ShieldAlertIcon size={20} color={palette.danger} style={styles.shieldIcon} />
             <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3}>
               Block {workerName}?
             </Text>
@@ -81,7 +81,7 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
             accessibilityLabel="Close sheet"
             disabled={isLoading}
           >
-            <X size={20} color={colors.textSecondary} />
+            <CloseIcon size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -97,9 +97,9 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
           {/* Edge Case Warning: Active Booking */}
           {hasActiveBooking && (
             <View style={styles.activeBookingWarning}>
-              <AlertCircle size={18} color={palette.amber700} style={styles.warningIcon} />
+              <AlertCircleIcon size={18} color={palette.amber700} style={styles.warningIcon} />
               <Text style={styles.activeBookingText} maxFontSizeMultiplier={1.3}>
-                You still have an active booking with this worker — blocking won't cancel or affect your ongoing service.
+                You still have an active booking with this worker. Blocking won't cancel or change it.
               </Text>
             </View>
           )}
@@ -129,7 +129,7 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
                       isSelected && styles.radioCircleSelected,
                     ]}
                   >
-                    {isSelected && <Check size={12} color={palette.pureWhite} strokeWidth={3} />}
+                    {isSelected && <CheckIcon size={12} color={palette.pureWhite} strokeWidth={3} />}
                   </View>
                   <Text
                     style={[
@@ -165,7 +165,7 @@ export const BlockWorkerSheet: React.FC<BlockWorkerSheetProps> = ({
               {isLoading ? (
                 <ActivityIndicator size="small" color={palette.pureWhite} />
               ) : (
-                <Text style={styles.blockBtnText}>Block Service Provider</Text>
+                <Text style={styles.blockBtnText}>Block worker</Text>
               )}
             </TouchableOpacity>
 

@@ -10,7 +10,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RefreshCw, Check } from 'lucide-react-native';
+import { CheckIcon, RefreshIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design/typography';
 import { NETWORK_CONFIG } from '../../config/networkConfig';
 import { SyncState } from '../../types/network.types';
@@ -138,10 +138,10 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = React.memo(
           ]}
         >
           {isCompleted ? (
-            <Check size={12} color={palette.green700} strokeWidth={2.5} style={styles.icon} />
+            <CheckIcon size={12} color={palette.green700} strokeWidth={2.5} style={styles.icon} />
           ) : (
             <Animated.View style={[styles.icon, iconRotationStyle]}>
-              <RefreshCw size={12} color={palette.gray600} strokeWidth={2.2} />
+              <RefreshIcon size={12} color={palette.gray600} strokeWidth={2.2} />
             </Animated.View>
           )}
           <Text

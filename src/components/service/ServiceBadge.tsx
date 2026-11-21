@@ -11,7 +11,7 @@ import Animated, {
   withSpring,
   withDelay,
 } from 'react-native-reanimated';
-import { Flame, Sparkles, Tag } from 'lucide-react-native';
+import { FireIcon, SparklesIcon, TagIcon } from '../ui/Icon/icons';
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -52,19 +52,19 @@ export const ServiceBadge: React.FC<ServiceBadgeProps> = ({
         return {
           backgroundColor: palette.warning,
           label: 'Popular',
-          Icon: Flame,
+          Icon: FireIcon,
         };
       case 'new':
         return {
           backgroundColor: palette.info,
           label: 'New',
-          Icon: Sparkles,
+          Icon: SparklesIcon,
         };
       case 'deal':
         return {
           backgroundColor: palette.danger,
           label: 'Deal',
-          Icon: Tag,
+          Icon: TagIcon,
         };
       case 'limited':
         return {

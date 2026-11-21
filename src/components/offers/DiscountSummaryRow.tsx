@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { Tag } from 'lucide-react-native';
+import { TagIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { formatRs, getBookingSavings } from '../../utils/offers';
 import type { BookingDiscountFields } from '../../types/offers.types';
@@ -48,7 +48,7 @@ export const DiscountSummaryRow: React.FC<DiscountSummaryRowProps> = ({
   if (variant === 'source') {
     return (
       <View style={[styles.source, style]} accessible accessibilityLabel={caption}>
-        <Tag size={13} color={palette.green700} strokeWidth={2.4} />
+        <TagIcon size={13} color={palette.green700} strokeWidth={2.4} />
         <Text style={styles.sourceText} numberOfLines={1}>
           {caption}
         </Text>
@@ -63,7 +63,7 @@ export const DiscountSummaryRow: React.FC<DiscountSummaryRowProps> = ({
       accessibilityLabel={`You saved ${formatRs(savings.amount)}. ${caption}`}
     >
       <View style={styles.iconWrap}>
-        <Tag size={14} color={palette.green700} strokeWidth={2.4} />
+        <TagIcon size={14} color={palette.green700} strokeWidth={2.4} />
       </View>
       <View style={styles.textCol}>
         <Text style={styles.saved}>You saved {formatRs(savings.amount)}</Text>

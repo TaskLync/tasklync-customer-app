@@ -2,6 +2,7 @@ import { apiClient } from './client';
 import { useAuthStore } from '../../store/auth.store';
 import {
   UserProfile,
+  UserProfileStats,
   UserPreferences,
   UserAddress,
   UpdateUserPayload,
@@ -31,6 +32,12 @@ export function setCachedUserProfile(profile: UserProfile): void {
   } catch {}
 }
 
+/** Server stats only; a missing or non-numeric value stays undefined (never a made-up number). */
+function toStats(raw: any): UserProfileStats {
+  const n = Number(raw?.total_bookings ?? raw?.stats?.completed_bookings);
+  return Number.isFinite(n) && n >= 0 ? { completed_bookings: n } : {};
+}
+
 export const userApi = {
   /**
    * 2.1 Get Current User Profile (GET /users/me)
@@ -47,12 +54,8 @@ export const userApi = {
       avatar_url: authUser?.avatar_url || null,
       preferred_language: 'en',
       preferred_currency: 'PKR',
-      stats: {
-        bookings_count: 0,
-        rating: 5.0,
-        completed_jobs: 0,
-        loyalty_points: 0,
-      },
+      // Offline / signed-out placeholder: no statistics are known, so none are invented.
+      stats: {},
       is_verified: true,
       created_at: new Date().toISOString(),
     };
@@ -74,12 +77,8 @@ export const userApi = {
           avatar_url: raw.avatar_url || raw.avatarUrl || authUser?.avatar_url || null,
           preferred_language: raw.preferred_language || raw.preferredLanguage || 'en',
           preferred_currency: raw.preferred_currency || raw.preferredCurrency || 'PKR',
-          stats: {
-            bookings_count: Number(raw.stats?.bookings_count || raw.stats?.bookingsCount || raw.bookings_count || 5),
-            rating: raw.stats?.rating ? Number(raw.stats.rating) : 4.9,
-            completed_jobs: Number(raw.stats?.completed_jobs || raw.completed_jobs || 5),
-            loyalty_points: Number(raw.stats?.loyalty_points || 250),
-          },
+          // Only what the server actually sent. The live count comes from GET /bookings/stats (useCustomerStats).
+          stats: toStats(raw),
           is_verified: Boolean(raw.is_verified ?? raw.isVerified ?? true),
           created_at: raw.created_at || raw.createdAt || new Date().toISOString(),
         };

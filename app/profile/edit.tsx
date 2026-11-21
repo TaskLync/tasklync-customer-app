@@ -2,7 +2,13 @@ import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Lock, Camera, Image as ImageIcon, X } from 'lucide-react-native';
+import {
+  ArrowLeftIcon,
+  CameraIcon,
+  CloseIcon,
+  ImageIcon,
+  LockIcon,
+} from '../../src/components/ui/Icon/icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import { BottomSheet } from '../../src/components/layout/BottomSheet';
@@ -53,10 +59,10 @@ export default function EditProfileScreen() {
   const handleBackPress = useCallback(() => {
     if (isDirty) {
       showAlert(
-        'Discard Changes?',
-        'You have unsaved edits. Are you sure you want to leave without saving?',
+        'Discard changes?',
+        'You have unsaved changes. Leave without saving?',
         [
-          { text: 'Keep Editing', style: 'cancel' },
+          { text: 'Keep editing', style: 'cancel' },
           {
             text: 'Discard',
             style: 'destructive',
@@ -81,7 +87,7 @@ export default function EditProfileScreen() {
 
       router.back();
     } catch (err: any) {
-      showAlert('Update Failed', err?.message || 'Unable to update profile. Please try again.');
+      showAlert("Couldn't update profile", err?.message || 'Please try again.');
     }
   };
 
@@ -95,7 +101,7 @@ export default function EditProfileScreen() {
       if (source === 'camera') {
         const { granted } = await ImagePicker.requestCameraPermissionsAsync();
         if (!granted) {
-          showAlert('Permission Denied', 'Camera permission is required to take a profile photo.');
+          showAlert('Camera access needed', 'Allow camera access in Settings to take a profile photo.');
           return;
         }
         result = await ImagePicker.launchCameraAsync({
@@ -107,7 +113,7 @@ export default function EditProfileScreen() {
       } else {
         const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!granted) {
-          showAlert('Permission Denied', 'Gallery permission is required to select a photo.');
+          showAlert('Photo access needed', 'Allow photo access in Settings to choose a profile photo.');
           return;
         }
         result = await ImagePicker.launchImageLibraryAsync({
@@ -150,7 +156,7 @@ export default function EditProfileScreen() {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={22} color={colors.textPrimary} />
+            <ArrowLeftIcon size={22} color={colors.textPrimary} />
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>Edit Profile</Text>
@@ -233,7 +239,7 @@ export default function EditProfileScreen() {
             <View style={styles.inputGroup}>
               <View style={styles.labelWithLock}>
                 <Text style={styles.inputLabel}>Phone Number</Text>
-                <Lock size={12} color={colors.textMuted} />
+                <LockIcon size={12} color={colors.textMuted} />
               </View>
               <View style={styles.disabledInput}>
                 <Text style={styles.disabledInputText}>{user?.phone || '+92 300 0000000'}</Text>
@@ -271,7 +277,7 @@ export default function EditProfileScreen() {
 
             {/* Language Toggle */}
             <PreferenceToggleRow
-              label="Display Language"
+              label="Display language"
               subtitle="Select your preferred app language"
               options={[
                 { label: 'English', value: 'en' },
@@ -283,7 +289,7 @@ export default function EditProfileScreen() {
 
             {/* Currency Toggle */}
             <PreferenceToggleRow
-              label="Pricing Currency"
+              label="Currency"
               subtitle="Default currency for estimates & invoices"
               options={[
                 { label: 'PKR (Rs)', value: 'PKR' },
@@ -309,7 +315,7 @@ export default function EditProfileScreen() {
                 style={styles.sheetCloseBtn}
                 onPress={() => setPhotoSheetVisible(false)}
               >
-                <X size={20} color={colors.textSecondary} />
+                <CloseIcon size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -319,7 +325,7 @@ export default function EditProfileScreen() {
               onPress={() => handlePickPhoto('camera')}
             >
               <View style={styles.optionIconCircle}>
-                <Camera size={20} color={colors.primaryDark} />
+                <CameraIcon size={20} color={colors.primaryDark} />
               </View>
               <View style={styles.optionTextCol}>
                 <Text style={styles.optionTitle}>Take New Photo</Text>

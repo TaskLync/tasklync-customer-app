@@ -7,27 +7,27 @@ import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 export const DISPUTE_REASONS: DisputeReasonOption[] = [
   {
     key: 'work_not_completed',
-    label: 'Incomplete or Unfinished Work',
+    label: 'Incomplete or unfinished work',
     description: 'The job was left incomplete or key agreed tasks were skipped.',
   },
   {
     key: 'poor_quality',
-    label: 'Substandard Service Quality',
-    description: 'Workmanship was significantly below professional expectations.',
+    label: 'Poor quality work',
+    description: 'The quality of the work was much worse than expected.',
   },
   {
     key: 'worker_no_show',
-    label: 'Worker Did Not Show Up',
-    description: 'The service professional was absent and did not arrive for the appointment.',
+    label: 'Worker did not show up',
+    description: 'The worker did not come and did not arrive for the appointment.',
   },
   {
     key: 'overcharged',
-    label: 'Incorrect Charge / Demanded Extra Fees',
+    label: 'Wrong charge or asked for extra money',
     description: 'Billed incorrectly or requested unauthorized additional cash payments.',
   },
   {
     key: 'other',
-    label: 'Other Service or Conduct Issue',
+    label: 'Other problem',
     description: 'Property damage, unprofessional conduct, or policy violation.',
   },
 ];

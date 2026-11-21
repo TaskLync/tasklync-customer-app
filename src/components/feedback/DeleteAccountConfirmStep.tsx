@@ -13,7 +13,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { AlertTriangle } from 'lucide-react-native';
+import { WarningIcon } from '../ui/Icon/icons';
 import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -78,7 +78,7 @@ export const DeleteAccountConfirmStep: React.FC<DeleteAccountConfirmStepProps> =
 
       {/* Warning Box */}
       <View style={styles.warningBox}>
-        <AlertTriangle size={20} color={colors.dangerMedium} style={styles.warningIcon} />
+        <WarningIcon size={20} color={colors.dangerMedium} style={styles.warningIcon} />
         <View style={styles.warningTextContainer}>
           <Text style={styles.warningTitle}>This action is permanent and irreversible</Text>
           <Text style={styles.warningBody}>
@@ -134,7 +134,7 @@ export const DeleteAccountConfirmStep: React.FC<DeleteAccountConfirmStepProps> =
           {isLoading ? (
             <ActivityIndicator size="small" color={palette.pureWhite} />
           ) : (
-            <Text style={styles.deleteBtnText}>Permanently Delete My Account</Text>
+            <Text style={styles.deleteBtnText}>Delete my account</Text>
           )}
         </TouchableOpacity>
 

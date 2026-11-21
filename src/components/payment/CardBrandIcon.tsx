@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { CardBrand } from '../../types/payment.types';
-import { CreditCard, Banknote } from 'lucide-react-native';
+import { CashIcon, CreditCardIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -74,7 +74,7 @@ export const CardBrandIcon: React.FC<CardBrandIconProps> = ({ brand = 'unknown',
           },
         ]}
       >
-        <Banknote size={15} color={palette.green800} />
+        <CashIcon size={15} color={palette.green800} />
       </View>
     );
   }
@@ -172,7 +172,7 @@ export const CardBrandIcon: React.FC<CardBrandIconProps> = ({ brand = 'unknown',
         },
       ]}
     >
-      <CreditCard size={14} color={palette.gray600} />
+      <CreditCardIcon size={14} color={palette.gray600} />
     </View>
   );
 };

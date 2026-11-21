@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { DeleteAccountReason, DeleteAccountReasonOption } from '../../types/moderation.types';
 import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
-import { Check } from 'lucide-react-native';
+import { CheckIcon } from '../ui/Icon/icons';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface DeleteAccountReasonStepProps {
@@ -67,7 +67,7 @@ export const DeleteAccountReasonStep: React.FC<DeleteAccountReasonStepProps> = (
                   isSelected && styles.radioCircleSelected,
                 ]}
               >
-                {isSelected && <Check size={12} color={palette.pureWhite} strokeWidth={3} />}
+                {isSelected && <CheckIcon size={12} color={palette.pureWhite} strokeWidth={3} />}
               </View>
               <Text
                 style={[

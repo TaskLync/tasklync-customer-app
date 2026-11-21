@@ -53,6 +53,15 @@ export const layout = {
   tabBarH: 60,
   paddingBottom: 8,
 
+  // OTP verification
+  otpCellH: 54,
+  otpCellMaxW: 52,
+  otpCellGap: 8,
+  otpCellBorderW: 1,
+  otpCaretW: 1.5,
+  otpCaretH: 24,
+  otpIconTile: 48,
+
   // Grid Constants
   categoryCardSize: 106,
   categoryCardH: 100,

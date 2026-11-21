@@ -7,38 +7,36 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Modal,
   TextInput,
-  Pressable,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import {
-  ArrowLeft,
-  Clock,
-  MapPin,
-  Calendar,
-  MessageSquare,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  FileText,
-  ChevronRight,
-  ShieldCheck,
-  Star,
-  Phone,
-  Maximize2,
-} from 'lucide-react-native';
+  ArrowLeftIcon,
+  CalendarIcon,
+  ChatIcon,
+  CheckCircleIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  CloseCircleIcon,
+  ExpandIcon,
+  LocationIcon,
+  ShieldCheckIcon,
+  WarningIcon,
+} from '../../../src/components/ui/Icon/icons';
 
 import { typography } from '../../../src/design';
 import { WorkerAvatar } from '../../../src/components/worker/WorkerAvatar';
+import { WorkerProfileLink } from '../../../src/components/worker/WorkerProfileLink';
 import { useCustomRequestDetail } from '../../../src/hooks/custom-requests/useCustomRequestDetail';
 import { useWorkerProfile } from '../../../src/hooks/useWorkerProfile';
 import { CustomRequestStatus } from '../../../src/types/customRequest.types';
 import { ImageViewer } from '../../../src/components/common/ImageViewer';
 import { chatApi } from '../../../src/services/api/chat.api';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
+import { AppDialog } from '../../../src/components/feedback/AppDialog';
+const WORKER_AVATAR_SIZE = 52;
 
 export default function CustomRequestDetailScreen() {
   const { colors, palette } = useAppTheme();
@@ -66,7 +64,7 @@ export default function CustomRequestDetailScreen() {
     request?.provider_name ||
     request?.worker_name ||
     workerProfile?.name ||
-    'Assigned Professional';
+    'Assigned Worker';
   const resolvedWorkerAvatar =
     request?.worker_avatar ||
     workerProfile?.avatarUrl ||
@@ -141,10 +139,10 @@ export default function CustomRequestDetailScreen() {
   if (isError || !request) {
     return (
       <SafeAreaView style={styles.centerContainer} edges={['top']}>
-        <AlertTriangle size={48} color={palette.red500} />
-        <Text style={styles.errorTitle}>Request Not Found</Text>
+        <WarningIcon size={48} color={palette.red500} />
+        <Text style={styles.errorTitle}>Request not found</Text>
         <Text style={styles.errorSubtitle}>
-          Unable to find this service request or access was denied.
+          We couldn't find this request. It may have been removed or belong to another account.
         </Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
           <Text style={styles.retryButtonText}>Retry</Text>
@@ -187,7 +185,7 @@ export default function CustomRequestDetailScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <ArrowLeft size={22} color={palette.gray900} />
+          <ArrowLeftIcon size={22} color={palette.gray900} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>Custom Request</Text>
@@ -235,27 +233,27 @@ export default function CustomRequestDetailScreen() {
         {/* Status Callout Banner */}
         {request.status === CustomRequestStatus.SUBMITTED && (
           <View style={[styles.banner, styles.bannerAmber]}>
-            <Clock size={18} color={colors.warningMedium} />
+            <ClockIcon size={18} color={colors.warningMedium} />
             <Text style={[styles.bannerText, styles.bannerTextAmber]}>
-              Request Sent — Professional will review your requirements and respond with a formal quote shortly.
+              Request sent. The worker will review your details and send you a quote.
             </Text>
           </View>
         )}
 
         {request.status === CustomRequestStatus.UNDER_REVIEW && (
           <View style={[styles.banner, styles.bannerBlue]}>
-            <Clock size={18} color={colors.textInfo} />
+            <ClockIcon size={18} color={colors.textInfo} />
             <Text style={[styles.bannerText, styles.bannerTextBlue]}>
-              Under Review — Professional is currently evaluating your problem details and photos.
+              Under review. The worker is looking at your details and photos.
             </Text>
           </View>
         )}
 
         {request.status === CustomRequestStatus.CLARIFICATION_REQUESTED && (
           <View style={[styles.banner, styles.bannerPurple]}>
-            <MessageSquare size={18} color={palette.purple600} />
+            <ChatIcon size={18} color={palette.purple600} />
             <Text style={[styles.bannerText, styles.bannerTextPurple]}>
-              Clarification Needed — Professional has sent you a message to clarify details before quoting.
+              The worker has a question. Reply in chat so they can prepare your quote.
             </Text>
           </View>
         )}
@@ -267,7 +265,7 @@ export default function CustomRequestDetailScreen() {
             activeOpacity={0.8}
           >
             <View style={styles.bannerHighlightLeft}>
-              <CheckCircle2 size={22} color={colors.textGreen} />
+              <CheckCircleIcon size={22} color={colors.textGreen} />
               <View style={{ marginLeft: 10, flex: 1 }}>
                 <Text style={styles.bannerHighlightTitle}>Quote Ready for Review!</Text>
                 <Text style={styles.bannerHighlightSubtitle}>
@@ -277,7 +275,7 @@ export default function CustomRequestDetailScreen() {
             </View>
             <View style={styles.bannerHighlightCta}>
               <Text style={styles.bannerHighlightCtaText}>Review</Text>
-              <ChevronRight size={16} color={colors.textGreen} />
+              <ChevronRightIcon size={16} color={colors.textGreen} />
             </View>
           </TouchableOpacity>
         )}
@@ -289,7 +287,7 @@ export default function CustomRequestDetailScreen() {
             activeOpacity={0.8}
           >
             <View style={styles.bannerHighlightLeft}>
-              <CheckCircle2 size={22} color={colors.textGreen} />
+              <CheckCircleIcon size={22} color={colors.textGreen} />
               <View style={{ marginLeft: 10, flex: 1 }}>
                 <Text style={styles.bannerHighlightTitle}>Quote Accepted</Text>
                 <Text style={styles.bannerHighlightSubtitle}>
@@ -299,7 +297,7 @@ export default function CustomRequestDetailScreen() {
             </View>
             <View style={styles.bannerHighlightCta}>
               <Text style={styles.bannerHighlightCtaText}>Checkout</Text>
-              <ChevronRight size={16} color={colors.textGreen} />
+              <ChevronRightIcon size={16} color={colors.textGreen} />
             </View>
           </TouchableOpacity>
         )}
@@ -315,19 +313,19 @@ export default function CustomRequestDetailScreen() {
               }
             }}
           >
-            <CheckCircle2 size={18} color={colors.textGreen} />
+            <CheckCircleIcon size={18} color={colors.textGreen} />
             <Text style={[styles.bannerText, styles.bannerTextGreen]}>
-              Booking Confirmed — Tap to view your scheduled service appointment.
+              Booking placed. Tap to view your booking.
             </Text>
           </TouchableOpacity>
         )}
 
         {request.status === CustomRequestStatus.DECLINED && (
           <View style={[styles.banner, styles.bannerRed]}>
-            <XCircle size={18} color={colors.dangerMedium} />
+            <CloseCircleIcon size={18} color={colors.dangerMedium} />
             <View style={{ marginLeft: 8, flex: 1 }}>
               <Text style={[styles.bannerText, styles.bannerTextRed]}>
-                Request Declined by Professional
+                Request Declined by Worker
               </Text>
               {request.decline_reason ? (
                 <Text style={styles.declineReasonText}>Reason: {request.decline_reason}</Text>
@@ -338,7 +336,7 @@ export default function CustomRequestDetailScreen() {
 
         {request.status === CustomRequestStatus.CANCELLED && (
           <View style={[styles.banner, styles.bannerGray]}>
-            <XCircle size={18} color={colors.textSecondary} />
+            <CloseCircleIcon size={18} color={colors.textSecondary} />
             <View style={{ marginLeft: 8, flex: 1 }}>
               <Text style={[styles.bannerText, styles.bannerTextGray]}>Request Cancelled</Text>
               {request.cancellation_reason ? (
@@ -350,18 +348,25 @@ export default function CustomRequestDetailScreen() {
 
         {/* Assigned Professional Card */}
         <View style={styles.sectionCard}>
-          <Text style={styles.cardHeaderTitle}>Assigned Professional</Text>
+          <Text style={styles.cardHeaderTitle}>Assigned Worker</Text>
           <View style={styles.workerRow}>
-            <WorkerAvatar
-              uri={resolvedWorkerAvatar}
-              name={resolvedWorkerName}
-              size={52}
-            />
+            <WorkerProfileLink
+              workerId={request.worker_id}
+              isCompany={request.provider_type === 'COMPANY'}
+              workerName={resolvedWorkerName}
+              size={WORKER_AVATAR_SIZE}
+            >
+              <WorkerAvatar
+                uri={resolvedWorkerAvatar}
+                name={resolvedWorkerName}
+                size={WORKER_AVATAR_SIZE}
+              />
+            </WorkerProfileLink>
             <View style={styles.workerInfo}>
               <View style={styles.workerNameRow}>
                 <Text style={styles.workerName}>{resolvedWorkerName}</Text>
                 <View style={styles.verifiedPill}>
-                  <ShieldCheck size={11} color={colors.textGreen} />
+                  <ShieldCheckIcon size={11} color={colors.textGreen} />
                   <Text style={styles.verifiedPillText}>Verified</Text>
                 </View>
                 {request.provider_type === 'COMPANY' ? (
@@ -386,7 +391,7 @@ export default function CustomRequestDetailScreen() {
                 <ActivityIndicator size="small" color={palette.green600} />
               ) : (
                 <>
-                  <MessageSquare size={16} color={palette.green600} />
+                  <ChatIcon size={16} color={palette.green600} />
                   <Text style={styles.workerActionBtnText}>Message</Text>
                 </>
               )}
@@ -396,7 +401,7 @@ export default function CustomRequestDetailScreen() {
               style={styles.workerActionBtnSecondary}
               onPress={() => router.push(`/worker/${request.worker_id}` as any)}
             >
-              <Text style={styles.workerActionBtnSecondaryText}>View Profile</Text>
+              <Text style={styles.workerActionBtnSecondaryText}>View profile</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -430,7 +435,7 @@ export default function CustomRequestDetailScreen() {
                 >
                   <Image source={{ uri: item.media_url }} style={styles.mediaThumb} contentFit="cover" />
                   <View style={styles.expandOverlay}>
-                    <Maximize2 size={12} color={colors.pureWhite} />
+                    <ExpandIcon size={12} color={colors.pureWhite} />
                   </View>
                 </TouchableOpacity>
               ))}
@@ -443,7 +448,7 @@ export default function CustomRequestDetailScreen() {
           <Text style={styles.cardHeaderTitle}>Service Location</Text>
           <View style={styles.addressRow}>
             <View style={styles.addressIconWrap}>
-              <MapPin size={20} color={palette.green600} />
+              <LocationIcon size={20} color={palette.green600} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.addressText}>{request.address_text}</Text>
@@ -458,13 +463,13 @@ export default function CustomRequestDetailScreen() {
             <View style={styles.scheduleRow}>
               {request.preferred_date && (
                 <View style={styles.schedulePill}>
-                  <Calendar size={14} color={palette.gray600} />
+                  <CalendarIcon size={14} color={palette.gray600} />
                   <Text style={styles.schedulePillText}>{request.preferred_date}</Text>
                 </View>
               )}
               {request.preferred_time_slot && (
                 <View style={styles.schedulePill}>
-                  <Clock size={14} color={palette.gray600} />
+                  <ClockIcon size={14} color={palette.gray600} />
                   <Text style={styles.schedulePillText}>{request.preferred_time_slot}</Text>
                 </View>
               )}
@@ -520,7 +525,7 @@ export default function CustomRequestDetailScreen() {
             onPress={() => router.push(`/custom-request/${request.id}/checkout` as any)}
             activeOpacity={0.8}
           >
-            <Text style={styles.reviewQuoteCtaText}>Complete Appointment Checkout →</Text>
+            <Text style={styles.reviewQuoteCtaText}>Confirm booking →</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -534,47 +539,29 @@ export default function CustomRequestDetailScreen() {
       />
 
       {/* Cancel Request Confirmation Modal */}
-      <Modal
+      <AppDialog
         visible={cancelModalVisible}
-        transparent
-        animationType="fade"
+        tone="warning"
+        title="Cancel this request?"
+        message="The worker will be told that you cancelled."
         onRequestClose={() => setCancelModalVisible(false)}
+        dismissOnBackdropPress
+        actions={[
+          { label: 'Keep request', onPress: () => setCancelModalVisible(false), variant: 'secondary' },
+          { label: 'Yes, cancel', onPress: handleConfirmCancel, variant: 'destructive' },
+        ]}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setCancelModalVisible(false)}>
-          <View style={styles.cancelSheet}>
-            <Text style={styles.cancelSheetTitle}>Cancel Service Request?</Text>
-            <Text style={styles.cancelSheetSubtitle}>
-              Are you sure you want to cancel this request? The technician will be notified.
-            </Text>
-
-            <TextInput
-              style={styles.cancelReasonInput}
-              placeholder="Reason for cancellation (optional)"
-              placeholderTextColor={palette.gray400}
-              value={cancelReason}
-              onChangeText={setCancelReason}
-              maxLength={500}
-              multiline
-              numberOfLines={3}
-            />
-
-            <View style={styles.modalButtonsRow}>
-              <TouchableOpacity
-                style={styles.modalDismissBtn}
-                onPress={() => setCancelModalVisible(false)}
-              >
-                <Text style={styles.modalDismissBtnText}>Keep Request</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalConfirmBtn}
-                onPress={handleConfirmCancel}
-              >
-                <Text style={styles.modalConfirmBtnText}>Yes, Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Pressable>
-      </Modal>
+        <TextInput
+          style={styles.cancelReasonInput}
+          placeholder="Reason for cancelling (optional)"
+          placeholderTextColor={palette.gray400}
+          value={cancelReason}
+          onChangeText={setCancelReason}
+          maxLength={500}
+          multiline
+          numberOfLines={3}
+        />
+      </AppDialog>
     </SafeAreaView>
   );
 }

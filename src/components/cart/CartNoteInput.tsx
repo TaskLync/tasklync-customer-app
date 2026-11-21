@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ChevronDownIcon, ChevronUpIcon } from '../ui/Icon/icons';
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -51,9 +51,9 @@ export const CartNoteInput: FC<CartNoteInputProps> = ({
         </View>
 
         {isExpanded ? (
-          <ChevronUp size={18} color={colors.textMuted} />
+          <ChevronUpIcon size={18} color={colors.textMuted} />
         ) : (
-          <ChevronDown size={18} color={colors.textMuted} />
+          <ChevronDownIcon size={18} color={colors.textMuted} />
         )}
       </Pressable>
 

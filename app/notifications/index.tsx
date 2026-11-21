@@ -3,7 +3,12 @@ import { View, Text, StyleSheet, Pressable, RefreshControl, ActivityIndicator, L
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
-import { ArrowLeft, Check, BellOff, ChevronRight } from 'lucide-react-native';
+import {
+  ArrowLeftIcon,
+  BellOffIcon,
+  CheckDoubleIcon,
+  ChevronRightIcon,
+} from '../../src/components/ui/Icon/icons';
 
 import { useNotifications } from '../../src/hooks/useNotifications';
 import { useNotificationPermission } from '../../src/hooks/useNotificationPermission';
@@ -12,26 +17,23 @@ import {
   NotificationItem as NotificationItemType,
   NotificationListItem,
 } from '../../src/types/notification.types';
-import { NotificationItem } from '../../src/components/notification/NotificationItem';
+import { NotificationItem, NOTIFICATION_ROW } from '../../src/components/notification/NotificationItem';
 import { NotificationSwipeRow } from '../../src/components/notification/NotificationSwipeRow';
 import { NotificationGroupHeader } from '../../src/components/notification/NotificationGroupHeader';
 import { EmptyNotifications } from '../../src/components/feedback/EmptyState/EmptyNotifications';
 import { ErrorState } from '../../src/components/feedback/ErrorState';
+import { Skeleton, SkeletonGroup } from '../../src/components/ui/Skeleton/Skeleton';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { resolveNotificationRoute } from '../../src/utils/deepLink';
-import { fontFamily, radius } from '../../src/design';
+import { fontFamily } from '../../src/design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
 /**
- * NotificationsScreen
- *
- * Production-grade minimalist notification center:
- * - Clean centered header with ergonomic back button & subtle green "Mark all as read" action
- * - Compact segmented filter pills ("All", "Unread (X)") with clear visual states
- * - Elegant grouping ("Today", "Yesterday", "Earlier") without noisy dividers or badges
- * - High-performance FlashList with swipe actions (Mark read / Delete)
- * - Safe area handling for Android status & navigation bars
+ * Notifications
+ * White / charcoal page, flat list rows with semantic neutral icons, date sections, a compact
+ * segmented All / Unread control and a quiet "Mark all read" action that waits for the server.
+ * Data, pagination, grouping, swipe actions and deep links come from useNotifications / resolveNotificationRoute.
  */
 export default function NotificationsScreen() {
   const { colors } = useAppTheme();
@@ -57,6 +59,7 @@ export default function NotificationsScreen() {
     refetch,
     markRead,
     markAllRead,
+    isMarkingAllRead,
     deleteNotification,
   } = useNotifications();
 
@@ -71,38 +74,26 @@ export default function NotificationsScreen() {
     }
   }, [isUndetermined, canAskAgain, request, register]);
 
-  // Navigation & Deep Linking Handler
   const handleItemPress = useCallback(
     (item: NotificationItemType) => {
-      // 1. Optimistic read mark
       if (!item.is_read) {
         markRead(item.id);
       }
-
-      // 2. Resolve destination path
       const targetRoute = resolveNotificationRoute({
         deep_link: item.deep_link ?? undefined,
         type: item.category,
         template_key: item.template_key,
         ...(item.data || {}),
       });
-
       if (targetRoute && targetRoute !== '/notifications') {
         try {
           router.push(targetRoute as any);
         } catch {
-          // Fallback: stay on feed
+          // Destination unavailable: stay on the feed.
         }
       }
     },
     [markRead, router]
-  );
-
-  const handleFilterChange = useCallback(
-    (filter: 'all' | 'unread') => {
-      setActiveFilter(filter);
-    },
-    [setActiveFilter]
   );
 
   const handleEndReached = useCallback(() => {
@@ -111,159 +102,130 @@ export default function NotificationsScreen() {
     }
   }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]);
 
-  // FlashList Render Item
   const renderItem = useCallback(
     ({ item }: { item: NotificationListItem }) => {
       if (item.type === 'header') {
         return <NotificationGroupHeader title={item.title} count={item.count} />;
       }
-
       return (
-        <NotificationSwipeRow
-          item={item.notification}
-          onMarkRead={markRead}
-          onDelete={deleteNotification}
-        >
-          <NotificationItem
-            item={item.notification}
-            onPress={handleItemPress}
-          />
+        <NotificationSwipeRow item={item.notification} onMarkRead={markRead} onDelete={deleteNotification}>
+          <NotificationItem item={item.notification} onPress={handleItemPress} />
         </NotificationSwipeRow>
       );
     },
     [deleteNotification, handleItemPress, markRead]
   );
 
-  const getItemType = useCallback((item: NotificationListItem) => {
-    return item.type;
-  }, []);
+  const getItemType = useCallback((item: NotificationListItem) => item.type, []);
+
+  const showMarkAll = unreadCount > 0 || isMarkingAllRead;
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ThemedStatusBar />
 
-      {/* Screen Header */}
+      {/* Header: back, centred title, quiet "Mark all read" (only when there is something unread) */}
       <View style={styles.header}>
-        {/* Back Button */}
         <Pressable
-          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+          style={({ pressed }) => [styles.iconButton, pressed && styles.iconButtonPressed]}
           onPress={() => router.back()}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.4} />
+          <ArrowLeftIcon size={22} color={colors.textPrimary} strokeWidth={2} />
         </Pressable>
 
-        {/* Centered Notifications Title */}
         <View style={styles.titleContainer} pointerEvents="none">
-          <Text style={styles.headerTitle} numberOfLines={1}>
+          <Text style={styles.headerTitle} numberOfLines={1} accessibilityRole="header">
             Notifications
           </Text>
         </View>
 
-        {/* Right Action: Mark all as read */}
-        <View style={styles.rightActionContainer}>
-          {unreadCount > 0 ? (
+        <View style={styles.rightSlot}>
+          {showMarkAll ? (
             <Pressable
-              style={({ pressed }) => [
-                styles.markAllButton,
-                pressed && styles.markAllButtonPressed,
-              ]}
+              style={({ pressed }) => [styles.markAll, pressed && styles.markAllPressed]}
               onPress={markAllRead}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              disabled={isMarkingAllRead}
+              hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="Mark all notifications as read"
+              accessibilityState={{ busy: isMarkingAllRead, disabled: isMarkingAllRead }}
             >
-              <Check size={14} color={colors.primaryDark} strokeWidth={2.4} />
-              <Text style={styles.markAllText}>Mark all as read</Text>
+              {isMarkingAllRead ? (
+                <ActivityIndicator size="small" color={colors.textSecondary} />
+              ) : (
+                <CheckDoubleIcon size={16} color={colors.primaryDark} strokeWidth={2} />
+              )}
+              <Text style={[styles.markAllText, isMarkingAllRead && styles.markAllTextBusy]} maxFontSizeMultiplier={1.2}>
+                Mark all read
+              </Text>
             </Pressable>
-          ) : (
-            <View style={styles.rightActionPlaceholder} />
-          )}
+          ) : null}
         </View>
       </View>
 
-      {/* Filter Tabs (All / Unread) */}
-      <View style={styles.filterBar}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.filterPill,
-            activeFilter === 'all' ? styles.filterPillActive : styles.filterPillInactive,
-            pressed && styles.filterPillPressed,
-          ]}
-          onPress={() => handleFilterChange('all')}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: activeFilter === 'all' }}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              activeFilter === 'all' ? styles.filterTextActive : styles.filterTextInactive,
-            ]}
-          >
-            All
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.filterPill,
-            activeFilter === 'unread' ? styles.filterPillActive : styles.filterPillInactive,
-            pressed && styles.filterPillPressed,
-          ]}
-          onPress={() => handleFilterChange('unread')}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: activeFilter === 'unread' }}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              activeFilter === 'unread' ? styles.filterTextActive : styles.filterTextInactive,
-            ]}
-          >
-            {unreadCount > 0 ? `Unread (${unreadCount})` : 'Unread'}
-          </Text>
-        </Pressable>
+      {/* Segmented All / Unread control (unread count is live) */}
+      <View style={styles.segmentWrap}>
+        <View style={styles.segment} accessibilityRole="tablist">
+          {(['all', 'unread'] as const).map((key) => {
+            const active = activeFilter === key;
+            return (
+              <Pressable
+                key={key}
+                style={[styles.segmentItem, active && styles.segmentItemActive]}
+                onPress={() => setActiveFilter(key)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={key === 'all' ? 'All notifications' : `Unread notifications, ${unreadCount}`}
+              >
+                <Text style={[styles.segmentText, active && styles.segmentTextActive]} maxFontSizeMultiplier={1.2}>
+                  {key === 'all' ? 'All' : 'Unread'}
+                </Text>
+                {key === 'unread' && unreadCount > 0 ? (
+                  <View style={[styles.countPill, active && styles.countPillActive]}>
+                    <Text style={[styles.countText, active && styles.countTextActive]} maxFontSizeMultiplier={1.2}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
-      {/* Push Permission Recovery Banner */}
+      {/* Push permission recovery (neutral, not alarming) */}
       {!isGranted && (
         <Pressable
-          style={styles.permissionBanner}
+          style={({ pressed }) => [styles.permissionRow, pressed && styles.permissionRowPressed]}
           onPress={handleEnablePush}
           accessibilityRole="button"
-          accessibilityLabel="Enable push notifications"
+          accessibilityLabel="Turn on push notifications"
         >
-          <View style={styles.permissionIconCircle}>
-            <BellOff size={15} color={colors.danger} strokeWidth={2.2} />
-          </View>
+          <BellOffIcon size={18} color={colors.textSecondary} strokeWidth={1.9} />
           <View style={styles.permissionTextCol}>
-            <Text style={styles.permissionTitle}>Push notifications are disabled</Text>
-            <Text style={styles.permissionSubtitle}>
-              Enable to get real-time booking alerts and messages
+            <Text style={styles.permissionTitle} maxFontSizeMultiplier={1.3}>
+              Push notifications are off
+            </Text>
+            <Text style={styles.permissionSubtitle} maxFontSizeMultiplier={1.3}>
+              Turn them on to get booking updates and messages.
             </Text>
           </View>
-          <ChevronRight size={16} color={colors.textMuted} />
+          <ChevronRightIcon size={16} color={colors.textMuted} />
         </Pressable>
       )}
 
-      {/* Main FlashList Feed */}
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primaryDark} />
-        </View>
+        <NotificationsSkeleton />
       ) : isError && groupedList.length === 0 ? (
         <ErrorState
           type={isOffline ? 'offline' : 'error'}
-          title={isOffline ? 'No internet connection' : "Couldn't load notifications"}
-          subtitle={
-            isOffline
-              ? 'Please check your connection and pull to refresh.'
-              : 'An unexpected error occurred while fetching your notifications.'
-          }
+          title={isOffline ? "You're offline" : "Couldn't load notifications"}
+          subtitle={isOffline ? 'Check your connection and try again.' : 'Something went wrong. Please try again.'}
           onRetry={refetch}
-          retryButtonText="Retry"
+          retryButtonText="Try again"
         />
       ) : (
         <FlashList
@@ -272,30 +234,22 @@ export default function NotificationsScreen() {
           getItemType={getItemType}
           keyExtractor={(item) => item.id}
           stickyHeaderIndices={stickyHeaderIndices}
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingTop: 4,
-            paddingBottom: Math.max(insets.bottom, 20) + 16,
-          }}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 16 }}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={refetch}
-              tintColor={colors.primaryDark}
+              tintColor={colors.textSecondary}
               colors={[colors.primaryDark]}
             />
           }
-          ListEmptyComponent={
-            !isLoading ? (
-              <EmptyNotifications isFiltered={activeFilter === 'unread'} />
-            ) : null
-          }
+          ListEmptyComponent={<EmptyNotifications isFiltered={activeFilter === 'unread'} />}
           ListFooterComponent={
             isFetchingNextPage ? (
               <View style={styles.footerLoader}>
-                <ActivityIndicator size="small" color={colors.primaryDark} />
+                <ActivityIndicator size="small" color={colors.textSecondary} />
               </View>
             ) : null
           }
@@ -305,161 +259,196 @@ export default function NotificationsScreen() {
   );
 }
 
-const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
+/** Row-shaped placeholders (same geometry as NotificationItem) so nothing shifts when data arrives. */
+function NotificationsSkeleton() {
+  const styles = useThemedStyles(createStyles);
+  return (
+    <SkeletonGroup style={styles.skeletonList} accessibilityLabel="Loading notifications">
+      <Skeleton width={64} height={13} borderRadius={4} style={styles.skeletonHeader} />
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <View key={i} style={styles.skeletonRow}>
+          <Skeleton width={NOTIFICATION_ROW.icon} height={NOTIFICATION_ROW.icon} borderRadius={NOTIFICATION_ROW.icon / 2} />
+          <View style={styles.skeletonText}>
+            <Skeleton width="62%" height={14} borderRadius={4} />
+            <Skeleton width="92%" height={12} borderRadius={4} style={styles.skeletonLine} />
+            <Skeleton width="48%" height={12} borderRadius={4} style={styles.skeletonLine} />
+          </View>
+        </View>
+      ))}
+    </SkeletonGroup>
+  );
+}
+
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgApp,
+    backgroundColor: colors.bgCard,
   },
   header: {
-    height: 52,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    backgroundColor: palette.white,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.gray100,
-    position: 'relative',
+    paddingHorizontal: 8,
   },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.circle,
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.gray50,
-    borderWidth: 1,
-    borderColor: palette.gray200,
     zIndex: 2,
   },
-  backButtonPressed: {
-    backgroundColor: palette.gray100,
-    transform: [{ scale: 0.96 }],
+  iconButtonPressed: {
+    backgroundColor: colors.bgHover,
   },
   titleContainer: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
   },
   headerTitle: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: 16,
+    fontFamily: fontFamily.jakarta.bold,
+    fontSize: 17,
+    letterSpacing: -0.2,
     color: colors.textPrimary,
   },
-  rightActionContainer: {
-    zIndex: 2,
-    minWidth: 36,
+  rightSlot: {
+    minWidth: 44,
     alignItems: 'flex-end',
     justifyContent: 'center',
+    zIndex: 2,
   },
-  rightActionPlaceholder: {
-    width: 36,
-    height: 36,
-  },
-  markAllButton: {
+  markAll: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    gap: 5,
+    height: 36,
+    paddingHorizontal: 10,
+    borderRadius: 10,
   },
-  markAllButtonPressed: {
-    opacity: 0.6,
+  markAllPressed: {
+    backgroundColor: colors.bgHover,
   },
   markAllText: {
     fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 12,
-    color: colors.primaryDark,
-  },
-  filterBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: palette.white,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.gray100,
-    gap: 8,
-  },
-  filterPill: {
-    height: 32,
-    paddingHorizontal: 14,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterPillActive: {
-    backgroundColor: palette.green50,
-    borderWidth: 1,
-    borderColor: palette.green200,
-  },
-  filterPillInactive: {
-    backgroundColor: palette.gray100,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  filterPillPressed: {
-    opacity: 0.8,
-  },
-  filterText: {
     fontSize: 13,
-    lineHeight: 16,
-  },
-  filterTextActive: {
-    fontFamily: fontFamily.jakarta.semiBold,
     color: colors.primaryDark,
   },
-  filterTextInactive: {
-    fontFamily: fontFamily.jakarta.medium,
+  markAllTextBusy: {
     color: colors.textSecondary,
   },
-  permissionBanner: {
+  segmentWrap: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 6,
+  },
+  segment: {
+    flexDirection: 'row',
+    padding: 3,
+    borderRadius: 12,
+    backgroundColor: colors.bgHover,
+  },
+  segmentItem: {
+    flex: 1,
+    height: 34,
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 10,
-    marginBottom: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: palette.red50,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: palette.red200,
-    gap: 10,
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 9,
   },
-  permissionIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: palette.red100,
+  segmentItemActive: {
+    backgroundColor: colors.cardRaised,
+  },
+  segmentText: {
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 13.5,
+    color: colors.textSecondary,
+  },
+  segmentTextActive: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    color: colors.textPrimary,
+  },
+  countPill: {
+    minWidth: 20,
+    height: 18,
+    paddingHorizontal: 5,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.border,
+  },
+  countPillActive: {
+    backgroundColor: colors.primaryDark,
+  },
+  countText: {
+    fontFamily: fontFamily.inter.semiBold,
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontVariant: ['tabular-nums'],
+  },
+  countTextActive: {
+    color: colors.pureWhite,
+  },
+  permissionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 2,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: colors.bgHover,
+  },
+  permissionRowPressed: {
+    opacity: 0.8,
   },
   permissionTextCol: {
     flex: 1,
+    minWidth: 0,
   },
   permissionTitle: {
     fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.textDangerDark,
+    fontSize: 13.5,
+    color: colors.textPrimary,
   },
   permissionSubtitle: {
     fontFamily: fontFamily.jakarta.regular,
-    fontSize: 11,
-    lineHeight: 15,
-    color: palette.red700,
+    fontSize: 12.5,
+    lineHeight: 17,
+    color: colors.textSecondary,
     marginTop: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   footerLoader: {
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  skeletonList: {
+    paddingTop: 18,
+  },
+  skeletonHeader: {
+    marginLeft: 20,
+    marginBottom: 10,
+  },
+  skeletonRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: NOTIFICATION_ROW.paddingH,
+    paddingVertical: 14,
+  },
+  skeletonText: {
+    flex: 1,
+    marginLeft: NOTIFICATION_ROW.gap,
+  },
+  skeletonLine: {
+    marginTop: 8,
   },
 });

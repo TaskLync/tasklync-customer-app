@@ -8,7 +8,7 @@ export interface SuccessSubtitleProps {
 }
 
 export const SuccessSubtitle: React.FC<SuccessSubtitleProps> = ({
-  subtitle = 'Your service request has been sent to the professional.',
+  subtitle = 'Your service request has been sent to the worker.',
 }) => {
   const styles = useThemedStyles(createStyles);
   return (

@@ -1,6 +1,7 @@
-import { View, StyleSheet } from 'react-native';
+import { useEffect } from 'react';
+import { View, StyleSheet, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSharedValue } from 'react-native-reanimated';
 
 // Design system
@@ -25,6 +26,16 @@ export default function SuccessScreen() {
   // Driven by <SuccessCelebration /> once the circle forms; staggers the content in.
   const reveal = useSharedValue(0);
 
+  // Android back from a finished booking goes Home and pops the whole booking funnel (schedule / address are
+  // still below this screen), never back into a checkout step that already completed.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      router.dismissTo('/(tabs)' as any);
+      return true;
+    });
+    return () => sub.remove();
+  }, []);
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
       <ThemedStatusBar />
@@ -34,7 +45,7 @@ export default function SuccessScreen() {
 
         {/* 2. Headline */}
         <Reveal reveal={reveal} index={0}>
-          <SuccessHeadline title="Booking Confirmed!" />
+          <SuccessHeadline title="Booking placed" />
         </Reveal>
 
         {/* 3. Short confirmation message */}

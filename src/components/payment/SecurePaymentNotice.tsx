@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { ShieldCheck } from 'lucide-react-native';
+import { ShieldCheckIcon } from '../ui/Icon/icons';
 import { fontFamily, radius, spacing } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -14,7 +14,7 @@ export const SecurePaymentNotice: React.FC<SecurePaymentNoticeProps> = ({
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
-      <ShieldCheck size={16} color={palette.green600} style={styles.icon} />
+      <ShieldCheckIcon size={16} color={palette.green600} style={styles.icon} />
       <Text style={styles.noticeText} maxFontSizeMultiplier={1.3}>
         {customText}
       </Text>

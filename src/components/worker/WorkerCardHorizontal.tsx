@@ -7,7 +7,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { Star, ShieldCheck, Heart, MapPin } from 'lucide-react-native';
+import { HeartIcon, LocationIcon, ShieldCheckIcon, StarIcon } from '../ui/Icon/icons';
 
 import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
@@ -83,7 +83,7 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
   };
 
   const isOnline = worker.availabilityStatus === 'AVAILABLE';
-  const profession = worker.categories?.[0] || 'Professional Service';
+  const profession = worker.categories?.[0] || 'Home Service';
   const ratingValue = worker.avgRating > 0 ? worker.avgRating.toFixed(1) : '5.0';
   const reviewCount = worker.totalReviews || 0;
   // Real measurement only: customer coords vs worker coords. Hidden when unknown (never a default).
@@ -135,7 +135,7 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
             accessibilityLabel={isFav ? 'Remove from favorites' : 'Add to favorites'}
           >
             <Animated.View style={heartAnimatedStyle}>
-              <Heart
+              <HeartIcon
                 size={20}
                 color={isFav ? '#EF4444' : colors.textMuted}
                 fill={isFav ? '#EF4444' : 'transparent'}
@@ -152,7 +152,7 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
             <Text style={styles.name} numberOfLines={1}>
               {worker.name}
             </Text>
-            <ShieldCheck size={15} color={colors.primary} style={styles.verifiedIcon} />
+            <ShieldCheckIcon size={15} color={colors.primary} style={styles.verifiedIcon} />
           </View>
 
           {/* Profession/Category in a softer secondary gray color */}
@@ -162,13 +162,13 @@ export const WorkerCardHorizontal = memo<WorkerCardHorizontalProps>(({
 
           {/* Compact Metadata Row: ⭐ Star + rating, (reviews), dot, location/distance */}
           <View style={styles.metaRow}>
-            <Star size={13} color="#F59E0B" fill="#F59E0B" style={styles.starIcon} />
+            <StarIcon size={13} color="#F59E0B" fill="#F59E0B" style={styles.starIcon} />
             <Text style={styles.ratingText}>{ratingValue}</Text>
             <Text style={styles.reviewsText}>({reviewCount})</Text>
             {distance ? (
               <>
                 <Text style={styles.separatorDot}>•</Text>
-                <MapPin size={12} color={colors.textMuted} style={styles.mapPinIcon} />
+                <LocationIcon size={12} color={colors.textMuted} style={styles.mapPinIcon} />
                 <Text style={styles.distanceText} numberOfLines={1}>
                   {distance}
                 </Text>

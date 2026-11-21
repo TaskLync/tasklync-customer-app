@@ -8,13 +8,13 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
-  MapPin,
-  Navigation,
-  Plus,
-  ChevronRight,
-  Check,
-  X,
-} from 'lucide-react-native';
+  CheckIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  LocationIcon,
+  NavigationIcon,
+  PlusIcon,
+} from '../ui/Icon/icons';
 
 import { BottomSheet, BottomSheetRef, BottomSheetScrollView } from '../layout/BottomSheet';
 import { DefaultAddressBadge } from '../address/DefaultAddressBadge';
@@ -110,8 +110,8 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
             setIsSwitchingGPS(false);
             if (!permResult.canAskAgain) {
               showAlert(
-                'Location Permission Denied',
-                'Tasklync needs location permission to show workers near you. Please enable it in Settings.',
+                'Location access is off',
+                'Turn on location access in Settings to see workers near you.',
                 [
                   { text: 'Cancel', style: 'cancel' },
                   { text: 'Open Settings', onPress: openSettings },
@@ -124,8 +124,8 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
 
         if (!isServicesEnabled) {
           showAlert(
-            'GPS Disabled',
-            'Your device location services are turned off. Please turn on GPS in your device settings.',
+            'Location is turned off',
+            'Turn on location in your device settings.',
             [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Open Settings', onPress: openSettings },
@@ -139,14 +139,14 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
         if (freshCoords) {
           const validation = validateServiceArea(freshCoords);
           if (!validation.isServiceable) {
-            showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+            showAlert('Outside service area', SERVICE_UNAVAILABLE_MESSAGE);
             setIsSwitchingGPS(false);
             return;
           }
         } else {
           showAlert(
-            'GPS Signal Weak',
-            'Unable to acquire a verified GPS location. Please check your signal and try again.'
+            'Weak GPS signal',
+            "Couldn't get an accurate location. Check your signal and try again."
           );
           setIsSwitchingGPS(false);
           return;
@@ -157,7 +157,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
         }
         handleClose();
       } catch (_e) {
-        showAlert('Location Error', 'Failed to detect current GPS location.');
+        showAlert("Couldn't get your location", 'Please try again.');
       } finally {
         setIsSwitchingGPS(false);
       }
@@ -169,7 +169,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
 
       const validation = validateServiceArea({ lat: addr.lat, lng: addr.lng });
       if (!validation.isServiceable) {
-        showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+        showAlert('Outside service area', SERVICE_UNAVAILABLE_MESSAGE);
         return;
       }
 
@@ -277,7 +277,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
               accessibilityRole="button"
               accessibilityLabel="Close location selector"
             >
-              <X size={20} color={colors.textPrimary} />
+              <CloseIcon size={20} color={colors.textPrimary} />
             </Pressable>
           </View>
 
@@ -307,7 +307,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
                 {isLocating || isSwitchingGPS ? (
                   <ActivityIndicator size="small" color={colors.primary} />
                 ) : (
-                  <Navigation size={18} color={colors.primary} strokeWidth={2.4} />
+                  <NavigationIcon size={18} color={colors.primary} strokeWidth={2.4} />
                 )}
               </View>
               <View style={styles.actionTextWrap}>
@@ -327,10 +327,10 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
               </View>
               {isGPSActive ? (
                 <View style={styles.checkBadge}>
-                  <Check size={14} color={colors.primaryDark} strokeWidth={2.8} />
+                  <CheckIcon size={14} color={colors.primaryDark} strokeWidth={2.8} />
                 </View>
               ) : (
-                <ChevronRight size={18} color={colors.textMuted} />
+                <ChevronRightIcon size={18} color={colors.textMuted} />
               )}
             </Pressable>
 
@@ -349,7 +349,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
             ) : safeAddressList.length === 0 ? (
               <View style={styles.emptyCard}>
                 <View style={styles.emptyIconWrap}>
-                  <MapPin size={22} color={colors.textMuted} />
+                  <LocationIcon size={22} color={colors.textMuted} />
                 </View>
                 <View style={styles.emptyTextWrap}>
                   <Text style={styles.emptyTitle}>No saved addresses yet</Text>
@@ -417,10 +417,10 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
 
                       {active ? (
                         <View style={styles.checkBadge}>
-                          <Check size={14} color={colors.primaryDark} strokeWidth={2.8} />
+                          <CheckIcon size={14} color={colors.primaryDark} strokeWidth={2.8} />
                         </View>
                       ) : (
-                        <ChevronRight size={16} color={colors.textMuted} />
+                        <ChevronRightIcon size={16} color={colors.textMuted} />
                       )}
                     </Pressable>
                   );
@@ -440,7 +440,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
               accessibilityLabel="Add new address"
             >
               <View style={[styles.iconCircle, { backgroundColor: colors.bgInput }]}>
-                <Plus size={18} color={colors.textPrimary} strokeWidth={2.4} />
+                <PlusIcon size={18} color={colors.textPrimary} strokeWidth={2.4} />
               </View>
               <View style={styles.actionTextWrap}>
                 <Text style={styles.actionTitle}>Add New Address</Text>
@@ -448,7 +448,7 @@ export const LocationSelectSheet = forwardRef<LocationSelectSheetRef, LocationSe
                   Search location or pinpoint on map
                 </Text>
               </View>
-              <ChevronRight size={18} color={colors.textMuted} />
+              <ChevronRightIcon size={18} color={colors.textMuted} />
             </Pressable>
 
             {/* Manage Addresses Footer Link */}

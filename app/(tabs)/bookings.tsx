@@ -30,9 +30,9 @@ const BOOKING_TABS: { value: TabType; label: string }[] = [
 ];
 
 const REQUEST_EMPTY: Record<RequestFilter, { title: string; body: string }> = {
-  ALL: { title: 'No custom quotes yet', body: 'Ask a professional for a custom quote and it will appear here.' },
-  QUOTE_READY: { title: 'No quotes ready', body: 'When a professional sends you a quote, you’ll find it here.' },
-  ACTIVE: { title: 'Nothing in review', body: 'Requests that are waiting on a professional appear here.' },
+  ALL: { title: 'No custom quotes yet', body: 'Ask a worker for a custom quote and it will appear here.' },
+  QUOTE_READY: { title: 'No quotes ready', body: 'When a worker sends you a quote, you’ll find it here.' },
+  ACTIVE: { title: 'Nothing in review', body: 'Requests that are waiting on a worker appear here.' },
   RESOLVED: { title: 'No past requests', body: 'Booked, declined and expired requests appear here.' },
 };
 
@@ -118,7 +118,7 @@ export default function BookingsScreen() {
           description={copy.body}
           actionVariant="neutral"
           {...(requestFilter === 'ALL'
-            ? { actionLabel: 'Find professionals', onAction: () => router.push('/(tabs)/explore' as any) }
+            ? { actionLabel: 'Find workers', onAction: () => router.push('/(tabs)/explore' as any) }
             : { actionLabel: 'View all', onAction: () => setRequestFilter('ALL') })}
         />
       </View>
@@ -137,7 +137,7 @@ export default function BookingsScreen() {
             onChange={setMainSection}
             options={[
               { value: 'BOOKINGS', label: 'Confirmed Bookings' },
-              { value: 'CUSTOM_REQUESTS', label: 'Custom Quotes', badge: counts.QUOTE_READY },
+              { value: 'CUSTOM_REQUESTS', label: 'Custom quotes', badge: counts.QUOTE_READY },
             ]}
           />
         </View>
@@ -150,8 +150,8 @@ export default function BookingsScreen() {
             onChange={setRequestFilter}
             options={[
               { value: 'ALL', label: 'All', count: counts.ALL },
-              { value: 'QUOTE_READY', label: 'Quotes Ready', count: counts.QUOTE_READY },
-              { value: 'ACTIVE', label: 'In Review', count: counts.ACTIVE },
+              { value: 'QUOTE_READY', label: 'Quotes ready', count: counts.QUOTE_READY },
+              { value: 'ACTIVE', label: 'In review', count: counts.ACTIVE },
               { value: 'RESOLVED', label: 'Past', count: counts.RESOLVED },
             ]}
           />

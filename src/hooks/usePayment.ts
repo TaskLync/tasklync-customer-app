@@ -33,7 +33,7 @@ export function usePayment() {
       bookingId: string,
       amount?: number,
       workerId?: string
-    ): Promise<{ success: boolean; data?: PaymentInitiateResponse; error?: string }> => {
+    ): Promise<{ success: boolean; data?: PaymentInitiateResponse; error?: string; code?: string }> => {
       if (!bookingId || bookingId.startsWith('b-') || bookingId.startsWith('TL-')) {
         const msg = 'No valid confirmed booking reference found for payment.';
         setError(msg);
@@ -60,7 +60,8 @@ export function usePayment() {
         const userMsg = extractPaymentErrorMessage(err);
         setError(userMsg);
         setIsLoading(false);
-        return { success: false, error: userMsg };
+        const code = err?.response?.data?.error?.code || err?.code;
+        return { success: false, error: userMsg, ...(typeof code === 'string' ? { code } : {}) };
       }
     },
     []

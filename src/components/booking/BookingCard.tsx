@@ -6,8 +6,13 @@ import { BookingServiceMeta } from './BookingServiceMeta';
 import { BookingPriceTag } from './BookingPriceTag';
 import { BookingCountdown } from './BookingCountdown';
 import { BookingActions } from './BookingActions';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { DiscountSummaryRow } from '../offers/DiscountSummaryRow';
+import { showAlert } from '../feedback/AppAlert';
+import { getBookAgainHref } from '../../utils/workerProfileRoute';
+import { pushOnce } from '../../utils/navigationGuard';
+import { prefetchWorkerProfile } from '../../hooks/useWorkerProfile';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingCardProps {
@@ -17,6 +22,7 @@ interface BookingCardProps {
 export function BookingCard({ booking }: BookingCardProps) {
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const isCompany = Boolean(
     booking.is_company ||
@@ -65,9 +71,25 @@ export function BookingCard({ booking }: BookingCardProps) {
       case 'invoice':
         router.push(`/booking/${booking.id}/invoice` as any);
         break;
-      case 'book_again':
-        router.push('/(tabs)' as any);
+      case 'book_again': {
+        // Same provider again: open the profile of the worker / agency this booking was with.
+        const href = getBookAgainHref(booking);
+        if (!href) {
+          showAlert(
+            'Worker not available',
+            "We couldn't find the worker from this booking. You can choose another worker.",
+            [
+              { text: 'Not now', style: 'cancel' },
+              { text: 'Find a worker', onPress: () => router.push('/(tabs)/explore' as any) },
+            ],
+          );
+          break;
+        }
+        // Warm the cache the worker profile screen reads, so it opens with data instead of a refetch.
+        if (href.pathname === '/worker/[id]') prefetchWorkerProfile(queryClient, href.params.id);
+        pushOnce(() => router.push(href as unknown as Href));
         break;
+      }
       default:
         router.push(`/booking/${booking.id}` as any);
         break;
@@ -95,6 +117,7 @@ export function BookingCard({ booking }: BookingCardProps) {
       </View>
 
       <BookingWorkerRow
+        workerId={booking.worker_id}
         workerName={displayName}
         categoryName={booking.category_name}
         workerAvatarUrl={displayAvatar}

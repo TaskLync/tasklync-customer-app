@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, Text, StyleSheet, Pressable } from 'react-native';
-import { Building2, User, Sparkles } from 'lucide-react-native';
+import { BuildingIcon, SparklesIcon, UserIcon } from '../ui/Icon/icons';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export type ProviderTypeFilter = 'ALL' | 'INDIVIDUAL' | 'COMPANY';
@@ -32,7 +32,7 @@ export const ProviderTypeFilterChips: React.FC<ProviderTypeFilterChipsProps> = (
         accessibilityRole="button"
         accessibilityLabel="Show all providers"
       >
-        <Sparkles
+        <SparklesIcon
           size={13}
           color={selected === 'ALL' ? colors.textPrimary : colors.textSecondary}
         />
@@ -56,7 +56,7 @@ export const ProviderTypeFilterChips: React.FC<ProviderTypeFilterChipsProps> = (
         accessibilityRole="button"
         accessibilityLabel="Show independent craftsmen only"
       >
-        <User
+        <UserIcon
           size={13}
           color={selected === 'INDIVIDUAL' ? colors.textPrimary : colors.textSecondary}
         />
@@ -80,7 +80,7 @@ export const ProviderTypeFilterChips: React.FC<ProviderTypeFilterChipsProps> = (
         accessibilityRole="button"
         accessibilityLabel="Show registered agencies only"
       >
-        <Building2
+        <BuildingIcon
           size={13}
           color={selected === 'COMPANY' ? colors.textPrimary : colors.textSecondary}
         />

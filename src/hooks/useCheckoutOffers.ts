@@ -6,7 +6,7 @@ import type { BookingQuoteParams } from '../types/offers.types';
 /**
  * The authoritative checkout price for THIS customer and the coupons they can use, from one request.
  *
- * - Keyed by the booking parameters (worker, services + quantities, time, place, urgency): any change
+ * - Keyed by the booking parameters (worker, services + quantities, time, place): any change
  *   refetches, anything else reuses the cache, so applying/removing a coupon makes no extra request.
  * - The returned pricing already includes the worker's automatic offer, so it is also the price to show
  *   after a coupon is removed (the server computed it; the app never does).

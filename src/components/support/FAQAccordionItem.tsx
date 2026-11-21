@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, {
+  FadeIn,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { ChevronDown } from 'lucide-react-native';
-import { fontFamily, spacing } from '../../design';
+import { ChevronDownIcon } from '../ui/Icon/icons';
+import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface FAQItemData {
@@ -21,91 +22,79 @@ export interface FAQAccordionItemProps {
   onToggle: () => void;
 }
 
-export const FAQAccordionItem: React.FC<FAQAccordionItemProps> = ({
-  item,
-  isExpanded,
-  onToggle,
-}) => {
-  const { palette } = useAppTheme();
+export const FAQAccordionItem: React.FC<FAQAccordionItemProps> = ({ item, isExpanded, onToggle }) => {
+  const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   const rotation = useSharedValue(isExpanded ? 180 : 0);
 
   useEffect(() => {
-    rotation.value = withTiming(isExpanded ? 180 : 0, { duration: 150 });
+    rotation.value = withTiming(isExpanded ? 180 : 0, { duration: 180 });
   }, [isExpanded, rotation]);
 
-  const chevronAnimatedStyle = useAnimatedStyle(() => ({
+  const chevronStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        activeOpacity={0.7}
+    <View>
+      <Pressable
         onPress={onToggle}
-        style={styles.headerRow}
+        style={({ pressed }) => [styles.header, pressed && styles.headerPressed]}
         accessibilityRole="button"
         accessibilityState={{ expanded: isExpanded }}
-        accessibilityLabel={`${item.question}, ${isExpanded ? 'collapse answer' : 'expand answer'}`}
+        accessibilityLabel={item.question}
+        accessibilityHint={isExpanded ? 'Hides the answer' : 'Shows the answer'}
       >
-        <Text
-          style={styles.questionText}
-          maxFontSizeMultiplier={1.3}
-        >
+        <Text style={styles.question} maxFontSizeMultiplier={1.3}>
           {item.question}
         </Text>
-
-        <Animated.View style={[styles.chevronBox, chevronAnimatedStyle]}>
-          <ChevronDown size={18} color={palette.gray500} />
+        <Animated.View style={[styles.chevron, chevronStyle]}>
+          <ChevronDownIcon size={18} color={colors.textMuted} strokeWidth={2} />
         </Animated.View>
-      </TouchableOpacity>
+      </Pressable>
 
       {isExpanded && (
-        <View style={styles.contentBody}>
-          <Text
-            style={styles.answerText}
-            maxFontSizeMultiplier={1.3}
-          >
+        <Animated.View entering={FadeIn.duration(180)} style={styles.body}>
+          <Text style={styles.answer} maxFontSizeMultiplier={1.3}>
             {item.answer}
           </Text>
-        </View>
+        </Animated.View>
       )}
     </View>
   );
 };
 
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
-  container: {
-    backgroundColor: colors.bgCard,
-  },
-  headerRow: {
-    minHeight: 52,
+  header: {
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm + 4,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
   },
-  questionText: {
+  headerPressed: {
+    backgroundColor: colors.bgHover,
+  },
+  question: {
     flex: 1,
-    fontFamily: fontFamily.jakarta.semiBold,
+    fontFamily: fontFamily.jakarta.medium,
     fontSize: 15,
     lineHeight: 21,
     color: colors.textPrimary,
-    marginRight: spacing.sm,
+    marginRight: 12,
   },
-  chevronBox: {
-    width: 28,
-    height: 28,
+  chevron: {
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  contentBody: {
-    paddingHorizontal: spacing.base,
-    paddingBottom: spacing.base,
-    paddingTop: spacing.xs,
+  body: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    marginTop: -4,
   },
-  answerText: {
+  answer: {
     fontFamily: fontFamily.jakarta.regular,
     fontSize: 14,
     lineHeight: 21,

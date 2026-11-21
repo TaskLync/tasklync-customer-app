@@ -124,7 +124,7 @@ const DefaultFallback = ({
             : 'An unexpected error occurred. Please try again.')
         }
         onRetry={onRetry}
-        retryButtonText={retryText || 'Try Again'}
+        retryButtonText={retryText || 'Try again'}
       />
 
       {shouldShowDebug && (

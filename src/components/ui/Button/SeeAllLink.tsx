@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { ArrowRight } from 'lucide-react-native';
+import { ArrowRightIcon } from '../Icon/icons';
 
 import { fontFamily } from '../../../design/typography';
 import { useAppTheme } from '../../../theme/useAppTheme';
@@ -33,7 +33,7 @@ export const SeeAllLink: React.FC<SeeAllLinkProps> = ({ onPress, label = 'See al
       <Text style={[styles.text, { color: tint }]} maxFontSizeMultiplier={1.2}>
         {text}
       </Text>
-      <ArrowRight size={14} color={tint} strokeWidth={2.2} />
+      <ArrowRightIcon size={14} color={tint} strokeWidth={2.2} />
     </Pressable>
   );
 };

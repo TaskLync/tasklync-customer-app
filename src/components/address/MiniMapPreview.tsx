@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MapPin, Navigation } from 'lucide-react-native';
+import { LocationIcon, NavigationIcon } from '../ui/Icon/icons';
 import { BookingAddress } from '../../store/bookingDraft.store';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -43,7 +43,7 @@ export const MiniMapPreview: React.FC<MiniMapPreviewProps> = ({ selectedAddress 
           <View style={styles.pinWrapper}>
             <View style={styles.pinPulse} />
             <View style={styles.pinCircle}>
-              <MapPin size={18} color={palette.pureWhite} fill={colors.primary} />
+              <LocationIcon size={18} color={palette.pureWhite} fill={colors.primary} />
             </View>
           </View>
         </View>
@@ -60,7 +60,7 @@ export const MiniMapPreview: React.FC<MiniMapPreviewProps> = ({ selectedAddress 
           </View>
 
           <View style={styles.adjustBadge}>
-            <Navigation size={12} color={colors.primaryDark} />
+            <NavigationIcon size={12} color={colors.primaryDark} />
             <Text style={styles.adjustText}>Adjust Pin</Text>
           </View>
         </View>

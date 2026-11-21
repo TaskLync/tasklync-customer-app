@@ -1,6 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { MapPinOff, RefreshCw, Edit3 } from 'lucide-react-native';
+import { EditIcon, LocationOffIcon, RefreshIcon } from '../ui/Icon/icons';
 import { fontFamily, fontSize, radius } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -61,7 +61,7 @@ const MapFallback = ({
   return (
   <View style={styles.fallbackContainer}>
     <View style={styles.iconCircle}>
-      <MapPinOff size={32} color={palette.gray500} strokeWidth={2} />
+      <LocationOffIcon size={32} color={palette.gray500} strokeWidth={2} />
     </View>
 
     <Text style={styles.title}>Map Preview Unavailable</Text>
@@ -76,7 +76,7 @@ const MapFallback = ({
         accessibilityRole="button"
         accessibilityLabel="Retry loading map"
       >
-        <RefreshCw size={16} color={colors.textPrimary} />
+        <RefreshIcon size={16} color={colors.textPrimary} />
         <Text style={styles.retryText}>Retry Map</Text>
       </Pressable>
 
@@ -87,7 +87,7 @@ const MapFallback = ({
           accessibilityRole="button"
           accessibilityLabel="Enter address manually"
         >
-          <Edit3 size={16} color={palette.pureWhite} />
+          <EditIcon size={16} color={palette.pureWhite} />
           <Text style={styles.manualText}>Enter Manually</Text>
         </Pressable>
       )}

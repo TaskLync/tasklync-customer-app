@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { StyleSheet, Text, Pressable } from 'react-native';
-import { Search, SlidersHorizontal } from 'lucide-react-native';
+import { FilterIcon, SearchIcon } from '../ui/Icon/icons';
 import { useRouter } from 'expo-router';
 import { typography } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -10,7 +10,7 @@ interface MapSearchBarProps {
 }
 
 export const MapSearchBar: FC<MapSearchBarProps> = ({
-  placeholder = 'Search services or workers...',
+  placeholder = 'Search services or workers',
 }) => {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
@@ -34,7 +34,7 @@ export const MapSearchBar: FC<MapSearchBarProps> = ({
       accessibilityRole="search"
       accessibilityLabel="Search services or workers"
     >
-      <Search size={18} color={colors.textMuted} style={styles.searchIcon} />
+      <SearchIcon size={18} color={colors.textMuted} style={styles.searchIcon} />
       <Text style={styles.placeholderText} numberOfLines={1}>
         {placeholder}
       </Text>
@@ -45,7 +45,7 @@ export const MapSearchBar: FC<MapSearchBarProps> = ({
         accessibilityRole="button"
         accessibilityLabel="Open search filters"
       >
-        <SlidersHorizontal size={16} color={colors.primaryDark} />
+        <FilterIcon size={16} color={colors.primaryDark} />
       </Pressable>
     </Pressable>
   );

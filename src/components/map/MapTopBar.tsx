@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { StyleSheet, View, Pressable, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeftIcon } from '../ui/Icon/icons';
 import { useRouter } from 'expo-router';
 import { CategoryFilterChips } from './CategoryFilterChips';
 import { MapSearchBar } from './MapSearchBar';
@@ -40,7 +40,7 @@ export const MapTopBar: FC<MapTopBarProps> = ({
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <ArrowLeft size={20} color={colors.textPrimary} />
+          <ArrowLeftIcon size={20} color={colors.textPrimary} />
         </Pressable>
 
         {showSearchBar && (

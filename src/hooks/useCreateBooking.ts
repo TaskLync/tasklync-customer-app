@@ -6,10 +6,12 @@ import { bookingApi } from '../services/api/booking.api';
 import { BookingDetails, CreateBookingPayload } from '../types/booking.types';
 import { slotToUTCISO, normalizeDateToYYYYMMDD } from '../utils/timezone';
 import { cartDurationHours } from '../utils/bookingDuration';
+import { toServiceLines } from '../utils/cartItems';
 import { isValidUUID } from '../utils/uuid';
 import { resolveBookingLocation } from '../utils/activeAddress';
 import { invalidateAvailability, classifyBookingFailure, type BookingFailure } from '../utils/availabilityEvents';
 import { classifyCreateDiscountFailure, discountErrorMessage, trimCode } from '../utils/offers';
+import { bookingIdempotency, bookingDetailsFingerprint } from '../services/booking/bookingIdempotency';
 import {
   validateServiceArea,
   SERVICE_UNAVAILABLE_MESSAGE,
@@ -33,11 +35,6 @@ export interface SubmitResult {
   failure?: BookingFailure & { attemptRef: string };
 }
 
-/** Client id for one confirm attempt; reused by retries of the same booking so support sees one attempt. */
-function newAttemptId(): string {
-  return `ba-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
 export interface SubmitOptions {
   /** Raw code the customer applied. Omit to book without a code (an automatic offer may still apply server-side). */
   couponCode?: string | undefined;
@@ -54,16 +51,14 @@ export function useCreateBooking() {
   const {
     selectedDate,
     selectedTimeSlot,
-    isUrgent,
     workerId: draftWorkerId,
     addressId,
     address,
     note,
   } = useBookingDraftStore();
 
-  // Each successful create consumes a use of a code: a second tap must never start a second request.
+  // A second tap must never start a second request (the idempotency key makes it harmless, this makes it free).
   const inFlight = useRef(false);
-  const attempt = useRef<{ key: string; id: string } | null>(null);
 
   const submit = useCallback(async (options?: SubmitOptions): Promise<SubmitResult> => {
     if (inFlight.current) {
@@ -86,14 +81,14 @@ export function useCreateBooking() {
 
       // Validate that worker is not a mock worker ID
       if (typeof rawWorkerId === 'string' && (rawWorkerId.startsWith('w') || rawWorkerId.startsWith('mock'))) {
-        const err = 'Selected professional is not valid. Please choose an active verified professional.';
+        const err = 'Selected worker is not valid. Please choose an active verified worker.';
         setError(err);
         return { booking: null, error: err };
       }
 
       // Validate workerId to standard RFC4122 UUID v4
       if (!isValidUUID(rawWorkerId)) {
-        const err = 'Selected professional is not valid. Please choose an active verified professional.';
+        const err = 'Selected worker is not valid. Please choose an active verified worker.';
         setError(err);
         return { booking: null, error: err };
       }
@@ -128,9 +123,9 @@ export function useCreateBooking() {
       if (!location.ok) {
         const err =
           location.reason === 'UNSAVED_ADDRESS'
-            ? 'Please confirm your address on the map so the professional can find you.'
+            ? 'Please confirm your address on the map so the worker can find you.'
             : location.reason === 'NO_COORDINATES'
-            ? 'Please re-select your address — its map location is missing.'
+            ? 'This address is missing its map location. Please select it again.'
             : 'Please select or add a delivery address before confirming.';
         setError(err);
         return { booking: null, error: err };
@@ -151,13 +146,13 @@ export function useCreateBooking() {
       // Convert date + time slot in Pakistan Time (Asia/Karachi, UTC+5) to standard ISO-8601 UTC timestamp
       const scheduledAt = slotToUTCISO(dateStr, timeStr || '10:00 AM');
 
-      // Every cart line must be a real service: the server prices each (service, quantity) pair itself.
+      // Every cart line must be a real service: the server prices each selected service itself (once).
       if (cartItems.length === 0 || serviceIds.some((id) => !isValidUUID(id))) {
         const err = 'Some services in your cart are out of date. Please remove them and add them again.';
         setError(err);
         return { booking: null, error: err };
       }
-      const items = cartItems.map((i) => ({ service_id: i.serviceId, quantity: Math.max(1, Math.round(Number(i.quantity)) || 1) }));
+      const items = toServiceLines(cartItems);
       const primaryServiceId = serviceIds[0] as string;
 
       const payload: CreateBookingPayload = {
@@ -173,33 +168,35 @@ export function useCreateBooking() {
         address_text: addrText,
         latitude: lat,
         longitude: lng,
-        is_urgent: isUrgent,
         description: note || undefined,
         ...(options?.couponCode && trimCode(options.couponCode)
           ? { coupon_code: trimCode(options.couponCode) }
           : {}),
       };
 
-      // One attempt id per set of booking details: "Try again" after a network failure reuses it, so the
-      // backend (and support) see one attempt; any change to worker / time / items / address starts a new one.
-      const attemptKey = JSON.stringify([
-        payload.worker_id, payload.scheduled_at, payload.duration_hours, payload.items,
-        payload.address_id, payload.latitude, payload.longitude, payload.coupon_code ?? null,
-      ]);
-      if (!attempt.current || attempt.current.key !== attemptKey) {
-        attempt.current = { key: attemptKey, id: newAttemptId() };
-      }
-      const attemptRef = attempt.current.id;
+      // Idempotency key: ONE per exact set of booking details, minted before the first request and persisted.
+      // Every retry of this booking (double tap, timeout, lost response, app restart, coming back to this
+      // screen) sends the SAME key, and the backend answers with the booking it already created. It is NOT
+      // reset on success: only a finished checkout (bookingIdempotency.clear) or changed details start a new one.
+      const details = bookingDetailsFingerprint(payload as unknown as Record<string, unknown>);
+      const attemptRef = bookingIdempotency.keyFor(details);
 
       setError(null);
 
       try {
         const booking = await bookingApi.createBooking({ ...payload, attempt_id: attemptRef });
-        attempt.current = null;
+        bookingIdempotency.markConfirmed(details, booking.id);
         // The slot is now taken for THIS worker only: refresh that worker's calendar.
         invalidateAvailability(workerId);
         return { booking, error: null };
       } catch (err: any) {
+        if (err?.code === 'IDEMPOTENCY_KEY_REUSED') {
+          // Should never happen (the key is bound to these exact details); never resend that key.
+          bookingIdempotency.discard(details);
+          const msg = 'Your booking details changed while confirming. Please review and confirm again.';
+          setError(msg);
+          return { booking: null, error: msg };
+        }
         // Discount failures first: COUPON_NO_LONGER_AVAILABLE is a 409, which would otherwise read as a slot conflict.
         const discount = classifyCreateDiscountFailure(err?.code);
         if (discount) {
@@ -220,7 +217,7 @@ export function useCreateBooking() {
           // The calendar must stop offering this time: pull this worker's real slots.
           invalidateAvailability(workerId);
         }
-        const msg = failure.message || 'Failed to create booking. Please try again.';
+        const msg = failure.message || "Couldn't place your booking. Please try again.";
         setError(msg);
         return { booking: null, error: msg, conflict, failure: { ...failure, attemptRef } };
       }
@@ -234,7 +231,6 @@ export function useCreateBooking() {
     draftWorkerId,
     selectedDate,
     selectedTimeSlot,
-    isUrgent,
     addressId,
     address,
     note,

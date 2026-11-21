@@ -8,20 +8,15 @@ export interface NotificationGroupHeaderProps {
   count?: number;
 }
 
-/**
- * NotificationGroupHeader Component
- *
- * Minimalist section heading for FlashList notification groups:
- * - Subtle typography (Jakarta-SemiBold, 12px)
- * - Seamless canvas background without borders or count badges
- * - Comfortable 4pt/8pt vertical spacing
- */
+/** Small, quiet date section heading ("Today", "Yesterday", "Earlier"). Sticky, so it uses the page surface. */
 export const NotificationGroupHeader: React.FC<NotificationGroupHeaderProps> = React.memo(
   function NotificationGroupHeader({ title }) {
     const styles = useThemedStyles(createStyles);
     return (
       <View style={styles.container} accessibilityRole="header">
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={1.3}>
+          {title}
+        </Text>
       </View>
     );
   }
@@ -29,16 +24,15 @@ export const NotificationGroupHeader: React.FC<NotificationGroupHeaderProps> = R
 
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
-    paddingHorizontal: 4,
-    paddingTop: 14,
-    paddingBottom: 8,
-    backgroundColor: colors.bgApp,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 6,
+    backgroundColor: colors.bgCard,
   },
   title: {
     fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 18,
     color: colors.textSecondary,
-    letterSpacing: 0.2,
   },
 });

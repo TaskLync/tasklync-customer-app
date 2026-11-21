@@ -10,9 +10,9 @@ import Animated, {
   Extrapolation,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { Check, Trash2, MailOpen } from 'lucide-react-native';
+import { CheckIcon, DeleteIcon, MailOpenIcon } from '../ui/Icon/icons';
 import { NotificationItem } from '../../types/notification.types';
-import { fontFamily, radius } from '../../design';
+import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 const ACTION_WIDTH = 72;
@@ -194,9 +194,9 @@ export const NotificationSwipeRow: React.FC<NotificationSwipeRowProps> = ({
         >
           <Animated.View style={[styles.actionIconContainer, readActionAnimatedStyle]}>
             {item.is_read ? (
-              <MailOpen size={20} color={colors.pureWhite} strokeWidth={2.2} />
+              <MailOpenIcon size={20} color={colors.pureWhite} strokeWidth={2.2} />
             ) : (
-              <Check size={20} color={colors.pureWhite} strokeWidth={2.5} />
+              <CheckIcon size={20} color={colors.pureWhite} strokeWidth={2.5} />
             )}
             <Text style={styles.actionText}>
               {item.is_read ? 'Unread' : 'Read'}
@@ -212,7 +212,7 @@ export const NotificationSwipeRow: React.FC<NotificationSwipeRowProps> = ({
           accessibilityLabel="Delete notification"
         >
           <Animated.View style={[styles.actionIconContainer, deleteActionAnimatedStyle]}>
-            <Trash2 size={20} color={colors.pureWhite} strokeWidth={2.2} />
+            <DeleteIcon size={20} color={colors.pureWhite} strokeWidth={2.2} />
             <Text style={styles.actionText}>Delete</Text>
           </Animated.View>
         </Pressable>
@@ -229,11 +229,10 @@ export const NotificationSwipeRow: React.FC<NotificationSwipeRowProps> = ({
 };
 
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
+  // Flat, full-width list row (no card radius or gaps between rows).
   wrapper: {
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: radius.lg,
-    marginBottom: 8,
   },
   actionTray: {
     position: 'absolute',
@@ -244,7 +243,6 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'stretch',
-    borderRadius: radius.lg,
     overflow: 'hidden',
   },
   actionButton: {
@@ -270,6 +268,5 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   },
   foregroundCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
   },
 });

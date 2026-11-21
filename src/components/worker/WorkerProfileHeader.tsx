@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, Pressable } from 'react-native';
-import { ArrowLeft, Share2, Ellipsis, Star, BadgeCheck } from 'lucide-react-native';
+import { ArrowLeftIcon, MoreIcon, ShareIcon, StarIcon, VerifiedIcon } from '../ui/Icon/icons';
 import { SharedValue } from 'react-native-reanimated';
 import { fontFamily } from '../../design/typography';
 import { WorkerPublicProfile } from '../../types/worker.types';
@@ -56,7 +56,7 @@ export const WorkerProfileHeader: React.FC<WorkerProfileHeaderProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+          <ArrowLeftIcon size={20} color={colors.textPrimary} strokeWidth={2.2} />
         </Pressable>
 
         <View style={styles.navRightGroup}>
@@ -67,7 +67,7 @@ export const WorkerProfileHeader: React.FC<WorkerProfileHeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Share profile"
           >
-            <Share2 size={18} color={colors.textPrimary} strokeWidth={2.2} />
+            <ShareIcon size={18} color={colors.textPrimary} strokeWidth={2.2} />
           </Pressable>
           <Pressable
             onPress={onMore}
@@ -76,7 +76,7 @@ export const WorkerProfileHeader: React.FC<WorkerProfileHeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel="More options"
           >
-            <Ellipsis size={18} color={colors.textPrimary} strokeWidth={2.2} />
+            <MoreIcon size={18} color={colors.textPrimary} strokeWidth={2.2} />
           </Pressable>
         </View>
       </View>
@@ -90,7 +90,7 @@ export const WorkerProfileHeader: React.FC<WorkerProfileHeaderProps> = ({
               {worker?.name || 'Worker'}
             </Text>
             {worker?.isVerified ? (
-              <BadgeCheck
+              <VerifiedIcon
                 size={18}
                 color={colors.pureWhite}
                 fill={colors.primaryDark}
@@ -115,7 +115,7 @@ export const WorkerProfileHeader: React.FC<WorkerProfileHeaderProps> = ({
               accessibilityRole="button"
               accessibilityLabel={`Rated ${worker?.avgRating?.toFixed(1)} from ${reviewCount} reviews`}
             >
-              <Star size={14} color={colors.warning} fill={colors.warning} />
+              <StarIcon size={14} color={colors.warning} fill={colors.warning} />
               <Text style={styles.ratingText}>{worker?.avgRating?.toFixed(1)}</Text>
               <Text style={styles.reviewCountText}>
                 ({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})

@@ -21,7 +21,6 @@ export interface BookingAddress {
 export interface BookingDraftState {
   selectedDate: string | null; // Format: YYYY-MM-DD
   selectedTimeSlot: string | null; // e.g. "09:00 AM"
-  isUrgent: boolean;
   workerId: string | null;
   addressId: string | null;
   address: BookingAddress | null;
@@ -30,7 +29,6 @@ export interface BookingDraftState {
   // Actions
   setSelectedDate: (date: string | null) => void;
   setSelectedTimeSlot: (slot: string | null) => void;
-  setIsUrgent: (isUrgent: boolean) => void;
   setWorkerId: (workerId: string | null) => void;
   setAddressId: (addressId: string | null) => void;
   setAddress: (address: BookingAddress | null) => void;
@@ -42,7 +40,6 @@ export interface BookingDraftState {
 export const useBookingDraftStore = create<BookingDraftState>((set, get) => ({
   selectedDate: null,
   selectedTimeSlot: null,
-  isUrgent: false,
   workerId: null,
   addressId: null,
   address: null,
@@ -59,14 +56,6 @@ export const useBookingDraftStore = create<BookingDraftState>((set, get) => ({
 
   setSelectedTimeSlot: (selectedTimeSlot) => {
     const newState = { selectedTimeSlot };
-    set(newState);
-    try {
-      storage.set(STORAGE_KEY, JSON.stringify({ ...get(), ...newState }));
-    } catch (_e) {}
-  },
-
-  setIsUrgent: (isUrgent) => {
-    const newState = { isUrgent };
     set(newState);
     try {
       storage.set(STORAGE_KEY, JSON.stringify({ ...get(), ...newState }));
@@ -112,7 +101,6 @@ export const useBookingDraftStore = create<BookingDraftState>((set, get) => ({
     set({
       selectedDate: null,
       selectedTimeSlot: null,
-      isUrgent: false,
       workerId: null,
       addressId: null,
       address: null,
@@ -128,7 +116,6 @@ export const useBookingDraftStore = create<BookingDraftState>((set, get) => ({
         set({
           selectedDate: parsed.selectedDate || null,
           selectedTimeSlot: parsed.selectedTimeSlot || null,
-          isUrgent: Boolean(parsed.isUrgent),
           workerId: parsed.workerId || null,
           addressId: parsed.addressId || null,
           address: parsed.address || null,

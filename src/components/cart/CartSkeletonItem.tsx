@@ -5,7 +5,7 @@ import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 /**
  * Mirrors CartItem: flat row (16px vertical padding, hairline divider) with the service name
- * (14/20), price below, and the QuantityStepper pill (≈92×36) on the right.
+ * (14/20), price below, and the "Remove" text action on the right.
  */
 export const CartSkeletonItem: FC = () => {
   const styles = useThemedStyles(createStyles);
@@ -15,7 +15,7 @@ export const CartSkeletonItem: FC = () => {
       <SkeletonText fontSize={14} lineHeight={20} width="62%" style={styles.name} />
       <SkeletonText fontSize={14} lineHeight={19} width={70} />
     </View>
-    <Skeleton width={92} height={36} borderRadius={SKELETON.radius.pill} />
+    <Skeleton width={56} height={16} borderRadius={SKELETON.radius.pill} />
   </SkeletonGroup>
 );
 };

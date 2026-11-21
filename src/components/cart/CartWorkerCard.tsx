@@ -1,11 +1,14 @@
 import { FC } from 'react';
 import { StyleSheet, View, Text, Image, Pressable, Platform } from 'react-native';
-import { Star } from 'lucide-react-native';
+import { StarIcon } from '../ui/Icon/icons';
 import { useRouter } from 'expo-router';
 import { WorkerInfo } from '../../store/cart.store';
 import { VerifiedBadge } from '../worker/VerifiedBadge';
+import { WorkerProfileLink } from '../worker/WorkerProfileLink';
 import { typography } from '../../design/typography';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+
+const AVATAR_SIZE = 46;
 
 interface CartWorkerCardProps {
   worker: WorkerInfo | null;
@@ -31,7 +34,13 @@ export const CartWorkerCard: FC<CartWorkerCardProps> = ({
 
   return (
     <View style={styles.card}>
-      {/* Avatar Container */}
+      {/* Avatar: opens the worker's profile */}
+      <WorkerProfileLink
+        workerId={worker.id}
+        isCompany={Boolean(worker.isCompany || worker.providerType === 'COMPANY')}
+        workerName={worker.name}
+        size={AVATAR_SIZE}
+      >
       {worker.avatarUrl ? (
         <Image
           source={{ uri: worker.avatarUrl }}
@@ -45,6 +54,7 @@ export const CartWorkerCard: FC<CartWorkerCardProps> = ({
           </Text>
         </View>
       )}
+      </WorkerProfileLink>
 
       {/* Info Container */}
       <View style={styles.infoContainer}>
@@ -58,7 +68,7 @@ export const CartWorkerCard: FC<CartWorkerCardProps> = ({
         </View>
 
         <View style={styles.metaRow}>
-          <Star size={13} color="#F59E0B" fill="#F59E0B" />
+          <StarIcon size={13} color="#F59E0B" fill="#F59E0B" />
           <Text style={styles.ratingText}>
             {worker.avgRating ? worker.avgRating.toFixed(1) : '4.9'}
           </Text>
@@ -92,15 +102,15 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     borderBottomColor: colors.border,
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     backgroundColor: colors.bgSection,
   },
   avatarFallback: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',

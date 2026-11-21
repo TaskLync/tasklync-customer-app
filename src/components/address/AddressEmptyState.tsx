@@ -13,7 +13,7 @@ export const AddressEmptyState: React.FC<AddressEmptyStateProps> = ({ onAddPress
         type="no-data"
         title="No saved addresses yet"
         description="Add an address to book services faster"
-        actionLabel="Add Address"
+        actionLabel="Add address"
         onAction={onAddPress}
       />
     </View>

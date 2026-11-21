@@ -1,5 +1,5 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Check } from 'lucide-react-native';
+import { CheckIcon } from '../ui/Icon/icons';
 import { Address } from '../../types/address.types';
 import { labelToIcon } from '../../utils/address';
 import { DefaultAddressBadge } from './DefaultAddressBadge';
@@ -110,7 +110,7 @@ export const AddressCard: React.FC<AddressCardProps> = ({
               isSelected ? styles.radioOuterSelected : styles.radioOuterUnselected,
             ]}
           >
-            {isSelected && <Check size={12} color={palette.pureWhite} strokeWidth={3} />}
+            {isSelected && <CheckIcon size={12} color={palette.pureWhite} strokeWidth={3} />}
           </View>
         ) : (
           <View style={styles.rightContainer}>

@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Modal,
 } from 'react-native';
-import { X, HeartHandshake } from 'lucide-react-native';
+import { CloseIcon, HandshakeIcon } from '../ui/Icon/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheet, BottomSheetScrollView } from '../layout/BottomSheet';
 import { DeleteAccountReason } from '../../types/moderation.types';
@@ -67,7 +67,7 @@ export const DeleteAccountSheet: React.FC<DeleteAccountSheetProps> = ({
           accessibilityLiveRegion="polite"
         >
           <View style={styles.goodbyeIconBox}>
-            <HeartHandshake size={36} color={palette.gray700} />
+            <HandshakeIcon size={36} color={palette.gray700} />
           </View>
           <Text style={styles.goodbyeTitle} maxFontSizeMultiplier={1.3}>
             Account Deleted
@@ -97,7 +97,7 @@ export const DeleteAccountSheet: React.FC<DeleteAccountSheetProps> = ({
             accessibilityLabel="Close account deletion sheet"
             disabled={isLoading}
           >
-            <X size={20} color={colors.textSecondary} />
+            <CloseIcon size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 

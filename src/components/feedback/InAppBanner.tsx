@@ -19,14 +19,13 @@ import {
 } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  Bell,
-  MessageSquare,
-  CalendarCheck,
-  CreditCard,
-  Star,
-  Sparkles,
-  Info,
-} from 'lucide-react-native';
+  BellIcon,
+  CalendarCheckIcon,
+  ChatIcon,
+  CreditCardIcon,
+  SparklesIcon,
+  StarIcon,
+} from '../ui/Icon/icons';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface InAppBannerData {
@@ -118,21 +117,21 @@ export const InAppBanner = React.memo(function InAppBanner({
   const getCategoryIcon = () => {
     const cat = (data.category || '').toLowerCase();
     if (cat.includes('chat') || cat.includes('message')) {
-      return <MessageSquare size={18} color={colors.textInfo} strokeWidth={2.2} />;
+      return <ChatIcon size={18} color={colors.textInfo} strokeWidth={2.2} />;
     }
     if (cat.includes('booking')) {
-      return <CalendarCheck size={18} color={colors.primaryDark} strokeWidth={2.2} />;
+      return <CalendarCheckIcon size={18} color={colors.primaryDark} strokeWidth={2.2} />;
     }
     if (cat.includes('payment')) {
-      return <CreditCard size={18} color={colors.warningMedium} strokeWidth={2.2} />;
+      return <CreditCardIcon size={18} color={colors.warningMedium} strokeWidth={2.2} />;
     }
     if (cat.includes('review')) {
-      return <Star size={18} color={colors.starFilled} strokeWidth={2.2} />;
+      return <StarIcon size={18} color={colors.starFilled} strokeWidth={2.2} />;
     }
     if (cat.includes('marketing') || cat.includes('promo')) {
-      return <Sparkles size={18} color={palette.purple600} strokeWidth={2.2} />;
+      return <SparklesIcon size={18} color={palette.purple600} strokeWidth={2.2} />;
     }
-    return <Bell size={18} color={colors.primaryDark} strokeWidth={2.2} />;
+    return <BellIcon size={18} color={colors.primaryDark} strokeWidth={2.2} />;
   };
 
   return (

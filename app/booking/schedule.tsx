@@ -26,7 +26,6 @@ import { CalendarHeader } from '../../src/components/booking/schedule/CalendarHe
 import { CalendarWeekdayRow } from '../../src/components/booking/schedule/CalendarWeekdayRow';
 import { CalendarGrid } from '../../src/components/booking/schedule/CalendarGrid';
 import { TimeSlotGrid } from '../../src/components/booking/schedule/TimeSlotGrid';
-import { UrgentToggleRow } from '../../src/components/booking/schedule/UrgentToggleRow';
 import { BookingIssueSheet, type BookingIssueKind } from '../../src/components/booking/BookingIssueSheet';
 import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
@@ -49,9 +48,7 @@ export default function ScheduleScreen() {
   const {
     selectedDate,
     selectedTimeSlot,
-    isUrgent,
     setSelectedTimeSlot,
-    setIsUrgent,
     setWorkerId,
     hydrate,
     // Read the persisted workerId directly from the draft store so both hooks
@@ -218,16 +215,13 @@ export default function ScheduleScreen() {
             />
           )}
 
-          {/* Urgent Booking Switch Row */}
-          <UrgentToggleRow isUrgent={isUrgent} onToggle={setIsUrgent} />
-
           {/* Bottom spacing to ensure scroll clears sticky footer */}
           <View style={{ height: 112 + insets.bottom }} />
         </ScrollView>
 
         {/* Sticky Continue Footer */}
         <BookingFooterCTA
-          label="Next: Address →"
+          label="Next: address →"
           subtext={
             selectedDate && selectedTimeSlot
               ? `${selectedDate} • ${selectedTimeSlot}`

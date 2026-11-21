@@ -14,6 +14,7 @@ import {
 import { groupNotificationsByDate } from '../utils/groupByDate';
 import { useNotificationStore } from '../store/notification.store';
 import { UNREAD_COUNT_QUERY_KEY } from './useUnreadCount';
+import { showAlert } from '../components/feedback/AppAlert';
 
 export const NOTIFICATIONS_QUERY_KEY = 'notifications';
 
@@ -171,28 +172,16 @@ export function useNotifications() {
     },
   });
 
-  // 6. Mutation: Mark All As Read (Optimistic with Rollback)
+  // 6. Mutation: Mark All As Read. Confirm-first (not optimistic): the list and the unread count only change
+  //    once the server has actually marked everything read; the header shows progress meanwhile.
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
       const count = await notificationApi.markAllRead();
       return count;
     },
-    onMutate: async () => {
+    onSuccess: async () => {
       await queryClient.cancelQueries({ queryKey: [NOTIFICATIONS_QUERY_KEY] });
 
-      const prevUnreadCount = useNotificationStore.getState().unreadCount;
-      const previousDataMap = new Map<string, InfiniteData<NotificationFeedResponse> | undefined>();
-      const queryFilterKeys = [
-        [NOTIFICATIONS_QUERY_KEY, { filter: 'all' as const }],
-        [NOTIFICATIONS_QUERY_KEY, { filter: 'unread' as const }],
-      ];
-
-      for (const qk of queryFilterKeys) {
-        const snap = queryClient.getQueryData<InfiniteData<NotificationFeedResponse>>(qk);
-        previousDataMap.set(JSON.stringify(qk), snap);
-      }
-
-      // Optimistically mark all cached notifications as read
       queryClient.setQueriesData<InfiniteData<NotificationFeedResponse>>(
         { queryKey: [NOTIFICATIONS_QUERY_KEY] },
         (oldData) => {
@@ -207,25 +196,13 @@ export function useNotifications() {
         }
       );
 
-      // Optimistically zero unread count
+      // Server confirmed: everything is read now.
       clearUnread();
       queryClient.setQueryData<number>(UNREAD_COUNT_QUERY_KEY, 0);
-
-      return { previousDataMap, prevUnreadCount };
     },
-    onError: (_err, _variables, context) => {
-      if (context?.previousDataMap) {
-        context.previousDataMap.forEach((data, keyStr) => {
-          try {
-            const queryKey = JSON.parse(keyStr);
-            queryClient.setQueryData(queryKey, data);
-          } catch {}
-        });
-      }
-      if (context?.prevUnreadCount !== undefined) {
-        setUnreadCount(context.prevUnreadCount);
-        queryClient.setQueryData(UNREAD_COUNT_QUERY_KEY, context.prevUnreadCount);
-      }
+    onError: () => {
+      // Nothing was changed locally, so there is nothing to roll back; just tell the user.
+      showAlert("Couldn't mark all as read", 'Please check your connection and try again.');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY });
@@ -328,6 +305,7 @@ export function useNotifications() {
     refetch: handleRefresh,
     markRead,
     markAllRead,
+    isMarkingAllRead: markAllReadMutation.isPending,
     deleteNotification,
   };
 }

@@ -5,6 +5,7 @@
  */
 
 import type { BookingDiscountFields } from './offers.types';
+import type { FeeSnapshotFields } from "../utils/feeDisplay";
 
 export type BookingStatus =
   | 'PENDING'
@@ -96,6 +97,10 @@ export interface InvoicePaymentMethodData {
   last4?: string | undefined;
   paid_at?: string | undefined;
   status: 'PAID' | 'PENDING' | 'REFUNDED';
+  /** Human label from the payment record's method code, e.g. "Cash on Delivery", "JazzCash Wallet". */
+  label?: string | undefined;
+  /** Payment record / gateway reference, only when the server has one. */
+  reference?: string | undefined;
 }
 
 export interface StructuredInvoiceData {
@@ -117,9 +122,17 @@ export interface StructuredInvoiceData {
     tax_id?: string | undefined;
   };
   line_items: InvoiceLineItemData[];
+  /** Service category of the booking (e.g. "AC Repair"), shown apart from the purchased services. */
+  category?: string | undefined;
+  /** The lines are an accepted custom quote rather than catalogue services. */
+  is_custom_quote?: boolean | undefined;
   subtotal: number;
   platform_fee: number;
-  urgency_fee?: number | undefined;
+  /** From the booking's pricing snapshot (absent on older bookings). */
+  platform_fee_percent?: number | null | undefined;
+  tax_amount?: number | undefined;
+  tax_label?: string | null | undefined;
+  tax_percent?: number | null | undefined;
   discount?: number | undefined;
   total: number;
   currency: string;
@@ -154,7 +167,6 @@ export interface CreateBookingPayload {
   address_text: string;
   latitude: number;
   longitude: number;
-  is_urgent: boolean;
   description?: string | undefined;
   /** Which services and how many; the server resolves every price. */
   items: Array<{ service_id: string; quantity: number }>;
@@ -166,7 +178,7 @@ export interface CreateBookingPayload {
  * 6.2 & 6.4 Booking Details Model
  * `estimated_total` is already the DISCOUNTED payable total; discount fields come from BookingDiscountFields.
  */
-export interface BookingDetails extends BookingDiscountFields {
+export interface BookingDetails extends BookingDiscountFields, FeeSnapshotFields {
   id: string;
   user_id: string;
   worker_id: string;
@@ -187,7 +199,6 @@ export interface BookingDetails extends BookingDiscountFields {
   /** Customer's directions for the professional (snapshot; booking-service migration 018). */
   address_instructions?: string | null | undefined;
   base_price: number;
-  urgency_multiplier: number;
   demand_multiplier: number;
   time_of_day_multiplier: number;
   estimated_total: number;
@@ -195,7 +206,6 @@ export interface BookingDetails extends BookingDiscountFields {
   worker_amount: number;
   currency: string;
   price_type: PriceType;
-  is_urgent: boolean;
   is_payment_confirmed: boolean;
   cancellation_reason?: string | undefined;
   cancelled_by?: string | undefined;
@@ -207,7 +217,11 @@ export interface BookingDetails extends BookingDiscountFields {
   worker_avatar_url?: string | undefined;
   worker_phone?: string | undefined;
   category_name?: string | undefined;
+  /** Name of the booked service as resolved by booking-service from this booking's own references (null if unknown). */
+  service_name?: string | null | undefined;
   custom_request_id?: string | undefined;
+  /** The customer's own words from the custom service request this booking came from (not the worker's quote). */
+  custom_request_description?: string | null | undefined;
   quote_id?: string | undefined;
   quote_type?: string | undefined;
   dispute?: DisputeDetails | null | undefined;

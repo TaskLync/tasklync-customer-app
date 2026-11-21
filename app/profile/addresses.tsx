@@ -4,15 +4,15 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import {
-  ArrowLeft,
-  Plus,
-  Pencil,
-  Trash2,
-  CheckCircle2,
-  X,
-  AlertCircle,
-  RefreshCw,
-} from 'lucide-react-native';
+  AlertCircleIcon,
+  ArrowLeftIcon,
+  CheckCircleIcon,
+  CloseIcon,
+  DeleteIcon,
+  EditIcon,
+  PlusIcon,
+  RefreshIcon,
+} from '../../src/components/ui/Icon/icons';
 
 import { BottomSheet } from '../../src/components/layout/BottomSheet';
 import { useAddresses } from '../../src/hooks/useAddresses';
@@ -77,7 +77,7 @@ export default function SavedAddressesScreen() {
   const handleDeleteAddress = (address: Address) => {
     setActionSheetAddress(null);
     showAlert(
-      'Delete Address',
+      'Delete address?',
       `Are you sure you want to delete "${address.label || 'this address'}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
@@ -88,7 +88,7 @@ export default function SavedAddressesScreen() {
             try {
               await deleteAddress(address.id);
             } catch (_err) {
-              showAlert('Error', "Couldn't delete address. Tap retry.");
+              showAlert("Couldn't delete address", 'Please try again.');
             }
           },
         },
@@ -102,7 +102,7 @@ export default function SavedAddressesScreen() {
     try {
       await setDefaultAddress(address.id);
     } catch (_err) {
-      showAlert('Error', 'Failed to update default address.');
+      showAlert("Couldn't update default address", 'Please try again.');
     }
   };
 
@@ -143,7 +143,7 @@ export default function SavedAddressesScreen() {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={22} color={colors.textPrimary} strokeWidth={2.4} />
+            <ArrowLeftIcon size={22} color={colors.textPrimary} strokeWidth={2.4} />
           </Pressable>
 
           <Text
@@ -161,7 +161,7 @@ export default function SavedAddressesScreen() {
           {/* Error Banner */}
           {isError && (
             <View style={styles.errorCard}>
-              <AlertCircle size={20} color={palette.danger} />
+              <AlertCircleIcon size={20} color={palette.danger} />
               <View style={styles.errorTextWrap}>
                 <Text style={styles.errorTitle}>Couldn&apos;t load addresses</Text>
                 <Text style={styles.errorSubtitle}>Please check your connection</Text>
@@ -172,7 +172,7 @@ export default function SavedAddressesScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading addresses"
               >
-                <RefreshCw size={14} color={colors.primaryDark} />
+                <RefreshIcon size={14} color={colors.primaryDark} />
                 <Text style={styles.retryText}>Retry</Text>
               </Pressable>
             </View>
@@ -221,7 +221,7 @@ export default function SavedAddressesScreen() {
             accessibilityRole="button"
             accessibilityLabel="Add New Address"
           >
-            <Plus size={20} color={colors.primaryDark} strokeWidth={2.4} />
+            <PlusIcon size={20} color={colors.primaryDark} strokeWidth={2.4} />
             <Text style={styles.addButtonText} maxFontSizeMultiplier={1.3}>
               Add New Address
             </Text>
@@ -244,7 +244,7 @@ export default function SavedAddressesScreen() {
                 onPress={() => setActionSheetAddress(null)}
                 style={styles.actionSheetClose}
               >
-                <X size={20} color={palette.gray500} />
+                <CloseIcon size={20} color={palette.gray500} />
               </Pressable>
             </View>
 
@@ -255,7 +255,7 @@ export default function SavedAddressesScreen() {
                 style={styles.actionSheetRow}
                 accessibilityRole="button"
               >
-                <CheckCircle2 size={20} color={colors.primaryDark} strokeWidth={2.2} />
+                <CheckCircleIcon size={20} color={colors.primaryDark} strokeWidth={2.2} />
                 <Text style={styles.actionSheetRowText} maxFontSizeMultiplier={1.3}>
                   Set as Default Address
                 </Text>
@@ -268,7 +268,7 @@ export default function SavedAddressesScreen() {
               style={styles.actionSheetRow}
               accessibilityRole="button"
             >
-              <Pencil size={20} color={palette.info} strokeWidth={2.2} />
+              <EditIcon size={20} color={palette.info} strokeWidth={2.2} />
               <Text style={styles.actionSheetRowText} maxFontSizeMultiplier={1.3}>
                 Edit Address Details
               </Text>
@@ -280,7 +280,7 @@ export default function SavedAddressesScreen() {
               style={[styles.actionSheetRow, styles.actionSheetRowDanger]}
               accessibilityRole="button"
             >
-              <Trash2 size={20} color={palette.danger} strokeWidth={2.2} />
+              <DeleteIcon size={20} color={palette.danger} strokeWidth={2.2} />
               <Text style={[styles.actionSheetRowText, styles.dangerText]} maxFontSizeMultiplier={1.3}>
                 Delete Address
               </Text>

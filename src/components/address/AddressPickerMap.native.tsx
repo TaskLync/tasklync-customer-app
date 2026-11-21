@@ -20,7 +20,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { MapPin } from 'lucide-react-native';
+import { LocationIcon } from '../ui/Icon/icons';
 import { MapRegion } from '../../types/address.types';
 import { FAISALABAD_DEFAULT_REGION } from '../../config/serviceArea.config';
 import { DARK_MAP_STYLE, LIGHT_MAP_STYLE } from '../../design/mapStyles';
@@ -240,7 +240,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
               Map couldn&apos;t load
             </Text>
             <Text style={styles.tilesFailedText} maxFontSizeMultiplier={1.3}>
-              Check your internet connection. You can still search for your area or use your location — the pin
+              Check your internet connection. You can still search for your area or use your location. The pin
               in the centre is what will be saved.
             </Text>
           </View>
@@ -254,7 +254,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
           {/* Floating animated pin icon */}
           <Animated.View style={[styles.pinIconWrapper, pinAnimatedStyle]}>
             <View style={styles.pinHead}>
-              <MapPin size={34} color={colors.primaryDark} strokeWidth={2.4} />
+              <LocationIcon size={34} color={colors.primaryDark} strokeWidth={2.4} />
               <View style={styles.pinDot} />
             </View>
           </Animated.View>

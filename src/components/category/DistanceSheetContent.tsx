@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { MapPin, Navigation, Check } from 'lucide-react-native';
+import { CheckIcon, LocationIcon, NavigationIcon } from '../ui/Icon/icons';
 import { SortOption } from '../../types/search.types';
 import { Button } from '../ui/Button/Button';
 import { typography } from '../../design/typography';
@@ -36,7 +36,7 @@ const DISTANCE_OPTIONS: DistanceOption[] = [
     subtitle: 'Extended metropolitan radius',
   },
   {
-    label: 'All Distances',
+    label: 'All distances',
     radiusMeters: 50000,
     subtitle: 'Show all available workers across the region',
   },
@@ -68,7 +68,7 @@ export const DistanceSheetContent: React.FC<DistanceSheetContentProps> = ({
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>
-          <MapPin size={20} color={colors.primary} />
+          <LocationIcon size={20} color={colors.primary} />
           <Text style={styles.headerTitle}>Distance & Coverage</Text>
         </View>
         <Pressable onPress={handleResetToDefault} hitSlop={12}>
@@ -113,7 +113,7 @@ export const DistanceSheetContent: React.FC<DistanceSheetContentProps> = ({
               </View>
 
               <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
-                {isSelected && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
+                {isSelected && <CheckIcon size={14} color="#FFFFFF" strokeWidth={3} />}
               </View>
             </Pressable>
           );
@@ -127,17 +127,17 @@ export const DistanceSheetContent: React.FC<DistanceSheetContentProps> = ({
         accessibilityRole="checkbox"
         accessibilityState={{ checked: sortByNearest }}
       >
-        <Navigation size={18} color={sortByNearest ? colors.primary : colors.textMuted} />
-        <Text style={styles.sortToggleText}>Prioritize closest workers first (Nearest sort)</Text>
+        <NavigationIcon size={18} color={sortByNearest ? colors.primary : colors.textMuted} />
+        <Text style={styles.sortToggleText}>Show closest workers first</Text>
         <View style={[styles.checkboxCircle, sortByNearest && styles.checkboxCircleSelected]}>
-          {sortByNearest && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
+          {sortByNearest && <CheckIcon size={12} color="#FFFFFF" strokeWidth={3} />}
         </View>
       </Pressable>
 
       {/* Footer */}
       <View style={styles.footer}>
         <Button
-          label="Apply Distance"
+          label="Apply distance"
           onPress={handleApply}
           variant="primary"
           size="lg"

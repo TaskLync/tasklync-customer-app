@@ -64,8 +64,8 @@ export const WorkerServiceRow: React.FC<WorkerServiceRowProps> = ({
 
   const handleQuotePress = () => {
     showAlert(
-      'Get Quote',
-      `Would you like to chat with ${workerName || 'the provider'} to get a custom quote for ${service.serviceName}?`,
+      'Get a quote',
+      `Chat with ${workerName || 'this worker'} to get a custom quote for ${service.serviceName}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Message', onPress: () => router.push('/chat' as any) },

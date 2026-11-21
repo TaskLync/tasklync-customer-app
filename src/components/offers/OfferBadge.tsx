@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { Tag } from 'lucide-react-native';
+import { TagIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { formatBadgePercent, formatEndsIn, isOfferLive } from '../../utils/offers';
 import type { SearchWorkerPromotion } from '../../types/offers.types';
@@ -34,7 +34,7 @@ export const OfferBadge: React.FC<OfferBadgeProps> = React.memo(({ promotion, st
       accessibilityLabel={`Offer: ${percent}${detail ? `, ${detail}` : ''}`}
     >
       <View style={styles.pill}>
-        <Tag size={10} color={palette.green700} strokeWidth={2.6} />
+        <TagIcon size={10} color={palette.green700} strokeWidth={2.6} />
         <Text style={styles.pillText}>{percent}</Text>
       </View>
       {detail ? (

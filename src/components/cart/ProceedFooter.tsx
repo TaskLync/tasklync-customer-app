@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowRight } from 'lucide-react-native';
+import { ArrowRightIcon } from '../ui/Icon/icons';
 import { useRouter } from 'expo-router';
 import { typography } from '../../design/typography';
 import { springConfig } from '../../design/animations';
@@ -99,7 +99,7 @@ export const ProceedFooter: FC<ProceedFooterProps> = ({
             <View style={styles.rightGroup}>
               {/* Inter font for total inside CTA */}
               <Text style={styles.priceBadgeText}>{formattedTotal}</Text>
-              <ArrowRight size={18} color={colors.textOnGreen} />
+              <ArrowRightIcon size={18} color={colors.textOnGreen} />
             </View>
           )}
         </View>

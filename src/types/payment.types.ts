@@ -168,4 +168,4 @@ export interface AddCardDTO {
 }
 
 export const ONLINE_PAYMENTS_DISABLED_MESSAGE =
-  'Online payments are temporarily unavailable. Please proceed with Cash on Delivery.';
+  'Online payments are temporarily unavailable. Please pay with Cash on Delivery.';

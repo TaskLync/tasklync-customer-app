@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
-import { Plus, X, RotateCw } from 'lucide-react-native';
+import { CloseIcon, PlusIcon, RetryIcon } from '../ui/Icon/icons';
 import { EvidenceSlotState } from '../../types/booking.types';
 import { fontFamily, fontSize, radius, spacing } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -57,7 +57,7 @@ export const DisputeEvidenceSlot: React.FC<DisputeEvidenceSlotProps> = ({
           accessibilityLabel={`Add photo evidence slot ${index + 1}`}
         >
           <View style={styles.plusCircle}>
-            <Plus size={20} color={colors.primaryDark} strokeWidth={2.4} />
+            <PlusIcon size={20} color={colors.primaryDark} strokeWidth={2.4} />
           </View>
           <Text style={styles.addText}>Add Photo</Text>
         </Pressable>
@@ -98,7 +98,7 @@ export const DisputeEvidenceSlot: React.FC<DisputeEvidenceSlotProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`Retry uploading photo ${index + 1}`}
           >
-            <RotateCw size={20} color={palette.pureWhite} />
+            <RetryIcon size={20} color={palette.pureWhite} />
             <Text style={styles.retryText}>Retry</Text>
           </Pressable>
 
@@ -110,7 +110,7 @@ export const DisputeEvidenceSlot: React.FC<DisputeEvidenceSlotProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Remove failed photo"
           >
-            <X size={14} color={palette.pureWhite} />
+            <CloseIcon size={14} color={palette.pureWhite} />
           </Pressable>
         </View>
       )}
@@ -134,7 +134,7 @@ export const DisputeEvidenceSlot: React.FC<DisputeEvidenceSlotProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`Remove photo ${index + 1}`}
           >
-            <X size={14} color={palette.pureWhite} strokeWidth={2.5} />
+            <CloseIcon size={14} color={palette.pureWhite} strokeWidth={2.5} />
           </Pressable>
         </View>
       )}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, ViewStyle } from 'react-native';
-import { ShieldCheck } from 'lucide-react-native';
+import { ShieldCheckIcon } from '../ui/Icon/icons';
 import { radius } from '../../design/radius';
 import { typography } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -26,7 +26,7 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
   if (isXs || !showLabel) {
     return (
       <View style={[styles.compactContainer, style]}>
-        <ShieldCheck size={iconSize} color={colors.primary} />
+        <ShieldCheckIcon size={iconSize} color={colors.primary} />
       </View>
     );
   }
@@ -39,7 +39,7 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
         style,
       ]}
     >
-      <ShieldCheck size={iconSize} color={colors.primaryDark} style={styles.icon} />
+      <ShieldCheckIcon size={iconSize} color={colors.primaryDark} style={styles.icon} />
       <Text style={[styles.text, isMd ? styles.textMd : styles.textSm]}>
         Verified Worker
       </Text>

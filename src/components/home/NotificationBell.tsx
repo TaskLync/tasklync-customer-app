@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Bell } from 'lucide-react-native';
+import { BellIcon } from '../ui/Icon/icons';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -103,7 +103,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     <View style={styles.container}>
       <Animated.View style={bellStyle}>
         <IconButton
-          icon={Bell}
+          icon={BellIcon}
           iconSize={iconSize}
           color={colors.textPrimary}
           bg="transparent"

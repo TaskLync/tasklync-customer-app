@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, RefreshControl, Pressable, ActivityIndicator } 
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
-import { ArrowLeft, Edit3, Lock } from 'lucide-react-native';
+import { ArrowLeftIcon, EditIcon, LockIcon } from '../../src/components/ui/Icon/icons';
 import { Image } from 'expo-image';
 
 import { useCustomerReviews } from '../../src/hooks/useReview';
@@ -86,12 +86,12 @@ export default function CustomerReviewsScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Edit review. ${hoursLeft} hours remaining.`}
             >
-              <Edit3 size={13} color={colors.primary} />
+              <EditIcon size={13} color={colors.primary} />
               <Text style={styles.editBadgeText}>{hoursLeft}h left to edit</Text>
             </Pressable>
           ) : (
             <View style={styles.lockedBadge}>
-              <Lock size={12} color={palette.gray400} />
+              <LockIcon size={12} color={palette.gray400} />
               <Text style={styles.lockedBadgeText}>Locked</Text>
             </View>
           )}
@@ -137,7 +137,7 @@ export default function CustomerReviewsScreen() {
           <ReviewReplyBubble
             reply={item.worker_reply}
             repliedAt={item.worker_replied_at || null}
-            workerName="Service Professional"
+            workerName="Service Worker"
             style={styles.replyBubble}
           />
         ) : null}
@@ -167,7 +167,7 @@ export default function CustomerReviewsScreen() {
         <EmptyState
           type="no-data"
           title="No Reviews Submitted Yet"
-          description="When you complete a booking and rate your service professional, your reviews will appear here."
+          description="When you complete a booking and rate your service worker, your reviews will appear here."
         />
       </View>
     );
@@ -186,7 +186,7 @@ export default function CustomerReviewsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={colors.textPrimary} />
+          <ArrowLeftIcon size={22} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>My Reviews</Text>
         <View style={styles.iconButton} />

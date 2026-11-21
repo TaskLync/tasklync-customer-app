@@ -25,12 +25,12 @@ export const AddressNotesInput: React.FC<AddressNotesInputProps> = ({
   onChangeText,
   onFocus,
   onBlur,
-  label = 'Directions for the professional',
+  label = 'Directions for the worker',
   placeholder = 'e.g. Blue gate opposite the mosque, 2nd floor, ring twice',
   maxLength = 300,
   optional = true,
   accessibilityLabel,
-  accessibilityHint = 'Optional directions to help the professional find your door',
+  accessibilityHint = 'Optional directions to help the worker find your door',
 }) => {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);

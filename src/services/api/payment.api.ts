@@ -31,7 +31,7 @@ export const STANDARD_PAYMENT_METHODS: SavedPaymentMethod[] = [
     type: 'cash',
     brand: 'cash',
     title: 'Cash on Delivery',
-    subtitle: 'Pay cash to professional upon service completion',
+    subtitle: 'Pay the worker in cash after the job',
     isDefault: true,
     isEnabled: true,
   },
@@ -76,7 +76,7 @@ export const paymentApi = {
         success: true,
         instructions: {
           type: 'cod',
-          message: 'Pay cash directly to the worker upon service completion. The worker will confirm receipt in-app.',
+          message: 'Pay the worker in cash after the job is done. The worker will confirm the payment in the app.',
         },
       };
     } catch (err: any) {

@@ -1,21 +1,28 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 import { SkeletonGroup } from './Skeleton';
 import { SkeletonCategoryCard } from './SkeletonCategoryCard';
+import {
+  CATEGORY_VISIBLE_COUNT,
+  getCategoryCarouselLayout,
+  type CategoryCarouselLayout,
+} from '../../home/categoryCarouselLayout';
 
-/** Same insets/gap as CategoryGrid's FlatList (34 left, 22 between items). */
-export const SkeletonCategoryGrid = () => (
-  <SkeletonGroup style={styles.row} accessibilityLabel="Loading categories">
-    {Array.from({ length: 6 }).map((_, i) => (
-      <SkeletonCategoryCard key={i} />
-    ))}
-  </SkeletonGroup>
-);
+/** Same slots and gutter as CategoryGrid, so the real categories replace it with no shift. */
+export const SkeletonCategoryGrid = ({ layout }: { layout?: CategoryCarouselLayout }) => {
+  const { width } = useWindowDimensions();
+  const l = layout ?? getCategoryCarouselLayout(width);
+  return (
+    <SkeletonGroup style={[styles.row, { paddingHorizontal: l.gutter }]} accessibilityLabel="Loading categories">
+      {Array.from({ length: CATEGORY_VISIBLE_COUNT }).map((_, i) => (
+        <SkeletonCategoryCard key={i} width={l.itemWidth} tileSize={l.tileSize} tileRadius={l.tileRadius} />
+      ))}
+    </SkeletonGroup>
+  );
+};
 
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    paddingLeft: 34,
-    gap: 22,
     overflow: 'hidden',
   },
 });

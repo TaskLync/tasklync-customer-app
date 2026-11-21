@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
   interpolateColor,
 } from 'react-native-reanimated';
+import { CashIcon } from '../ui/Icon/icons';
 import { PaymentMethod } from '../../types/payment.types';
 import { CardBrandIcon } from './CardBrandIcon';
 import { fontFamily, radius, spacing } from '../../design';
@@ -42,7 +43,7 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
     const backgroundColor = interpolateColor(
       highlightProgress.value,
       [0, 1],
-      [colors.bgCard, palette.green50]
+      [colors.cardRaised, palette.green50]
     );
     return { backgroundColor };
   });
@@ -61,7 +62,7 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   // Determine line 2 text (Concise: "Pay after service completion" for cash)
   const line2Text =
     type === 'cash'
-      ? 'Pay after service completion'
+      ? 'Pay after your service is completed'
       : type === 'wallet'
       ? `${brand === 'jazzcash' ? 'JazzCash' : 'EasyPaisa'} Direct Account`
       : exp_month && exp_year
@@ -72,18 +73,20 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
 
   return (
     <Animated.View
-      style={[
-        styles.cardContainer,
-        is_default ? styles.defaultBorder : styles.regularBorder,
-        animatedStyle,
-      ]}
+      style={[styles.cardContainer, animatedStyle]}
       accessible={true}
       accessibilityRole="none"
       accessibilityLabel={a11yAnnouncement}
     >
-      {/* Left: Brand Icon */}
+      {/* Left: method icon. Cash uses a neutral tile; cards/wallets keep their brand mark. */}
       <View style={styles.iconContainer}>
-        <CardBrandIcon brand={brand} size="md" />
+        {type === 'cash' ? (
+          <View style={styles.cashIconTile}>
+            <CashIcon size={20} color={colors.textSecondary} strokeWidth={1.8} />
+          </View>
+        ) : (
+          <CardBrandIcon brand={brand} size="md" />
+        )}
       </View>
 
       {/* Middle: Data & Label */}
@@ -131,47 +134,51 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   );
 };
 
-const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
+  // Neutral, thin-bordered card: white in Light, lifted charcoal in Dark. Green is not used for "default".
   cardContainer: {
-    height: 70,
+    minHeight: 72,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.cardRaised,
     borderRadius: radius.lg,
-    paddingHorizontal: spacing.base,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  regularBorder: {
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  defaultBorder: {
-    borderWidth: 1.2,
-    borderColor: colors.buttonPrimary,
+    paddingHorizontal: spacing.base,
+    paddingVertical: 14,
   },
   iconContainer: {
     marginRight: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  cashIconTile: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: colors.cardRaised,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   contentContainer: {
     flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
     marginRight: spacing.sm,
   },
   line1: {
-    fontFamily: fontFamily.inter.semiBold,
+    fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 15,
     lineHeight: 20,
     color: colors.textPrimary,
-    letterSpacing: 0.1,
   },
   line2: {
-    fontFamily: fontFamily.inter.regular,
+    fontFamily: fontFamily.jakarta.regular,
     fontSize: 13,
     lineHeight: 18,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   actionContainer: {
@@ -179,15 +186,15 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   defaultChip: {
-    backgroundColor: palette.green100,
-    paddingHorizontal: 9,
+    backgroundColor: colors.bgHover,
+    paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: radius.pill,
+    borderRadius: 6,
   },
   defaultChipText: {
-    fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 11,
-    color: palette.green800,
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 11.5,
+    color: colors.textSecondary,
     lineHeight: 15,
   },
   setDefaultButton: {

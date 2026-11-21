@@ -89,9 +89,9 @@ export function statusToLabel(status?: BookingStatus | string): string {
     case 'ACCEPTED':
       return 'Confirmed';
     case 'IN_PROGRESS':
-      return 'In Progress';
+      return 'In progress';
     case 'COMPLETED_BY_WORKER':
-      return 'Awaiting Confirmation';
+      return 'Waiting for confirmation';
     case 'COMPLETED':
     case 'AUTO_COMPLETED':
       return 'Completed';

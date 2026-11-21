@@ -26,16 +26,16 @@ export const bookingActionsMap: Record<BookingStatus, BookingActionConfig[]> = {
   ],
   COMPLETED: [
     { label: 'Review', action: 'review', variant: 'primary' },
-    { label: 'Book Again', action: 'book_again', variant: 'secondary' }
+    { label: 'Book again', action: 'book_again', variant: 'secondary' }
   ],
   AUTO_COMPLETED: [
     { label: 'Review', action: 'review', variant: 'primary' },
-    { label: 'Book Again', action: 'book_again', variant: 'secondary' }
+    { label: 'Book again', action: 'book_again', variant: 'secondary' }
   ],
   DISPUTED: [],
   RESOLVED: [],
   REFUNDED: [],
   CANCELLED: [
-    { label: 'Book Again', action: 'book_again', variant: 'secondary' }
+    { label: 'Book again', action: 'book_again', variant: 'secondary' }
   ],
 };

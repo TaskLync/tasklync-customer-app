@@ -8,7 +8,7 @@ import {
   ViewStyle,
   LayoutChangeEvent,
 } from 'react-native';
-import { MessageCircle } from 'lucide-react-native';
+import { ChatBubbleIcon } from '../ui/Icon/icons';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 /** Shown at the top of the history while an older page is being fetched. */
@@ -44,7 +44,7 @@ export const EmptyConversation = React.memo(function EmptyConversation({
   return (
     <View style={[styles.empty, style]} onLayout={onLayout}>
       <View style={styles.emptyIcon}>
-        <MessageCircle size={22} color={colors.primaryDark} strokeWidth={2} />
+        <ChatBubbleIcon size={22} color={colors.primaryDark} strokeWidth={2} />
       </View>
       <Text style={styles.emptyTitle}>No messages yet</Text>
       <Text style={styles.emptySubtitle}>Send a message to start the conversation.</Text>

@@ -6,7 +6,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WifiOff } from 'lucide-react-native';
+import { WifiOffIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design/typography';
 import { NETWORK_CONFIG } from '../../config/networkConfig';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -73,9 +73,9 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = React.memo(({ isOffli
       ]}
     >
       <View style={styles.banner}>
-        <WifiOff size={14} color={palette.warningDark} strokeWidth={2.2} style={styles.icon} />
+        <WifiOffIcon size={14} color={palette.warningDark} strokeWidth={2.2} style={styles.icon} />
         <Text style={styles.text} numberOfLines={1}>
-          You're offline — some features may be limited
+          You're offline. Some features may be unavailable.
         </Text>
       </View>
     </Animated.View>

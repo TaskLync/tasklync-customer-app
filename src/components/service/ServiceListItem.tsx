@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Zap, Wind, Droplet, Sparkles, Wrench } from 'lucide-react-native';
+import { AcIcon, DropletIcon, FlashIcon, SparklesIcon, WrenchIcon } from '../ui/Icon/icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, interpolateColor } from 'react-native-reanimated';
 
 import { radius } from '../../design/radius';
@@ -86,11 +86,11 @@ export const ServiceListItem: React.FC<ServiceListItemProps> = ({
       );
     }
     switch (iconName) {
-      case 'zap': return <Zap size={20} color={colors.primary} />;
-      case 'wind': return <Wind size={20} color={colors.primary} />;
-      case 'droplet': return <Droplet size={20} color={colors.primary} />;
-      case 'sparkles': return <Sparkles size={20} color={colors.primary} />;
-      default: return <Wrench size={20} color={colors.primary} />;
+      case 'zap': return <FlashIcon size={20} color={colors.primary} />;
+      case 'wind': return <AcIcon size={20} color={colors.primary} />;
+      case 'droplet': return <DropletIcon size={20} color={colors.primary} />;
+      case 'sparkles': return <SparklesIcon size={20} color={colors.primary} />;
+      default: return <WrenchIcon size={20} color={colors.primary} />;
     }
   };
 

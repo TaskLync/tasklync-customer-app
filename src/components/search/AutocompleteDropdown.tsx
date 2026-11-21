@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Layers, User, ArrowUpRight } from 'lucide-react-native';
+import { ArrowUpRightIcon, LayersIcon, UserIcon } from '../ui/Icon/icons';
 import { AutocompleteSuggestion } from '../../types/search.types';
 import { typography } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -40,9 +40,9 @@ export const AutocompleteDropdown: React.FC<AutocompleteDropdownProps> = ({
           >
             <View style={[styles.iconWrap, isCategory ? styles.categoryIconWrap : styles.workerIconWrap]}>
               {isCategory ? (
-                <Layers size={15} color={colors.primary} />
+                <LayersIcon size={15} color={colors.primary} />
               ) : (
-                <User size={15} color={palette.blue600} />
+                <UserIcon size={15} color={palette.blue600} />
               )}
             </View>
 
@@ -58,11 +58,11 @@ export const AutocompleteDropdown: React.FC<AutocompleteDropdownProps> = ({
                 ) : null}
               </View>
               <Text style={styles.typeSubLabel}>
-                {isCategory ? 'Service Category' : 'Verified Professional'}
+                {isCategory ? 'Service Category' : 'Verified Worker'}
               </Text>
             </View>
 
-            <ArrowUpRight size={16} color={colors.textMuted} />
+            <ArrowUpRightIcon size={16} color={colors.textMuted} />
           </Pressable>
         );
       })}

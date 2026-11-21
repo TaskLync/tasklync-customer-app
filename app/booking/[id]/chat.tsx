@@ -174,7 +174,7 @@ export default function BookingChatScreen() {
       const cleanCategory = cat.replace(/s$/i, '').trim();
       return isCompany ? `${cleanCategory} Agency Support` : `Assigned ${cleanCategory}`;
     }
-    return isCompany ? 'Agency Support Office' : 'Assigned Professional';
+    return isCompany ? 'Agency Support Office' : 'Assigned Worker';
   }, [params.companyName, params.workerName, params.categoryName, booking?.provider_name, booking?.worker_name, booking?.category_name, isCompany]);
 
   const resolvedWorkerAvatar =
@@ -195,12 +195,12 @@ export default function BookingChatScreen() {
 
   const handleCallPress = useCallback(() => {
     if (!resolvedWorkerPhone) {
-      showAlert('Contact Unavailable', 'Direct phone calling is not available for this booking.');
+      showAlert('Calling unavailable', "Calling isn't available for this booking. You can still message here.");
       return;
     }
     const cleanPhone = resolvedWorkerPhone.replace(/[^\d+]/g, '');
     Linking.openURL(`tel:${cleanPhone}`).catch(() => {
-      showAlert('Unable to place call', 'Could not open phone dialer on this device.');
+      showAlert("Couldn't start the call", "This device can't open the phone dialer.");
     });
   }, [resolvedWorkerPhone]);
 
@@ -255,6 +255,7 @@ export default function BookingChatScreen() {
         isOnline={isWorkerOnline || isWorkerTyping}
         workerPhone={resolvedWorkerPhone}
         isCompany={isCompany}
+        workerId={booking?.worker_id || params.workerId}
         onCallPress={handleCallPress}
       />
 

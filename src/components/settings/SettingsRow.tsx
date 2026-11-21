@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRightIcon } from '../ui/Icon/icons';
 import { fontFamily, spacing } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -62,7 +62,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
       <View style={styles.trailingContainer}>
         {rightElement}
         {showChevron && (
-          <ChevronRight size={18} color={palette.gray400} style={styles.chevron} />
+          <ChevronRightIcon size={18} color={palette.gray400} style={styles.chevron} />
         )}
       </View>
     </View>

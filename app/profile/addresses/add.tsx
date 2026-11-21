@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, Keyboard } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Info } from 'lucide-react-native';
+import { ArrowLeftIcon, InfoIcon } from '../../../src/components/ui/Icon/icons';
 
 import { AddressPickerMap, AddressPickerMapRef } from '../../../src/components/address/AddressPickerMap';
 import { MapErrorBoundary } from '../../../src/components/address/MapErrorBoundary';
@@ -371,8 +371,8 @@ export default function AddEditAddressScreen() {
     if (!selectGateRef.current.isLatest(ticket)) return;
     if (!details) {
       showAlert(
-        'Location Error',
-        'Could not determine location for this address. Please select directly on the map.'
+        "Couldn't find this address",
+        'Please place the pin on the map instead.'
       );
       resetSearch();
       return;
@@ -380,7 +380,7 @@ export default function AddEditAddressScreen() {
 
     const validation = validateServiceArea({ lat: details.lat, lng: details.lng });
     if (!validation.isServiceable) {
-      showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      showAlert('Outside service area', SERVICE_UNAVAILABLE_MESSAGE);
       resetSearch();
       return;
     }
@@ -422,7 +422,7 @@ export default function AddEditAddressScreen() {
     userInteractedRef.current = true; // explicit user action: auto-GPS must not move the pin again
     const validation = validateServiceArea(coords);
     if (!validation.isServiceable) {
-      showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      showAlert('Outside service area', SERVICE_UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -464,7 +464,7 @@ export default function AddEditAddressScreen() {
   const handleSaveAddress = async (payload: AddressConfirmPayload): Promise<boolean> => {
     const validation = validateServiceArea({ lat: payload.lat, lng: payload.lng });
     if (!validation.isServiceable) {
-      showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      showAlert('Outside service area', SERVICE_UNAVAILABLE_MESSAGE);
       return false;
     }
 
@@ -565,8 +565,8 @@ export default function AddEditAddressScreen() {
       showAlert(
         'Address not saved',
         err?.isNetworkError || err?.isTimeout
-          ? "You're offline or the connection is slow. Your pin and details are kept — tap Save again when you're connected."
-          : err?.message || "Couldn't save the address. Your pin and details are kept — please try again."
+          ? "You're offline or the connection is slow. We've kept your pin and details. Tap Save again once you're back online."
+          : err?.message || "Couldn't save the address. We've kept your pin and details, so you can try again."
       );
       return false;
     } finally {
@@ -586,7 +586,7 @@ export default function AddEditAddressScreen() {
         router.replace('/profile/addresses');
       }
     } catch (_err) {
-      showAlert('Error', "Couldn't delete address.");
+      showAlert("Couldn't delete address", 'Please try again.');
     }
   };
 
@@ -625,7 +625,7 @@ export default function AddEditAddressScreen() {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.4} />
+            <ArrowLeftIcon size={20} color={colors.textPrimary} strokeWidth={2.4} />
           </Pressable>
 
           {/* Floating Search Input */}
@@ -658,7 +658,7 @@ export default function AddEditAddressScreen() {
         {/* Approximate centre / restored draft notice (map stays fully interactive) */}
         {Boolean(mapBanner) && predictions.length === 0 && query.trim().length < 2 && (
           <View style={styles.mapBanner} pointerEvents="none" accessibilityLiveRegion="polite">
-            <Info size={14} color={palette.warningDark} strokeWidth={2.4} />
+            <InfoIcon size={14} color={palette.warningDark} strokeWidth={2.4} />
             <Text style={styles.mapBannerText} maxFontSizeMultiplier={1.3}>
               {mapBanner}
             </Text>

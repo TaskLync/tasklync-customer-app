@@ -1,15 +1,21 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { CheckCircle2, User } from 'lucide-react-native';
+import { CheckCircleIcon, UserIcon } from '../ui/Icon/icons';
 import { fontFamily, fontSize } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { WorkerProfileLink } from '../worker/WorkerProfileLink';
+
+const AVATAR_SIZE = 44;
 
 export interface ReviewWorkerContextProps {
   workerName: string;
   workerAvatar?: string | null | undefined;
   serviceName?: string | undefined;
   completedDate?: string | undefined;
+  /** Provider id; when present the avatar opens the provider's public profile. */
+  workerId?: string | null | undefined;
+  isCompany?: boolean | undefined;
 }
 
 /**
@@ -26,6 +32,8 @@ export const ReviewWorkerContext: React.FC<ReviewWorkerContextProps> = ({
   workerAvatar,
   serviceName,
   completedDate,
+  workerId,
+  isCompany,
 }) => {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
@@ -47,7 +55,13 @@ export const ReviewWorkerContext: React.FC<ReviewWorkerContextProps> = ({
   return (
     <View style={styles.card} accessibilityRole="summary">
       {/* Avatar Slot */}
-      <View style={styles.avatarContainer}>
+      <WorkerProfileLink
+        workerId={workerId}
+        isCompany={isCompany}
+        workerName={workerName}
+        size={AVATAR_SIZE}
+        style={styles.avatarContainer}
+      >
         {workerAvatar ? (
           <Image
             source={{ uri: workerAvatar }}
@@ -57,18 +71,18 @@ export const ReviewWorkerContext: React.FC<ReviewWorkerContextProps> = ({
           />
         ) : (
           <View style={styles.avatarFallback}>
-            <User size={20} color={colors.textMuted} />
+            <UserIcon size={20} color={colors.textMuted} />
           </View>
         )}
-      </View>
+      </WorkerProfileLink>
 
       {/* Worker & Service Metadata */}
       <View style={styles.infoCol}>
         <View style={styles.nameRow}>
           <Text style={styles.workerName} numberOfLines={1}>
-            {workerName || 'Service Professional'}
+            {workerName || 'Service Worker'}
           </Text>
-          <CheckCircle2 size={15} color={colors.primary} style={styles.verifiedIcon} />
+          <CheckCircleIcon size={15} color={colors.primary} style={styles.verifiedIcon} />
         </View>
 
         <View style={styles.metaRow}>
@@ -96,9 +110,9 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderBottomColor: colors.border,
   },
   avatarContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     overflow: 'hidden',
     backgroundColor: palette.gray100,
     marginRight: 12,

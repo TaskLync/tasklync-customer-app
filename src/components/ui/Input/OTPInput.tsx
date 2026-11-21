@@ -1,29 +1,23 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text,
-  TextInput as RNTextInput, 
-  StyleSheet,
-  Pressable,
-  NativeSyntheticEvent,
-  TextInputSelectionChangeEventData,
-} from 'react-native';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withTiming, 
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { View, TextInput as RNTextInput, StyleSheet } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
   withSequence,
-  withDelay
+  withTiming,
 } from 'react-native-reanimated';
 
+import { fontFamily, fontSize, textStyles } from '@design/typography';
+import { layout } from '@design/spacing';
 import { radius } from '@design/radius';
-import { fontFamily } from '@design/typography';
-import { shakeSequence, springConfig } from '@design/animations';
-import { useAppTheme } from '../../../theme/useAppTheme';
-
-const AnimatedView = Animated.createAnimatedComponent(View);
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+import { shakeSequence } from '@design/animations';
+import { OTP_CONFIG, OTP_COPY, OTP_MOTION } from '../../../config/otp.config';
+import { sanitizeOtpInput } from '@utils/otp';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
 
 export interface OTPInputProps {
   value: string;
@@ -34,8 +28,29 @@ export interface OTPInputProps {
   verifying?: boolean;
   disabled?: boolean;
   length?: number;
+  autoFocus?: boolean;
 }
 
+type CellState = 'idle' | 'active' | 'error' | 'success';
+
+/**
+ * The hidden input must stay rendered and hit-testable (Android ignores fully transparent views for
+ * paste / autofill), so it keeps a near-zero opacity and a minimal font size instead of 0.
+ */
+const HIDDEN_INPUT_OPACITY = 0.011;
+const HIDDEN_INPUT_FONT_SIZE = 1;
+
+const colorTiming = { duration: OTP_MOTION.colorTransition, easing: Easing.out(Easing.quad) };
+const shakeSteps = shakeSequence.map((x) => x * OTP_MOTION.shakeScale);
+
+/**
+ * Borderless code cells driven by ONE hidden TextInput. A single native input is what makes paste,
+ * Android SMS autofill (`autoComplete="sms-otp"`), iOS one-time-code suggestions and backspace all
+ * behave natively; the cells are purely presentational.
+ *
+ * Resting cells are a flat neutral surface. Only the active cell lifts (raised surface, hairline border,
+ * slim caret); error and success tint the surface rather than outlining every cell.
+ */
 export const OTPInput: React.FC<OTPInputProps> = ({
   value,
   onChange,
@@ -44,252 +59,231 @@ export const OTPInput: React.FC<OTPInputProps> = ({
   success = false,
   verifying = false,
   disabled = false,
-  length = 6,
+  length = OTP_CONFIG.length,
+  autoFocus = true,
 }) => {
-  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const inputRef = useRef<RNTextInput>(null);
-  const [isFocused, setIsFocused] = useState<boolean>(false);
-  const [selection, setSelection] = useState<{ start: number; end: number }>({
-    start: value.length,
-    end: value.length,
-  });
-
-  // Animation values
+  const [isFocused, setIsFocused] = useState(false);
   const shakeX = useSharedValue(0);
 
-  // Individual box spring bounce shared values (fixed array of 6 to strictly respect React Hooks)
-  const s0 = useSharedValue(1.0);
-  const s1 = useSharedValue(1.0);
-  const s2 = useSharedValue(1.0);
-  const s3 = useSharedValue(1.0);
-  const s4 = useSharedValue(1.0);
-  const s5 = useSharedValue(1.0);
-  const scales = [s0, s1, s2, s3, s4, s5];
+  const interactive = !disabled && !verifying && !success;
 
-  // Auto-focus on initial mount
+  // Focus once the screen has settled, and again whenever input becomes possible after a verify
+  // attempt or resend.
   useEffect(() => {
-    if (!disabled && !verifying && !success) {
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 150);
-      return () => clearTimeout(timer);
-    }
-  }, [disabled, verifying, success]);
+    if (!autoFocus || !interactive) return;
+    const timer = setTimeout(() => inputRef.current?.focus(), OTP_MOTION.autoFocusDelay);
+    return () => clearTimeout(timer);
+  }, [autoFocus, interactive]);
 
-  // Keep selection synchronized with value length when typing
+  // Invalid code: one restrained horizontal nudge. Digits are kept so the user can correct in place.
   useEffect(() => {
-    setSelection({ start: value.length, end: value.length });
-  }, [value.length]);
-
-  // Handle Error Shake animation (does NOT auto-wipe user digits)
-  useEffect(() => {
-    if (error) {
-      shakeX.value = withSequence(
-        ...shakeSequence.map(x => withTiming(x, { duration: 45 }))
-      );
-      // Keep keyboard active so user can immediately correct the code
-      inputRef.current?.focus();
-    }
+    if (!error) return;
+    shakeX.value = withSequence(
+      ...shakeSteps.map((x) => withTiming(x, { duration: OTP_MOTION.shakeStepDuration })),
+    );
+    inputRef.current?.focus();
   }, [error, shakeX]);
 
-  // Handle Success Cascade Bounce (celebration on backend confirmation)
-  useEffect(() => {
-    if (success) {
-      scales.forEach((scale, index) => {
-        scale.value = withDelay(
-          index * 45,
-          withSequence(
-            withSpring(1.08, springConfig.bouncy),
-            withSpring(1.0, springConfig.bouncy)
-          )
-        );
-      });
-    }
-  }, [success]);
+  useEffect(() => () => cancelAnimation(shakeX), [shakeX]);
 
-  const handleTextChange = useCallback((text: string) => {
-    if (disabled || verifying || success) return;
+  const handleTextChange = useCallback(
+    (text: string) => {
+      if (!interactive) return;
+      const next = sanitizeOtpInput(text, length);
+      if (next === value) return;
+      onChange(next);
+      if (next.length === length) onComplete?.(next);
+    },
+    [interactive, length, value, onChange, onComplete],
+  );
 
-    // Sanitize to numeric digits only and clamp to exact length
-    const sanitized = text.replace(/[^0-9]/g, '').slice(0, length);
+  const handleFocus = useCallback(() => setIsFocused(true), []);
+  const handleBlur = useCallback(() => setIsFocused(false), []);
 
-    // Micro-interaction bounce on newly typed box
-    if (sanitized.length > value.length && sanitized.length <= length) {
-      const typedIndex = sanitized.length - 1;
-      if (scales[typedIndex]) {
-        scales[typedIndex].value = withSequence(
-          withSpring(1.06, springConfig.bouncy),
-          withSpring(1.0, springConfig.bouncy)
-        );
-      }
-    }
-
-    onChange(sanitized);
-
-    // Automatically trigger completion when exactly 6 digits are populated
-    if (sanitized.length === length && onComplete) {
-      onComplete(sanitized);
-    }
-  }, [disabled, verifying, success, length, value.length, onChange, onComplete, scales]);
-
-  const handleSelectionChange = useCallback((
-    e: NativeSyntheticEvent<TextInputSelectionChangeEventData>
-  ) => {
-    setSelection(e.nativeEvent.selection);
-  }, []);
-
-  const handleBoxPress = useCallback((index: number) => {
-    if (disabled || verifying || success) return;
-
-    // Direct cursor to tapped box or clamped to next empty position
-    const target = Math.min(index, value.length);
-    setSelection({
-      start: target,
-      end: target < value.length ? target + 1 : target,
-    });
-    inputRef.current?.focus();
-  }, [disabled, verifying, success, value.length]);
-
-  const containerShakeStyle = useAnimatedStyle(() => ({
+  const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
   }));
 
-  const activeInput = !disabled && !verifying && !success;
+  const activeIndex = Math.min(value.length, length - 1);
+
+  // The row, not each cell, carries the size cap: cells are equal flex shares of a row that is at most
+  // `length` full-size cells plus gaps, and the row is centred. On narrow screens the row is the full
+  // width and the cells shrink equally; on wide screens the spare width is split evenly on both sides.
+  const rowMaxWidth = length * layout.otpCellMaxW + (length - 1) * layout.otpCellGap;
 
   return (
-    <AnimatedView style={[styles.container, containerShakeStyle]}>
-      {/* Master Hidden Input: handles numeric keyboard, pasting, SMS autofill & backspaces */}
+    <Animated.View style={[styles.container, shakeStyle]}>
+      <View style={[styles.row, { maxWidth: rowMaxWidth }]} pointerEvents="none">
+        {Array.from({ length }, (_, index) => {
+          const char = value[index] ?? '';
+          let state: CellState = 'idle';
+          if (error) state = 'error';
+          else if (success) state = 'success';
+          else if (isFocused && interactive && index === activeIndex) state = 'active';
+
+          return (
+            <OTPCell
+              key={index}
+              char={char}
+              state={state}
+              dimmed={verifying}
+              showCaret={state === 'active' && !char}
+            />
+          );
+        })}
+      </View>
+
+      {/* Transparent native input stretched over the cells: receives taps, long-press paste and autofill. */}
       <RNTextInput
         ref={inputRef}
         value={value}
         onChangeText={handleTextChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        onSelectionChange={handleSelectionChange}
-        selection={selection}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         keyboardType="number-pad"
+        inputMode="numeric"
         textContentType="oneTimeCode"
         autoComplete="sms-otp"
-        maxLength={length}
-        editable={activeInput}
-        caretHidden={true}
+        importantForAutofill="yes"
+        autoCorrect={false}
+        spellCheck={false}
+        editable={interactive}
+        caretHidden
+        selectionColor="transparent"
+        cursorColor="transparent"
         style={styles.hiddenInput}
-        accessibilityLabel={`One-time verification code, ${length} digits`}
-        accessibilityRole="text"
+        accessibilityLabel={OTP_COPY.a11y.input(length, value.length)}
+        accessibilityHint={OTP_COPY.a11y.inputHint}
       />
-
-      {/* Visual Display Boxes */}
-      <View style={styles.boxesRow}>
-        {Array.from({ length }).map((_, index) => {
-          const char = value[index] || '';
-          const isFilled = char.length > 0;
-          
-          // Focused box: active cursor position or first empty box
-          const isCurrentFocus = isFocused && activeInput && !error && (
-            selection.start === index || 
-            (selection.start >= value.length && index === value.length)
-          );
-
-          let bgColor = colors.bgInput;
-          let borderColor = colors.border;
-          let textColor = colors.textPrimary;
-
-          if (error) {
-            // Subtle red error state across all boxes
-            bgColor = colors.dangerLight; // #FEF2F2
-            borderColor = colors.borderError; // #EF4444
-            textColor = colors.textDanger; // #DC2626
-          } else if (success) {
-            // Confirmed green success state ONLY after backend validation
-            bgColor = colors.bgSuccess; // #F0FDF4
-            borderColor = colors.borderSuccess; // #22C55E
-            textColor = colors.textPrimary;
-          } else if (isCurrentFocus) {
-            // Emerald focus ring on active box only
-            bgColor = colors.bgCard; // #FFFFFF
-            borderColor = colors.borderFocus; // #16A34A
-            textColor = colors.textPrimary;
-          } else if (isFilled) {
-            // Neutral soft border on populated boxes
-            bgColor = colors.bgCard; // #FFFFFF
-            borderColor = colors.border; // #E2E8F0
-            textColor = colors.textPrimary;
-          }
-
-          const animatedBoxStyle = useAnimatedStyle(() => {
-            const scaleVal = scales[index] ? scales[index].value : 1.0;
-            return {
-              transform: [{ scale: scaleVal }],
-            };
-          });
-
-          return (
-            <AnimatedPressable
-              key={index}
-              onPress={() => handleBoxPress(index)}
-              style={[
-                styles.boxContainer,
-                {
-                  backgroundColor: bgColor,
-                  borderColor,
-                  borderWidth: isCurrentFocus || error || success ? 2 : 1.5,
-                  opacity: verifying ? 0.85 : 1,
-                },
-                animatedBoxStyle,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`Digit ${index + 1} of ${length}: ${char || 'empty'}`}
-              accessibilityState={{
-                selected: isCurrentFocus,
-                disabled: !activeInput,
-              }}
-            >
-              <Text style={[styles.digitText, { color: textColor }]}>
-                {char}
-              </Text>
-            </AnimatedPressable>
-          );
-        })}
-      </View>
-    </AnimatedView>
+    </Animated.View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  boxesRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-    width: '100%',
-  },
-  boxContainer: {
-    width: 50,
-    height: 58,
-    borderRadius: radius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  digitText: {
-    textAlign: 'center',
-    fontFamily: fontFamily.inter.bold,
-    fontSize: 22,
-  },
-  hiddenInput: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.01,
-    fontSize: 1,
-    color: 'transparent',
-    zIndex: 1,
-  },
+interface OTPCellProps {
+  char: string;
+  state: CellState;
+  dimmed: boolean;
+  showCaret: boolean;
+}
+
+const OTPCell = memo(function OTPCell({ char, state, dimmed, showCaret }: OTPCellProps) {
+  const { colors } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+
+  // Idle cells use their own surface colour as the border, so the border is invisible but the
+  // geometry never changes between states.
+  const tones: Record<CellState, { bg: string; border: string; text: string }> = {
+    idle: { bg: colors.fieldSurface, border: colors.fieldSurface, text: colors.textStrong },
+    active: { bg: colors.fieldSurfaceActive, border: colors.fieldBorderActive, text: colors.textStrong },
+    error: { bg: colors.dangerLight, border: colors.borderErrorLight, text: colors.textDangerDark },
+    success: { bg: colors.fieldSurface, border: colors.borderSuccessLight, text: colors.textGreen },
+  };
+  const { bg, border, text } = tones[state];
+
+  // Digit entry: a quick fade with a small rise; no scaling, so typing stays crisp.
+  const digitProgress = useSharedValue(char ? 1 : 0);
+  useEffect(() => {
+    digitProgress.value = 0;
+    if (char) {
+      digitProgress.value = withTiming(1, {
+        duration: OTP_MOTION.digitEnterDuration,
+        easing: Easing.out(Easing.cubic),
+      });
+    }
+  }, [char, digitProgress]);
+
+  // Slim blinking caret in the active empty cell.
+  const caret = useSharedValue(1);
+  useEffect(() => {
+    if (!showCaret) {
+      cancelAnimation(caret);
+      return;
+    }
+    caret.value = 1;
+    caret.value = withRepeat(
+      withSequence(
+        withDelay(OTP_MOTION.caretHold, withTiming(0, { duration: OTP_MOTION.caretFade })),
+        withDelay(OTP_MOTION.caretHold, withTiming(1, { duration: OTP_MOTION.caretFade })),
+      ),
+      -1,
+    );
+    return () => cancelAnimation(caret);
+  }, [showCaret, caret]);
+
+  useEffect(() => () => cancelAnimation(digitProgress), [digitProgress]);
+
+  const cellStyle = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(bg, colorTiming),
+    borderColor: withTiming(border, colorTiming),
+  }));
+
+  const digitStyle = useAnimatedStyle(() => ({
+    opacity: digitProgress.value,
+    transform: [{ translateY: (1 - digitProgress.value) * OTP_MOTION.digitEnterOffset }],
+  }));
+
+  const caretStyle = useAnimatedStyle(() => ({ opacity: caret.value }));
+
+  return (
+    <Animated.View style={[styles.cell, cellStyle]}>
+      {showCaret ? (
+        <Animated.View style={[styles.caret, caretStyle]} />
+      ) : (
+        <View style={dimmed && styles.digitDimmed}>
+          <Animated.Text style={[styles.digit, { color: text }, digitStyle]} allowFontScaling={false}>
+            {char}
+          </Animated.Text>
+        </View>
+      )}
+    </Animated.View>
+  );
 });
+
+const createStyles = ({ colors }: AppTheme) =>
+  StyleSheet.create({
+    container: {
+      width: '100%',
+    },
+    row: {
+      flexDirection: 'row',
+      width: '100%',
+      alignSelf: 'center',
+      gap: layout.otpCellGap,
+    },
+    cell: {
+      // Equal shares of the row (basis 0), so every cell has the same width.
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 0,
+      minWidth: 0,
+      height: layout.otpCellH,
+      borderRadius: radius.md,
+      borderWidth: layout.otpCellBorderW,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    digit: {
+      fontFamily: fontFamily.inter.medium,
+      fontSize: fontSize.h2,
+      lineHeight: textStyles.h2.lineHeight,
+      includeFontPadding: false,
+      textAlign: 'center',
+    },
+    digitDimmed: {
+      opacity: OTP_MOTION.verifyingOpacity,
+    },
+    caret: {
+      width: layout.otpCaretW,
+      height: layout.otpCaretH,
+      borderRadius: layout.otpCaretW,
+      backgroundColor: colors.textStrong,
+    },
+    hiddenInput: {
+      ...StyleSheet.absoluteFill,
+      opacity: HIDDEN_INPUT_OPACITY,
+      color: 'transparent',
+      fontSize: HIDDEN_INPUT_FONT_SIZE,
+    },
+  });

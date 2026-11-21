@@ -10,14 +10,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {
-  MapPin,
-  Navigation,
-  Check,
-  X,
-  ChevronRight,
-  AlertCircle,
-  RefreshCw,
-} from 'lucide-react-native';
+  AlertCircleIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  LocationIcon,
+  NavigationIcon,
+  RefreshIcon,
+} from '../ui/Icon/icons';
 import { locationService } from '../../services/location/location.service';
 
 import { BottomSheet, BottomSheetRef } from '../layout/BottomSheet/BottomSheet';
@@ -131,7 +131,7 @@ export const AddAddressBottomSheet = forwardRef<
 
     const validation = validateServiceArea({ lat: addr.lat, lng: addr.lng });
     if (!validation.isServiceable) {
-      showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      showAlert('Outside service area', SERVICE_UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -160,15 +160,15 @@ export const AddAddressBottomSheet = forwardRef<
         if (!perm.granted) {
           if (!perm.canAskAgain) {
             showAlert(
-              'Permission Required',
-              'Location permission is permanently disabled. Please enable it in Settings.',
+              'Location access is off',
+              'Turn on location access in Settings to use your current location.',
               [
                 { text: 'Cancel', style: 'cancel' },
                 { text: 'Open Settings', onPress: locationService.openSettings },
               ]
             );
           } else {
-            showAlert('Permission Denied', 'Please enable location permissions to use GPS.');
+            showAlert('Location access needed', 'Allow location access to use your current location.');
           }
           setIsLocating(false);
           return;
@@ -177,8 +177,8 @@ export const AddAddressBottomSheet = forwardRef<
 
       if (!state.servicesEnabled) {
         showAlert(
-          'Location Services Off',
-          'Please enable GPS in your device settings to detect your current location.',
+          'Location is turned off',
+          'Turn on location in your device settings to use your current location.',
           [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Open Settings', onPress: locationService.openSettings },
@@ -197,7 +197,7 @@ export const AddAddressBottomSheet = forwardRef<
         };
         const validation = validateServiceArea(coords);
         if (!validation.isServiceable) {
-          showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+          showAlert('Outside service area', SERVICE_UNAVAILABLE_MESSAGE);
           setIsLocating(false);
           return;
         }
@@ -219,15 +219,15 @@ export const AddAddressBottomSheet = forwardRef<
       } else {
         showAlert(
           freshResult.error.code === 'SERVICES_DISABLED'
-            ? 'Location Services Off'
+            ? 'Location is turned off'
             : freshResult.error.code === 'LOW_ACCURACY'
-            ? 'Weak GPS Signal'
-            : 'Location Error',
+            ? 'Weak GPS signal'
+            : "Couldn't get your location",
           freshResult.error.userMessage
         );
       }
     } catch (_err) {
-      showAlert('Location Error', 'Unable to retrieve current GPS location.');
+      showAlert("Couldn't get your location", 'Please try again or place the pin on the map.');
     } finally {
       setIsLocating(false);
     }
@@ -235,14 +235,14 @@ export const AddAddressBottomSheet = forwardRef<
 
   const handleSave = async () => {
     if (!street.trim()) {
-      showAlert('Address Required', 'Please enter your street / building address.');
+      showAlert('Add your street address', 'Please enter your street or building.');
       streetInputRef.current?.focus();
       return;
     }
 
     const validation = validateServiceArea({ lat, lng });
     if (!validation.isServiceable) {
-      showAlert('Service Unavailable', SERVICE_UNAVAILABLE_MESSAGE);
+      showAlert('Outside service area', SERVICE_UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -251,7 +251,7 @@ export const AddAddressBottomSheet = forwardRef<
     if (!coordsVerified) {
       showAlert(
         'Confirm location on map',
-        'We need the exact spot for this address so your technician can find you. Tap "Use my location" or place the pin on the map.',
+        'We need the exact spot for this address so your worker can find you. Tap "Use my location" or place the pin on the map.',
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -280,7 +280,7 @@ export const AddAddressBottomSheet = forwardRef<
     const accuracy = gpsAccuracyRef.current;
     const confirmed = await new Promise<boolean>((resolve) => {
       showAlert(
-        'Is the professional coming here?',
+        'Is the worker coming here?',
         `We'll save "${street.trim()}" at your current location${
           accuracy ? ` (±${Math.round(accuracy)} m)` : ''
         }. If the job is somewhere else, place the pin on the map instead.`,
@@ -339,8 +339,8 @@ export const AddAddressBottomSheet = forwardRef<
       showAlert(
         'Address not saved',
         err?.isNetworkError || err?.isTimeout
-          ? "You're offline or the connection is slow. Your details are kept — tap Save again when you're connected."
-          : err?.message || 'Failed to save address. Please try again.'
+          ? "You're offline or the connection is slow. We've kept your details. Tap Save again once you're back online."
+          : err?.message || "Couldn't save the address. Please try again."
       );
     } finally {
       isSubmittingRef.current = false;
@@ -381,7 +381,7 @@ export const AddAddressBottomSheet = forwardRef<
           {/* Fixed Sheet Header */}
           <View style={styles.header}>
             <View style={styles.headerIconBadge}>
-              <MapPin size={20} color={colors.primaryDark} strokeWidth={2.3} />
+              <LocationIcon size={20} color={colors.primaryDark} strokeWidth={2.3} />
             </View>
             <View style={styles.headerTitleWrap}>
               <Text style={styles.title}>Service Address</Text>
@@ -399,7 +399,7 @@ export const AddAddressBottomSheet = forwardRef<
               accessibilityRole="button"
               accessibilityLabel="Close address sheet"
             >
-              <X size={18} color={colors.textPrimary} />
+              <CloseIcon size={18} color={colors.textPrimary} />
             </Pressable>
           </View>
 
@@ -423,7 +423,7 @@ export const AddAddressBottomSheet = forwardRef<
                 {isLocating ? (
                   <ActivityIndicator size="small" color={colors.primaryDark} />
                 ) : (
-                  <Navigation size={18} color={colors.primaryDark} strokeWidth={2.3} />
+                  <NavigationIcon size={18} color={colors.primaryDark} strokeWidth={2.3} />
                 )}
               </View>
               <View style={styles.gpsTextWrap}>
@@ -436,7 +436,7 @@ export const AddAddressBottomSheet = forwardRef<
                     : 'Auto-detect your current street & area via GPS'}
                 </Text>
               </View>
-              <ChevronRight size={18} color={colors.primaryDark} />
+              <ChevronRightIcon size={18} color={colors.primaryDark} />
             </TouchableOpacity>
 
             {/* 2. Saved Addresses Section */}
@@ -456,7 +456,7 @@ export const AddAddressBottomSheet = forwardRef<
               </View>
             ) : isAddressesError ? (
               <View style={styles.errorBox}>
-                <AlertCircle size={18} color={palette.danger} />
+                <AlertCircleIcon size={18} color={palette.danger} />
                 <View style={styles.errorTextWrap}>
                   <Text style={styles.errorTitle}>Couldn&apos;t load saved addresses</Text>
                   <Text style={styles.errorSubtitle}>Check your connection or add a new address below</Text>
@@ -467,14 +467,14 @@ export const AddAddressBottomSheet = forwardRef<
                   accessibilityRole="button"
                   accessibilityLabel="Retry loading addresses"
                 >
-                  <RefreshCw size={13} color={colors.primaryDark} />
+                  <RefreshIcon size={13} color={colors.primaryDark} />
                   <Text style={styles.retryBtnText}>Retry</Text>
                 </Pressable>
               </View>
             ) : safeAddressList.length === 0 ? (
               <View style={styles.emptySavedBox}>
                 <View style={styles.emptySavedIconWrap}>
-                  <MapPin size={18} color={colors.textMuted} />
+                  <LocationIcon size={18} color={colors.textMuted} />
                 </View>
                 <View style={styles.emptySavedTextWrap}>
                   <Text style={styles.emptySavedTitle}>No saved addresses yet</Text>
@@ -534,10 +534,10 @@ export const AddAddressBottomSheet = forwardRef<
                       </View>
                       {isSelected ? (
                         <View style={styles.selectedCheckCircle}>
-                          <Check size={14} color={colors.primaryDark} strokeWidth={2.8} />
+                          <CheckIcon size={14} color={colors.primaryDark} strokeWidth={2.8} />
                         </View>
                       ) : (
-                        <ChevronRight size={16} color={colors.textMuted} />
+                        <ChevronRightIcon size={16} color={colors.textMuted} />
                       )}
                     </Pressable>
                   );
@@ -564,7 +564,7 @@ export const AddAddressBottomSheet = forwardRef<
                       activeOpacity={0.75}
                     >
                       {isSelected && (
-                        <Check size={13} color={palette.pureWhite} style={{ marginRight: 4 }} />
+                        <CheckIcon size={13} color={palette.pureWhite} style={{ marginRight: 4 }} />
                       )}
                       <Text style={[styles.presetText, isSelected && styles.presetTextSelected]}>
                         {p}
@@ -601,7 +601,7 @@ export const AddAddressBottomSheet = forwardRef<
                     accessibilityRole="button"
                     accessibilityLabel="Clear address input"
                   >
-                    <X size={15} color={colors.textMuted} />
+                    <CloseIcon size={15} color={colors.textMuted} />
                   </Pressable>
                 )}
               </View>
@@ -637,7 +637,7 @@ export const AddAddressBottomSheet = forwardRef<
               {isSaving ? (
                 <ActivityIndicator color={palette.pureWhite} />
               ) : (
-                <Text style={styles.saveButtonText}>Save & Select Address</Text>
+                <Text style={styles.saveButtonText}>Save & select address</Text>
               )}
             </TouchableOpacity>
           </View>

@@ -1,21 +1,26 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Lock } from 'lucide-react-native';
+import { ArrowLeftIcon, InfoIcon, LockIcon } from '../../src/components/ui/Icon/icons';
 
 import { usePaymentMethods } from '../../src/hooks/usePaymentMethods';
 import {
   PaymentMethodCard,
   PaymentMethodCardSkeleton,
   PaymentMethodSwipeActions,
-  AddCardButton,
 } from '../../src/components/payment';
-import { fontFamily, fontSize, spacing, shadows, radius } from '../../src/design';
+import { fontFamily, spacing } from '../../src/design';
 import { ONLINE_PAYMENTS_DISABLED_MESSAGE } from '../../src/types/payment.types';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 import { showAlert } from '../../src/components/feedback/AppAlert';
 
+/**
+ * Payment Methods
+ * Neutral surfaces, charcoal type, thin borders. Green appears only as the "active" status dot.
+ * Online payments are switched off product-wide, so the footer is an explicit disabled-state notice
+ * (tapping it explains why), never a primary-looking button.
+ */
 export default function PaymentMethodsScreen() {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
@@ -29,54 +34,48 @@ export default function PaymentMethodsScreen() {
     setDefaultMethod,
   } = usePaymentMethods();
 
-  const handleBack = () => {
-    router.back();
-  };
-
-  const handleAddPress = () => {
+  const handleOnlinePaymentsInfo = () => {
     showAlert(
-      'Online Payments Unavailable',
-      `${ONLINE_PAYMENTS_DISABLED_MESSAGE}\n\nAdding credit/debit cards or mobile wallets is temporarily paused while online gateways are safely disconnected.`
+      'Online payments unavailable',
+      `${ONLINE_PAYMENTS_DISABLED_MESSAGE}\n\nYou can't add cards or mobile wallets right now.`
     );
   };
 
-  const renderHeaderNotice = () => (
-    <View style={styles.statusBanner}>
-      <View style={styles.statusDotWrapper}>
-        <View style={styles.statusDot} />
-      </View>
-      <Text style={styles.statusBannerText} maxFontSizeMultiplier={1.2}>
-        Cash on Delivery Active
-      </Text>
-    </View>
-  );
+  const cashActive = methods.some((m) => m.type === 'cash');
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ThemedStatusBar />
 
-      {/* Screen Header */}
+      {/* Header: minimal back control, centred title, no bar background */}
       <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={handleBack}
-          style={styles.backButton}
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={20} color={colors.textPrimary} />
-        </TouchableOpacity>
+          <ArrowLeftIcon size={22} color={colors.textPrimary} strokeWidth={2} />
+        </Pressable>
 
-        <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3}>
+        <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3} accessibilityRole="header">
           Payment Methods
         </Text>
 
         <View style={styles.headerRightSpacer} />
       </View>
 
-      {/* Main Content Area */}
       <View style={styles.content}>
-        {renderHeaderNotice()}
+        {/* Status: a quiet line with a single green dot */}
+        {!isLoading && cashActive ? (
+          <View style={styles.statusRow} accessible accessibilityLabel="Cash on Delivery is active">
+            <View style={styles.statusDot} />
+            <Text style={styles.statusText} maxFontSizeMultiplier={1.3}>
+              Cash on Delivery is active
+            </Text>
+          </View>
+        ) : null}
 
         {isLoading ? (
           <View style={styles.skeletonContainer}>
@@ -86,10 +85,8 @@ export default function PaymentMethodsScreen() {
           <FlatList
             data={methods}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{
-              paddingTop: spacing.xs,
-              paddingBottom: insets.bottom + 80,
-            }}
+            contentContainerStyle={styles.listContent}
+            ItemSeparatorComponent={() => <View style={styles.listGap} />}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
               <PaymentMethodSwipeActions
@@ -106,104 +103,118 @@ export default function PaymentMethodsScreen() {
         )}
       </View>
 
-      {/* Sticky Bottom Footer CTA */}
-      <View
-        style={[
-          styles.footerContainer,
-          { paddingBottom: insets.bottom > 0 ? insets.bottom + 14 : 20 },
-        ]}
-      >
-        <AddCardButton
-          label="Online Payments Unavailable"
-          icon={<Lock size={15} color={colors.textOnGreen} strokeWidth={2.2} />}
-          onPress={handleAddPress}
-        />
+      {/* Footer: disabled-state notice for online payments (not a primary action) */}
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
+        <Pressable
+          onPress={handleOnlinePaymentsInfo}
+          style={({ pressed }) => [styles.unavailableRow, pressed && styles.unavailableRowPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Online payments are currently unavailable"
+          accessibilityHint="Shows why only Cash on Delivery is available"
+        >
+          <LockIcon size={15} color={colors.textMuted} strokeWidth={2} />
+          <Text style={styles.unavailableText} maxFontSizeMultiplier={1.3}>
+            Online payments are currently unavailable
+          </Text>
+          <InfoIcon size={15} color={colors.textMuted} strokeWidth={2} />
+        </Pressable>
       </View>
     </View>
   );
 }
 
-const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
+  // Pure white in Light, deep charcoal in Dark (bgCard is the base surface in both themes).
   container: {
     flex: 1,
-    backgroundColor: colors.bgApp,
+    backgroundColor: colors.bgCard,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.bgApp,
+    paddingHorizontal: 8,
+    height: 56,
   },
   backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.iceGray,
+  },
+  backButtonPressed: {
+    backgroundColor: colors.bgHover,
   },
   headerTitle: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: fontSize.h3,
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: fontFamily.jakarta.bold,
+    fontSize: 17,
+    letterSpacing: -0.2,
     color: colors.textPrimary,
   },
   headerRightSpacer: {
-    width: 38,
+    width: 44,
   },
   content: {
     flex: 1,
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.base,
+    paddingTop: spacing.sm,
   },
-  statusBanner: {
+  statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.green50,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: palette.green200,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 16,
     gap: 8,
-  },
-  statusDotWrapper: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: palette.green100,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 14,
+    paddingHorizontal: 2,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.primary,
   },
-  statusBannerText: {
-    fontFamily: fontFamily.jakarta.semiBold,
-    fontSize: 13,
-    color: colors.primaryDark,
+  statusText: {
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 13.5,
+    color: colors.textSecondary,
     includeFontPadding: false,
   },
   skeletonContainer: {
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
-  footerContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.bgCard,
+  listContent: {
+    paddingBottom: spacing.xl,
+  },
+  listGap: {
+    height: 10,
+  },
+  footer: {
     paddingHorizontal: spacing.base,
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    ...shadows.md,
+    backgroundColor: colors.bgCard,
+  },
+  // Disabled look: neutral surface, muted text, no fill colour, no shadow.
+  unavailableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 48,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: colors.bgHover,
+  },
+  unavailableRowPressed: {
+    opacity: 0.75,
+  },
+  unavailableText: {
+    flexShrink: 1,
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 13.5,
+    // textSecondary, not textMuted: muted grey on the grey surface falls below readable contrast in Light.
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
 });

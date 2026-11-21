@@ -14,7 +14,7 @@ import Animated, {
   withTiming,
   interpolate,
 } from 'react-native-reanimated';
-import { ChevronDown } from 'lucide-react-native';
+import { ChevronDownIcon } from '../Icon/icons';
 import { radius } from '../../../design/radius';
 import { shadows } from '../../../design/shadows';
 import { springConfig } from '../../../design/animations';
@@ -121,7 +121,7 @@ export const AccordionItem: React.FC<AccordionItemProps> = ({
         <View style={styles.titleContainer}>{title}</View>
 
         <Animated.View style={[styles.chevronContainer, chevronAnimatedStyle]}>
-          <ChevronDown
+          <ChevronDownIcon
             size={18}
             color={isOpen ? colors.primary : colors.textMuted}
           />

@@ -10,7 +10,7 @@ import Animated, {
   Extrapolation,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import { Trash2 } from 'lucide-react-native';
+import { DeleteIcon } from '../ui/Icon/icons';
 import { springConfig } from '../../design/animations';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -112,7 +112,7 @@ export const SwipeToDeleteRow: FC<SwipeToDeleteRowProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Delete item"
         >
-          <Trash2 size={22} color="#FFFFFF" />
+          <DeleteIcon size={22} color="#FFFFFF" />
         </Pressable>
       </Animated.View>
 

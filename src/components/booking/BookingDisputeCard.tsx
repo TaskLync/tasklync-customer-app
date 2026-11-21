@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import {
-  Clock,
-  ShieldAlert,
-  CheckCircle2,
-  AlertCircle,
-  ChevronRight,
-  MessageSquare,
-} from 'lucide-react-native';
+  AlertCircleIcon,
+  ChatIcon,
+  CheckCircleIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  ShieldAlertIcon,
+} from '../ui/Icon/icons';
 import { DisputeDetails, DisputeStatus } from '../../types/booking.types';
 import { fontFamily, fontSize, radius, spacing } from '../../design';
 import { DISPUTE_REASONS } from './DisputeReasonRadioGroup';
@@ -100,17 +100,17 @@ export const BookingDisputeCard: React.FC<BookingDisputeCardProps> = ({
       badgeText: palette.blue700,
       badgeDot: colors.info,
       cardBorder: palette.blue100,
-      icon: <Clock size={16} color={colors.textInfo} strokeWidth={2.2} />,
+      icon: <ClockIcon size={16} color={colors.textInfo} strokeWidth={2.2} />,
       statusNote: 'Our Trust & Safety team is reviewing your report. Typical turnaround is within 24 hours.',
     },
     UNDER_REVIEW: {
-      title: 'Under Review',
-      badgeLabel: 'Under Review',
+      title: 'Under review',
+      badgeLabel: 'Under review',
       badgeBg: colors.warningLight,
       badgeText: palette.amber700,
       badgeDot: colors.warning,
       cardBorder: palette.amber200,
-      icon: <ShieldAlert size={16} color={colors.warningMedium} strokeWidth={2.2} />,
+      icon: <ShieldAlertIcon size={16} color={colors.warningMedium} strokeWidth={2.2} />,
       statusNote: 'Our dispute specialists are actively investigating this case and reviewing evidence.',
     },
     RESOLVED: {
@@ -120,7 +120,7 @@ export const BookingDisputeCard: React.FC<BookingDisputeCardProps> = ({
       badgeText: colors.primaryDarker,
       badgeDot: colors.primaryDark,
       cardBorder: palette.emerald200,
-      icon: <CheckCircle2 size={16} color={colors.primaryDark} strokeWidth={2.2} />,
+      icon: <CheckCircleIcon size={16} color={colors.primaryDark} strokeWidth={2.2} />,
       statusNote: 'This dispute has been resolved in your favor.',
     },
     CLOSED: {
@@ -130,7 +130,7 @@ export const BookingDisputeCard: React.FC<BookingDisputeCardProps> = ({
       badgeText: colors.textSecondary,
       badgeDot: colors.textMuted,
       cardBorder: colors.border,
-      icon: <AlertCircle size={16} color={colors.textSecondary} strokeWidth={2.2} />,
+      icon: <AlertCircleIcon size={16} color={colors.textSecondary} strokeWidth={2.2} />,
       statusNote: 'This dispute review has concluded.',
     },
   }[stateKind];
@@ -174,7 +174,7 @@ export const BookingDisputeCard: React.FC<BookingDisputeCardProps> = ({
       {/* Worker Reply Quote (When Under Review or Responded) */}
       {dispute.worker_response ? (
         <View style={styles.workerReplyBox}>
-          <Text style={styles.workerReplyLabel}>Professional's Response</Text>
+          <Text style={styles.workerReplyLabel}>Worker's Response</Text>
           <Text style={styles.workerReplyText}>
             "{dispute.worker_response.trim()}"
           </Text>
@@ -216,13 +216,13 @@ export const BookingDisputeCard: React.FC<BookingDisputeCardProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Contact TaskLync customer support regarding this dispute"
           >
-            <MessageSquare size={14} color={colors.textPrimary} style={{ marginRight: 6 }} />
+            <ChatIcon size={14} color={colors.textPrimary} style={{ marginRight: 6 }} />
             <Text style={styles.actionBtnText}>
               {stateKind === 'RESOLVED' || stateKind === 'CLOSED'
                 ? 'Need Help? Contact Support'
                 : 'Chat with Dispute Support'}
             </Text>
-            <ChevronRight size={14} color={colors.textMuted} />
+            <ChevronRightIcon size={14} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
       )}
@@ -232,11 +232,10 @@ export const BookingDisputeCard: React.FC<BookingDisputeCardProps> = ({
 
 const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   container: {
-    backgroundColor: palette.white,
+    backgroundColor: colors.cardRaised,
+    borderRadius: 16,
     padding: spacing.base,
-    marginVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    marginBottom: 12,
   },
   topRow: {
     flexDirection: 'row',

@@ -39,7 +39,7 @@ export function useCreateCustomRequest() {
       router.replace(`/custom-request/${request.id}` as any);
     },
     onError: (error) => {
-      showAlert('Request Failed', error.message || 'Unable to submit request. Please try again.');
+      showAlert("Couldn't send request", error.message || 'Please try again.');
     },
   });
 }

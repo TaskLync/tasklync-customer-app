@@ -60,7 +60,7 @@ export const RecentBookingBanner = () => {
         return {
           dotStatus: 'offline' as const,
           dotColor: '#3B82F6',
-          text: 'Booking Confirmed',
+          text: 'Booking confirmed',
           sub: `${activeBooking.workerName} · ${activeBooking.scheduledTime || 'Scheduled'}`,
           buttons: (
             <>
@@ -73,7 +73,7 @@ export const RecentBookingBanner = () => {
         return {
           dotStatus: 'online' as const,
           dotColor: colors.online,
-          text: 'In Progress',
+          text: 'In progress',
           sub: `${activeBooking.workerName} · Started recently`,
           buttons: (
             <>

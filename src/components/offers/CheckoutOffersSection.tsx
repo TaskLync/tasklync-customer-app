@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Info, Sparkles } from 'lucide-react-native';
+import { InfoIcon, SparklesIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { discountValueLabel, formatRs } from '../../utils/offers';
 import type { CheckoutOffers } from '../../types/offers.types';
@@ -59,7 +59,7 @@ export const CheckoutOffersSection: React.FC<CheckoutOffersSectionProps> = ({
 
       {showAutoOffer && autoOffer ? (
         <View style={styles.autoOffer} accessible accessibilityLabel={`${workerName ? workerName + "'s" : 'Worker'} offer applied automatically`}>
-          <Sparkles size={16} color={palette.green700} strokeWidth={2.2} />
+          <SparklesIcon size={16} color={palette.green700} strokeWidth={2.2} />
           <View style={styles.autoText}>
             <Text style={styles.autoTitle} numberOfLines={1}>
               {autoOffer.title || 'Worker offer'} · {discountValueLabel(autoOffer.discount_type, autoOffer.discount_value)}
@@ -89,7 +89,7 @@ export const CheckoutOffersSection: React.FC<CheckoutOffersSectionProps> = ({
       {/* Why a qualifying coupon was not used (server policy: one discount per booking). */}
       {offers?.discount.not_applied && !promo.applied ? (
         <View style={styles.policy}>
-          <Info size={14} color={colors.textMuted} style={styles.policyIcon} />
+          <InfoIcon size={14} color={colors.textMuted} style={styles.policyIcon} />
           <Text style={styles.policyText}>
             Only one discount applies per booking. Your {offers.discount.applied?.title ?? 'current offer'} saves more
             than {offers.discount.not_applied.title}.
@@ -108,13 +108,16 @@ export const CheckoutOffersSection: React.FC<CheckoutOffersSectionProps> = ({
 const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   section: {
     gap: 10,
-    marginBottom: 6,
   },
+  // Matches the review screen's section labels (SummarySectionCard).
   heading: {
-    fontFamily: fontFamily.jakarta.bold,
-    fontSize: 15,
-    color: colors.textPrimary,
-    marginTop: 4,
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 11.5,
+    lineHeight: 16,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 2,
   },
   skeletonCard: {
     marginTop: 10,

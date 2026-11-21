@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, TextInput, StyleSheet, Pressable } from 'react-native';
 import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Search, X } from 'lucide-react-native';
+import { CloseIcon, SearchIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -43,7 +43,7 @@ export const ConversationSearchBar: React.FC<ConversationSearchBarProps> = ({
   return (
     <Pressable onPress={() => inputRef.current?.focus()} accessible={false}>
       <Animated.View style={[styles.container, animatedFill]}>
-        <Search size={18} strokeWidth={2} color={focused || hasText ? colors.neutralInk : colors.neutralInkSecondary} />
+        <SearchIcon size={18} strokeWidth={2} color={focused || hasText ? colors.neutralInk : colors.neutralInkSecondary} />
         <TextInput
           ref={inputRef}
           value={value}
@@ -74,7 +74,7 @@ export const ConversationSearchBar: React.FC<ConversationSearchBarProps> = ({
             accessibilityLabel="Clear search"
           >
             <View style={styles.clearCircle}>
-              <X size={11} strokeWidth={2.6} color={colors.neutralBg} />
+              <CloseIcon size={11} strokeWidth={2.6} color={colors.neutralBg} />
             </View>
           </Pressable>
         )}

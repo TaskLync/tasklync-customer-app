@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Platform, PixelRatio, type LayoutCha
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, Search, Calendar, MessageSquare, User } from 'lucide-react-native';
+import { CalendarIcon, ChatIcon, HomeIcon, SearchIcon, UserIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design/typography';
 import { useChatUnreadStore } from '../../store/chatUnread.store';
 import { TabBadge } from './TabBadge';
@@ -137,17 +137,17 @@ export const TabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, naviga
 
           switch (route.name) {
             case 'index':
-              return <Home {...iconProps} />;
+              return <HomeIcon {...iconProps} />;
             case 'explore':
-              return <Search {...iconProps} />;
+              return <SearchIcon {...iconProps} />;
             case 'bookings':
-              return <Calendar {...iconProps} />;
+              return <CalendarIcon {...iconProps} />;
             case 'messages':
-              return <MessageSquare {...iconProps} />;
+              return <ChatIcon {...iconProps} />;
             case 'profile':
-              return <User {...iconProps} />;
+              return <UserIcon {...iconProps} />;
             default:
-              return <Home {...iconProps} />;
+              return <HomeIcon {...iconProps} />;
           }
         };
 

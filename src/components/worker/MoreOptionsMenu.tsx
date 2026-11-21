@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share2, Flag, Ban } from 'lucide-react-native';
+import { BlockIcon, FlagIcon, ShareIcon } from '../ui/Icon/icons';
 import { ActionSheet } from '../layout/ActionSheet/ActionSheet';
 
 interface MoreOptionsMenuProps {
@@ -24,19 +24,19 @@ export const MoreOptionsMenu: React.FC<MoreOptionsMenuProps> = ({
   const actions = [
     {
       label: 'Share profile',
-      icon: Share2,
+      icon: ShareIcon,
       variant: 'default' as const,
       onPress: onShare,
     },
     {
       label: 'Report worker',
-      icon: Flag,
+      icon: FlagIcon,
       variant: 'default' as const,
       onPress: onReport,
     },
     {
       label: 'Block worker',
-      icon: Ban,
+      icon: BlockIcon,
       variant: 'danger' as const,
       onPress: onBlock,
     },

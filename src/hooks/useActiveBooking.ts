@@ -48,7 +48,7 @@ export const useActiveBooking = () => {
         return {
           id: active.id,
           status: active.status,
-          workerName: workerName || 'Assigned Professional',
+          workerName: workerName || 'Assigned Worker',
           workerAvatarUrl: workerAvatar,
           scheduledTime: formatPKTRelativeSchedule(active.scheduled_at),
           startedAt: active.started_at || null,

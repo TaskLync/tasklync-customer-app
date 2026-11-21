@@ -10,7 +10,7 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from 'react-native-reanimated';
-import { Camera } from 'lucide-react-native';
+import { CameraIcon } from '../ui/Icon/icons';
 import { fontFamily, shadows } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -132,7 +132,7 @@ export const AvatarUploadRing: React.FC<AvatarUploadRingProps> = ({
       {/* Camera Edit Badge */}
       {showEditBadge && (
         <View style={styles.editBadge}>
-          <Camera size={14} color={palette.pureWhite} />
+          <CameraIcon size={14} color={palette.pureWhite} />
         </View>
       )}
     </View>

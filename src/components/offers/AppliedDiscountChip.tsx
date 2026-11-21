@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { Check, X } from 'lucide-react-native';
+import { CheckIcon, CloseIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { formatRs, formatValidUntil } from '../../utils/offers';
 import type { AppliedPromo } from '../../types/offers.types';
@@ -44,7 +44,7 @@ export const AppliedDiscountChip: React.FC<AppliedDiscountChipProps> = ({
       accessibilityLabel={`${source} ${heading} applied. You save ${formatRs(saving)}.`}
     >
       <View style={styles.check}>
-        <Check size={14} color={colors.pureWhite} strokeWidth={3} />
+        <CheckIcon size={14} color={colors.pureWhite} strokeWidth={3} />
       </View>
 
       <View style={styles.body}>
@@ -72,7 +72,7 @@ export const AppliedDiscountChip: React.FC<AppliedDiscountChipProps> = ({
         {disabled ? (
           <ActivityIndicator size="small" color={colors.textMuted} />
         ) : (
-          <X size={16} color={colors.textSecondary} strokeWidth={2.4} />
+          <CloseIcon size={16} color={colors.textSecondary} strokeWidth={2.4} />
         )}
       </Pressable>
     </Animated.View>

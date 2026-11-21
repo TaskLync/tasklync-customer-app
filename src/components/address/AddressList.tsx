@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { AlertCircle, RefreshCw } from 'lucide-react-native';
+import { AlertCircleIcon, RefreshIcon } from '../ui/Icon/icons';
 import { BookingAddress, useBookingDraftStore } from '../../store/bookingDraft.store';
 import { Address } from '../../types/address.types';
 import { useAddresses } from '../../hooks/useAddresses';
@@ -54,7 +54,7 @@ export const AddressList: React.FC<AddressListProps> = ({
   if (isError) {
     return (
       <View style={styles.errorContainer}>
-        <AlertCircle size={20} color={palette.danger} />
+        <AlertCircleIcon size={20} color={palette.danger} />
         <View style={styles.errorTextWrap}>
           <Text style={styles.errorTitle}>Couldn&apos;t load addresses</Text>
           <Text style={styles.errorSubtitle}>Please check your connection and retry</Text>
@@ -65,7 +65,7 @@ export const AddressList: React.FC<AddressListProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Retry loading addresses"
         >
-          <RefreshCw size={14} color={colors.primary} />
+          <RefreshIcon size={14} color={colors.primary} />
           <Text style={styles.retryText}>Retry</Text>
         </Pressable>
       </View>

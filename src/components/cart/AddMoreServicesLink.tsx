@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { StyleSheet, Text, Pressable, Platform } from 'react-native';
-import { Plus } from 'lucide-react-native';
+import { PlusIcon } from '../ui/Icon/icons';
 import { useRouter } from 'expo-router';
 import { typography } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -36,7 +36,7 @@ export const AddMoreServicesLink: FC<AddMoreServicesLinkProps> = ({
       accessibilityRole="button"
       accessibilityLabel="Add more services"
     >
-      <Plus size={16} color={colors.primaryDark} style={styles.icon} />
+      <PlusIcon size={16} color={colors.primaryDark} style={styles.icon} />
       {/* Plus Jakarta Sans for helper link */}
       <Text style={styles.linkText}>Add more services</Text>
     </Pressable>

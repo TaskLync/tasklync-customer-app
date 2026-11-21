@@ -80,7 +80,7 @@ export const TimeSlotGrid: React.FC<TimeSlotGridProps> = ({
           <View style={styles.emptySlotBox}>
             <Text style={styles.emptySlotText}>No available slots on this date</Text>
             <Text style={styles.emptySlotSub}>
-              Please select another date on the calendar or turn on Urgent Booking below.
+              Please pick another date on the calendar.
             </Text>
           </View>
         )}

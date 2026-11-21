@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { Plus } from 'lucide-react-native';
+import { PlusIcon } from '../ui/Icon/icons';
 import { fontFamily, radius, spacing, shadows } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -13,7 +13,7 @@ export interface AddCardButtonProps {
 
 export const AddCardButton: React.FC<AddCardButtonProps> = ({
   onPress,
-  label = '+ Add New Payment Method',
+  label = '+ Add payment method',
   icon,
   style,
 }) => {
@@ -28,7 +28,7 @@ export const AddCardButton: React.FC<AddCardButtonProps> = ({
       accessibilityLabel={label}
     >
       <View style={styles.contentGroup}>
-        {icon ?? <Plus size={16} color={colors.textOnGreen} strokeWidth={2.2} />}
+        {icon ?? <PlusIcon size={16} color={colors.textOnGreen} strokeWidth={2.2} />}
         <Text
           style={styles.buttonText}
           numberOfLines={1}

@@ -177,7 +177,7 @@ export function useReviewMediaUpload(bookingId?: string) {
   const pickAndUploadImage = useCallback(
     async (source: 'camera' | 'gallery') => {
       if (photos.length >= 5) {
-        showAlert('Photo Limit Reached', 'You can upload a maximum of 5 photos per review.');
+        showAlert('Photo limit reached', 'You can add up to 5 photos to a review.');
         return;
       }
 
@@ -189,7 +189,7 @@ export function useReviewMediaUpload(bookingId?: string) {
         if (source === 'camera') {
           const { status } = await ImagePicker.requestCameraPermissionsAsync();
           if (status !== 'granted') {
-            showAlert('Permission Denied', 'Camera permission is required to take review photos.');
+            showAlert('Camera access needed', 'Allow camera access in Settings to take review photos.');
             return;
           }
           result = await ImagePicker.launchCameraAsync({
@@ -202,8 +202,8 @@ export function useReviewMediaUpload(bookingId?: string) {
           const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (status !== 'granted') {
             showAlert(
-              'Permission Denied',
-              'Photo library permission is required to attach review photos.'
+              'Photo access needed',
+              'Allow photo access in Settings to attach review photos.'
             );
             return;
           }
@@ -235,7 +235,7 @@ export function useReviewMediaUpload(bookingId?: string) {
       } catch (err: any) {
         const message = extractReviewErrorMessage(err);
         setUploadError(message);
-        showAlert('Upload Failed', message);
+        showAlert("Couldn't upload photo", message);
       } finally {
         setIsUploading(false);
       }

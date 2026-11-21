@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { Trash2 } from 'lucide-react-native';
+import { DeleteIcon } from '../ui/Icon/icons';
 import { PaymentMethod } from '../../types/payment.types';
 import { fontFamily, radius, spacing } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -33,8 +33,8 @@ export const PaymentMethodSwipeActions: React.FC<PaymentMethodSwipeActionsProps>
     if (method.is_default) {
       // Soft confirmation for default payment method
       showAlert(
-        'Delete Default Method?',
-        'This is currently set as your default payment method. Are you sure you want to remove it?',
+        'Remove default payment method?',
+        'This is your default payment method. Remove it anyway?',
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -61,7 +61,7 @@ export const PaymentMethodSwipeActions: React.FC<PaymentMethodSwipeActionsProps>
           accessibilityRole="button"
           accessibilityLabel={`Delete ${method.title}`}
         >
-          <Trash2 size={20} color={palette.pureWhite} />
+          <DeleteIcon size={20} color={palette.pureWhite} />
           <Text style={styles.deleteText}>Delete</Text>
         </TouchableOpacity>
       </View>

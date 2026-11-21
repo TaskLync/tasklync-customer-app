@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { useRouter, router as globalRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MapPin, MapPinOff, X, Navigation } from 'lucide-react-native';
+import { LocationIcon, LocationOffIcon, NavigationIcon } from '../../src/components/ui/Icon/icons';
 
 import { Screen } from '@components/layout/Screen';
 import { Button } from '@components/ui/Button';
@@ -13,6 +13,7 @@ import { startLocationBootstrap } from '../../src/services/location/locationBoot
 import { validateServiceArea } from '../../src/config/serviceArea.config';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 import { showAlert } from '../../src/components/feedback/AppAlert';
+import { AppDialog } from '../../src/components/feedback/AppDialog';
 import type { VerifiedLocation } from '../../src/types/location.types';
 
 /**
@@ -26,8 +27,8 @@ function notifyIfOutsideServiceArea(fix: VerifiedLocation) {
   if (store.locationMode === 'address') return;
   if (validateServiceArea({ lat: fix.lat, lng: fix.lng }).isServiceable) return;
   showAlert(
-    'We currently operate only in Faisalabad',
-    'You appear to be outside our service area. You can still explore services and workers, but bookings can only be placed for a Faisalabad address.',
+    'We only work in Faisalabad for now',
+    'You seem to be outside our service area. You can still look at services and workers, but you can only book for an address in Faisalabad.',
     [
       { text: 'Keep exploring', style: 'cancel' },
       { text: 'Set a Faisalabad address', onPress: () => globalRouter.push('/profile/addresses/add' as any) },
@@ -103,8 +104,8 @@ export default function LocationPermissionScreen() {
           navigateToHome(true);
         } else {
           showAlert(
-            'Location Services Off',
-            'Your device location services (GPS) are turned off. Please enable GPS in device settings to detect your location.',
+            'Location is turned off',
+            'Turn on location in your device settings so we can find your area.',
             [
               { text: 'Later', style: 'cancel', onPress: () => navigateToHome(true) },
               {
@@ -147,7 +148,7 @@ export default function LocationPermissionScreen() {
         <View style={styles.centerContent}>
           {/* Refined Icon Emblem */}
           <View style={styles.iconCircle} accessibilityLabel="Location icon">
-            <MapPin size={32} color={colors.primaryDark} strokeWidth={2.2} />
+            <LocationIcon size={32} color={colors.primaryDark} strokeWidth={2.2} />
           </View>
 
           {/* Clean, Impactful Heading */}
@@ -175,8 +176,8 @@ export default function LocationPermissionScreen() {
             onPress={handleAllow}
             disabled={isLoading}
             loading={isLoading}
-            icon={Navigation}
-            label="Share Current Location"
+            icon={NavigationIcon}
+            label="Share current location"
             style={styles.primaryBtn}
           />
 
@@ -194,66 +195,35 @@ export default function LocationPermissionScreen() {
       </View>
 
       {/* Modal: Location permission permanently blocked in OS settings */}
-      <Modal
+      <AppDialog
         visible={showBlockedModal}
-        transparent
-        animationType="fade"
+        icon={<LocationOffIcon size={22} color={colors.textDanger} strokeWidth={2} />}
+        title="Location access is off"
+        message="Location is turned off in your phone settings. Turn it on to find workers near you."
         onRequestClose={() => {
           setShowBlockedModal(false);
           navigateToHome(true);
         }}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <View style={styles.modalIconWrap}>
-                <MapPinOff size={22} color={palette.danger} strokeWidth={2.4} />
-              </View>
-              <Pressable
-                onPress={() => {
-                  setShowBlockedModal(false);
-                  navigateToHome(true);
-                }}
-                style={styles.closeBtn}
-                accessibilityRole="button"
-                accessibilityLabel="Close"
-                hitSlop={8}
-              >
-                <X size={18} color={palette.gray500} />
-              </Pressable>
-            </View>
-
-            <Text style={styles.modalTitle}>Location Permission Required</Text>
-            <Text style={styles.modalDescription}>
-              Location access is disabled in your device settings. To find workers near your doorstep, please enable location in Settings.
-            </Text>
-
-            <View style={styles.modalActions}>
-              <Pressable
-                onPress={() => {
-                  setShowBlockedModal(false);
-                  navigateToHome(true);
-                }}
-                style={styles.modalCancelBtn}
-                accessibilityRole="button"
-              >
-                <Text style={styles.modalCancelText}>Continue without</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  setShowBlockedModal(false);
-                  locationService.openSettings();
-                  navigateToHome(true);
-                }}
-                style={styles.modalSettingsBtn}
-                accessibilityRole="button"
-              >
-                <Text style={styles.modalSettingsText}>Open Settings</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        actions={[
+          {
+            label: 'Not now',
+            variant: 'secondary',
+            onPress: () => {
+              setShowBlockedModal(false);
+              navigateToHome(true);
+            },
+          },
+          {
+            label: 'Open Settings',
+            variant: 'primary',
+            onPress: () => {
+              setShowBlockedModal(false);
+              locationService.openSettings();
+              navigateToHome(true);
+            },
+          },
+        ]}
+      />
     </Screen>
   );
 }

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, ShieldCheck } from 'lucide-react-native';
+import { ArrowLeftIcon, ShieldCheckIcon } from '../../src/components/ui/Icon/icons';
 
 import { useBlockedWorkers } from '../../src/hooks/useBlockedWorkers';
 import { BlockedWorkerRow } from '../../src/components/worker/BlockedWorkerRow';
@@ -58,7 +58,7 @@ export default function BlockedWorkersScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={colors.textPrimary} />
+          <ArrowLeftIcon size={22} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3}>
@@ -70,9 +70,9 @@ export default function BlockedWorkersScreen() {
 
       {/* Privacy Notice Banner */}
       <View style={styles.infoStrip}>
-        <ShieldCheck size={16} color={palette.gray600} style={styles.infoIcon} />
+        <ShieldCheckIcon size={16} color={palette.gray600} style={styles.infoIcon} />
         <Text style={styles.infoStripText} maxFontSizeMultiplier={1.3}>
-          Blocked professionals cannot view your profile, contact you, or receive your booking requests.
+          Blocked workers cannot view your profile, contact you, or receive your booking requests.
         </Text>
       </View>
 

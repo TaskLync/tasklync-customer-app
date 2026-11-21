@@ -36,7 +36,7 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
       {rows.map((row) => {
         const isGood = row.kind === 'discount' || row.kind === 'saving';
         const text =
-          row.kind === 'discount' ? `- ${formatRs(Math.abs(row.amount))}` : formatRs(row.amount);
+          row.display ?? (row.kind === 'discount' ? `- ${formatRs(Math.abs(row.amount))}` : formatRs(row.amount));
         return (
           <View key={row.key} style={[styles.row, compact && styles.rowCompact]}>
             <Text style={[styles.label, compact && styles.labelCompact, isGood && styles.goodLabel]}>

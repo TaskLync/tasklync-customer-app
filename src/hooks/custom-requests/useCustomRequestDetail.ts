@@ -46,10 +46,10 @@ export function useCustomRequestDetail(id: string) {
         };
       });
       queryClient.invalidateQueries({ queryKey: ['custom-requests'] });
-      showAlert('Request Cancelled', 'Your custom service request has been cancelled.');
+      showAlert('Request cancelled', 'Your custom request has been cancelled.');
     },
     onError: (err: any) => {
-      showAlert('Cancellation Failed', err?.message || 'Could not cancel request. Please try again.');
+      showAlert("Couldn't cancel request", err?.message || 'Please try again.');
     },
   });
 

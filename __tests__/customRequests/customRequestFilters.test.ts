@@ -54,7 +54,7 @@ describe('custom quote filters (membership unchanged)', () => {
 describe('status badges', () => {
   test('labels are unchanged and every status has a readable label', () => {
     assert.strictEqual(requestStatusBadge('SUBMITTED').label, 'Submitted');
-    assert.strictEqual(requestStatusBadge('QUOTE_SENT').label, 'Quote Ready');
+    assert.strictEqual(requestStatusBadge('QUOTE_SENT').label, 'Quote ready');
     assert.strictEqual(requestStatusBadge('CONVERTED').label, 'Booked');
     assert.strictEqual(requestStatusBadge('EXPIRED').label, 'Expired');
     for (const s of ALL_STATUSES) assert.ok(!requestStatusBadge(s).label.includes('_'), s);

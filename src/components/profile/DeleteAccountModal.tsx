@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Trash2, X, AlertTriangle } from 'lucide-react-native';
+import { CloseIcon, DeleteIcon, WarningIcon } from '../ui/Icon/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -76,7 +76,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.iconCircle}>
-              <AlertTriangle size={22} color={colors.textDanger} />
+              <WarningIcon size={22} color={colors.textDanger} />
             </View>
             <TouchableOpacity
               style={styles.closeBtn}
@@ -84,7 +84,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
               disabled={isLoading}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <X size={20} color={colors.textSecondary} />
+              <CloseIcon size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -92,7 +92,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
 
           {/* Consequence Copy */}
           <Text style={styles.consequenceText}>
-            This action is <Text style={styles.boldText}>permanent and irreversible</Text>. All your active bookings, past receipts, chat histories, and saved addresses will be deleted immediately.
+            This <Text style={styles.boldText}>cannot be undone</Text>. Your bookings, receipts, chats and saved addresses will be deleted.
           </Text>
 
           {/* Typed Confirmation Gate */}
@@ -133,8 +133,8 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
                 <ActivityIndicator size="small" color={palette.pureWhite} />
               ) : (
                 <View style={styles.btnRow}>
-                  <Trash2 size={18} color={palette.pureWhite} />
-                  <Text style={styles.deleteBtnText}>Permanently Delete My Account</Text>
+                  <DeleteIcon size={18} color={palette.pureWhite} />
+                  <Text style={styles.deleteBtnText}>Delete my account</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -145,7 +145,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
               onPress={handleClose}
               disabled={isLoading}
             >
-              <Text style={styles.cancelBtnText}>Keep My Account</Text>
+              <Text style={styles.cancelBtnText}>Keep my account</Text>
             </TouchableOpacity>
           </View>
         </View>

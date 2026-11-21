@@ -1,31 +1,19 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  Modal,
-  Pressable,
-} from 'react-native';
+import { useRef, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  ArrowLeft,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  ShieldCheck,
-  FileText,
-  AlertTriangle,
-  History,
-  ChevronDown,
-  ChevronUp,
-  Info,
-} from 'lucide-react-native';
+  ArrowLeftIcon,
+  CashIcon,
+  CheckCircleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ClockIcon,
+  CloseCircleIcon,
+  DocumentIcon,
+  InfoIcon,
+} from '../../../src/components/ui/Icon/icons';
 
-import { typography } from '../../../src/design';
 import { useCustomRequestDetail } from '../../../src/hooks/custom-requests/useCustomRequestDetail';
 import { useQuoteDetail } from '../../../src/hooks/custom-requests/useQuoteDetail';
 import { QuoteBreakdownCard } from '../../../src/components/custom-requests/QuoteBreakdownCard';
@@ -33,9 +21,33 @@ import { QuoteExpiryCountdown } from '../../../src/components/custom-requests/Qu
 import { DeclineQuoteModal } from '../../../src/components/custom-requests/DeclineQuoteModal';
 import { QuotePricingType, QuoteStatus } from '../../../src/types/customRequest.types';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../src/theme/useAppTheme';
+import { AppDialog } from '../../../src/components/feedback/AppDialog';
 
+/** "Approximately 1 hour", "Approximately 2.5 hours", "Approximately 45 minutes"; null when unknown. */
+function formatDuration(hours: number | null | undefined): string | null {
+  const h = Number(hours);
+  if (!Number.isFinite(h) || h <= 0) return null;
+  if (h < 1) return `Approximately ${Math.round(h * 60)} minutes`;
+  const rounded = Math.round(h * 10) / 10;
+  return `Approximately ${rounded} ${rounded === 1 ? 'hour' : 'hours'}`;
+}
+
+/** A scope that is empty or looks like an internal id (uuid / hex) is not shown as the scope. */
+function isReadableScope(text: string | null | undefined): text is string {
+  const t = (text ?? '').trim();
+  if (t.length < 3) return false;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)) return false;
+  if (/^[0-9a-f]{16,}$/i.test(t)) return false;
+  return true;
+}
+
+/**
+ * Review quote: built around the customer's decision order:
+ * whose quote, its status, what is included, what it costs, how to pay, what to do next.
+ * Every price, status and detail comes from the backend quote; the screen never decides acceptance itself.
+ */
 export default function QuoteReviewScreen() {
-  const { colors, palette } = useAppTheme();
+  const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -56,32 +68,31 @@ export default function QuoteReviewScreen() {
   const [declineModalVisible, setDeclineModalVisible] = useState(false);
   const [showRevisions, setShowRevisions] = useState(false);
   const [acceptConfirmVisible, setAcceptConfirmVisible] = useState(false);
+  const navigating = useRef(false);
 
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace(`/custom-request/${requestId}` as any);
-    }
-  };
-
-  const handleAcceptPress = () => {
-    if (!activeQuote) return;
-    setAcceptConfirmVisible(true);
+    if (router.canGoBack()) router.back();
+    else router.replace(`/custom-request/${requestId}` as any);
   };
 
   const handleConfirmAccept = () => {
     setAcceptConfirmVisible(false);
-    if (activeQuote) {
-      acceptQuote(activeQuote.id);
-    }
+    if (activeQuote) acceptQuote(activeQuote.id);
   };
 
   const handleConfirmDecline = (reason: string) => {
     setDeclineModalVisible(false);
-    if (activeQuote) {
-      rejectQuote({ quoteId: activeQuote.id, reason });
-    }
+    if (activeQuote) rejectQuote({ quoteId: activeQuote.id, reason });
+  };
+
+  // One tap = one navigation, even on a fast double tap.
+  const handleContinue = () => {
+    if (navigating.current) return;
+    navigating.current = true;
+    router.push(`/custom-request/${requestId}/checkout` as any);
+    setTimeout(() => {
+      navigating.current = false;
+    }, 800);
   };
 
   const isLoading = isRequestLoading || isQuoteLoading;
@@ -89,8 +100,8 @@ export default function QuoteReviewScreen() {
   if (isLoading && !activeQuote) {
     return (
       <SafeAreaView style={styles.centerContainer} edges={['top']}>
-        <ActivityIndicator size="large" color={palette.green600} />
-        <Text style={styles.loadingText}>Loading formal quote...</Text>
+        <ActivityIndicator size="large" color={colors.textSecondary} />
+        <Text style={styles.loadingText}>Loading quote…</Text>
       </SafeAreaView>
     );
   }
@@ -98,14 +109,16 @@ export default function QuoteReviewScreen() {
   if (!activeQuote) {
     return (
       <SafeAreaView style={styles.centerContainer} edges={['top']}>
-        <AlertTriangle size={48} color={palette.gray400} />
-        <Text style={styles.errorTitle}>No Quote Found</Text>
-        <Text style={styles.errorSubtitle}>
-          The professional has not submitted a formal quote yet or it has been withdrawn.
-        </Text>
-        <TouchableOpacity style={styles.backButtonCenter} onPress={handleBack}>
-          <Text style={styles.backButtonCenterText}>Go to Request Details</Text>
-        </TouchableOpacity>
+        <DocumentIcon size={40} color={colors.textMuted} strokeWidth={1.6} />
+        <Text style={styles.errorTitle}>No quote yet</Text>
+        <Text style={styles.errorSubtitle}>The worker has not sent a quote yet, or it was withdrawn.</Text>
+        <Pressable
+          style={({ pressed }) => [styles.secondaryBtn, styles.centerBtn, pressed && styles.secondaryBtnPressed]}
+          onPress={handleBack}
+          accessibilityRole="button"
+        >
+          <Text style={styles.secondaryBtnText}>Go to request</Text>
+        </Pressable>
       </SafeAreaView>
     );
   }
@@ -117,235 +130,230 @@ export default function QuoteReviewScreen() {
   const isWithdrawn = activeQuote.status === QuoteStatus.WITHDRAWN;
   const isExpired = activeQuote.status === QuoteStatus.EXPIRED;
 
+  const workerName = request?.provider_name || request?.worker_name || null;
+  const subtitle = [workerName ? `From ${workerName}` : null, activeQuote.version > 1 ? `Revision ${activeQuote.version}` : null]
+    .filter(Boolean)
+    .join(' · ');
+  // The agreed scope is the quote's own scope; if it is unusable, show the customer's own request text instead.
+  const scopeText = isReadableScope(activeQuote.scope_description)
+    ? activeQuote.scope_description.trim()
+    : isReadableScope(request?.description)
+      ? request!.description.trim()
+      : null;
+  const duration = formatDuration(activeQuote.estimated_duration_hours);
+  const terms = activeQuote.terms_and_exclusions || activeQuote.terms_and_conditions;
+  const totalLabel = `${activeQuote.currency || 'PKR'} ${Math.round(Number(activeQuote.total_price || 0)).toLocaleString()}`;
+
+  const status = isAccepted
+    ? { icon: <CheckCircleIcon size={18} color={colors.primaryDark} strokeWidth={2} />, title: 'Quote accepted', text: 'Your price is confirmed. Continue to checkout.' }
+    : isRejected
+      ? { icon: <CloseCircleIcon size={18} color={colors.textDanger} strokeWidth={2} />, title: 'Quote declined', text: 'The worker has been told.' }
+      : isWithdrawn
+        ? { icon: <CloseCircleIcon size={18} color={colors.textSecondary} strokeWidth={2} />, title: 'Quote withdrawn', text: 'The worker withdrew this quote.' }
+        : isExpired
+          ? { icon: <ClockIcon size={18} color={colors.textSecondary} strokeWidth={2} />, title: 'Quote expired', text: 'Ask the worker for a new quote.' }
+          : null;
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Top Header */}
+      {/* 1. Whose quote */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
-          <ArrowLeft size={22} color={palette.gray900} />
-        </TouchableOpacity>
+        <Pressable
+          onPress={handleBack}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeftIcon size={22} color={colors.textPrimary} strokeWidth={2} />
+        </Pressable>
         <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>Review Quote</Text>
-          <Text style={styles.headerSubtitle}>
-            {request?.provider_name || request?.worker_name
-              ? `From ${request?.provider_name || request?.worker_name}`
-              : 'Professional Quote'}
+          <Text style={styles.headerTitle} accessibilityRole="header">
+            Review quote
           </Text>
+          {subtitle ? (
+            <Text style={styles.headerSubtitle} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
-        <View style={styles.versionBadge}>
-          <Text style={styles.versionText}>v{activeQuote.version}</Text>
-        </View>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 120 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 132 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Pricing Type Banner */}
-        <View style={[styles.pricingTypeBanner, isFixed ? styles.fixedBanner : styles.estimateBanner]}>
-          <Info size={16} color={isFixed ? colors.textGreen : colors.warningMedium} />
-          <View style={{ marginLeft: 8, flex: 1 }}>
-            <Text style={[styles.pricingTypeTitle, isFixed ? styles.fixedTitle : styles.estimateTitle]}>
-              {isFixed ? 'Guaranteed Fixed Price Quote' : 'Preliminary Estimate'}
-            </Text>
-            <Text style={[styles.pricingTypeDesc, isFixed ? styles.fixedDesc : styles.estimateDesc]}>
-              {isFixed
-                ? 'This quoted price is fully binding for the specified scope of work.'
-                : 'Final labor charges are subject to on-site physical diagnosis.'}
-            </Text>
+        {/* 2. Status (only what the backend says) */}
+        {status ? (
+          <View style={styles.statusRow} accessible accessibilityLabel={`${status.title}. ${status.text}`}>
+            {status.icon}
+            <View style={styles.statusTextCol}>
+              <Text style={styles.statusTitle}>{status.title}</Text>
+              <Text style={styles.statusText}>{status.text}</Text>
+            </View>
           </View>
-        </View>
-
-        {/* Validity Countdown (if still SENT) */}
-        {isSent && activeQuote.valid_until && (
-          <QuoteExpiryCountdown validUntil={activeQuote.valid_until} />
-        )}
-
-        {/* Status Callouts if not SENT */}
-        {isAccepted && (
-          <View style={styles.acceptedBanner}>
-            <CheckCircle size={18} color={colors.textGreen} />
-            <Text style={styles.acceptedBannerText}>
-              You have accepted this quote. Please proceed to checkout to finalize your appointment.
-            </Text>
+        ) : isSent && activeQuote.valid_until ? (
+          <View style={styles.validityRow}>
+            <QuoteExpiryCountdown validUntil={activeQuote.valid_until} />
           </View>
-        )}
+        ) : null}
 
-        {isRejected && (
-          <View style={styles.declinedBanner}>
-            <AlertCircle size={18} color={colors.dangerMedium} />
-            <Text style={styles.declinedBannerText}>
-              You declined this quote. The technician has been notified.
-            </Text>
+        {/* 3. What's included */}
+        <Text style={styles.sectionTitle}>What's included</Text>
+        {scopeText ? (
+          <Text style={styles.scopeText} selectable>
+            {scopeText}
+          </Text>
+        ) : (
+          <Text style={styles.mutedText}>The worker did not add a description.</Text>
+        )}
+        {duration ? (
+          <View style={styles.durationRow}>
+            <ClockIcon size={16} color={colors.textSecondary} strokeWidth={1.9} />
+            <Text style={styles.durationLabel}>Estimated duration</Text>
+            <Text style={styles.durationValue}>{duration}</Text>
           </View>
-        )}
+        ) : null}
 
-        {/* Price Breakdown Card */}
+        <View style={styles.sectionGap} />
+
+        {/* 4. What it costs */}
         <QuoteBreakdownCard quote={activeQuote} />
 
-        {/* Scope of Work */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Scope of Work</Text>
-          <Text style={styles.scopeDescription}>{activeQuote.scope_description}</Text>
-
-          {activeQuote.estimated_duration_hours ? (
-            <View style={styles.durationRow}>
-              <Clock size={16} color={palette.gray500} />
-              <Text style={styles.durationText}>
-                Estimated Duration: ~{activeQuote.estimated_duration_hours} hours
-              </Text>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Terms and Exclusions */}
-        {(activeQuote.terms_and_exclusions || activeQuote.terms_and_conditions) && (
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Terms & Material Exclusions</Text>
-            <Text style={styles.termsText}>
-              {activeQuote.terms_and_exclusions || activeQuote.terms_and_conditions}
+        <View style={styles.noteRow}>
+          <InfoIcon size={16} color={colors.textSecondary} strokeWidth={1.9} />
+          <View style={styles.noteTextCol}>
+            <Text style={styles.noteTitle}>{isFixed ? 'Fixed price' : 'Estimate'}</Text>
+            <Text style={styles.noteText}>
+              {isFixed
+                ? 'The quoted price covers the agreed scope of work.'
+                : 'The final price may change after the worker checks the job on site.'}
             </Text>
           </View>
-        )}
+        </View>
 
-        {/* Revision History Collapsible */}
-        {revisions.length > 0 && (
-          <View style={styles.sectionCard}>
-            <TouchableOpacity
-              style={styles.revisionsHeader}
-              onPress={() => setShowRevisions(!showRevisions)}
-              activeOpacity={0.7}
+        {/* 5. How to pay */}
+        <View style={styles.paymentRow}>
+          <CashIcon size={20} color={colors.textSecondary} strokeWidth={1.8} />
+          <View style={styles.noteTextCol}>
+            <Text style={styles.paymentTitle}>Cash on Delivery</Text>
+            <Text style={styles.noteText}>Pay after your service is completed.</Text>
+          </View>
+        </View>
+
+        {terms ? (
+          <>
+            <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>Terms and exclusions</Text>
+            <Text style={styles.bodyText}>{terms}</Text>
+          </>
+        ) : null}
+
+        {revisions.length > 0 ? (
+          <View style={styles.revisions}>
+            <Pressable
+              style={({ pressed }) => [styles.revisionsHeader, pressed && styles.rowPressed]}
+              onPress={() => setShowRevisions((v) => !v)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showRevisions }}
             >
-              <View style={styles.revisionsHeaderLeft}>
-                <History size={18} color={palette.gray600} />
-                <Text style={styles.revisionsHeaderTitle}>
-                  Quote Revision History ({revisions.length})
-                </Text>
-              </View>
+              <Text style={styles.revisionsTitle}>Earlier versions ({revisions.length})</Text>
               {showRevisions ? (
-                <ChevronUp size={18} color={palette.gray500} />
+                <ChevronUpIcon size={18} color={colors.textMuted} />
               ) : (
-                <ChevronDown size={18} color={palette.gray500} />
+                <ChevronDownIcon size={18} color={colors.textMuted} />
               )}
-            </TouchableOpacity>
-
-            {showRevisions && (
-              <View style={styles.revisionsContent}>
-                {revisions.map((rev) => (
+            </Pressable>
+            {showRevisions
+              ? revisions.map((rev) => (
                   <View key={rev.id || rev.version} style={styles.revisionItem}>
-                    <View style={styles.revisionItemHeader}>
-                      <Text style={styles.revisionVersion}>Revision v{rev.version}</Text>
+                    <View style={styles.revisionHead}>
+                      <Text style={styles.revisionVersion}>Version {rev.version}</Text>
                       <Text style={styles.revisionPrice}>
-                        PKR {Number(rev.total_price).toLocaleString()}
+                        {activeQuote.currency || 'PKR'} {Math.round(Number(rev.total_price)).toLocaleString()}
                       </Text>
                     </View>
-                    <Text style={styles.revisionScope} numberOfLines={2}>
+                    <Text style={styles.mutedText} numberOfLines={2}>
                       {rev.scope_description}
                     </Text>
                     {rev.superseded_reason ? (
-                      <Text style={styles.revisionReason}>
-                        Superseded: {rev.superseded_reason}
-                      </Text>
+                      <Text style={styles.revisionReason}>Changed: {rev.superseded_reason}</Text>
                     ) : null}
                   </View>
-                ))}
-              </View>
-            )}
+                ))
+              : null}
           </View>
-        )}
+        ) : null}
       </ScrollView>
 
-      {/* Sticky Bottom Actions */}
-      <View
-        style={[
-          styles.footer,
-          { paddingBottom: insets.bottom > 0 ? insets.bottom + 14 : 20 },
-        ]}
-      >
-        {isSent && (
-          <View style={styles.footerButtonsRow}>
-            <TouchableOpacity
-              style={styles.declineBtn}
+      {/* 6. What to do next */}
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
+        {isSent ? (
+          <View style={styles.footerRow}>
+            <Pressable
+              style={({ pressed }) => [styles.secondaryBtn, styles.flex1, pressed && styles.secondaryBtnPressed]}
               onPress={() => setDeclineModalVisible(true)}
               disabled={isAccepting || isRejecting}
+              accessibilityRole="button"
             >
-              <Text style={styles.declineBtnText}>Decline</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.acceptBtn, (isAccepting || isRejecting) && styles.acceptBtnDisabled]}
-              onPress={handleAcceptPress}
+              <Text style={styles.secondaryBtnText}>Decline</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                styles.flex2,
+                pressed && styles.primaryBtnPressed,
+                (isAccepting || isRejecting) && styles.btnDisabled,
+              ]}
+              onPress={() => setAcceptConfirmVisible(true)}
               disabled={isAccepting || isRejecting}
-              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityState={{ busy: isAccepting, disabled: isAccepting || isRejecting }}
             >
               {isAccepting ? (
                 <ActivityIndicator size="small" color={colors.pureWhite} />
               ) : (
-                <Text style={styles.acceptBtnText}>Accept & Book</Text>
+                <Text style={styles.primaryBtnText}>Accept and book</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
-        )}
-
-        {isAccepted && (
-          <TouchableOpacity
-            style={styles.proceedCheckoutBtn}
-            onPress={() => router.push(`/custom-request/${requestId}/checkout` as any)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.proceedCheckoutBtnText}>Proceed to Checkout →</Text>
-          </TouchableOpacity>
-        )}
-
-        {(isRejected || isWithdrawn || isExpired) && (
-          <View style={styles.terminalStateBar}>
-            <Text style={styles.terminalStateText}>
-              {isRejected
-                ? 'Quote was declined'
-                : isWithdrawn
-                ? 'Quote was withdrawn by professional'
-                : 'Quote has expired'}
+        ) : isAccepted ? (
+          <View style={styles.footerRow}>
+            <View style={styles.footerTotal}>
+              <Text style={styles.footerTotalLabel}>Total</Text>
+              <Text style={styles.footerTotalValue}>{totalLabel}</Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.primaryBtn, styles.flex2, pressed && styles.primaryBtnPressed]}
+              onPress={handleContinue}
+              accessibilityRole="button"
+              accessibilityLabel={`Continue to checkout, total ${totalLabel}`}
+            >
+              <Text style={styles.primaryBtnText}>Continue to checkout</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.terminalBar}>
+            <Text style={styles.terminalText}>
+              {isRejected ? 'You declined this quote' : isWithdrawn ? 'This quote was withdrawn' : 'This quote has expired'}
             </Text>
           </View>
         )}
       </View>
 
-      {/* Accept Confirmation Modal */}
-      <Modal
+      <AppDialog
         visible={acceptConfirmVisible}
-        transparent
-        animationType="fade"
+        tone="success"
+        title="Accept this quote?"
+        message={`You are accepting ${totalLabel}. Next, you will pick a time and your address.`}
         onRequestClose={() => setAcceptConfirmVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setAcceptConfirmVisible(false)}>
-          <View style={styles.confirmSheet}>
-            <View style={styles.confirmIconWrap}>
-              <CheckCircle size={32} color={palette.green600} />
-            </View>
-            <Text style={styles.confirmTitle}>Accept this Quote?</Text>
-            <Text style={styles.confirmSubtitle}>
-              You are accepting the quoted price of PKR {activeQuote.total_price.toLocaleString()}. Next, you will select your preferred time slot and delivery address.
-            </Text>
-            <View style={styles.confirmButtonsRow}>
-              <TouchableOpacity
-                style={styles.confirmCancelBtn}
-                onPress={() => setAcceptConfirmVisible(false)}
-              >
-                <Text style={styles.confirmCancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.confirmProceedBtn}
-                onPress={handleConfirmAccept}
-              >
-                <Text style={styles.confirmProceedBtnText}>Confirm Acceptance</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Pressable>
-      </Modal>
+        dismissOnBackdropPress
+        actions={[
+          { label: 'Cancel', onPress: () => setAcceptConfirmVisible(false), variant: 'secondary' },
+          { label: 'Accept quote', onPress: handleConfirmAccept, variant: 'primary' },
+        ]}
+      />
 
-      {/* Decline Quote Sheet Modal */}
       <DeclineQuoteModal
         visible={declineModalVisible}
         onClose={() => setDeclineModalVisible(false)}
@@ -356,378 +364,336 @@ export default function QuoteReviewScreen() {
   );
 }
 
-const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: palette.canvasGray,
+    backgroundColor: colors.bgCard,
   },
   centerContainer: {
     flex: 1,
-    backgroundColor: palette.canvasGray,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    backgroundColor: colors.bgCard,
   },
   loadingText: {
     marginTop: 12,
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14,
-    color: palette.gray600,
+    color: colors.textSecondary,
   },
   errorTitle: {
-    marginTop: 16,
-    fontFamily: 'Poppins-Bold',
-    fontSize: 18,
-    color: palette.gray900,
+    marginTop: 14,
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 17,
+    color: colors.textPrimary,
   },
   errorSubtitle: {
     marginTop: 6,
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 13,
-    color: palette.gray500,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  backButtonCenter: {
-    marginTop: 18,
-    backgroundColor: colors.buttonPrimary,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  backButtonCenterText: {
-    color: colors.pureWhite,
-    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
+  centerBtn: {
+    marginTop: 20,
+    paddingHorizontal: 24,
+  },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.bgCard,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 8,
+    minHeight: 60,
   },
   backBtn: {
-    padding: 6,
-    marginRight: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backBtnPressed: {
+    backgroundColor: colors.bgHover,
   },
   headerInfo: {
     flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 17,
-    color: palette.gray900,
+    letterSpacing: -0.2,
+    color: colors.textPrimary,
   },
   headerSubtitle: {
+    marginTop: 1,
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    color: palette.gray500,
+    fontSize: 13,
+    color: colors.textSecondary,
   },
-  versionBadge: {
-    backgroundColor: colors.bgHover,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+  headerSpacer: {
+    width: 44,
   },
-  versionText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 11,
-    color: palette.gray600,
-  },
-  scrollView: {
-    flex: 1,
-  },
+
   scrollContent: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 8,
   },
-  pricingTypeBanner: {
+
+  // Status
+  statusRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 14,
-    borderWidth: 1,
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: colors.bgHover,
+    marginBottom: 24,
   },
-  fixedBanner: {
-    backgroundColor: colors.primaryTint,
-    borderColor: colors.primaryBorder,
+  statusTextCol: {
+    flex: 1,
+    minWidth: 0,
   },
-  estimateBanner: {
-    backgroundColor: palette.amber50,
-    borderColor: colors.warningBorder,
+  statusTitle: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 14.5,
+    color: colors.textPrimary,
   },
-  pricingTypeTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 13,
-  },
-  fixedTitle: { color: colors.textGreen },
-  estimateTitle: { color: colors.textWarningMedium },
-  pricingTypeDesc: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
+  statusText: {
     marginTop: 2,
-    lineHeight: 16,
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 13.5,
+    lineHeight: 19,
+    color: colors.textSecondary,
   },
-  fixedDesc: { color: colors.textGreenDark },
-  estimateDesc: { color: colors.textWarning },
-  acceptedBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primaryBorderSubtle,
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
+  validityRow: {
+    marginBottom: 20,
   },
-  acceptedBannerText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    color: colors.textGreen,
-    marginLeft: 8,
-    flex: 1,
-  },
-  declinedBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.dangerLight,
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: colors.borderErrorLight,
-  },
-  declinedBannerText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    color: colors.dangerMedium,
-    marginLeft: 8,
-    flex: 1,
-  },
-  sectionCard: {
-    backgroundColor: colors.bgCard,
-    paddingVertical: 16,
-    marginBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
+
+  // Sections
   sectionTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 14,
-    color: palette.gray900,
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 15,
+    color: colors.textPrimary,
     marginBottom: 8,
   },
-  scopeDescription: {
+  sectionTitleSpaced: {
+    marginTop: 28,
+  },
+  sectionGap: {
+    height: 28,
+  },
+  scopeText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 13,
-    color: palette.gray700,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 23,
+    color: colors.textPrimary,
+  },
+  bodyText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.textSecondary,
+  },
+  mutedText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 13.5,
+    lineHeight: 19,
+    color: colors.textSecondary,
   },
   durationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    gap: 8,
+    marginTop: 14,
   },
-  durationText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
-    color: palette.gray600,
-    marginLeft: 6,
-  },
-  termsText: {
+  durationLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    color: palette.gray600,
-    lineHeight: 18,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  durationValue: {
+    flex: 1,
+    textAlign: 'right',
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+
+  // Fixed price note + payment
+  noteRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: colors.bgHover,
+  },
+  noteTextCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  noteTitle: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  noteText: {
+    marginTop: 2,
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 13.5,
+    lineHeight: 19,
+    color: colors.textSecondary,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  paymentTitle: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+
+  // Revisions
+  revisions: {
+    marginTop: 24,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
   revisionsHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingVertical: 14,
   },
-  revisionsHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  rowPressed: {
+    opacity: 0.7,
   },
-  revisionsHeaderTitle: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 13,
-    color: palette.gray800,
-    marginLeft: 8,
-  },
-  revisionsContent: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+  revisionsTitle: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   revisionItem: {
-    padding: 10,
-    backgroundColor: colors.bgSubtle,
-    borderRadius: 8,
-    marginBottom: 8,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
-  revisionItemHeader: {
+  revisionHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 4,
   },
   revisionVersion: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 12,
-    color: palette.gray900,
+    fontSize: 13.5,
+    color: colors.textPrimary,
   },
   revisionPrice: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 12,
-    color: palette.green600,
-  },
-  revisionScope: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 11,
-    color: palette.gray600,
-    lineHeight: 15,
+    fontFamily: 'Inter-Medium',
+    fontSize: 13.5,
+    color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
   revisionReason: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 11,
-    color: palette.gray400,
     marginTop: 4,
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12.5,
+    color: colors.textMuted,
   },
+
+  // Footer
   footer: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.bgCard,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingHorizontal: 16,
+    bottom: 0,
+    paddingHorizontal: 20,
     paddingTop: 12,
+    backgroundColor: colors.bgCard,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
-  footerButtonsRow: {
+  footerRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
-  declineBtn: {
+  flex1: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.borderErrorLight,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  declineBtnText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 14,
-    color: colors.dangerMedium,
-  },
-  acceptBtn: {
+  flex2: {
     flex: 2,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.buttonPrimary,
+  },
+  footerTotal: {
+    flex: 1,
+    minWidth: 0,
+  },
+  footerTotalLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12.5,
+    color: colors.textSecondary,
+  },
+  footerTotalValue: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 17,
+    color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+  primaryBtn: {
+    height: 52,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    backgroundColor: colors.buttonPrimary,
   },
-  acceptBtnDisabled: {
+  primaryBtnPressed: {
+    backgroundColor: colors.buttonPrimaryPressed,
+  },
+  primaryBtnText: {
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 15,
+    color: colors.pureWhite,
+  },
+  btnDisabled: {
     opacity: 0.6,
   },
-  acceptBtnText: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 14,
-    color: colors.pureWhite,
-  },
-  proceedCheckoutBtn: {
-    backgroundColor: colors.buttonPrimary,
-    paddingVertical: 14,
-    borderRadius: 12,
+  secondaryBtn: {
+    height: 52,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  proceedCheckoutBtnText: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 14,
-    color: colors.pureWhite,
-  },
-  terminalStateBar: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  terminalStateText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 13,
-    color: palette.gray500,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  confirmSheet: {
-    backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-  },
-  confirmIconWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     backgroundColor: colors.bgHover,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
   },
-  confirmTitle: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 17,
-    color: palette.gray900,
-    marginBottom: 6,
+  secondaryBtnPressed: {
+    backgroundColor: colors.buttonSecondaryPressed,
   },
-  confirmSubtitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 13,
-    color: palette.gray600,
-    textAlign: 'center',
-    lineHeight: 19,
-    marginBottom: 20,
-  },
-  confirmButtonsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  confirmCancelBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: colors.bgHover,
-    alignItems: 'center',
-  },
-  confirmCancelBtnText: {
+  secondaryBtnText: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 14,
-    color: palette.gray700,
+    fontSize: 15,
+    color: colors.textPrimary,
   },
-  confirmProceedBtn: {
-    flex: 1.5,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: colors.buttonPrimary,
+  terminalBar: {
+    height: 52,
+    borderRadius: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bgHover,
   },
-  confirmProceedBtnText: {
-    fontFamily: 'PlusJakartaSans-Bold',
+  terminalText: {
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14,
-    color: colors.pureWhite,
+    color: colors.textSecondary,
   },
 });

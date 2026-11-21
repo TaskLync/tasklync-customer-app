@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
-import { ChevronLeft, SlidersHorizontal } from 'lucide-react-native';
+import { ChevronLeftIcon, FilterIcon } from '../ui/Icon/icons';
 import Animated, { SharedValue, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconButton } from '../ui/Button/IconButton';
@@ -60,7 +60,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
       <View style={styles.row}>
         {showBackButton && (
           <View style={styles.back}>
-            <IconButton icon={ChevronLeft} onPress={() => onBackPress?.()} size={40} bg="transparent" accessibilityLabel="Back" />
+            <IconButton icon={ChevronLeftIcon} onPress={() => onBackPress?.()} size={40} bg="transparent" accessibilityLabel="Back" />
           </View>
         )}
 
@@ -86,7 +86,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
               accessibilityRole="button"
               accessibilityLabel={activeFilterCount > 0 ? `Filters, ${activeFilterCount} applied` : 'Filters'}
             >
-              <SlidersHorizontal size={SEARCH_BAR.iconSize - 1} strokeWidth={2} color={colors.textPrimary} />
+              <FilterIcon size={SEARCH_BAR.iconSize - 1} strokeWidth={2} color={colors.textPrimary} />
               {activeFilterCount > 0 && (
                 <View style={styles.badge} pointerEvents="none">
                   <Text style={styles.badgeText} maxFontSizeMultiplier={1.1}>

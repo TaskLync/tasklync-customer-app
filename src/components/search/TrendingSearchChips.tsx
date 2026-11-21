@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { TrendingUp, Flame } from 'lucide-react-native';
+import { FireIcon, TrendingUpIcon } from '../ui/Icon/icons';
 import { typography } from '../../design/typography';
 import { TrendingTerm } from '../../types/search.types';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -23,7 +23,7 @@ export const TrendingSearchChips: React.FC<TrendingSearchChipsProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <TrendingUp size={16} color={colors.primary} />
+        <TrendingUpIcon size={16} color={colors.primary} />
         <Text style={styles.title}>{title}</Text>
       </View>
 
@@ -39,7 +39,7 @@ export const TrendingSearchChips: React.FC<TrendingSearchChipsProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`Search for ${item.term}`}
           >
-            <Flame size={13} color={palette.orange500} />
+            <FireIcon size={13} color={palette.orange500} />
             <Text style={styles.chipText}>{item.term}</Text>
           </Pressable>
         ))}

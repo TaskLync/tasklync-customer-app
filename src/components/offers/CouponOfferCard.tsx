@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
-import { Check, Ticket, X } from 'lucide-react-native';
+import { CheckIcon, CloseIcon, CouponIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import {
   discountValueLabel,
@@ -55,7 +55,7 @@ export const CouponOfferCard: React.FC<CouponOfferCardProps> = ({
       }`}
     >
       <View style={[styles.icon, applied && styles.iconApplied]}>
-        <Ticket size={18} color={applied ? colors.pureWhite : palette.green700} strokeWidth={2.2} />
+        <CouponIcon size={18} color={applied ? colors.pureWhite : palette.green700} strokeWidth={2.2} />
       </View>
 
       <View style={styles.body}>
@@ -78,7 +78,7 @@ export const CouponOfferCard: React.FC<CouponOfferCardProps> = ({
       {applied ? (
         <View style={styles.actionCol}>
           <View style={styles.appliedPill}>
-            <Check size={13} color={colors.pureWhite} strokeWidth={3} />
+            <CheckIcon size={13} color={colors.pureWhite} strokeWidth={3} />
             <Text style={styles.appliedText}>Applied</Text>
           </View>
           <Pressable
@@ -89,7 +89,7 @@ export const CouponOfferCard: React.FC<CouponOfferCardProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`Remove coupon ${coupon.code}`}
           >
-            <X size={13} color={colors.textSecondary} strokeWidth={2.4} />
+            <CloseIcon size={13} color={colors.textSecondary} strokeWidth={2.4} />
             <Text style={styles.removeText}>Remove</Text>
           </Pressable>
         </View>

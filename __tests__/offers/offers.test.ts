@@ -238,13 +238,11 @@ describe('code input and parameter identity (spec 8.3, 10.2)', () => {
     duration_hours: 2,
     latitude: 31.4,
     longitude: 73.1,
-    is_urgent: false,
   };
 
   test('every priced parameter changes the hash', () => {
     const h = quoteParamsHash(base);
     assert.strictEqual(quoteParamsHash({ ...base }), h);
-    assert.notStrictEqual(quoteParamsHash({ ...base, is_urgent: true }), h);
     assert.notStrictEqual(quoteParamsHash({ ...base, duration_hours: 3 }), h);
     assert.notStrictEqual(quoteParamsHash({ ...base, scheduled_at: '2026-11-10T06:00:00.000Z' }), h);
     assert.notStrictEqual(quoteParamsHash({ ...base, latitude: 31.5 }), h);

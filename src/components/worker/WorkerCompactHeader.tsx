@@ -8,10 +8,9 @@ import Animated, {
   Extrapolation,
   SharedValue,
 } from 'react-native-reanimated';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeftIcon } from '../ui/Icon/icons';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '../ui/Button/Button';
 import { shadows } from '../../design/shadows';
 import { typography } from '../../design/typography';
 import { WorkerPublicProfile } from '../../types/worker.types';
@@ -22,14 +21,12 @@ interface WorkerCompactHeaderProps {
   worker?: WorkerPublicProfile;
   scrollY: SharedValue<number>;
   onBack: () => void;
-  onBookNow: () => void;
 }
 
 export const WorkerCompactHeader: React.FC<WorkerCompactHeaderProps> = ({
   worker,
   scrollY,
   onBack,
-  onBookNow,
 }) => {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
@@ -61,10 +58,6 @@ export const WorkerCompactHeader: React.FC<WorkerCompactHeaderProps> = ({
     onBack();
   };
 
-  const handleBookPress = () => {
-    onBookNow();
-  };
-
   const insets = useSafeAreaInsets();
   const safeTop = Math.max(
     insets.top,
@@ -90,7 +83,7 @@ export const WorkerCompactHeader: React.FC<WorkerCompactHeaderProps> = ({
           style={styles.backButton}
           hitSlop={12}
         >
-          <ChevronLeft size={24} color={colors.textPrimary} />
+          <ChevronLeftIcon size={24} color={colors.textPrimary} />
         </Pressable>
 
         {/* Center: Profile Mini Info */}
@@ -104,17 +97,6 @@ export const WorkerCompactHeader: React.FC<WorkerCompactHeaderProps> = ({
             {worker?.name || 'Worker'}
           </Text>
         </View>
-
-        {/* Right: Book Button */}
-        <Button
-          variant="primary"
-          size="sm"
-          label="Book"
-          onPress={handleBookPress}
-          disabled={worker?.availabilityStatus === 'UNAVAILABLE' || worker?.availabilityStatus === 'INACTIVE'}
-          fullWidth={false}
-          style={styles.bookButton}
-        />
       </View>
     </Animated.View>
   );
@@ -167,10 +149,5 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     color: colors.textPrimary,
     marginLeft: 8,
     flex: 1,
-  },
-  bookButton: {
-    height: 32,
-    paddingHorizontal: 12,
-    marginRight: 8,
   },
 });

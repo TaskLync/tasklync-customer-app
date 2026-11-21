@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRightIcon } from '../ui/Icon/icons';
 
 import { radius } from '../../design/radius';
 import { shadows } from '../../design/shadows';
@@ -101,7 +101,7 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({ worker }) => {
            worker.availabilityStatus === 'BUSY' ? 'Busy' : 'Offline'}
         </Text>
         <View style={styles.chevron}>
-          <ChevronRight size={14} color={colors.textMuted} />
+          <ChevronRightIcon size={14} color={colors.textMuted} />
         </View>
       </View>
     </AnimatedPressable>

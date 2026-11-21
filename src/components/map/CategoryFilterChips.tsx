@@ -9,7 +9,7 @@ export interface CategoryOption {
 }
 
 const DEFAULT_CATEGORIES: CategoryOption[] = [
-  { id: 'all', label: 'All Workers' },
+  { id: 'all', label: 'All workers' },
   { id: 'electrician', label: 'Electrician' },
   { id: 'plumber', label: 'Plumber' },
   { id: 'ac_repair', label: 'AC Repair' },

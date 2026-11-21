@@ -12,6 +12,8 @@ import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppT
 export interface BookingFooterCTAProps {
   label: string;
   subtext?: string | null;
+  /** Optional small label above the subtext (e.g. "Total"), making the left side a label + value pair. */
+  caption?: string | undefined;
   enabled: boolean;
   loading?: boolean;
   onPress: () => void;
@@ -23,6 +25,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export const BookingFooterCTA: React.FC<BookingFooterCTAProps> = ({
   label,
   subtext,
+  caption,
   enabled,
   loading = false,
   onPress,
@@ -61,7 +64,8 @@ export const BookingFooterCTA: React.FC<BookingFooterCTAProps> = ({
         {/* Optional Subtext / Summary info */}
         {subtext !== undefined && (
           <View style={styles.summaryContainer}>
-            <Text style={styles.summaryValue} numberOfLines={1}>
+            {caption ? <Text style={styles.captionText}>{caption}</Text> : null}
+            <Text style={[styles.summaryValue, caption ? styles.summaryValueLarge : null]} numberOfLines={1}>
               {subtext || 'Select details to proceed'}
             </Text>
           </View>
@@ -135,6 +139,18 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     fontSize: 15,
     color: colors.textPrimary,
     letterSpacing: -0.2,
+  },
+  captionText: {
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.textMuted,
+  },
+  summaryValueLarge: {
+    fontFamily: fontFamily.inter.semiBold,
+    fontSize: 18,
+    lineHeight: 24,
+    letterSpacing: -0.3,
   },
   button: {
     paddingVertical: 14,

@@ -204,7 +204,7 @@ export function classifyError(error: any): ClassifiedError {
         category: 'SERVER_ERROR',
         code: rawCode || code,
         message: rawMessage || `Server error (${status})`,
-        userMessage: "We're having trouble connecting to the service. Please try again shortly.",
+        userMessage: "We're having trouble connecting. Please try again in a moment.",
         status,
         isRetryable: true,
         originalError: error,

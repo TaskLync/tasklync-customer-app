@@ -1,153 +1,115 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { UserCheck, Star, User, Building2 } from 'lucide-react-native';
+import { BuildingIcon, StarIcon, UserIcon } from '../../ui/Icon/icons';
 import { SummarySectionCard } from './SummarySectionCard';
 import { WorkerInfo } from '../../../store/cart.store';
 import { fontFamily } from '../../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
+import { WorkerProfileLink } from '../../worker/WorkerProfileLink';
+
+const AVATAR_SIZE = 44;
 
 export interface SummaryWorkerRowProps {
   worker: WorkerInfo | null;
 }
 
+/** Shown only when the customer picked a worker or agency. */
 export const SummaryWorkerRow: React.FC<SummaryWorkerRowProps> = ({ worker }) => {
-  const { colors, palette } = useAppTheme();
+  const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
-  const isCompany = Boolean(
-    worker?.isCompany ||
-    worker?.providerType === 'COMPANY' ||
-    Boolean(worker?.businessName)
-  );
-  const workerName = isCompany
-    ? (worker?.businessName || worker?.name || 'Verified Service Agency')
-    : (worker?.name || 'Assigned Professional');
-  const avatarUrl = worker?.avatarUrl;
-  const rating = worker?.avgRating;
-  const category = worker?.category || (isCompany ? 'Service Agency' : 'Service Professional');
+
+  if (!worker) return null;
+
+  const isCompany = Boolean(worker.isCompany || worker.providerType === 'COMPANY' || worker.businessName);
+  const workerName = isCompany ? worker.businessName || worker.name : worker.name;
+  const rating = typeof worker.avgRating === 'number' && worker.avgRating > 0 ? worker.avgRating : null;
+  const category = worker.category || null;
 
   return (
-    <SummarySectionCard
-      icon={
-        isCompany ? (
-          <Building2 size={16} color={colors.textInfo} strokeWidth={2.2} />
-        ) : (
-          <UserCheck size={16} color={colors.primaryDark} strokeWidth={2.2} />
-        )
-      }
-      title={isCompany ? 'Service Agency' : 'Service Professional'}
-    >
+    <SummarySectionCard title={isCompany ? 'Agency' : 'Worker'}>
       <View style={styles.contentRow}>
-        {avatarUrl ? (
-          <Image
-            source={{ uri: avatarUrl }}
-            style={styles.avatar}
-            contentFit="cover"
-            transition={200}
-          />
-        ) : (
-          <View style={[styles.avatarPlaceholder, isCompany && { backgroundColor: colors.infoLight, borderColor: colors.borderInfoLight }]}>
-            {isCompany ? (
-              <Building2 size={22} color={colors.textInfo} />
-            ) : (
-              <User size={22} color={palette.gray500} />
-            )}
-          </View>
-        )}
+        <WorkerProfileLink workerId={worker.id} isCompany={isCompany} workerName={workerName} size={AVATAR_SIZE}>
+          {worker.avatarUrl ? (
+            <Image source={{ uri: worker.avatarUrl }} style={styles.avatar} contentFit="cover" transition={200} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              {isCompany ? (
+                <BuildingIcon size={20} color={colors.textMuted} />
+              ) : (
+                <UserIcon size={20} color={colors.textMuted} />
+              )}
+            </View>
+          )}
+        </WorkerProfileLink>
 
         <View style={styles.infoContainer}>
-          <View style={styles.nameRow}>
-            <Text style={styles.nameText}>{workerName}</Text>
-            {isCompany && (
-              <View style={styles.agencyBadge}>
-                <Text style={styles.agencyBadgeText}>Agency</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.categoryText}>
-            {category}
-          </Text>
-
-          {typeof rating === 'number' && rating > 0 && (
-            <View style={styles.ratingRow}>
-              <Star size={12} color={palette.warning} fill={palette.warning} />
-              <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-              </View>
-          )}
+          <Text style={styles.nameText} numberOfLines={1}>{workerName}</Text>
+          {category || rating !== null ? (
+            <View style={styles.metaRow}>
+              {category ? <Text style={styles.metaText} numberOfLines={1}>{category}</Text> : null}
+              {category && rating !== null ? <Text style={styles.metaText}>{'  ·  '}</Text> : null}
+              {rating !== null ? (
+                <View style={styles.ratingGroup} accessibilityLabel={`Rating ${rating.toFixed(1)}`}>
+                  <StarIcon size={11} color={colors.textPrimary} fill={colors.textPrimary} />
+                  <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       </View>
     </SummarySectionCard>
   );
 };
 
-const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: palette.gray200,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    backgroundColor: colors.bgSection,
     marginRight: 14,
   },
   avatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
   },
   infoContainer: {
     flex: 1,
+    minWidth: 0,
   },
   nameText: {
-    fontFamily: fontFamily.poppins.semiBold,
+    fontFamily: fontFamily.poppins.medium,
     fontSize: 15,
-    lineHeight: 20,
+    lineHeight: 21,
     color: colors.textPrimary,
   },
-  categoryText: {
-    fontFamily: fontFamily.jakarta.regular,
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.textSecondary,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 2,
   },
-  ratingRow: {
+  metaText: {
+    flexShrink: 1,
+    fontFamily: fontFamily.jakarta.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textSecondary,
+  },
+  ratingGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-    gap: 4,
+    gap: 3,
   },
   ratingText: {
-    fontFamily: fontFamily.inter.bold,
-    fontSize: 12,
+    fontFamily: fontFamily.inter.medium,
+    fontSize: 13,
+    lineHeight: 18,
     color: colors.textPrimary,
-  },
-  ratingLabel: {
-    fontFamily: fontFamily.jakarta.medium,
-    fontSize: 11,
-    color: colors.primaryDark,
-    marginLeft: 4,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  agencyBadge: {
-    backgroundColor: colors.infoLight,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  agencyBadgeText: {
-    fontFamily: fontFamily.jakarta.bold,
-    fontSize: 10,
-    color: colors.textInfo,
   },
 });

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, Modal, ActivityIndicator } from 'react-native';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CalendarClock, CloudOff, UserX } from 'lucide-react-native';
+import { CalendarClockIcon, CloudOffIcon, UserRemoveIcon } from '../ui/Icon/icons';
 import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 import type { BookingFailureKind } from '../../utils/availabilityEvents';
@@ -42,29 +42,29 @@ export function bookingIssueCopy(kind: BookingIssueKind, reason?: string | null)
           reason === 'SLOT_HELD'
             ? "Another customer is booking this time right now. Your booking hasn't been confirmed. Please choose another available time."
             : "Another customer has booked this time. Your booking hasn't been confirmed. Please choose another available time.",
-        primary: 'Choose Another Time',
-        secondary: 'Refresh Availability',
+        primary: 'Choose another time',
+        secondary: 'Refresh availability',
       };
     case 'time_unavailable':
       return {
         title: "This time isn't available",
-        body: "The professional isn't available at this time. Your booking hasn't been confirmed. Please choose another available time.",
-        primary: 'Choose Another Time',
-        secondary: 'Refresh Availability',
+        body: "The worker isn't available at this time. Your booking hasn't been confirmed. Please choose another available time.",
+        primary: 'Choose another time',
+        secondary: 'Refresh availability',
       };
     case 'worker_unavailable':
       return {
         title: 'Not taking bookings right now',
-        body: "This professional isn't accepting new bookings at the moment. Your booking hasn't been confirmed and you haven't been charged.",
-        primary: 'Find Another Professional',
+        body: "This worker isn't accepting new bookings at the moment. Your booking hasn't been confirmed and you haven't been charged.",
+        primary: 'Find another worker',
         secondary: 'Not now',
       };
     case 'retryable':
     default:
       return {
-        title: 'Unable to confirm your booking',
+        title: "We couldn't place your booking",
         body: "We couldn't complete the booking right now. Your selected time and booking details are saved. Please try again.",
-        primary: 'Try Again',
+        primary: 'Try again',
         secondary: 'Not now',
       };
   }
@@ -84,7 +84,7 @@ export const BookingIssueSheet: React.FC<BookingIssueSheetProps> = ({
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const copy = bookingIssueCopy(kind, reason);
-  const Icon = kind === 'retryable' ? CloudOff : kind === 'worker_unavailable' ? UserX : CalendarClock;
+  const Icon = kind === 'retryable' ? CloudOffIcon : kind === 'worker_unavailable' ? UserRemoveIcon : CalendarClockIcon;
 
   return (
     <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={onDismiss}>

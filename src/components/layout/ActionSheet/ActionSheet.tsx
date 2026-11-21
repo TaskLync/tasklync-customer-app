@@ -6,7 +6,7 @@ import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useA
 
 export interface ActionItem {
   label: string;
-  icon?: any; // LucideIcon
+  icon?: any; // AppIconComponent (ui/Icon/icons)
   variant?: 'default' | 'danger' | 'disabled';
   onPress: () => void;
 }

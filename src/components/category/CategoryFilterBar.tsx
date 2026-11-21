@@ -6,7 +6,7 @@ import {
   ViewStyle,
   Platform,
 } from 'react-native';
-import { SlidersHorizontal, X, MapPin } from 'lucide-react-native';
+import { CloseIcon, FilterIcon, LocationIcon } from '../ui/Icon/icons';
 import { Chip } from '../ui/Chip/Chip';
 import { SortOption, FilterState } from '../../types/search.types';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -37,7 +37,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
   if (activeFilters.radius && activeFilters.radius !== 10000) {
     activeChips.push({
       key: 'radius',
-      label: activeFilters.radius >= 50000 ? 'All Distances' : `Within ${activeFilters.radius / 1000} km`,
+      label: activeFilters.radius >= 50000 ? 'All distances' : `Within ${activeFilters.radius / 1000} km`,
     });
   }
 
@@ -86,7 +86,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
           label={
             activeFilters.radius && activeFilters.radius !== 10000
               ? activeFilters.radius >= 50000
-                ? 'All Distances'
+                ? 'All distances'
                 : `Within ${activeFilters.radius / 1000} km`
               : 'Distance'
           }
@@ -95,7 +95,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
           size="sm"
           variant="filter"
           showCheckmark={false}
-          icon={MapPin}
+          icon={LocationIcon}
         />
 
         {/* Sort Chips */}
@@ -108,7 +108,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
           showCheckmark={false}
         />
         <Chip
-          label="Top Rated"
+          label="Top rated"
           selected={sortBy === 'rating'}
           onPress={() => handleSortPress('rating')}
           size="sm"
@@ -116,7 +116,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
           showCheckmark={false}
         />
         <Chip
-          label="Lowest Price"
+          label="Lowest price"
           selected={sortBy === 'price_low'}
           onPress={() => handleSortPress('price_low')}
           size="sm"
@@ -136,7 +136,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
             size="sm"
             variant="filter"
             showCheckmark={false}
-            trailingIcon={X}
+            trailingIcon={CloseIcon}
             onTrailingPress={() => handleRemove(chip.key)}
           />
         ))}
@@ -147,7 +147,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
           onPress={onOpenFilters}
           size="sm"
           variant="tag"
-          icon={SlidersHorizontal}
+          icon={FilterIcon}
         />
       </ScrollView>
     </View>

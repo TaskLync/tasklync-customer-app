@@ -6,6 +6,7 @@
  * - chat-service: Pre-booking clarification room entities
  * - notification-service: Custom request and quote push templates
  */
+import type { FeeSnapshotFields } from "../utils/feeDisplay";
 
 export const CustomRequestStatus = {
   SUBMITTED: 'SUBMITTED',
@@ -97,7 +98,7 @@ export interface CustomServiceRequest {
   media_count?: number;
 }
 
-export interface Quote {
+export interface Quote extends FeeSnapshotFields {
   id: string;
   request_id: string;
   worker_id: string;

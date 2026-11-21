@@ -1,4 +1,9 @@
-import { Home, Building2, MapPin, LucideIcon } from 'lucide-react-native';
+import {
+  type AppIconComponent,
+  BuildingIcon,
+  HomeIcon,
+  LocationIcon,
+} from '../components/ui/Icon/icons';
 import { Address, ReverseGeocodeResult } from '../types/address.types';
 
 /**
@@ -7,10 +12,10 @@ import { Address, ReverseGeocodeResult } from '../types/address.types';
  * Office/Work -> Building2 icon
  * Other/Custom -> MapPin icon
  */
-export function labelToIcon(label: string): LucideIcon {
+export function labelToIcon(label: string): AppIconComponent {
   const normalized = (label || '').trim().toLowerCase();
   if (normalized.includes('home') || normalized === 'house') {
-    return Home;
+    return HomeIcon;
   }
   if (
     normalized.includes('office') ||
@@ -18,9 +23,9 @@ export function labelToIcon(label: string): LucideIcon {
     normalized.includes('business') ||
     normalized.includes('building')
   ) {
-    return Building2;
+    return BuildingIcon;
   }
-  return MapPin;
+  return LocationIcon;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { bookingApi } from '../services/api/booking.api';
+import { fetchInvoice } from '../services/invoice/invoice.service';
 import { InvoiceData } from '../types/booking.types';
 
 /**
@@ -16,10 +16,11 @@ export function useInvoice(bookingId?: string | null) {
       if (!bookingId) {
         throw new Error('Booking ID is required to fetch invoice');
       }
-      return await bookingApi.getInvoice(bookingId);
+      return await fetchInvoice(bookingId);
     },
     enabled: Boolean(bookingId),
-    staleTime: Infinity, // Settled financial document is immutable
+    // Payment status can move (PENDING -> PAID / REFUNDED), so the invoice is re-checked on revisit.
+    staleTime: 60_000,
   });
 
   return {

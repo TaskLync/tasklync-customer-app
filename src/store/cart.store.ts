@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import { createMMKV } from 'react-native-mmkv';
+import { toSingleInstanceItems } from '../utils/cartItems';
 
 const storage = createMMKV();
 
+/**
+ * One selected service. TaskLync books each service once: a cart holds DIFFERENT services, never the
+ * same service twice. `quantity` is kept (always 1) only because the booking / pricing APIs carry it.
+ */
 export interface CartItem {
   serviceId: string;
   serviceName: string;
   price: number;
-  quantity: number;
+  /** Always 1. */
+  quantity: 1;
   workerId: string;
   durationMins?: number | undefined;
   durationHours?: number | undefined;
@@ -45,11 +51,9 @@ export interface CartState {
       providerType?: 'INDIVIDUAL' | 'COMPANY';
       durationMins?: number | undefined;
       durationHours?: number | undefined;
-    },
-    quantity?: number
-  ) => { success: boolean; hasConflict?: boolean };
+    }
+  ) => { success: boolean; hasConflict?: boolean; alreadyAdded?: boolean };
   removeItem: (serviceId: string) => void;
-  updateQuantity: (serviceId: string, quantity: number) => void;
   setNote: (note: string) => void;
   clearCart: () => void;
   replaceCart: (item: {
@@ -76,7 +80,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   worker: null,
   note: '',
 
-  addItem: (item, quantity = 1) => {
+  addItem: (item) => {
     const { items, worker } = get();
 
     // Check single-worker conflict rule
@@ -84,27 +88,23 @@ export const useCartStore = create<CartState>((set, get) => ({
       return { success: false, hasConflict: true };
     }
 
-    const existingIndex = items.findIndex((i) => i.serviceId === item.serviceId);
-    let updatedItems: CartItem[];
-
-    if (existingIndex !== -1) {
-      updatedItems = items.map((i, idx) =>
-        idx === existingIndex ? { ...i, quantity: i.quantity + quantity } : i
-      );
-    } else {
-      updatedItems = [
-        ...items,
-        {
-          serviceId: item.serviceId,
-          serviceName: item.serviceName,
-          price: item.price,
-          quantity,
-          workerId: item.workerId,
-          ...(item.durationMins !== undefined ? { durationMins: item.durationMins } : {}),
-          ...(item.durationHours !== undefined ? { durationHours: item.durationHours } : {}),
-        },
-      ];
+    // One service, once: a service already in the cart is never added again or counted up.
+    if (items.some((i) => i.serviceId === item.serviceId)) {
+      return { success: false, alreadyAdded: true };
     }
+
+    const updatedItems: CartItem[] = [
+      ...items,
+      {
+        serviceId: item.serviceId,
+        serviceName: item.serviceName,
+        price: item.price,
+        quantity: 1,
+        workerId: item.workerId,
+        ...(item.durationMins !== undefined ? { durationMins: item.durationMins } : {}),
+        ...(item.durationHours !== undefined ? { durationHours: item.durationHours } : {}),
+      },
+    ];
 
     // Always keep worker info fully synchronized with the selected professional or company
     const isCompany =
@@ -113,10 +113,10 @@ export const useCartStore = create<CartState>((set, get) => ({
         : item.providerType === 'COMPANY' || Boolean(item.businessName) || Boolean(worker?.isCompany);
     const updatedWorker: WorkerInfo = {
       id: item.workerId,
-      name: item.workerName || worker?.name || 'Selected Professional',
+      name: item.workerName || worker?.name || 'Selected Worker',
       avatarUrl: item.workerAvatar ?? worker?.avatarUrl ?? null,
       avgRating: item.workerRating ?? worker?.avgRating ?? 4.9,
-      category: item.workerCategory || worker?.category || 'Professional Service',
+      category: item.workerCategory || worker?.category || 'Home Service',
       isVerified: item.isVerified ?? worker?.isVerified ?? false,
       businessName: item.businessName || worker?.businessName || null,
       isCompany,
@@ -140,25 +140,6 @@ export const useCartStore = create<CartState>((set, get) => ({
     const newState = { items: updatedItems, worker: updatedWorker };
     try {
       storage.set(STORAGE_KEY, JSON.stringify({ ...newState, note: get().note }));
-    } catch (_e) {}
-
-    set(newState);
-  },
-
-  updateQuantity: (serviceId, quantity) => {
-    if (quantity <= 0) {
-      get().removeItem(serviceId);
-      return;
-    }
-
-    const { items } = get();
-    const updatedItems = items.map((i) =>
-      i.serviceId === serviceId ? { ...i, quantity } : i
-    );
-
-    const newState = { items: updatedItems };
-    try {
-      storage.set(STORAGE_KEY, JSON.stringify({ items: updatedItems, worker: get().worker, note: get().note }));
     } catch (_e) {}
 
     set(newState);
@@ -194,10 +175,10 @@ export const useCartStore = create<CartState>((set, get) => ({
         : item.providerType === 'COMPANY' || Boolean(item.businessName);
     const newWorker: WorkerInfo = {
       id: item.workerId,
-      name: item.workerName || 'Selected Professional',
+      name: item.workerName || 'Selected Worker',
       avatarUrl: item.workerAvatar ?? null,
       avgRating: item.workerRating ?? 4.9,
-      category: item.workerCategory || 'Professional Service',
+      category: item.workerCategory || 'Home Service',
       isVerified: item.isVerified ?? false,
       businessName: item.businessName || null,
       isCompany,
@@ -217,8 +198,13 @@ export const useCartStore = create<CartState>((set, get) => ({
       const dataStr = storage.getString(STORAGE_KEY);
       if (dataStr) {
         const parsed = JSON.parse(dataStr);
+        const items = toSingleInstanceItems(parsed.items);
+        // Persist the cleaned cart so every screen reads the same single-instance list.
+        if (JSON.stringify(items) !== JSON.stringify(parsed.items ?? [])) {
+          storage.set(STORAGE_KEY, JSON.stringify({ items, worker: parsed.worker || null, note: parsed.note || '' }));
+        }
         set({
-          items: parsed.items || [],
+          items,
           worker: parsed.worker || null,
           note: parsed.note || '',
         });

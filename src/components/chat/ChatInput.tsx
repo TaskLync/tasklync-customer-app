@@ -16,7 +16,7 @@ import Animated, {
   withTiming,
   interpolateColor,
 } from 'react-native-reanimated';
-import { Paperclip, ArrowUp, Camera, Image as ImageIcon, X } from 'lucide-react-native';
+import { ArrowUpIcon, AttachmentIcon, CameraIcon, CloseIcon, ImageIcon } from '../ui/Icon/icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { compressImage } from '../../utils/imageCompression';
@@ -128,7 +128,7 @@ export const ChatInput = React.memo(function ChatInput({
     try {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) {
-        showAlert('Camera Permission Required', 'Please allow camera access in your device settings to capture photos for chat.');
+        showAlert('Camera access needed', 'Allow camera access in Settings to take photos in chat.');
         return;
       }
 
@@ -151,7 +151,7 @@ export const ChatInput = React.memo(function ChatInput({
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        showAlert('Photo Library Permission Required', 'Please allow photo library access in your device settings to attach photos.');
+        showAlert('Photo access needed', 'Allow photo access in Settings to attach photos.');
         return;
       }
 
@@ -213,7 +213,7 @@ export const ChatInput = React.memo(function ChatInput({
             {isAttaching ? (
               <ActivityIndicator size="small" color={colors.primaryDark} />
             ) : (
-              <Paperclip size={21} color={colors.textSecondary} />
+              <AttachmentIcon size={21} color={colors.textSecondary} />
             )}
           </Pressable>
 
@@ -240,7 +240,7 @@ export const ChatInput = React.memo(function ChatInput({
             accessibilityRole="button"
             accessibilityState={{ disabled: !text.trim() || disabled }}
           >
-            <ArrowUp size={18} color={sendIconColor} strokeWidth={2.5} />
+            <ArrowUpIcon size={18} color={sendIconColor} strokeWidth={2.5} />
           </AnimatedPressable>
         </View>
       </View>
@@ -269,7 +269,7 @@ export const ChatInput = React.memo(function ChatInput({
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 style={styles.modalCloseButton}
               >
-                <X size={18} color={colors.textSecondary} />
+                <CloseIcon size={18} color={colors.textSecondary} />
               </Pressable>
             </View>
 
@@ -285,7 +285,7 @@ export const ChatInput = React.memo(function ChatInput({
                 accessibilityLabel="Take photo with camera"
               >
                 <View style={[styles.iconCircle, { backgroundColor: colors.infoLight }]}>
-                  <Camera size={22} color={colors.textInfo} strokeWidth={2.2} />
+                  <CameraIcon size={22} color={colors.textInfo} strokeWidth={2.2} />
                 </View>
                 <View style={styles.optionTextCol}>
                   <Text style={styles.optionTitle}>Take Photo</Text>

@@ -1,25 +1,28 @@
 import { useCallback, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Linking, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, ActivityIndicator, TextInput, Linking } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import {
-  ArrowLeft,
-  Check,
-  Phone,
-  MessageSquare,
-  FileText,
-  Copy,
-  Clock,
-  RefreshCw,
-  ExternalLink,
-  Star,
-} from 'lucide-react-native';
+  ArrowLeftIcon,
+  CashIcon,
+  ChatIcon,
+  CheckIcon,
+  ClockIcon,
+  CopyIcon,
+  DocumentIcon,
+  ExternalLinkIcon,
+  LocationIcon,
+  PhoneIcon,
+  RefreshIcon,
+  StarIcon,
+} from '../../src/components/ui/Icon/icons';
 import { Image as ExpoImage } from 'expo-image';
 
 import { useBookingDetails } from '../../src/hooks/useBookingDetails';
 import { useBookingTrack } from '../../src/hooks/useBookingTrack';
 import { useWorkerProfile } from '../../src/hooks/useWorkerProfile';
+import { useCategories } from '../../src/hooks/useCategories';
 import { useCartStore } from '../../src/store/cart.store';
 import { useConfirmCompletion } from '../../src/hooks/useConfirmCompletion';
 import { useBookingDispute } from '../../src/hooks/useBookingDispute';
@@ -28,6 +31,7 @@ import { BookingDisputeCard } from '../../src/components/booking/BookingDisputeC
 import { BookingCountdown } from '../../src/components/booking/BookingCountdown';
 import { BookingVerificationSection } from '../../src/components/booking/BookingVerificationSection';
 import { DispatchedTechnicianCard } from '../../src/components/booking/DispatchedTechnicianCard';
+import { WorkerProfileLink } from '../../src/components/worker/WorkerProfileLink';
 import { TechnicianReassignedBanner } from '../../src/components/booking/TechnicianReassignedBanner';
 import { useBookingRealtimeUpdates } from '../../src/hooks/useBookingRealtimeUpdates';
 import { CustomRefreshControl } from '../../src/components/feedback/CustomRefreshControl';
@@ -43,12 +47,14 @@ import { bookingItemDiscount, buildPriceSummaryRows, getBookingSavings } from '.
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 import { showAlert } from '../../src/components/feedback/AppAlert';
+import { AppDialog } from '../../src/components/feedback/AppDialog';
+const WORKER_AVATAR_SIZE = 48;
 
 // 4 simple milestone steps like Uber / Foodpanda
 const TRACK_STEPS = [
   { key: 'PENDING', label: 'Placed' },
   { key: 'ACCEPTED', label: 'Confirmed' },
-  { key: 'IN_PROGRESS', label: 'In Progress' },
+  { key: 'IN_PROGRESS', label: 'In progress' },
   { key: 'COMPLETED', label: 'Completed' },
 ];
 
@@ -88,7 +94,9 @@ export default function BookingDetailsScreen() {
   // (e.g. arriving from a push notification or returning from another screen).
   useFocusEffect(
     useCallback(() => {
-      if (id) refetch();
+      // cancelRefetch: false joins a fetch already in flight (e.g. the initial load) instead of
+      // cancelling and restarting it, which doubled the first load time.
+      if (id) refetch({ cancelRefetch: false });
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id])
   );
@@ -108,6 +116,9 @@ export default function BookingDetailsScreen() {
 
   // Asynchronously query & reactively subscribe to worker public profile
   const { worker: workerProfile } = useWorkerProfile(effectiveWorkerId);
+
+  // Category catalog (cached for an hour) maps a booking's category id to its display name.
+  const { categories } = useCategories();
 
   // Copy Reference ID
   const handleCopyId = async () => {
@@ -141,7 +152,7 @@ export default function BookingDetailsScreen() {
               onPress={() => router.back()}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <ArrowLeft size={20} color={colors.textPrimary} />
+              <ArrowLeftIcon size={20} color={colors.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Booking Details</Text>
             <View style={{ width: 40 }} />
@@ -192,7 +203,39 @@ export default function BookingDetailsScreen() {
     (workerProfile as any)?.category ||
     workerProfile?.categories?.[0] ||
     (cartWorker?.id === effectiveWorkerId ? cartWorker?.category : null) ||
-    (booking?.category_id ? formatCategoryName(booking.category_id, 'Service', 'title') : 'Service Professional');
+    (booking?.category_id ? formatCategoryName(booking.category_id, 'Service', 'title') : 'Service Worker');
+
+  // Booked service: strictly this booking's own data (stored cart snapshot, then the server-resolved
+  // service name). Never the worker's catalog or profile category.
+  // Always a category NAME: when the server only echoes the raw id back, use the catalog name instead.
+  const bookingCategoryId = booking.category_id && booking.category_id !== 'service' ? booking.category_id : null;
+  const serverCategoryName = booking.category_name?.trim() || null;
+  const serverSentRawId = Boolean(
+    serverCategoryName && bookingCategoryId && serverCategoryName.toLowerCase() === bookingCategoryId.toLowerCase()
+  );
+  const catalogCategoryName = bookingCategoryId
+    ? categories.find((c) => c.id.toLowerCase() === bookingCategoryId.toLowerCase())?.name?.trim() || null
+    : null;
+  const bookedCategory =
+    (serverCategoryName && !serverSentRawId ? serverCategoryName : null) ||
+    catalogCategoryName ||
+    (bookingCategoryId ? formatCategoryName(bookingCategoryId.replace(/-/g, ' '), 'Service', 'title') : null);
+  const bookedSnapshotLines = (booking.items ?? []).filter((line) => line.name.trim().length > 0);
+  const bookedServices: { key: string; name: string; quantity: number }[] =
+    bookedSnapshotLines.length > 0
+      ? bookedSnapshotLines.map((line, idx) => ({
+          key: `${line.service_id}-${idx}`,
+          name: line.name.trim(),
+          quantity: line.quantity,
+        }))
+      : booking.service_name?.trim()
+        ? [{ key: 'service', name: booking.service_name.trim(), quantity: 1 }]
+        : [];
+
+  // Original custom-request text from the server (custom_service_requests.description via custom_request_id).
+  const customRequestDescription = booking.custom_request_id
+    ? booking.custom_request_description?.trim() || null
+    : null;
 
   const isCompanyBooking = Boolean(
     booking.is_company ||
@@ -305,12 +348,12 @@ export default function BookingDetailsScreen() {
   const handleConfirmJob = () => {
     if (isConfirming || confirmInFlight.current) return;
     showAlert(
-      'Confirm Completion',
-      `Did the professional finish the job? Please confirm that you paid Rs. ${booking.estimated_total.toLocaleString()} in cash.`,
+      'Confirm completion',
+      `Did the worker finish the job? Please confirm that you paid Rs. ${booking.estimated_total.toLocaleString()} in cash.`,
       [
         { text: 'Not yet', style: 'cancel' },
         {
-          text: 'Yes, Confirm & Paid',
+          text: 'Yes, job done and paid',
           onPress: async () => {
             if (confirmInFlight.current) return;
             confirmInFlight.current = true;
@@ -318,13 +361,13 @@ export default function BookingDetailsScreen() {
               await confirmCompletion(booking.id);
               // Status only flips once the refetched backend state says so.
               await refetch();
-              showAlert('Success', 'Booking completed. Thank you!');
+              showAlert('Booking completed', 'Thanks for using Tasklync.');
             } catch (err: any) {
               const errorMessage =
                 err?.message ||
                 err?.response?.data?.error?.message ||
-                'Unable to confirm completion right now. Please try again.';
-              showAlert('Confirmation Error', errorMessage);
+                "Couldn't confirm completion. Please try again.";
+              showAlert('Completion not confirmed', errorMessage);
               refetch();
             } finally {
               confirmInFlight.current = false;
@@ -338,7 +381,7 @@ export default function BookingDetailsScreen() {
   // Dispute submission
   const handleOpenDispute = async () => {
     if (disputeReason.trim().length < 10) {
-      showAlert('Required', 'Please describe the issue (minimum 10 characters).');
+      showAlert('Add a few more details', 'Please describe the issue in at least 10 characters.');
       return;
     }
     try {
@@ -347,10 +390,10 @@ export default function BookingDetailsScreen() {
       setDisputeModalVisible(false);
       setDisputeReason('');
       setEvidenceUrl('');
-      showAlert('Report Received', 'Our support team will contact you shortly.');
+      showAlert('Report received', 'Our support team will contact you soon.');
       refetch();
     } catch (err: any) {
-      showAlert('Error', err?.message || 'Failed to submit report.');
+      showAlert("Couldn't submit report", err?.message || 'Please try again.');
     }
   };
 
@@ -359,13 +402,13 @@ export default function BookingDetailsScreen() {
     const phone = displayPhone || trackData?.worker_phone || booking?.worker_phone;
     if (phone) {
       Linking.openURL(`tel:${phone}`).catch(() => {
-        showAlert('Error', 'Unable to place call.');
+        showAlert("Couldn't start the call", "This device can't open the phone dialer.");
       });
     } else {
       router.push({
         pathname: `/booking/${booking.id}/chat`,
         params: {
-          workerName: displayWorkerName || booking?.worker_name || 'Service Professional',
+          workerName: displayWorkerName || booking?.worker_name || 'Service Worker',
           workerAvatar: displayWorkerAvatar || booking?.worker_avatar_url,
           workerPhone: phone,
           categoryName: displayCategory,
@@ -412,14 +455,14 @@ export default function BookingDetailsScreen() {
         };
       case 'IN_PROGRESS':
         return {
-          label: 'Service in Progress',
+          label: 'Service in progress',
           bg: colors.infoLight,
           text: colors.textInfo,
           dot: colors.info,
         };
       case 'COMPLETED_BY_WORKER':
         return {
-          label: 'Action Required',
+          label: 'Action required',
           bg: colors.warningLight,
           text: colors.textWarningMedium,
           dot: colors.warning,
@@ -449,14 +492,14 @@ export default function BookingDetailsScreen() {
         };
       case 'DISPUTED':
         return {
-          label: 'Under Review',
+          label: 'Under review',
           bg: colors.dangerLight,
           text: palette.red700,
           dot: colors.dangerMedium,
         };
       default:
         return {
-          label: 'Status Updated',
+          label: 'Status updated',
           bg: colors.borderLight,
           text: colors.textSecondary,
           dot: palette.gray500,
@@ -469,24 +512,24 @@ export default function BookingDetailsScreen() {
     switch (currentStatus) {
       case 'PENDING':
         return {
-          title: isCompanyBooking ? 'Awaiting Agency Confirmation' : 'Finding your professional',
+          title: isCompanyBooking ? 'Waiting for the agency' : 'Finding your worker',
           subtitle: isCompanyBooking
-            ? `${agencyName || 'The service agency'} is reviewing your booking request.`
-            : 'Connecting you with a verified specialist nearby.',
+            ? `${agencyName || 'The agency'} is checking your booking.`
+            : 'We are finding a verified worker near you.',
         };
       case 'ACCEPTED':
         return {
-          title: isCompanyBooking ? 'Agency Confirmed Booking' : 'Professional is assigned',
+          title: isCompanyBooking ? 'Agency accepted your booking' : 'Worker assigned',
           subtitle: isCompanyBooking
-            ? `Technician details will appear once dispatched by ${agencyName || 'the agency'}.`
-            : `${displayWorkerName || 'Professional'} confirmed your booking.`,
+            ? `You will see the worker's details once ${agencyName || 'the agency'} sends someone.`
+            : `${displayWorkerName || 'Worker'} confirmed your booking.`,
         };
       case 'IN_PROGRESS':
         return {
-          title: 'Service in Progress',
+          title: 'Job in progress',
           subtitle: isCompanyBooking
-            ? `Dispatched technician from ${agencyName || 'the agency'} is on-site.`
-            : 'The professional is currently working on your service.',
+            ? `The worker from ${agencyName || 'the agency'} is at your place.`
+            : 'The worker is working on your job now.',
         };
       case 'COMPLETED_BY_WORKER':
         return {
@@ -539,7 +582,7 @@ export default function BookingDetailsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={20} color={colors.textPrimary} />
+          <ArrowLeftIcon size={20} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleWrap}>
@@ -553,13 +596,13 @@ export default function BookingDetailsScreen() {
           >
             {copied ? (
               <View style={styles.copiedRow}>
-                <Check size={10} color={colors.textGreen} strokeWidth={3} />
+                <CheckIcon size={10} color={colors.textGreen} strokeWidth={3} />
                 <Text style={styles.idTextCopied}>Copied</Text>
               </View>
             ) : (
               <View style={styles.idRow}>
                 <Text style={styles.idText}>#{booking.id.slice(0, 8).toUpperCase()}</Text>
-                <Copy size={10} color={colors.textSecondary} style={{ marginLeft: 3 }} />
+                <CopyIcon size={10} color={colors.textSecondary} style={{ marginLeft: 3 }} />
               </View>
             )}
           </TouchableOpacity>
@@ -576,7 +619,7 @@ export default function BookingDetailsScreen() {
           {isRefetching ? (
             <ActivityIndicator size="small" color={colors.primaryDark} />
           ) : (
-            <RefreshCw size={18} color={colors.textSecondary} />
+            <RefreshIcon size={18} color={colors.textSecondary} />
           )}
         </TouchableOpacity>
       </View>
@@ -602,8 +645,8 @@ export default function BookingDetailsScreen() {
             />
           )}
 
-          {/* 2. Primary Booking Status Hero Section */}
-          <View style={styles.statusSection}>
+          {/* 2. Booking Status & Progress: one card, status first, tracker beneath */}
+          <View style={styles.statusCard}>
             <View style={[styles.statusBadge, { backgroundColor: statusBadge.bg }]}>
               <View style={[styles.statusDot, { backgroundColor: statusBadge.dot }]} />
               <Text style={[styles.statusBadgeText, { color: statusBadge.text }]}>
@@ -617,14 +660,10 @@ export default function BookingDetailsScreen() {
             {currentStatus === 'PENDING' && booking.expires_at && (
               <BookingCountdown expiresAt={booking.expires_at} status={currentStatus} />
             )}
-          </View>
-
-          {/* Post-Booking Review Prompt (if finished & eligible) */}
-          <BookingReviewPrompt bookingId={booking.id} workerId={booking.worker_id} />
 
           {/* 3. Milestone Progress Stepper */}
           {!isTerminal && (
-            <View style={styles.stepperCard}>
+            <View style={styles.stepperWrap}>
               <View style={styles.stepperRow}>
                 {TRACK_STEPS.map((step, idx) => {
                   const isCompletedStatus =
@@ -664,7 +703,7 @@ export default function BookingDetailsScreen() {
                           ]}
                         >
                           {isDone ? (
-                            <Check size={11} color={colors.pureWhite} strokeWidth={3} />
+                            <CheckIcon size={11} color={colors.pureWhite} strokeWidth={3} />
                           ) : isCurrent ? (
                             <View style={styles.nodeCurrentInner} />
                           ) : (
@@ -689,12 +728,48 @@ export default function BookingDetailsScreen() {
               </View>
             </View>
           )}
+          </View>
+
+          {/* Post-Booking Review Prompt (if finished & eligible) */}
+          <BookingReviewPrompt bookingId={booking.id} workerId={booking.worker_id} />
 
           {/* Contextual Job Start Verification: OTP & QR Code (Active when ACCEPTED) */}
           <BookingVerificationSection
             bookingId={booking.id}
             status={currentStatus}
           />
+
+          {/* Booked Service: category is the supporting eyebrow, the service itself is the headline.
+              Custom-request bookings also carry the customer's own words, kept apart from the worker's quote. */}
+          {(bookedCategory || bookedServices.length > 0 || customRequestDescription) && (
+            <View style={styles.card}>
+              <Text style={styles.sectionHeading} numberOfLines={1}>
+                {bookedCategory || (bookedServices.length > 1 ? 'Booked Services' : 'Booked Service')}
+              </Text>
+
+              {bookedServices.map((svc, idx) => (
+                <View key={svc.key} style={[styles.serviceRow, idx > 0 && styles.serviceRowSpaced]}>
+                  <Text style={styles.serviceName} numberOfLines={2}>
+                    {svc.name}
+                  </Text>
+                  {svc.quantity > 1 ? (
+                    <View style={styles.serviceQtyPill}>
+                      <Text style={styles.serviceQtyText}>×{svc.quantity}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              ))}
+
+              {customRequestDescription ? (
+                <View style={[styles.customRequestBlock, bookedServices.length === 0 && styles.customRequestBlockFirst]}>
+                  <Text style={styles.customRequestLabel}>Custom Service Request</Text>
+                  <Text style={styles.customRequestText} selectable>
+                    {customRequestDescription}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          )}
 
           {/* 4. Company Dispatched Technician Card OR Individual Assigned Worker */}
           {isCompanyBooking ? (
@@ -722,37 +797,44 @@ export default function BookingDetailsScreen() {
           ) : (
             <View style={styles.card}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionHeading}>Assigned Professional</Text>
+                <Text style={styles.sectionHeading}>Assigned Worker</Text>
               </View>
 
               {isProfessionalAssigned ? (
                 <View style={styles.workerRow}>
-                  {displayWorkerAvatar && !avatarError ? (
-                    <ExpoImage
-                      source={{ uri: displayWorkerAvatar }}
-                      style={styles.avatar}
-                      contentFit="cover"
-                      transition={200}
-                      cachePolicy="memory-disk"
-                      onError={() => setAvatarError(true)}
-                    />
-                  ) : (
-                    <View style={styles.avatarFallback}>
-                      <Text style={styles.avatarInitial}>
-                        {getInitials(displayWorkerName)}
-                      </Text>
-                    </View>
-                  )}
+                  <WorkerProfileLink
+                    workerId={effectiveWorkerId}
+                    workerName={displayWorkerName}
+                    size={WORKER_AVATAR_SIZE}
+                  >
+                    {displayWorkerAvatar && !avatarError ? (
+                      <ExpoImage
+                        source={{ uri: displayWorkerAvatar }}
+                        style={styles.avatar}
+                        contentFit="cover"
+                        transition={200}
+                        cachePolicy="memory-disk"
+                        onError={() => setAvatarError(true)}
+                      />
+                    ) : (
+                      <View style={styles.avatarFallback}>
+                        <Text style={styles.avatarInitial}>
+                          {getInitials(displayWorkerName)}
+                        </Text>
+                      </View>
+                    )}
+                  </WorkerProfileLink>
 
                   <View style={styles.workerInfo}>
                     <Text style={styles.workerName} numberOfLines={1}>
-                      {displayWorkerName || 'Service Professional'}
+                      {displayWorkerName || 'Service Worker'}
                     </Text>
-                    <Text style={styles.workerCategory} numberOfLines={1}>
-                      {displayCategory}
-                    </Text>
-                    <View style={styles.workerRatingRow}>
-                      <Star size={12} color={colors.starFilled} fill={colors.starFilled} />
+                    <View style={styles.workerMetaRow}>
+                      <Text style={styles.workerCategory} numberOfLines={1}>
+                        {displayCategory}
+                      </Text>
+                      <View style={styles.metaDot} />
+                      <StarIcon size={11} color={colors.starFilled} fill={colors.starFilled} />
                       <Text style={styles.workerRatingText}>{displayRating.toFixed(1)}</Text>
                       {typeof displayReviewCount === 'number' && displayReviewCount > 0 ? (
                         <Text style={styles.workerReviewCount}>({displayReviewCount})</Text>
@@ -760,15 +842,15 @@ export default function BookingDetailsScreen() {
                     </View>
                   </View>
 
-                  {/* Direct Action Icons: Chat & Call */}
+                  {/* Direct Action Icons: Chat & Call (neutral surfaces; icon colour carries the meaning) */}
                   <View style={styles.workerActions}>
-                    <TouchableOpacity
-                      style={styles.iconActionBtn}
+                    <Pressable
+                      style={({ pressed }) => [styles.iconActionBtn, pressed && styles.iconActionBtnPressed]}
                       onPress={() =>
                         router.push({
                           pathname: `/booking/${booking.id}/chat`,
                           params: {
-                            workerName: displayWorkerName || 'Service Professional',
+                            workerName: displayWorkerName || 'Service Worker',
                             workerAvatar: displayWorkerAvatar,
                             workerPhone: displayPhone,
                             categoryName: displayCategory,
@@ -776,29 +858,29 @@ export default function BookingDetailsScreen() {
                           },
                         } as any)
                       }
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                       accessibilityRole="button"
-                      accessibilityLabel="Chat with professional"
+                      accessibilityLabel="Chat with worker"
                     >
-                      <MessageSquare size={17} color={colors.primaryDark} />
-                    </TouchableOpacity>
+                      <ChatIcon size={18} color={colors.textPrimary} strokeWidth={1.9} />
+                    </Pressable>
 
-                    <TouchableOpacity
-                      style={[styles.iconActionBtn, styles.callBtn]}
+                    <Pressable
+                      style={({ pressed }) => [styles.iconActionBtn, pressed && styles.iconActionBtnPressed]}
                       onPress={handleCall}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                       accessibilityRole="button"
-                      accessibilityLabel="Call professional"
+                      accessibilityLabel="Call worker"
                     >
-                      <Phone size={17} color={colors.pureWhite} />
-                    </TouchableOpacity>
+                      <PhoneIcon size={18} color={colors.primaryDark} strokeWidth={1.9} />
+                    </Pressable>
                   </View>
                 </View>
               ) : (
                 <View style={styles.unassignedBox}>
-                  <Clock size={16} color={colors.textSecondary} />
+                  <ClockIcon size={16} color={colors.textSecondary} />
                   <Text style={styles.unassignedText}>
-                    Matching a verified professional nearby...
+                    Matching a verified worker nearby...
                   </Text>
                 </View>
               )}
@@ -810,21 +892,24 @@ export default function BookingDetailsScreen() {
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionHeading}>Service Location</Text>
               {booking.job_site_location && (
-                <TouchableOpacity
-                  style={styles.mapsLinkPill}
+                <Pressable
+                  style={({ pressed }) => [styles.mapLink, pressed && styles.mapLinkPressed]}
                   onPress={handleOpenMaps}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityRole="button"
                   accessibilityLabel="View location on Google Maps"
                 >
-                  <Text style={styles.mapsLinkText}>View on map</Text>
-                  <ExternalLink size={12} color={colors.primaryDark} style={{ marginLeft: 3 }} />
-                </TouchableOpacity>
+                  <Text style={styles.mapLinkText}>View on map</Text>
+                  <ExternalLinkIcon size={12} color={colors.textSecondary} strokeWidth={2} />
+                </Pressable>
               )}
             </View>
 
             <View style={styles.locationRow}>
-              <Text style={styles.addressText} numberOfLines={3}>
+              <View style={styles.locationIconWrap}>
+                <LocationIcon size={16} color={colors.textSecondary} strokeWidth={1.9} />
+              </View>
+              <Text style={styles.addressText} numberOfLines={4}>
                 {booking.address_text || 'Address on record'}
               </Text>
             </View>
@@ -845,6 +930,10 @@ export default function BookingDetailsScreen() {
                     originalAmount: booking.subtotal_before_discount ?? booking.base_price,
                     baseAmount: booking.base_price,
                     platformFee: booking.platform_fee,
+                    platformFeePercent: booking.customer_fee_percent,
+                    taxAmount: booking.tax_amount,
+                    taxLabel: booking.tax_label,
+                    taxPercent: booking.tax_percent,
                     discount: {
                       name: getBookingSavings(booking).rowLabel,
                       valueLabel: getBookingSavings(booking).valueLabel,
@@ -854,44 +943,41 @@ export default function BookingDetailsScreen() {
                 />
               </>
             ) : (
-              <>
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>Base Service Rate</Text>
-                  <Text style={styles.billValue}>Rs. {booking.base_price.toLocaleString()}</Text>
-                </View>
-
-                {booking.urgency_multiplier > 1.0 && (
-                  <View style={styles.billRow}>
-                    <Text style={styles.billLabel}>
-                      Urgency Surge ({booking.urgency_multiplier}x)
-                    </Text>
-                    <Text style={[styles.billValue, { color: colors.warningMedium }]}>
-                      +Rs. {(booking.base_price * (booking.urgency_multiplier - 1)).toLocaleString()}
-                    </Text>
-                  </View>
-                )}
-
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>Platform Fee</Text>
-                  <Text style={styles.billValue}>Rs. {booking.platform_fee.toLocaleString()}</Text>
-                </View>
-              </>
+              /* Service amount = stored total - stored fee - stored tax: the booking's own snapshot, never repriced. */
+              <PriceSummaryRows
+                compact
+                rows={buildPriceSummaryRows({
+                  originalAmount:
+                    Math.round((booking.estimated_total - booking.platform_fee - (booking.tax_amount ?? 0)) * 100) / 100,
+                  baseAmount: booking.base_price,
+                  platformFee: booking.platform_fee,
+                  platformFeePercent: booking.customer_fee_percent,
+                  taxAmount: booking.tax_amount,
+                  taxLabel: booking.tax_label,
+                  taxPercent: booking.tax_percent,
+                })}
+              />
             )}
 
             <View style={styles.billDivider} />
 
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total Payable</Text>
+              <Text style={styles.totalLabel}>Total payable</Text>
               <Text style={styles.totalValue}>
                 Rs. {booking.estimated_total.toLocaleString()}
               </Text>
             </View>
 
-            <View style={styles.codBadgeRow}>
-              <View style={styles.codDot} />
-              <Text style={styles.codNote}>
-                Cash on Delivery • Pay directly to professional after job is completed
-              </Text>
+            <View style={styles.codRow}>
+              <View style={styles.codIconWrap}>
+                <CashIcon size={17} color={colors.textSecondary} strokeWidth={1.9} />
+              </View>
+              <View style={styles.codTextCol}>
+                <Text style={styles.codTitle}>Cash on Delivery</Text>
+                <Text style={styles.codNote}>
+                  Pay directly to your worker after the job is completed.
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -931,7 +1017,7 @@ export default function BookingDetailsScreen() {
                   {isConfirming ? (
                     <ActivityIndicator size="small" color={colors.pureWhite} />
                   ) : (
-                    <Text style={styles.primaryBtnText}>Confirm Completion</Text>
+                    <Text style={styles.primaryBtnText}>Confirm completion</Text>
                   )}
                 </TouchableOpacity>
 
@@ -943,21 +1029,23 @@ export default function BookingDetailsScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Report an Issue"
                 >
-                  <Text style={styles.textActionBtnText}>Report an Issue</Text>
+                  <Text style={styles.textActionBtnText}>Report an issue</Text>
                 </TouchableOpacity>
               </View>
             )}
 
             {/* Pending or Accepted -> Subtle Cancel Action */}
             {(currentStatus === 'PENDING' || currentStatus === 'ACCEPTED') && (
-              <TouchableOpacity
-                style={styles.secondaryBtn}
+              <Pressable
+                style={({ pressed }) => [styles.secondaryBtn, pressed && styles.secondaryBtnPressed]}
                 onPress={() => setCancelModalVisible(true)}
+                disabled={cancelModalVisible}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel Booking"
+                accessibilityState={{ disabled: cancelModalVisible }}
               >
-                <Text style={styles.secondaryBtnText}>Cancel Booking</Text>
-              </TouchableOpacity>
+                <Text style={styles.secondaryBtnText}>Cancel booking</Text>
+              </Pressable>
             )}
 
             {/* Completed -> Invoice & Review actions */}
@@ -971,8 +1059,8 @@ export default function BookingDetailsScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="View Receipt"
                 >
-                  <FileText size={16} color={colors.pureWhite} style={{ marginRight: 6 }} />
-                  <Text style={styles.primaryBtnText}>View Receipt</Text>
+                  <DocumentIcon size={16} color={colors.pureWhite} style={{ marginRight: 6 }} />
+                  <Text style={styles.primaryBtnText}>View receipt</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -981,22 +1069,22 @@ export default function BookingDetailsScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Rate Service"
                 >
-                  <Star size={16} color={colors.primaryDark} style={{ marginRight: 6 }} />
-                  <Text style={styles.outlineBtnText}>Rate Service</Text>
+                  <StarIcon size={16} color={colors.textPrimary} style={{ marginRight: 6 }} />
+                  <Text style={styles.outlineBtnText}>Rate service</Text>
                 </TouchableOpacity>
               </View>
             )}
 
             {/* Disputed -> Contact Support */}
             {currentStatus === 'DISPUTED' && (
-              <TouchableOpacity
-                style={styles.secondaryBtn}
+              <Pressable
+                style={({ pressed }) => [styles.secondaryBtn, pressed && styles.secondaryBtnPressed]}
                 onPress={() => router.push('/profile/support' as any)}
                 accessibilityRole="button"
                 accessibilityLabel="Contact Support"
               >
-                <Text style={styles.secondaryBtnText}>Contact Support</Text>
-              </TouchableOpacity>
+                <Text style={styles.secondaryBtnText}>Contact support</Text>
+              </Pressable>
             )}
           </View>
         )}
@@ -1013,88 +1101,67 @@ export default function BookingDetailsScreen() {
         />
 
         {/* Dispute Modal */}
-        <Modal
+        <AppDialog
           visible={disputeModalVisible}
-          transparent
-          animationType="fade"
+          tone="warning"
+          title="Report a problem"
+          message="Tell us what went wrong with your booking."
           onRequestClose={() => setDisputeModalVisible(false)}
+          actions={[
+            { label: 'Cancel', onPress: () => setDisputeModalVisible(false), variant: 'secondary', disabled: isSubmittingDispute },
+            { label: 'Submit', onPress: handleOpenDispute, variant: 'primary', loading: isSubmittingDispute },
+          ]}
         >
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalCard}>
-                <Text style={styles.modalTitle}>Report an Issue</Text>
-                <Text style={styles.modalSub}>
-                  Let us know what went wrong with your booking.
-                </Text>
-
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="Reason (at least 10 characters)..."
-                  placeholderTextColor={colors.placeholder}
-                  value={disputeReason}
-                  onChangeText={setDisputeReason}
-                  multiline
-                  numberOfLines={3}
-                />
-
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={styles.modalCancel}
-                    onPress={() => setDisputeModalVisible(false)}
-                  >
-                    <Text style={styles.modalCancelText}>Cancel</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.modalSubmit}
-                    onPress={handleOpenDispute}
-                    disabled={isSubmittingDispute}
-                  >
-                    {isSubmittingDispute ? (
-                      <ActivityIndicator size="small" color={colors.pureWhite} />
-                    ) : (
-                      <Text style={styles.modalSubmitText}>Submit</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </Modal>
+          <TextInput
+            style={styles.modalInput}
+            placeholder="What happened? (at least 10 characters)"
+            placeholderTextColor={colors.placeholder}
+            value={disputeReason}
+            onChangeText={setDisputeReason}
+            multiline
+            numberOfLines={3}
+          />
+        </AppDialog>
       </View>
     </SafeAreaView>
   );
 }
 
-const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleSheet.create({
+/**
+ * Booking Details design language
+ *   Page   colors.bgApp (soft neutral)        Cards  colors.cardRaised, radius 16, padding 16, no border/shadow
+ *   Insets colors.bgHover, radius 12           Text   textPrimary / textSecondary / textMuted
+ *   Green is reserved for progress, the payable amount and the single primary CTA.
+ * Every colour is a theme token, so Dark mode gets its own layered charcoal surfaces automatically.
+ */
+const CARD_RADIUS = 16;
+const INSET_RADIUS = 12;
+
+const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgApp,
   },
   container: {
     flex: 1,
     backgroundColor: colors.bgApp,
   },
 
-  // 1. Top Navigation Header
+  // 1. Navigation header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: colors.bgCard,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: colors.bgApp,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   headerBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: colors.bgApp,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1106,78 +1173,89 @@ const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleShee
   headerTitle: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 16,
+    letterSpacing: -0.2,
     color: colors.textPrimary,
   },
   idButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
-    backgroundColor: colors.bgHover,
-    paddingHorizontal: 7,
+    marginTop: 3,
+    paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
+    backgroundColor: colors.bgHover,
   },
-  idText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 11,
-    color: colors.textSecondary,
+  idButtonCopied: {
+    backgroundColor: colors.primaryTint,
   },
-  copiedHint: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 10.5,
-    color: colors.primaryDark,
-    marginLeft: 5,
-  },
-
-  // Scroll Content
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 24,
-  },
-
-  // ID Button
   idRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  idText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11,
+    letterSpacing: 0.3,
+    color: colors.textSecondary,
   },
   copiedRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
   },
-  idButtonCopied: {
-    backgroundColor: colors.primaryBorderSubtle,
-  },
   idTextCopied: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 10.5,
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 11,
     color: colors.textGreen,
   },
 
-  // 2. Status Hero Section
-  statusSection: {
-    backgroundColor: colors.bgCard,
-    paddingVertical: 16,
-    marginBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+  // Scroll
+  scrollView: {
+    flex: 1,
   },
-  statusTopRow: {
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+
+  // Shared card + section headings
+  card: {
+    backgroundColor: colors.cardRaised,
+    borderRadius: CARD_RADIUS,
+    padding: 16,
+    marginBottom: 12,
+  },
+  sectionHeading: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 11.5,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.7,
+  },
+  sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 12,
+    gap: 12,
+  },
+
+  // 2. Status & progress
+  statusCard: {
+    backgroundColor: colors.cardRaised,
+    borderRadius: CARD_RADIUS,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 18,
+    marginBottom: 12,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
     borderRadius: 100,
     gap: 6,
     marginBottom: 10,
@@ -1188,55 +1266,53 @@ const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleShee
     borderRadius: 3,
   },
   statusBadgeText: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 11,
-    letterSpacing: 0.2,
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 11.5,
+    letterSpacing: 0.1,
   },
   statusTitle: {
     fontFamily: 'Poppins-SemiBold',
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 19,
+    lineHeight: 25,
     letterSpacing: -0.3,
     color: colors.textPrimary,
-    marginBottom: 4,
   },
   statusSubtitle: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 13,
+    lineHeight: 19,
     color: colors.textSecondary,
-    lineHeight: 18,
+    marginTop: 3,
   },
-
-  // 3. Milestone Stepper Card
-  stepperCard: {
-    backgroundColor: colors.bgSection,
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 10,
-    marginBottom: 12,
+  stepperWrap: {
+    marginTop: 18,
+    paddingTop: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
   stepperRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
   stepColumn: {
     flex: 1,
     alignItems: 'center',
+    minWidth: 0,
   },
   stepVisualContainer: {
     width: '100%',
-    height: 22,
+    height: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   connectorHalf: {
     position: 'absolute',
-    top: 10,
+    top: 8,
     height: 2,
-    backgroundColor: colors.border,
+    borderRadius: 1,
+    backgroundColor: colors.bgHover,
   },
   connectorLeft: {
     left: 0,
@@ -1247,13 +1323,13 @@ const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleShee
     right: 0,
   },
   connectorActive: {
-    backgroundColor: colors.buttonPrimary,
+    backgroundColor: colors.primaryDark,
   },
   nodeCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.bgApp,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.cardRaised,
     borderWidth: 1.5,
     borderColor: colors.borderStrong,
     alignItems: 'center',
@@ -1261,11 +1337,10 @@ const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleShee
     zIndex: 2,
   },
   nodeCircleDone: {
-    backgroundColor: colors.buttonPrimary,
-    borderColor: colors.buttonPrimary,
+    backgroundColor: colors.primaryDark,
+    borderColor: colors.primaryDark,
   },
   nodeCircleCurrent: {
-    backgroundColor: colors.primaryBorderSubtle,
     borderColor: colors.primaryDark,
     borderWidth: 2,
   },
@@ -1273,125 +1348,142 @@ const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleShee
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.buttonPrimary,
+    backgroundColor: colors.primaryDark,
   },
   nodeUpcomingInner: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.borderStrong,
+    width: 0,
+    height: 0,
   },
   stepLabel: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 10.5,
+    fontSize: 11,
     color: colors.textMuted,
     textAlign: 'center',
   },
   stepLabelDone: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    color: colors.textGreen,
+    color: colors.textSecondary,
   },
   stepLabelCurrent: {
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     color: colors.textPrimary,
   },
 
-  // Base Card
-  card: {
-    backgroundColor: colors.bgCard,
-    paddingVertical: 16,
-    marginBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+  // 4. Booked service
+  serviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 10,
   },
-  sectionHeading: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
+  serviceRowSpaced: {
+    marginTop: 10,
+  },
+  serviceName: {
+    flex: 1,
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 17,
+    lineHeight: 23,
+    letterSpacing: -0.2,
+    color: colors.textPrimary,
+  },
+  serviceQtyPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: colors.bgHover,
+  },
+  serviceQtyText: {
+    fontFamily: 'Inter-SemiBold',
     fontSize: 12,
+    color: colors.textSecondary,
+  },
+  customRequestBlock: {
+    marginTop: 14,
+    padding: 12,
+    borderRadius: INSET_RADIUS,
+    backgroundColor: colors.bgHover,
+  },
+  customRequestBlockFirst: {
+    marginTop: 10,
+  },
+  customRequestLabel: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 11,
     color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+    marginBottom: 6,
   },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  verifiedBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primaryBorderSubtle,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-    gap: 4,
-  },
-  verifiedBadgeText: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 11,
-    color: colors.textGreen,
+  customRequestText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.textPrimary,
   },
 
-  // Worker Row (Non-agency fallback)
+  // 5. Assigned professional
   workerRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: WORKER_AVATAR_SIZE,
+    height: WORKER_AVATAR_SIZE,
+    borderRadius: WORKER_AVATAR_SIZE / 2,
     backgroundColor: colors.bgHover,
   },
   avatarFallback: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: colors.infoLight,
+    width: WORKER_AVATAR_SIZE,
+    height: WORKER_AVATAR_SIZE,
+    borderRadius: WORKER_AVATAR_SIZE / 2,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitial: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 16,
-    color: companyTokens.colors.verifiedBlue,
+    color: colors.textSecondary,
   },
   workerInfo: {
     flex: 1,
+    minWidth: 0,
     marginLeft: 12,
+    marginRight: 8,
   },
   workerName: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 14.5,
+    fontSize: 15,
     color: colors.textPrimary,
   },
-  workerCategory: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  workerRatingRow: {
+  workerMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 3,
     gap: 4,
   },
+  workerCategory: {
+    flexShrink: 1,
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12.5,
+    color: colors.textSecondary,
+  },
+  metaDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: colors.textMuted,
+    marginHorizontal: 3,
+  },
   workerRatingText: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 11.5,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
     color: colors.textPrimary,
   },
   workerReviewCount: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  workerBadgeLabel: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 10,
-    color: colors.textGreen,
-    marginLeft: 2,
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: colors.textMuted,
   },
   workerActions: {
     flexDirection: 'row',
@@ -1399,164 +1491,158 @@ const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleShee
     gap: 8,
   },
   iconActionBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.buttonSecondary,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  callBtn: {
-    backgroundColor: colors.buttonPrimary,
-    borderColor: colors.buttonPrimary,
+  iconActionBtnPressed: {
+    backgroundColor: colors.buttonSecondaryPressed,
   },
   unassignedBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
+    padding: 12,
+    borderRadius: INSET_RADIUS,
+    backgroundColor: colors.bgHover,
     gap: 8,
   },
   unassignedText: {
+    flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12.5,
+    fontSize: 13,
     color: colors.textSecondary,
   },
 
-  // Service Location
-  locationRow: {
+  // 6. Service location
+  mapLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginVertical: -4,
+    marginRight: -8,
+    borderRadius: 8,
+  },
+  mapLinkPressed: {
+    backgroundColor: colors.bgHover,
+  },
+  mapLinkText: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 12.5,
+    color: colors.textSecondary,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
   },
   locationIconWrap: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    flexShrink: 0,
   },
   addressText: {
     flex: 1,
+    minWidth: 0,
+    paddingTop: 1,
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 13,
-    color: palette.gray800,
-    lineHeight: 18,
-  },
-  mapsLinkPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  mapsLinkText: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 11.5,
-    color: colors.primaryDark,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textPrimary,
   },
 
-  // Bill Details
+  // 7. Payment summary
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    gap: 12,
+    paddingVertical: 5,
   },
   billLabel: {
+    flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12.5,
+    fontSize: 13.5,
     color: colors.textSecondary,
   },
   billValue: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 12.5,
+    fontFamily: 'Inter-Medium',
+    fontSize: 13.5,
     color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
   billDivider: {
-    height: 1,
-    backgroundColor: colors.bgHover,
-    marginVertical: 10,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginTop: 10,
+    marginBottom: 12,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'baseline',
+    gap: 12,
   },
   totalLabel: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 14.5,
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 15,
     color: colors.textPrimary,
   },
   totalValue: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    fontSize: 20,
+    letterSpacing: -0.3,
     color: colors.primaryDark,
+    fontVariant: ['tabular-nums'],
   },
-  codBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: 10,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-    gap: 6,
-  },
-  codDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: colors.primaryDark,
-    marginTop: 5,
-    flexShrink: 0,
-  },
-  codNote: {
-    flex: 1,
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 11.5,
-    color: colors.textSecondary,
-  },
-
-  // Dispute Card
-  disputeCard: {
-    borderColor: colors.borderErrorLight,
-    backgroundColor: colors.dangerLight,
-  },
-  disputeHeader: {
+  codRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
+    gap: 12,
+    marginTop: 14,
+    padding: 12,
+    borderRadius: INSET_RADIUS,
+    backgroundColor: colors.bgHover,
   },
-  disputeTitle: {
-    fontFamily: 'PlusJakartaSans-Bold',
+  codIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: colors.cardRaised,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  codTextCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  codTitle: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 13.5,
-    color: colors.dangerMedium,
+    color: colors.textPrimary,
   },
-  disputeReason: {
+  codNote: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12.5,
-    color: palette.red900,
-    marginBottom: 4,
-  },
-  disputeWorkerReply: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    color: colors.textDangerDark,
-    fontStyle: 'italic',
+    lineHeight: 17,
+    color: colors.textSecondary,
     marginTop: 2,
   },
-  disputeHelpText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 11,
-    color: palette.red700,
-    marginTop: 4,
-  },
 
-  // Bottom Action Bar
+  // 8. Bottom actions
   bottomBar: {
-    backgroundColor: colors.bgCard,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    backgroundColor: colors.cardRaised,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
@@ -1593,7 +1679,7 @@ const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleShee
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.buttonPrimary,
-    height: 44,
+    height: 48,
     borderRadius: 12,
   },
   primaryBtnText: {
@@ -1606,30 +1692,33 @@ const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleShee
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bgCard,
-    borderWidth: 1.5,
-    borderColor: colors.buttonPrimary,
-    height: 44,
+    backgroundColor: colors.cardRaised,
+    borderWidth: 1,
+    borderColor: colors.border,
+    height: 48,
     borderRadius: 12,
   },
   outlineBtnText: {
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 14,
-    color: colors.primaryDark,
+    color: colors.textPrimary,
   },
   secondaryBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bgApp,
+    backgroundColor: colors.cardRaised,
     borderWidth: 1,
     borderColor: colors.border,
-    height: 42,
-    borderRadius: 10,
+    height: 48,
+    borderRadius: 12,
+  },
+  secondaryBtnPressed: {
+    backgroundColor: colors.bgHover,
   },
   secondaryBtnText: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 13,
-    color: colors.textSecondary,
+    fontSize: 14,
+    color: colors.textPrimary,
   },
   textActionBtn: {
     alignItems: 'center',
@@ -1641,16 +1730,16 @@ const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleShee
     color: colors.dangerMedium,
   },
 
-  // Modal
+  // Dispute modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: palette.overlay,
     justifyContent: 'center',
     padding: 20,
   },
   modalCard: {
     backgroundColor: colors.modalBackground,
-    borderRadius: 16,
+    borderRadius: CARD_RADIUS,
     padding: 20,
   },
   modalTitle: {
@@ -1703,7 +1792,7 @@ const createStyles = ({ colors, palette, companyTokens }: AppTheme) => StyleShee
     color: colors.pureWhite,
   },
 
-  // Center / Loading
+  // Loading
   centerContainer: {
     flex: 1,
     alignItems: 'center',

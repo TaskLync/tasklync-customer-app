@@ -396,7 +396,7 @@ export const locationService = {
                 code: 'TIMEOUT',
                 message: 'GPS satellite lock timed out before acquiring position.',
                 userMessage:
-                  'Unable to detect your GPS position. Please check your signal and try again, or place the pin on the map.',
+                  "Couldn't get your location. Check your signal and try again, or place the pin on the map.",
               },
             });
           }, effectiveTimeoutMs);

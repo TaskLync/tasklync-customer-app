@@ -11,14 +11,14 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import {
-  ChevronLeft,
-  Search,
-  Star,
-  Users,
-  Building2,
-  ChevronRight,
-  X,
-} from 'lucide-react-native';
+  BuildingIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  SearchIcon,
+  StarIcon,
+  UsersIcon,
+} from '../../src/components/ui/Icon/icons';
 import { useCompanies } from '../../src/hooks/useCompanies';
 import { WorkerNearby } from '../../src/types/worker.types';
 import { CompanyBadge } from '../../src/components/company/CompanyBadge';
@@ -129,7 +129,7 @@ export default function AllCompaniesScreen() {
                 />
               ) : (
                 <View style={styles.logoFallback}>
-                  <Building2 size={22} color={companyTokens.colors.verifiedBlue} />
+                  <BuildingIcon size={22} color={companyTokens.colors.verifiedBlue} />
                   <Text style={styles.logoFallbackText}>{initialLetters}</Text>
                 </View>
               )}
@@ -150,7 +150,7 @@ export default function AllCompaniesScreen() {
                 />
                 {item.fleetSize ? (
                   <View style={styles.fleetBadge}>
-                    <Users size={11} color={colors.textSecondary} />
+                    <UsersIcon size={11} color={colors.textSecondary} />
                     <Text style={styles.fleetText}>{item.fleetSize}+ Technicians</Text>
                   </View>
                 ) : null}
@@ -158,7 +158,7 @@ export default function AllCompaniesScreen() {
 
               {/* Rating & Reviews */}
               <View style={styles.ratingRow}>
-                <Star size={13} color={companyTokens.colors.ratingGold} fill={companyTokens.colors.ratingGold} />
+                <StarIcon size={13} color={companyTokens.colors.ratingGold} fill={companyTokens.colors.ratingGold} />
                 <Text style={styles.ratingText}>
                   {item.avgRating.toFixed(1)}
                 </Text>
@@ -170,7 +170,7 @@ export default function AllCompaniesScreen() {
               </View>
             </View>
 
-            <ChevronRight size={18} color={colors.textMuted} style={styles.chevron} />
+            <ChevronRightIcon size={18} color={colors.textMuted} style={styles.chevron} />
           </View>
 
           {/* Categories tags */}
@@ -207,7 +207,7 @@ export default function AllCompaniesScreen() {
           accessibilityRole="button"
           accessibilityLabel="Back"
         >
-          <ChevronLeft size={24} color={colors.textPrimary} />
+          <ChevronLeftIcon size={24} color={colors.textPrimary} />
         </Pressable>
         <View style={styles.headerTitleGroup}>
           <Text style={styles.headerTitle}>Service Companies</Text>
@@ -218,7 +218,7 @@ export default function AllCompaniesScreen() {
       {/* Search Input Bar */}
       <View style={styles.searchBarWrapper}>
         <View style={styles.searchBar}>
-          <Search size={18} color={colors.textMuted} />
+          <SearchIcon size={18} color={colors.textMuted} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search company or service..."
@@ -230,7 +230,7 @@ export default function AllCompaniesScreen() {
           />
           {searchQuery.length > 0 && (
             <Pressable onPress={() => setSearchQuery('')} hitSlop={10}>
-              <X size={16} color={colors.textMuted} />
+              <CloseIcon size={16} color={colors.textMuted} />
             </Pressable>
           )}
         </View>
@@ -281,7 +281,7 @@ export default function AllCompaniesScreen() {
         ) : isError && filteredCompanies.length === 0 ? (
           <View style={styles.errorContainer}>
             <EmptyState
-              title="Unable to load companies"
+              title="Couldn't load companies"
               subtitle="Please check your connection and tap to retry"
               actionLabel="Retry"
               onAction={refetch}
@@ -296,7 +296,7 @@ export default function AllCompaniesScreen() {
                   ? `No service companies matching "${searchQuery}"`
                   : 'Check back soon for new service partners in your area'
               }
-              {...(searchQuery ? { actionLabel: 'Clear Search', onAction: () => setSearchQuery('') } : {})}
+              {...(searchQuery ? { actionLabel: 'Clear search', onAction: () => setSearchQuery('') } : {})}
             />
           </View>
         ) : (

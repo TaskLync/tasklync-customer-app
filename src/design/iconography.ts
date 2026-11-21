@@ -50,6 +50,23 @@ export const getOpticalStrokeWidth = (
 };
 
 /**
+ * Icon weight scale → Hugeicons stroke.
+ *
+ * Every icon in the app is a Hugeicons "stroke rounded" glyph (see `components/ui/Icon/icons.ts`).
+ * Call sites express weight on the app's semantic weight scale, where `2` is the regular weight,
+ * `~2.2–2.5` is emphasis (active tab, selected chip) and `3+` is a bold confirmation tick.
+ * Hugeicons are drawn at a lighter native stroke (1.5), so the scale is mapped here — one place to
+ * tune the whole app's icon weight, keeping relative emphasis between states intact.
+ */
+export const HUGEICONS_REGULAR_STROKE = 1.5;
+export const ICON_WEIGHT_REGULAR = 2;
+
+export const toHugeiconsStrokeWidth = (weight: number = ICON_WEIGHT_REGULAR): number => {
+  const mapped = HUGEICONS_REGULAR_STROKE + (weight - ICON_WEIGHT_REGULAR) * 0.6;
+  return Math.round(Math.min(2.6, Math.max(1, mapped)) * 100) / 100;
+};
+
+/**
  * Optical centering offsets for directional icons.
  * Geometric centers often fail human perception (e.g. play triangle or chevrons appear pushed left).
  */

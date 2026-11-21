@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { BadgePercent } from 'lucide-react-native';
+import { DiscountIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
 import {
@@ -78,7 +78,7 @@ const OfferRow: React.FC<{ offer: PublicWorkerOffer; showDivider: boolean }> = R
         accessible
         accessibilityLabel={`${offer.title ? `${offer.title}. ` : ''}${headline}. ${details.join('. ')}`}
       >
-        <BadgePercent size={20} color={colors.primary} strokeWidth={1.9} />
+        <DiscountIcon size={20} color={colors.primary} strokeWidth={1.9} />
         <View style={styles.rowText}>
           <Text style={styles.headline} numberOfLines={1}>
             {headline}

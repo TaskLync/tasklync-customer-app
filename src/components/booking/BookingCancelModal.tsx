@@ -7,7 +7,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
-import { X, AlertCircle, Tag } from 'lucide-react-native';
+import { AlertCircleIcon, CloseIcon, TagIcon } from '../ui/Icon/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheet } from '../layout/BottomSheet';
 import { BookingDetails } from '../../types/booking.types';
@@ -62,10 +62,10 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
     [booking]
   );
 
-  // Resolved refund amount to ensure accurate display of PKR 2,100
+  // Fill in the refund amount from the booking's own total (never a made-up amount).
   const resolvedRefundPolicy = useMemo(() => {
     if (!refundPolicy) return refundPolicy;
-    const totalAmount = Number(booking?.estimated_total || booking?.base_price || 2100);
+    const totalAmount = Number(booking?.estimated_total || booking?.base_price || 0);
     if ((!refundPolicy.estimatedRefundAmount || refundPolicy.estimatedRefundAmount === 0) && totalAmount > 0) {
       return {
         ...refundPolicy,
@@ -122,11 +122,11 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Close"
           >
-            <X size={18} color={colors.textSecondary} />
+            <CloseIcon size={18} color={colors.textSecondary} />
           </Pressable>
         </View>
 
-        {/* Financial Transparency: 100% Refund & PKR 2,100 (Single-line row, zero fluff) */}
+        {/* Refund preview: percentage and amount (hidden until the fee settings are loaded) */}
         {resolvedRefundPolicy && (
           <RefundPolicyNotice
             policy={resolvedRefundPolicy}
@@ -140,7 +140,7 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
             style={[styles.discountNotice, discountNotice.tone === 'warning' && styles.discountNoticeWarning]}
             accessibilityRole="alert"
           >
-            <Tag
+            <TagIcon
               size={14}
               color={discountNotice.tone === 'warning' ? palette.amber700 : palette.green700}
               strokeWidth={2.4}
@@ -212,7 +212,7 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
         {/* Error Message */}
         {error ? (
           <View style={styles.errorRow} accessibilityRole="alert">
-            <AlertCircle size={14} color={palette.dangerDark} />
+            <AlertCircleIcon size={14} color={palette.dangerDark} />
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : null}
@@ -235,7 +235,7 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
             {isLoading ? (
               <ActivityIndicator size="small" color={palette.pureWhite} />
             ) : (
-              <Text style={styles.cancelBtnText}>Cancel Booking</Text>
+              <Text style={styles.cancelBtnText}>Cancel booking</Text>
             )}
           </Pressable>
 
@@ -251,7 +251,7 @@ export const BookingCancelModal: React.FC<BookingCancelModalProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Keep Booking"
           >
-            <Text style={styles.keepBtnText}>Keep Booking</Text>
+            <Text style={styles.keepBtnText}>Keep booking</Text>
           </Pressable>
         </View>
       </View>

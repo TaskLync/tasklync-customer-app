@@ -2,14 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import {
-  Phone,
-  MessageCircle,
-  MessageSquare,
-  ShieldCheck,
-  User,
-  Building2,
-  Clock,
-} from 'lucide-react-native';
+  BuildingIcon,
+  ChatBubbleIcon,
+  ChatIcon,
+  ClockIcon,
+  PhoneIcon,
+  ShieldCheckIcon,
+  UserIcon,
+} from '../ui/Icon/icons';
 import {
   parsePakistaniPhone,
   openPhoneDialer,
@@ -56,7 +56,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
         {/* Agency Header Row */}
         <View style={styles.agencyHeaderRow}>
           <View style={styles.agencyIconWrapper}>
-            <Building2 size={18} color={colors.textInfo} />
+            <BuildingIcon size={18} color={colors.textInfo} />
           </View>
           <View style={styles.agencyHeaderInfo}>
             <Text style={styles.agencyName} numberOfLines={1}>
@@ -64,7 +64,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
             </Text>
             <View style={styles.agencyMetaRow}>
               <View style={styles.verifiedBadge}>
-                <ShieldCheck size={11} color={colors.textGreen} strokeWidth={2.5} />
+                <ShieldCheckIcon size={11} color={colors.textGreen} strokeWidth={2.5} />
                 <Text style={styles.verifiedBadgeText}>Verified Agency</Text>
               </View>
             </View>
@@ -76,12 +76,12 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
         {/* Technician Assignment Status (Clean, Minimalist, Full-Width) */}
         <View style={styles.unassignedStatusCard}>
           <View style={styles.unassignedIconWrap}>
-            <Clock size={16} color={colors.warningMedium} />
+            <ClockIcon size={16} color={colors.warningMedium} />
           </View>
           <View style={styles.unassignedTextWrap}>
-            <Text style={styles.unassignedTitle}>Technician not assigned yet</Text>
+            <Text style={styles.unassignedTitle}>Worker not assigned yet</Text>
             <Text style={styles.unassignedSub}>
-              The agency will dispatch a verified technician for your booking.
+              The agency will send a verified worker for your booking.
             </Text>
           </View>
         </View>
@@ -98,7 +98,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
             accessibilityLabel={getChatButtonLabel()}
           >
             <View style={styles.chatIconWrapper}>
-              <MessageSquare size={17} color={colors.pureWhite} strokeWidth={2.2} />
+              <ChatIcon size={17} color={colors.pureWhite} strokeWidth={2.2} />
             </View>
             <Text
               style={styles.primaryChatButtonText}
@@ -150,7 +150,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
       {/* Agency Header Row */}
       <View style={styles.agencyHeaderRow}>
         <View style={styles.agencyIconWrapper}>
-          <Building2 size={18} color={colors.textInfo} />
+          <BuildingIcon size={18} color={colors.textInfo} />
         </View>
         <View style={styles.agencyHeaderInfo}>
           <Text style={styles.agencyName} numberOfLines={1}>
@@ -158,7 +158,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
           </Text>
           <View style={styles.agencyMetaRow}>
             <View style={styles.verifiedBadge}>
-              <ShieldCheck size={11} color={colors.textGreen} strokeWidth={2.5} />
+              <ShieldCheckIcon size={11} color={colors.textGreen} strokeWidth={2.5} />
               <Text style={styles.verifiedBadgeText}>Verified Agency</Text>
             </View>
           </View>
@@ -176,7 +176,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
             accessibilityLabel={`Chat with ${resolvedAgencyName} Office`}
           >
             <View style={styles.officeChatIconWrapper}>
-              <MessageSquare size={13} color={colors.textInfo} strokeWidth={2.2} />
+              <ChatIcon size={13} color={colors.textInfo} strokeWidth={2.2} />
             </View>
             <Text style={styles.officeChatPillText}>Office Chat</Text>
           </Pressable>
@@ -191,7 +191,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
           <Text style={styles.sectionLabel}>ASSIGNED FIELD TECHNICIAN</Text>
           <View style={styles.assignedBadge}>
             <View style={styles.assignedDot} />
-            <Text style={styles.assignedBadgeText}>Dispatched</Text>
+            <Text style={styles.assignedBadgeText}>On the way</Text>
           </View>
         </View>
 
@@ -206,7 +206,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
               />
             ) : (
               <View style={styles.avatarFallback}>
-                <User size={22} color={colors.textSecondary} />
+                <UserIcon size={22} color={colors.textSecondary} />
               </View>
             )}
           </View>
@@ -215,7 +215,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
             <Text style={styles.technicianName} numberOfLines={1}>
               {technicianName}
             </Text>
-            <Text style={styles.technicianRole}>Field Technician</Text>
+            <Text style={styles.technicianRole}>Assigned worker</Text>
 
             <View style={styles.phoneRow}>
               <Text style={styles.phoneText}>{parsedPhone.nationalFormat}</Text>
@@ -240,12 +240,12 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
             ]}
             onPress={handleCall}
             accessibilityRole="button"
-            accessibilityLabel={`Call technician ${technicianName}`}
+            accessibilityLabel={`Call ${technicianName}`}
           >
             <View style={styles.actionBtnIconWrap}>
-              <Phone size={15} color={colors.textInverse} strokeWidth={2.2} />
+              <PhoneIcon size={15} color={colors.textInverse} strokeWidth={2.2} />
             </View>
-            <Text style={styles.callButtonText} numberOfLines={1}>Call Technician</Text>
+            <Text style={styles.callButtonText} numberOfLines={1}>Call worker</Text>
           </Pressable>
 
           <Pressable
@@ -259,7 +259,7 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
             accessibilityLabel={`WhatsApp message to ${technicianName}`}
           >
             <View style={styles.actionBtnIconWrap}>
-              <MessageCircle size={16} color={colors.textGreen} strokeWidth={2.2} />
+              <ChatBubbleIcon size={16} color={colors.textGreen} strokeWidth={2.2} />
             </View>
             <Text style={styles.whatsappButtonText} numberOfLines={1}>WhatsApp</Text>
           </Pressable>
@@ -268,10 +268,10 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
 
       {/* Doorstep Verification & Safety Note */}
       <View style={styles.safetyBox}>
-        <ShieldCheck size={13} color={colors.textGreen} strokeWidth={2.2} style={{ marginTop: 1 }} />
+        <ShieldCheckIcon size={13} color={colors.textGreen} strokeWidth={2.2} style={{ marginTop: 1 }} />
         <Text style={styles.safetyBody}>
           <Text style={styles.safetyBold}>Doorstep Verification: </Text>
-          Verify technician identity before service. Pay cash only after service completion.
+          Check the worker's identity before the job starts. Pay cash only after service completion.
         </Text>
       </View>
     </View>
@@ -280,11 +280,10 @@ export const DispatchedTechnicianCard: React.FC<DispatchedTechnicianCardProps> =
 
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   cardContainer: {
-    backgroundColor: colors.bgCard,
-    paddingVertical: 16,
+    backgroundColor: colors.cardRaised,
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   divider: {
     height: 1,

@@ -2,7 +2,7 @@ import { SeeAllLink } from '../ui/Button/SeeAllLink';
 import React, { useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Building2 } from 'lucide-react-native';
+import { BuildingIcon } from '../ui/Icon/icons';
 import { CompanyCircleItem } from './CompanyCircleItem';
 import { useCompanies } from '../../hooks/useCompanies';
 import { WorkerNearby } from '../../types/worker.types';
@@ -105,11 +105,11 @@ export const CompanyRow: React.FC = () => {
           <View style={styles.emptyContainer}>
             <View style={styles.emptyCard}>
               <View style={styles.emptyIconWrapper}>
-                <Building2 size={20} color={colors.textGreen} strokeWidth={1.8} />
+                <BuildingIcon size={20} color={colors.textGreen} strokeWidth={1.8} />
               </View>
               <View style={styles.emptyTextWrapper}>
                 <Text style={styles.emptyTitle}>
-                  {isError ? 'Unable to load companies' : 'No service companies yet'}
+                  {isError ? "Couldn't load companies" : 'No service companies yet'}
                 </Text>
                 <Text style={styles.emptySubtitle}>
                   {isError

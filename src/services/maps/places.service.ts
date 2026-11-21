@@ -171,7 +171,7 @@ async function nativeAutocomplete(q: string, signal?: AbortSignal): Promise<Plac
         place_id: `geo_${r.latitude}_${r.longitude}_${index}`,
         description: label || `Area near ${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}`,
         primary_text: label || 'Approximate area',
-        secondary_text: 'Approximate match — confirm the exact spot on the map',
+        secondary_text: 'Approximate match. Confirm the exact spot on the map.',
         source: 'native',
         approximate: true,
       });

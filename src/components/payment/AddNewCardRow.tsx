@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Plus, ChevronRight, Lock } from 'lucide-react-native';
+import { ChevronRightIcon, LockIcon, PlusIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 import { showAlert } from '../feedback/AppAlert';
@@ -14,8 +14,8 @@ export interface AddNewCardRowProps {
 
 export const AddNewCardRow: React.FC<AddNewCardRowProps> = ({
   onPress,
-  title = 'Add Payment Method',
-  subtitle = 'Online methods currently unavailable · Cash on Delivery active',
+  title = 'Add payment method',
+  subtitle = 'Online payments not available · Cash on Delivery only',
   disabled = true,
 }) => {
   const { colors } = useAppTheme();
@@ -23,8 +23,8 @@ export const AddNewCardRow: React.FC<AddNewCardRowProps> = ({
   const handlePress = () => {
     if (disabled) {
       showAlert(
-        'Online Payments Disabled',
-        'Online payment registration (Debit/Credit Card, JazzCash, EasyPaisa) is temporarily paused while online gateways are offline. Cash on Delivery is automatically active for all your bookings.'
+        'Online payments unavailable',
+        "You can't add cards, JazzCash or EasyPaisa right now. All bookings use Cash on Delivery."
       );
       return;
     }
@@ -48,9 +48,9 @@ export const AddNewCardRow: React.FC<AddNewCardRowProps> = ({
         <View style={styles.leftGroup}>
           <View style={[styles.plusCircle, disabled && styles.plusCircleDisabled]}>
             {disabled ? (
-              <Lock size={16} color={colors.textMuted} strokeWidth={2.2} />
+              <LockIcon size={16} color={colors.textMuted} strokeWidth={2.2} />
             ) : (
-              <Plus size={18} color={colors.primaryDark} strokeWidth={2.4} />
+              <PlusIcon size={18} color={colors.primaryDark} strokeWidth={2.4} />
             )}
           </View>
           <View style={styles.textColumn}>
@@ -63,7 +63,7 @@ export const AddNewCardRow: React.FC<AddNewCardRowProps> = ({
           </View>
         </View>
 
-        <ChevronRight size={18} color={colors.textMuted} />
+        <ChevronRightIcon size={18} color={colors.textMuted} />
       </Pressable>
     </View>
   );

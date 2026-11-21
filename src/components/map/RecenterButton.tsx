@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { Navigation } from 'lucide-react-native';
+import { NavigationIcon } from '../ui/Icon/icons';
 import { springConfig } from '../../design/animations';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -64,7 +64,7 @@ export const RecenterButton: FC<RecenterButtonProps> = ({
       {isLoading ? (
         <ActivityIndicator size="small" color={colors.primaryDark} />
       ) : (
-        <Navigation size={20} color={colors.primaryDark} style={styles.icon} />
+        <NavigationIcon size={20} color={colors.primaryDark} style={styles.icon} />
       )}
     </AnimatedPressable>
   );

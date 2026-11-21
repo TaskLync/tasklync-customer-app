@@ -134,6 +134,15 @@ export const darkPalette: Palette = {
   info: '#3B82F6',
   infoDark: '#BFDBFE',
 
+  // Neutral greys: raised by lightness, not inverted
+  neutralText: '#F5F5F5',
+  neutralTextMuted: '#9299A2',
+  neutralSurface: '#202327',
+  neutralSurfaceRaised: '#272B30',
+  neutralBorder: '#30353A',
+  neutralBorderStrong: '#454B52',
+  neutralIcon: '#D0D4D9',
+
   // Overlays: darker scrims, shadows are invisible on dark surfaces
   overlay: 'rgba(0, 0, 0, 0.65)',
   overlayDark: 'rgba(0, 0, 0, 0.8)',

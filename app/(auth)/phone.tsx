@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
-import { Phone, ChevronLeft } from 'lucide-react-native';
+import { ChevronLeftIcon, PhoneIcon } from '../../src/components/ui/Icon/icons';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -143,7 +143,7 @@ export default function PhoneScreen() {
       >
         <View style={styles.header}>
           <IconButton
-            icon={ChevronLeft}
+            icon={ChevronLeftIcon}
             iconSize={24}
             color={colors.textPrimary}
             onPress={handleGoBack}
@@ -163,7 +163,7 @@ export default function PhoneScreen() {
           bounces={false}
         >
           <View style={styles.iconContainer}>
-            <Phone size={28} color={colors.primary} />
+            <PhoneIcon size={28} color={colors.primary} />
           </View>
 
           <Text variant="h1" color="primary" style={styles.title}>

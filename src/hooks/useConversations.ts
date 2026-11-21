@@ -101,7 +101,7 @@ export function useConversations() {
         const pendingEnrichment = items.filter(
           (c) =>
             c.workerId &&
-            (!c.workerName || c.workerName === 'Assigned Professional' || !c.workerAvatarUrl)
+            (!c.workerName || c.workerName === 'Assigned Worker' || c.workerName === 'Assigned Professional' || !c.workerAvatarUrl)
         );
 
         if (pendingEnrichment.length > 0) {
@@ -143,7 +143,7 @@ export function useConversations() {
                     return {
                       ...c,
                       workerName:
-                        c.workerName === 'Assigned Professional' ? info.name : c.workerName,
+                        c.workerName === 'Assigned Worker' || c.workerName === 'Assigned Professional' ? info.name : c.workerName,
                       workerAvatarUrl: info.avatarUrl,
                       workerPhone: c.workerPhone || info.phone || undefined,
                     };

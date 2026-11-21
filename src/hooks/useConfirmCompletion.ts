@@ -15,6 +15,8 @@ export function useConfirmCompletion() {
       queryClient.invalidateQueries({ queryKey: ['booking-details', bookingId] });
       queryClient.invalidateQueries({ queryKey: ['booking-track', bookingId] });
       queryClient.invalidateQueries({ queryKey: ['active-booking'] });
+      // A confirmed booking is a completed booking: refresh the profile's completed count.
+      queryClient.invalidateQueries({ queryKey: ['customer-stats'] });
     },
   });
 

@@ -16,7 +16,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { MapPin, Navigation } from 'lucide-react-native';
+import { LocationIcon, NavigationIcon } from '../ui/Icon/icons';
 import { MapRegion } from '../../types/address.types';
 import { fontFamily, radius } from '../../design';
 import { FAISALABAD_DEFAULT_REGION } from '../../config/serviceArea.config';
@@ -106,7 +106,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
 
           {/* Web interactive notice badge */}
           <View style={styles.webNoticeBadge}>
-            <Navigation size={13} color={colors.primaryDark} />
+            <NavigationIcon size={13} color={colors.primaryDark} />
             <Text style={styles.webNoticeText}>
               Click anywhere on map to reposition pin
             </Text>
@@ -118,7 +118,7 @@ export const AddressPickerMap = forwardRef<AddressPickerMapRef, AddressPickerMap
           <View style={styles.pinGroundShadow} />
           <Animated.View style={[styles.pinIconWrapper, pinAnimatedStyle]}>
             <View style={styles.pinHead}>
-              <MapPin size={36} color={colors.primaryDark} strokeWidth={2.4} />
+              <LocationIcon size={36} color={colors.primaryDark} strokeWidth={2.4} />
               <View style={styles.pinDot} />
             </View>
           </Animated.View>

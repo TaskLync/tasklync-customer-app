@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { UserCheck } from 'lucide-react-native';
+import { UserCheckIcon } from '../ui/Icon/icons';
 import { UserProfile } from '../../types/user.types';
 import { AvatarUploadRing } from './AvatarUploadRing';
 import { fontFamily } from '../../design';
@@ -49,7 +49,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </Text>
           {isVerified && (
             <View style={styles.verifiedBadge}>
-              <UserCheck size={12} color={colors.primaryDark} strokeWidth={2.4} />
+              <UserCheckIcon size={12} color={colors.primaryDark} strokeWidth={2.4} />
             </View>
           )}
         </View>
@@ -64,7 +64,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Edit Profile Details"
         >
-          <Text style={styles.editButtonText}>Edit Profile</Text>
+          <Text style={styles.editButtonText}>Edit profile</Text>
         </TouchableOpacity>
       </View>
     </View>

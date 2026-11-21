@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Check } from 'lucide-react-native';
+import { CheckIcon } from '../ui/Icon/icons';
 import { BottomSheet } from '../layout/BottomSheet';
 import { fontFamily } from '../../design/typography';
 import { formatRs } from '../../utils/offers';
@@ -72,7 +72,7 @@ export const BookNowServiceSheet: React.FC<BookNowServiceSheetProps> = ({
               accessibilityLabel={`${s.name}, ${formatRs(s.price)}${s.priceType === 'hourly' ? ' per hour' : ''}`}
             >
               <View style={[styles.box, isOn && styles.boxOn]}>
-                {isOn ? <Check size={14} color={colors.pureWhite} strokeWidth={3} /> : null}
+                {isOn ? <CheckIcon size={14} color={colors.pureWhite} strokeWidth={3} /> : null}
               </View>
               <View style={styles.rowText}>
                 <Text style={styles.name} numberOfLines={2}>{s.name}</Text>

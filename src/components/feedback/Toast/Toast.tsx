@@ -8,7 +8,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react-native';
+import { AlertCircleIcon, CheckCircleIcon, CloseIcon, InfoIcon } from '../../ui/Icon/icons';
 import { fontFamily } from '../../../design/typography';
 import { NETWORK_CONFIG } from '../../../config/networkConfig';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
@@ -94,21 +94,21 @@ export const Toast: React.FC<ToastProps> = React.memo(({ toast, onDismiss }) => 
     switch (variant) {
       case 'error':
         return {
-          icon: <AlertCircle size={18} color={palette.danger} strokeWidth={2.2} />,
+          icon: <AlertCircleIcon size={18} color={palette.danger} strokeWidth={2.2} />,
           borderColor: colors.borderErrorLight,
           bgColor: colors.bgCard,
           textColor: palette.gray900,
         };
       case 'success':
         return {
-          icon: <CheckCircle2 size={18} color={palette.green600} strokeWidth={2.2} />,
+          icon: <CheckCircleIcon size={18} color={palette.green600} strokeWidth={2.2} />,
           borderColor: colors.primaryBorderSubtle,
           bgColor: colors.bgCard,
           textColor: palette.gray900,
         };
       case 'warning':
         return {
-          icon: <AlertCircle size={18} color={palette.warning} strokeWidth={2.2} />,
+          icon: <AlertCircleIcon size={18} color={palette.warning} strokeWidth={2.2} />,
           borderColor: colors.warningLight,
           bgColor: colors.bgCard,
           textColor: palette.gray900,
@@ -116,7 +116,7 @@ export const Toast: React.FC<ToastProps> = React.memo(({ toast, onDismiss }) => 
       case 'info':
       default:
         return {
-          icon: <Info size={18} color={palette.info} strokeWidth={2.2} />,
+          icon: <InfoIcon size={18} color={palette.info} strokeWidth={2.2} />,
           borderColor: colors.borderInfoLight,
           bgColor: colors.bgCard,
           textColor: palette.gray900,
@@ -173,7 +173,7 @@ export const Toast: React.FC<ToastProps> = React.memo(({ toast, onDismiss }) => 
           accessibilityRole="button"
           accessibilityLabel="Dismiss notification"
         >
-          <X size={16} color={palette.gray400} />
+          <CloseIcon size={16} color={palette.gray400} />
         </Pressable>
       </View>
     </Animated.View>

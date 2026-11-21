@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { Check } from 'lucide-react-native';
+import { CheckIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -68,7 +68,7 @@ export const StepDot: React.FC<StepDotProps> = ({ stepNumber, state }) => {
       >
         {/* Checkmark icon (for complete state) */}
         <Animated.View style={[styles.absoluteIcon, checkAnimatedStyle]}>
-          <Check size={14} color={palette.pureWhite} strokeWidth={3} />
+          <CheckIcon size={14} color={palette.pureWhite} strokeWidth={3} />
         </Animated.View>
 
         {/* Step number (for active & future states) */}

@@ -6,7 +6,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { Building2 } from 'lucide-react-native';
+import { BuildingIcon } from '../ui/Icon/icons';
 import { WorkerNearby } from '../../types/worker.types';
 import { springConfig } from '../../design/animations';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -79,7 +79,7 @@ export const CompanyCircleItem: React.FC<CompanyCircleItemProps> = ({
           />
         ) : (
           <View style={styles.fallbackContainer}>
-            <Building2 size={20} color={companyTokens.colors.verifiedBlue} strokeWidth={2} />
+            <BuildingIcon size={20} color={companyTokens.colors.verifiedBlue} strokeWidth={2} />
             <Text style={styles.fallbackInitials}>{getInitials(displayName)}</Text>
           </View>
         )}

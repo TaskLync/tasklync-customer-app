@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, StyleProp, ViewStyle } from 'react-native';
-import { Clock } from 'lucide-react-native';
+import { ClockIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design/typography';
 import { NETWORK_CONFIG } from '../../config/networkConfig';
 import { useStaleDataLabel } from '../../hooks/useStaleDataLabel';
@@ -41,7 +41,7 @@ export const StaleDataBadge: React.FC<StaleDataBadgeProps> = React.memo(
         accessibilityLabel={fullAccessibilityLabel}
       >
         {showIcon && (
-          <Clock
+          <ClockIcon
             size={10}
             color={palette.gray400}
             strokeWidth={2}

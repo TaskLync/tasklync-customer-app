@@ -78,7 +78,7 @@ describe('resolveBookNow', () => {
   });
   test('unavailable beats everything else (checked before the cart)', () => {
     assert.strictEqual(resolveBookNow({ ...base, availability: 'BUSY', cartWorkerId: WORKER, cartItemCount: 1 }).kind, 'UNAVAILABLE');
-    assert.ok(unavailableMessage('', 'BUSY').startsWith('This professional'));
+    assert.ok(unavailableMessage('', 'BUSY').startsWith('This worker'));
   });
 });
 

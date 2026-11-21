@@ -14,7 +14,9 @@ function normalizeJobSite(b: any): { lat: number; lng: number } | undefined {
   const point = { lat: Number(src?.lat), lng: Number(src?.lng) };
   return isValidCoordinate(point) ? point : undefined;
 }
-import { bookingItemDiscount, normalizeDiscountFields, toNumber } from '../../utils/offers';
+import { normalizeDiscountFields, toNumber } from '../../utils/offers';
+import { normalizeFeeFields } from '../../utils/feeDisplay';
+
 import {
   BookingStatus,
   CreateBookingPayload,
@@ -26,9 +28,6 @@ import {
   ConfirmCompletionData,
   DisputeDetails,
   OpenDisputePayload,
-  InvoiceData,
-  StructuredInvoiceData,
-  PdfInvoiceData,
   ApiEnvelope,
   VerificationOtpData,
   VerificationQrData,
@@ -47,7 +46,10 @@ export function isGenericWorkerName(name?: string | null): boolean {
     lower === 'assigned worker' ||
     lower === 'unknown worker' ||
     lower === 'professional' ||
-    lower === 'selected professional'
+    lower === 'selected professional' ||
+    lower === 'service worker' ||
+    lower === 'selected worker' ||
+    lower === 'new worker'
   );
 }
 
@@ -427,6 +429,20 @@ function getLocalList(params?: ListBookingsParams): ListBookingsResponse {
 export const bookingApi = {
 
   /**
+   * GET /api/v1/bookings/stats — the signed-in customer's own statistics (server scopes it by the auth token).
+   * Throws on any failure so callers never mistake an error for a real "0".
+   */
+  getCustomerStats: async (): Promise<{ completed_bookings: number }> => {
+    const response = await apiClient.get<any>('/bookings/stats');
+    const raw = response.data?.data ?? response.data;
+    const n = Number(raw?.completed_bookings ?? raw?.completedBookings);
+    if (!Number.isFinite(n) || n < 0) {
+      throw new Error('Invalid booking stats response');
+    }
+    return { completed_bookings: n };
+  },
+
+  /**
    * 6.2 Create Booking
    * POST /api/v1/bookings
    */
@@ -439,7 +455,7 @@ export const bookingApi = {
     const cartWorker = useCartStore.getState().worker;
 
     if (!isValidUUID(payload.worker_id)) {
-      throw new Error('Selected professional is not valid. Please choose an active verified professional.');
+      throw new Error('Selected worker is not valid. Please choose an active verified worker.');
     }
 
     // Never substitute a shared placeholder address either: the job site would be someone else's /
@@ -469,7 +485,13 @@ export const bookingApi = {
 
     // Direct backend server creation - the server database is the authoritative source of truth.
     // Errors will not be swallowed into fake offline bookings.
-    const response = await apiClient.post<ApiEnvelope<BookingDetails>>('/bookings', sanitizedPayload);
+    // Idempotency-Key = the persisted attempt id: a retry of the same booking returns the booking the server
+    // already created (same id) instead of creating a second one. attempt_id stays in the body for older servers.
+    const response = await apiClient.post<ApiEnvelope<BookingDetails>>(
+      '/bookings',
+      sanitizedPayload,
+      payload.attempt_id ? { headers: { 'Idempotency-Key': payload.attempt_id } } : undefined,
+    );
     const serverBooking = response.data?.data || (response.data as any);
 
     if (!serverBooking || !serverBooking.id || typeof serverBooking.id !== 'string' || serverBooking.id.startsWith('b-') || serverBooking.id.startsWith('TL-')) {
@@ -525,6 +547,7 @@ export const bookingApi = {
       ...(serverBooking.estimated_total != null ? { estimated_total: toNumber(serverBooking.estimated_total) } : {}),
       ...(serverBooking.platform_fee != null ? { platform_fee: toNumber(serverBooking.platform_fee) } : {}),
       ...normalizeDiscountFields(serverBooking),
+      ...normalizeFeeFields(serverBooking),
     };
 
     savePersistedBooking(confirmedBooking);
@@ -605,7 +628,6 @@ export const bookingApi = {
           job_site_location: normalizeJobSite(b),
           address_instructions: b.address_instructions ?? null,
           base_price: Number(b.base_price ?? b.basePrice ?? b.estimated_total ?? 0),
-          urgency_multiplier: Number(b.urgency_multiplier || 1),
           demand_multiplier: Number(b.demand_multiplier || 1),
           time_of_day_multiplier: Number(b.time_of_day_multiplier || 1),
           estimated_total: Number(b.estimated_total ?? b.total_amount ?? b.totalAmount ?? b.price ?? b.base_price ?? 0),
@@ -613,12 +635,12 @@ export const bookingApi = {
           worker_amount: Number(b.worker_amount || b.workerAmount || 0),
           currency: b.currency || 'PKR',
           price_type: b.price_type || 'fixed',
-          is_urgent: Boolean(b.is_urgent ?? b.isUrgent),
           is_payment_confirmed: Boolean(b.is_payment_confirmed ?? b.isPaymentConfirmed),
           description: b.description || b.notes || '',
           created_at: b.created_at || b.createdAt || new Date().toISOString(),
           worker_name: workerName,
           category_name: workerInfo.category_name || (b.category_id ? formatCategoryName(b.category_id, 'Service', 'title') : undefined),
+          service_name: b.service_name || b.serviceName || null,
           worker_avatar_url: workerAvatar,
           worker_phone: workerInfo.worker_phone,
           provider_type: workerInfo.provider_type || b.provider_type,
@@ -629,6 +651,7 @@ export const bookingApi = {
           assigned_worker_phone: workerInfo.assigned_worker_phone || b.assigned_worker_phone,
           assignee: workerInfo.assignee || b.assignee,
           ...normalizeDiscountFields(b),
+          ...normalizeFeeFields(b),
         };
       });
 
@@ -706,7 +729,6 @@ export const bookingApi = {
           job_site_location: normalizeJobSite(raw),
           address_instructions: raw.address_instructions ?? null,
           base_price: Number(raw.base_price ?? raw.basePrice ?? raw.estimated_total ?? 0),
-          urgency_multiplier: Number(raw.urgency_multiplier || 1),
           demand_multiplier: Number(raw.demand_multiplier || 1),
           time_of_day_multiplier: Number(raw.time_of_day_multiplier || 1),
           estimated_total: Number(raw.estimated_total ?? raw.total_amount ?? raw.totalAmount ?? raw.price ?? raw.base_price ?? 0),
@@ -714,12 +736,15 @@ export const bookingApi = {
           worker_amount: Number(raw.worker_amount || raw.workerAmount || 0),
           currency: raw.currency || 'PKR',
           price_type: raw.price_type || 'fixed',
-          is_urgent: Boolean(raw.is_urgent ?? raw.isUrgent),
           is_payment_confirmed: Boolean(raw.is_payment_confirmed ?? raw.isPaymentConfirmed),
           description: raw.description || raw.notes || '',
           created_at: raw.created_at || raw.createdAt || new Date().toISOString(),
           worker_name: workerInfo.worker_name,
           category_name: workerInfo.category_name || (raw.category_id ? formatCategoryName(raw.category_id, 'Service', 'title') : local?.category_name),
+          service_name: raw.service_name || raw.serviceName || local?.service_name || null,
+          custom_request_id: raw.custom_request_id || raw.customRequestId || local?.custom_request_id || undefined,
+          custom_request_description:
+            raw.custom_request_description || raw.customRequestDescription || local?.custom_request_description || null,
           worker_avatar_url: workerInfo.worker_avatar_url,
           worker_phone: workerInfo.worker_phone,
           provider_type: workerInfo.provider_type || raw.provider_type,
@@ -730,6 +755,7 @@ export const bookingApi = {
           assigned_worker_phone: workerInfo.assigned_worker_phone || raw.assigned_worker_phone,
           assignee: workerInfo.assignee || raw.assignee,
           ...normalizeDiscountFields(raw),
+          ...normalizeFeeFields(raw),
           dispute:
             raw.dispute && typeof raw.dispute === 'object' && raw.dispute.id && raw.dispute.status
               ? raw.dispute
@@ -762,8 +788,17 @@ export const bookingApi = {
             }
           }
 
-          // If still missing real name or avatar, fetch directly from worker service
-          if (!normalized.worker_name || isGenericWorkerName(normalized.worker_name) || !normalized.worker_avatar_url) {
+          // Real name still missing: one worker-service lookup is worth waiting for.
+          // Only the avatar missing (common: many workers have none) must NOT block the screen; the
+          // details screen loads the live profile itself, so warm the cache in the background instead.
+          const needsName = !normalized.worker_name || isGenericWorkerName(normalized.worker_name);
+          if (!needsName && !normalized.worker_avatar_url && !cachedProfile) {
+            const workerId = normalized.worker_id;
+            workerApi.getWorkerProfile(workerId)
+              .then((profile) => localStorage.cacheWorkerProfile(workerId, profile))
+              .catch(() => {});
+          }
+          if (needsName) {
             try {
               const profile = await workerApi.getWorkerProfile(normalized.worker_id);
               if (profile?.name && !isGenericWorkerName(profile.name)) {
@@ -1026,140 +1061,7 @@ export const bookingApi = {
     }
   },
 
-  /**
-   * Day 34: Fetch Invoice Data (Structured JSON or Signed PDF URL)
-   * GET /api/v1/bookings/:id/invoice
-   */
-  getInvoice: async (id: string): Promise<InvoiceData> => {
-    const local = getPersistedBookings().find((b) => b.id === id);
-
-    try {
-      const response = await apiClient.get<any>(`/bookings/${id}/invoice`);
-      const raw = response.data?.data || response.data;
-
-      if (raw) {
-        if (raw.kind === 'pdf' || (raw.url && typeof raw.url === 'string' && raw.url.endsWith('.pdf'))) {
-          const pdfData: PdfInvoiceData = {
-            kind: 'pdf',
-            invoice_number: raw.invoice_number || raw.invoiceNumber || `INV-${id.slice(-6).toUpperCase()}`,
-            url: raw.url,
-            issued_at: raw.issued_at || raw.issuedAt || new Date().toISOString(),
-            total: raw.total ? Number(raw.total) : local ? Number(local.estimated_total) : undefined,
-            currency: raw.currency || local?.currency || 'PKR',
-          };
-          return pdfData;
-        }
-
-        if (raw.kind === 'structured' || raw.line_items || raw.lineItems) {
-          const structuredData: StructuredInvoiceData = {
-            kind: 'structured',
-            invoice_number: raw.invoice_number || raw.invoiceNumber || `INV-${id.replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase()}`,
-            issued_at: raw.issued_at || raw.issuedAt || local?.completed_at || local?.created_at || new Date().toISOString(),
-            due_date: raw.due_date || raw.dueDate,
-            booking_id: id,
-            customer: {
-              name: raw.customer?.name || 'Customer',
-              phone: raw.customer?.phone || '•••• ••••',
-              address: raw.customer?.address || local?.address_text || 'Customer Location',
-            },
-            provider: {
-              name: raw.provider?.name || local?.worker_name || 'Service Professional',
-              avatar_url: raw.provider?.avatar_url || raw.provider?.avatarUrl || local?.worker_avatar_url || null,
-              category: raw.provider?.category || local?.category_name || 'Home Service',
-              phone: raw.provider?.phone || local?.worker_phone,
-              tax_id: raw.provider?.tax_id || 'NTN-892410-PK',
-            },
-            line_items: Array.isArray(raw.line_items || raw.lineItems)
-              ? (raw.line_items || raw.lineItems).map((item: any, idx: number) => ({
-                  id: item.id || `item-${idx + 1}`,
-                  name: item.name || 'Service Item',
-                  description: item.description,
-                  quantity: Number(item.quantity || 1),
-                  unit_price: Number(item.unit_price || item.unitPrice || item.price || 0),
-                  total_price: Number(item.total_price || item.totalPrice || item.price || 0),
-                }))
-              : [
-                  {
-                    id: 'item-1',
-                    name: local?.category_name || 'Home Service',
-                    quantity: 1,
-                    unit_price: Number(local?.subtotal_before_discount ?? local?.base_price ?? 0),
-                    total_price: Number(local?.subtotal_before_discount ?? local?.base_price ?? 0),
-                  },
-                ],
-            subtotal: Number(raw.subtotal ?? local?.subtotal_before_discount ?? local?.base_price ?? 0),
-            platform_fee: Number(raw.platform_fee ?? raw.platformFee ?? local?.platform_fee ?? 0),
-            urgency_fee: raw.urgency_fee ? Number(raw.urgency_fee) : undefined,
-            // Server invoice discount, else the discount recorded on the booking itself.
-            discount: raw.discount ? Number(raw.discount) : local ? bookingItemDiscount(local) || undefined : undefined,
-            total: Number(raw.total ?? local?.estimated_total ?? 0),
-            currency: raw.currency || local?.currency || 'PKR',
-            payment_method: {
-              type: raw.payment_method?.type || 'cash',
-              brand: raw.payment_method?.brand || 'cash',
-              last4: raw.payment_method?.last4,
-              paid_at: raw.payment_method?.paid_at || local?.completed_at || local?.created_at || new Date().toISOString(),
-              status: raw.payment_method?.status || (local?.is_payment_confirmed ? 'PAID' : 'PENDING'),
-            },
-            notes: raw.notes,
-          };
-          return structuredData;
-        }
-      }
-    } catch (_error) {
-      // Fallback to locally synthesized structured invoice
-    }
-
-    // Default Fallback: Generate structured invoice from local booking details
-    // Only stored booking values: nothing here is invented.
-    const basePrice = Number(local?.subtotal_before_discount ?? local?.base_price ?? 0);
-    const platformFee = Number(local?.platform_fee ?? 0);
-    const totalPrice = Number(local?.estimated_total ?? 0);
-    const itemDiscount = local ? bookingItemDiscount(local) : 0;
-
-    const fallbackInvoice: StructuredInvoiceData = {
-      kind: 'structured',
-      invoice_number: `INV-${id.replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase()}`,
-      issued_at: local?.completed_at || local?.created_at || new Date().toISOString(),
-      booking_id: id,
-      customer: {
-        name: 'Customer Account',
-        phone: '•••• ••••',
-        address: local?.address_text || 'Customer Job Address',
-      },
-      provider: {
-        name: local?.worker_name || 'Service Professional',
-        avatar_url: local?.worker_avatar_url || null,
-        category: local?.category_name || 'Home Service',
-        phone: local?.worker_phone,
-        tax_id: 'NTN-739104-PK',
-      },
-      line_items: [
-        {
-          id: 'item-1',
-          name: local?.category_name || 'Verified Service Job',
-          description: local?.description || 'Standard on-demand service appointment',
-          quantity: 1,
-          unit_price: basePrice,
-          total_price: basePrice,
-        },
-      ],
-      subtotal: basePrice,
-      platform_fee: platformFee,
-      ...(itemDiscount > 0 ? { discount: itemDiscount } : {}),
-      total: totalPrice,
-      currency: local?.currency || 'PKR',
-      payment_method: {
-        type: 'cash',
-        brand: 'cash',
-        paid_at: local?.completed_at || local?.created_at || new Date().toISOString(),
-        status: local?.is_payment_confirmed ? 'PAID' : 'PENDING',
-      },
-      notes: 'Thank you for choosing Tasklync. All payments are escrow-protected.',
-    };
-
-    return fallbackInvoice;
-  },
+  // Invoices: see services/invoice/invoice.service.ts (fetchInvoice).
 
   /**
    * Job Start OTP Verification Retrieval
@@ -1176,7 +1078,7 @@ export const bookingApi = {
     );
     const data = response.data?.data || (response.data as any);
     if (!data || !data.otp) {
-      throw new Error('Failed to retrieve verification OTP from server.');
+      throw new Error("Couldn't load your verification code. Please try again.");
     }
     return data;
   },
@@ -1197,7 +1099,7 @@ export const bookingApi = {
     );
     const data = response.data?.data || (response.data as any);
     if (!data || !data.qr_token) {
-      throw new Error('Failed to generate verification QR token from server.');
+      throw new Error("Couldn't load your QR code. Please try again.");
     }
     return data;
   },

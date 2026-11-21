@@ -15,7 +15,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { RotateCcw, X } from 'lucide-react-native';
+import { CloseIcon, RetryIcon } from '../ui/Icon/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Message } from '../../types/chat.types';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -161,7 +161,7 @@ export const ImageMessage = React.memo(function ImageMessage({
                 accessibilityRole="button"
                 accessibilityLabel="Retry photo upload"
               >
-                <RotateCcw size={22} color={colors.pureWhite} strokeWidth={2.5} />
+                <RetryIcon size={22} color={colors.pureWhite} strokeWidth={2.5} />
               </Pressable>
               <Text style={styles.failedBadgeText}>Tap to retry</Text>
             </View>
@@ -187,7 +187,7 @@ export const ImageMessage = React.memo(function ImageMessage({
               accessibilityRole="button"
               accessibilityLabel="Close photo viewer"
             >
-              <X size={24} color={colors.pureWhite} strokeWidth={2.5} />
+              <CloseIcon size={24} color={colors.pureWhite} strokeWidth={2.5} />
             </Pressable>
           </View>
 

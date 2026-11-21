@@ -14,7 +14,7 @@ import Animated, {
   withTiming
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowRight } from 'lucide-react-native';
+import { ArrowRightIcon } from '../../src/components/ui/Icon/icons';
 
 import { Screen } from '@components/layout/Screen';
 import { Text } from '@components/ui/Text';
@@ -178,7 +178,7 @@ export default function NameScreen() {
               onPress={handleContinue}
               style={{ backgroundColor: isValid ? colors.primary : colors.primaryLight }}
               label="Let's go"
-              icon={ArrowRight}
+              icon={ArrowRightIcon}
               iconPosition="right"
             />
           </Animated.View>

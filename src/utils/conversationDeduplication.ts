@@ -1,6 +1,10 @@
 import type { ConversationItem, SenderType, Message, ChatRoom } from '../types/chat.types.ts';
 import { formatCategoryName } from './formatters.ts';
 
+/** Placeholder name before the real worker name is known ("Assigned Professional" is the pre-rename value still in saved data). */
+const isAssignedPlaceholder = (name?: string | null): boolean =>
+  name === 'Assigned Worker' || name === 'Assigned Professional';
+
 export interface WorkerProfileCacheItem {
   name: string;
   avatarUrl?: string | null;
@@ -212,7 +216,7 @@ export function buildDeduplicatedConversations({
       const workerName =
         primaryBooking?.worker_name ||
         cachedWorker?.name ||
-        'Assigned Professional';
+        'Assigned Worker';
 
       const workerAvatarUrl =
         primaryBooking?.worker_avatar_url ||
@@ -225,7 +229,7 @@ export function buildDeduplicatedConversations({
           ? formatCategoryName(primaryBooking.category_id, 'Service', 'title')
           : '') ||
         cachedWorker?.category ||
-        'Service Professional';
+        'Service Worker';
 
       // Unread count computation
       const isOverriddenRead =
@@ -297,7 +301,7 @@ export function buildDeduplicatedConversations({
             : existing.bookingStatus,
           roomId: candidateItem.roomId || existing.roomId,
           workerName:
-            existing.workerName !== 'Assigned Professional'
+            !isAssignedPlaceholder(existing.workerName)
               ? existing.workerName
               : candidateItem.workerName,
           workerAvatarUrl: existing.workerAvatarUrl || candidateItem.workerAvatarUrl,
@@ -356,7 +360,7 @@ export function buildDeduplicatedConversations({
     const workerName =
       primaryBooking.worker_name ||
       cachedWorker?.name ||
-      'Assigned Professional';
+      'Assigned Worker';
 
     const workerAvatarUrl =
       primaryBooking.worker_avatar_url ||
@@ -369,7 +373,7 @@ export function buildDeduplicatedConversations({
         ? formatCategoryName(primaryBooking.category_id, 'Service', 'title')
         : '') ||
       cachedWorker?.category ||
-      'Service Professional';
+      'Service Worker';
 
     conversationMap.set(convKey, {
       id: `conv_${wId}`,
@@ -405,8 +409,8 @@ export function buildDeduplicatedConversations({
     conversationMap.set(convKey, {
       id: `booking_${bId}`,
       bookingId: bId,
-      workerName: 'Assigned Professional',
-      categoryName: booking.category_name || 'Service Professional',
+      workerName: 'Assigned Worker',
+      categoryName: booking.category_name || 'Service Worker',
       lastMessage: meta.lastMessage,
       lastMessageAt: meta.lastMessageAt,
       lastMessageSenderType: meta.lastMessageSenderType,
@@ -554,7 +558,7 @@ export function deduplicateConversationList(items: ConversationItem[]): Conversa
       bookingId: preferItemBooking ? item.bookingId : existing.bookingId,
       bookingStatus: preferItemBooking ? item.bookingStatus : existing.bookingStatus,
       workerName:
-        existing.workerName !== 'Assigned Professional'
+        !isAssignedPlaceholder(existing.workerName)
           ? existing.workerName
           : item.workerName,
       workerAvatarUrl: existing.workerAvatarUrl || item.workerAvatarUrl,

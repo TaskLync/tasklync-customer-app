@@ -22,7 +22,7 @@ export const EmptyCart: FC<EmptyCartProps> = ({ onBrowseServices }) => {
       type="no-data"
       title="Your cart is empty"
       description="Explore top-rated local workers and add services to get started."
-      actionLabel="Browse Services"
+      actionLabel="Browse services"
       onAction={handleBrowse}
     />
   );

@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { EscrowNote } from '../cart/EscrowNote';
-import { CartTotalRow } from '../cart/CartTotalRow';
 import { Skeleton, SkeletonGroup } from '../ui/Skeleton/Skeleton';
 import { fontFamily } from '../../design';
 import { formatRs, type PriceSummaryRow } from '../../utils/offers';
@@ -36,7 +35,7 @@ export const PriceSummaryRows: React.FC<{ rows: PriceSummaryRow[]; compact?: boo
               {row.hint ? <Text style={styles.hint}>{row.hint}</Text> : null}
             </View>
             <Text style={[styles.value, good && { color: palette.green700 }]}>
-              {good ? `- ${formatRs(Math.abs(row.amount))}` : formatRs(row.amount)}
+              {row.display ?? (good ? `- ${formatRs(Math.abs(row.amount))}` : formatRs(row.amount))}
             </Text>
           </View>
         );
@@ -45,7 +44,7 @@ export const PriceSummaryRows: React.FC<{ rows: PriceSummaryRow[]; compact?: boo
   );
 };
 
-/** Original price → discount → platform fee → total. Used by checkout. */
+/** Original price → discount → platform fee → total. Used by checkout. Flat: the screen owns the section and its label. */
 export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
   rows,
   total,
@@ -57,17 +56,20 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
   if (loading) {
     return (
       <SkeletonGroup style={styles.card} accessibilityLabel="Calculating price">
-        <Skeleton height={16} borderRadius={6} style={styles.skRow} />
-        <Skeleton height={16} borderRadius={6} style={styles.skRow} />
-        <Skeleton height={20} borderRadius={6} style={styles.skTotal} />
+        <Skeleton height={14} borderRadius={6} style={styles.skRow} />
+        <Skeleton height={14} borderRadius={6} style={styles.skRow} />
+        <Skeleton height={22} borderRadius={6} style={styles.skTotal} />
       </SkeletonGroup>
     );
   }
 
   return (
     <View style={styles.card}>
-      <PriceSummaryRows rows={rows} />
-      <CartTotalRow total={total} />
+      <PriceSummaryRows rows={rows} compact />
+      <View style={styles.totalRow} accessible accessibilityLabel={`Total payable ${formatRs(total)}`}>
+        <Text style={styles.totalLabel}>Total payable</Text>
+        <Text style={styles.totalAmount}>{formatRs(total)}</Text>
+      </View>
       {showEscrowNote ? <EscrowNote /> : null}
     </View>
   );
@@ -75,11 +77,28 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
 
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   card: {
-    backgroundColor: colors.bgSection,
-    borderRadius: 14,
-    padding: 18,
-    marginTop: 8,
-    marginBottom: 16,
+    width: '100%',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    gap: 12,
+  },
+  totalLabel: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  totalAmount: {
+    fontFamily: fontFamily.inter.semiBold,
+    fontSize: 20,
+    letterSpacing: -0.3,
+    color: colors.textPrimary,
   },
   row: {
     flexDirection: 'row',

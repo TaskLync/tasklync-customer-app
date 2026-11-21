@@ -10,7 +10,7 @@ import {
   TextLayoutEventData,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Flag } from 'lucide-react-native';
+import { FlagIcon } from '../ui/Icon/icons';
 import { WorkerReview, ReviewItem, REVIEW_TAGS } from '../../types/review.types';
 import { ReviewMetaRow } from './ReviewMetaRow';
 import { ReviewReplyBubble } from './ReviewReplyBubble';
@@ -149,7 +149,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Report review"
             >
-              <Flag size={13} color={palette.gray400} />
+              <FlagIcon size={13} color={palette.gray400} />
             </Pressable>
           ) : undefined
         }

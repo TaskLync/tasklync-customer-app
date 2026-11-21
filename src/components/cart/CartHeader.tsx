@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { StyleSheet, View, Text, Pressable, Platform } from 'react-native';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeftIcon } from '../ui/Icon/icons';
 import { useRouter } from 'expo-router';
 import { typography } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -31,7 +31,7 @@ export const CartHeader: FC<CartHeaderProps> = ({ itemCount }) => {
         accessibilityRole="button"
         accessibilityLabel="Go back"
       >
-        <ArrowLeft size={22} color={colors.textPrimary} />
+        <ArrowLeftIcon size={22} color={colors.textPrimary} />
       </Pressable>
 
       <View style={styles.titleContainer}>

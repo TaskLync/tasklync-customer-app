@@ -6,6 +6,7 @@
  *   - platform Coupon (typed code, funded by the platform)
  *   - worker Promotion ("offer"; automatic, or by code, funded by the worker)
  */
+import type { FeeSnapshotFields } from "../utils/feeDisplay";
 
 export type DiscountType = 'PERCENT' | 'FIXED';
 export type DiscountFunding = 'PLATFORM' | 'WORKER';
@@ -59,12 +60,11 @@ export interface ValidateCodeRequest {
   duration_hours: number;
   latitude: number;
   longitude: number;
-  is_urgent: boolean;
   coupon_code: string;
 }
 
 /** Worker earnings are never exposed by this view. */
-export interface PricingView {
+export interface PricingView extends FeeSnapshotFields {
   currency: string;
   price_type: string;
   /** Sum of the service lines before surge multipliers (absent from older servers). */
@@ -174,7 +174,6 @@ export interface BookingQuoteParams {
   duration_hours: number;
   latitude: number;
   longitude: number;
-  is_urgent: boolean;
 }
 
 export type PromoStatus = 'idle' | 'validating' | 'applied' | 'invalid' | 'locked' | 'error';

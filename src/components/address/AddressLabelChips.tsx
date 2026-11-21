@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable, TextInput, Platform, Keyboard } from 'react-native';
-import { Home, Building2, MapPin } from 'lucide-react-native';
+import { BuildingIcon, HomeIcon, LocationIcon } from '../ui/Icon/icons';
 import { fontFamily, radius } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -15,11 +15,11 @@ export interface AddressLabelChipsProps {
 const CHIP_OPTIONS: Array<{
   id: 'Home' | 'Office' | 'Other';
   title: string;
-  Icon: typeof Home;
+  Icon: typeof HomeIcon;
 }> = [
-  { id: 'Home', title: 'Home', Icon: Home },
-  { id: 'Office', title: 'Office', Icon: Building2 },
-  { id: 'Other', title: 'Other', Icon: MapPin },
+  { id: 'Home', title: 'Home', Icon: HomeIcon },
+  { id: 'Office', title: 'Office', Icon: BuildingIcon },
+  { id: 'Other', title: 'Other', Icon: LocationIcon },
 ];
 
 export const AddressLabelChips: React.FC<AddressLabelChipsProps> = ({

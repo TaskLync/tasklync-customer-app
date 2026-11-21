@@ -1,6 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { ShieldCheck, FileText, MessageCircle, LifeBuoy, LucideIcon } from 'lucide-react-native';
+import {
+  type AppIconComponent,
+  ChatBubbleIcon,
+  DocumentIcon,
+  LifebuoyIcon,
+  ShieldCheckIcon,
+} from '../ui/Icon/icons';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 import { useAppTheme } from '../../theme/useAppTheme';
 
@@ -14,7 +20,7 @@ interface CompanyTrustGuaranteeCardProps {
 
 interface TrustItem {
   key: string;
-  Icon: LucideIcon;
+  Icon: AppIconComponent;
   title: string;
   body: string;
 }
@@ -40,7 +46,7 @@ export const CompanyTrustGuaranteeCard: React.FC<CompanyTrustGuaranteeCardProps>
   if (isVerified) {
     items.push({
       key: 'verified',
-      Icon: ShieldCheck,
+      Icon: ShieldCheckIcon,
       title: 'Verified by TaskLync',
       body: 'This agency has passed TaskLync verification.',
     });
@@ -48,20 +54,20 @@ export const CompanyTrustGuaranteeCard: React.FC<CompanyTrustGuaranteeCardProps>
   if (ntnNumber) {
     items.push({
       key: 'ntn',
-      Icon: FileText,
+      Icon: DocumentIcon,
       title: 'Registered business',
       body: `NTN ${ntnNumber} is on file.`,
     });
   }
   items.push({
     key: 'chat',
-    Icon: MessageCircle,
+    Icon: ChatBubbleIcon,
     title: 'Talk before you commit',
     body: 'Message the agency in the app about your booking.',
   });
   items.push({
     key: 'dispute',
-    Icon: LifeBuoy,
+    Icon: LifebuoyIcon,
     title: 'Help if something goes wrong',
     body: 'Report a problem from any booking and our team will review it.',
   });

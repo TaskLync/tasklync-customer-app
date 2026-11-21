@@ -10,7 +10,16 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Bell, CalendarCheck, CreditCard, MessageSquare, Star, Sparkles, Shield } from 'lucide-react-native';
+import {
+  ArrowLeftIcon,
+  BellIcon,
+  CalendarCheckIcon,
+  ChatIcon,
+  CreditCardIcon,
+  ShieldIcon,
+  SparklesIcon,
+  StarIcon,
+} from '../../src/components/ui/Icon/icons';
 import { notificationApi } from '../../src/services/api/notification.api';
 import { CategoryPreference, NotificationCategory } from '../../src/types/notification.types';
 import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
@@ -20,45 +29,45 @@ type CategoryMeta = { label: string; description: string; icon: any; color: stri
 
 const createCategoryMetadata = ({ colors, palette }: AppTheme): Record<NotificationCategory, CategoryMeta> => ({
   booking: {
-    label: 'Booking Updates',
+    label: 'Booking updates',
     description: 'Acceptance, start, arrival, and completion alerts',
-    icon: CalendarCheck,
+    icon: CalendarCheckIcon,
     color: colors.primaryDark,
   },
   payment: {
-    label: 'Payments & Receipts',
-    description: 'Payment confirmations, refunds, and escrow notices',
-    icon: CreditCard,
+    label: 'Payments & receipts',
+    description: 'Payment confirmations and refunds',
+    icon: CreditCardIcon,
     color: colors.warningMedium,
   },
   chat: {
-    label: 'Direct Messages',
-    description: 'Messages and photos from assigned service professionals',
-    icon: MessageSquare,
+    label: 'Direct messages',
+    description: 'Messages and photos from assigned service workers',
+    icon: ChatIcon,
     color: colors.textInfo,
   },
   review: {
-    label: 'Ratings & Reviews',
+    label: 'Ratings & reviews',
     description: 'Feedback requests and review verification',
-    icon: Star,
+    icon: StarIcon,
     color: colors.starFilled,
   },
   worker: {
-    label: 'Worker Updates',
+    label: 'Worker updates',
     description: 'Worker profile and status updates',
-    icon: Shield,
+    icon: ShieldIcon,
     color: colors.textSecondary,
   },
   platform: {
-    label: 'Platform & Security',
+    label: 'Platform & security',
     description: 'Account security and service terms notices',
-    icon: Bell,
+    icon: BellIcon,
     color: colors.textPrimary,
   },
   marketing: {
-    label: 'Offers & Promotions',
+    label: 'Offers & promotions',
     description: 'Seasonal discounts and featured service recommendations',
-    icon: Sparkles,
+    icon: SparklesIcon,
     color: palette.purple600,
   },
 });
@@ -122,7 +131,7 @@ export default function NotificationPreferencesScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={colors.textPrimary} />
+          <ArrowLeftIcon size={22} color={colors.textPrimary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>Notification Settings</Text>
@@ -147,7 +156,7 @@ export default function NotificationPreferencesScreen() {
             const meta = categoryMetadata[pref.category as NotificationCategory] || {
               label: pref.category,
               description: 'Notifications for this category',
-              icon: Bell,
+              icon: BellIcon,
               color: colors.primaryDark,
             };
             const Icon = meta.icon;

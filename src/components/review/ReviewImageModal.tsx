@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Modal, Pressable, StatusBar, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
-import { X } from 'lucide-react-native';
+import { CloseIcon } from '../ui/Icon/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface ReviewImageModalProps {
@@ -45,7 +45,7 @@ export const ReviewImageModal: React.FC<ReviewImageModalProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Close"
         >
-          <X size={24} color="#FFFFFF" strokeWidth={2.5} />
+          <CloseIcon size={24} color="#FFFFFF" strokeWidth={2.5} />
         </Pressable>
 
         {/* Full Image */}

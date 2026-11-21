@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Linking, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LogOut } from 'lucide-react-native';
+import { LogoutIcon } from '../../src/components/ui/Icon/icons';
 
 import { useCurrentUser } from '../../src/hooks/useProfile';
+import { useCustomerStats } from '../../src/hooks/useCustomerStats';
 import { useLogout } from '../../src/hooks/useLogout';
 import { useDeleteAccount } from '../../src/hooks/useDeleteAccount';
 import { PROFILE_MENU_SECTIONS } from '../../src/config/profileMenu.config';
@@ -35,6 +36,22 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const { user, isRefetching, refetch } = useCurrentUser();
+  const stats = useCustomerStats();
+  // Live COUNT from booking-service; if that call fails, the server's own counter from /users/me (still real data).
+  const completedBookings = stats.completedBookings ?? (stats.isError ? user?.stats?.completed_bookings : undefined);
+
+  // Bookings can finish while away (worker marks done, auto-confirm): refresh the count whenever the tab is shown.
+  const refetchStats = stats.refetch;
+  useFocusEffect(
+    useCallback(() => {
+      void refetchStats();
+    }, [refetchStats])
+  );
+
+  const handleRefresh = useCallback(() => {
+    void refetch();
+    void refetchStats();
+  }, [refetch, refetchStats]);
   const { logout, isLoggingOut } = useLogout();
   const { deleteAccount, isDeleting } = useDeleteAccount();
 
@@ -112,7 +129,7 @@ export default function ProfileScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
-            onRefresh={refetch}
+            onRefresh={handleRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
           />
@@ -126,7 +143,13 @@ export default function ProfileScreen() {
         />
 
         {/* 2. Stats Summary Row */}
-        <ProfileStatsRow stats={user?.stats} />
+        <ProfileStatsRow
+          completedBookings={completedBookings}
+          isLoading={stats.isLoading}
+          isError={stats.isError && completedBookings === undefined}
+          onRetry={() => void refetchStats()}
+          onPress={() => router.push('/profile/booking-history' as any)}
+        />
 
         {/* 3. Data-Driven Menu Sections */}
         {PROFILE_MENU_SECTIONS.map((section) => (
@@ -146,7 +169,7 @@ export default function ProfileScreen() {
           accessibilityLabel="Log out of Tasklync"
         >
           <View style={styles.logoutIconContainer}>
-            <LogOut size={18} color={colors.textDanger} strokeWidth={2.2} />
+            <LogoutIcon size={18} color={colors.textDanger} strokeWidth={2.2} />
           </View>
           <Text style={styles.logoutCardText}>Log Out</Text>
         </TouchableOpacity>

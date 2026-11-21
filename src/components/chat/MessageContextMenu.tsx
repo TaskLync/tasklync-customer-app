@@ -14,7 +14,7 @@ import Animated, {
   withTiming,
   withSpring,
 } from 'react-native-reanimated';
-import { Copy } from 'lucide-react-native';
+import { CopyIcon } from '../ui/Icon/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 import { useAppTheme } from '../../theme/useAppTheme';
@@ -157,7 +157,7 @@ export const MessageContextMenu = forwardRef<MessageContextMenuRef, MessageConte
                   accessibilityRole="button"
                   accessibilityLabel="Copy text"
                 >
-                  <Copy size={18} color={colors.textPrimary} strokeWidth={2} style={styles.optionIcon} />
+                  <CopyIcon size={18} color={colors.textPrimary} strokeWidth={2} style={styles.optionIcon} />
                   <Text style={styles.optionText}>Copy</Text>
                 </Pressable>
 

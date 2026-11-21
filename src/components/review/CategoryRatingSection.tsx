@@ -15,9 +15,9 @@ export interface CategoryRatingSectionProps {
 
 const CATEGORIES: Array<{ key: ReviewCategoryKey; label: string }> = [
   { key: 'punctuality', label: 'Punctuality' },
-  { key: 'quality', label: 'Service Quality' },
+  { key: 'quality', label: 'Service quality' },
   { key: 'communication', label: 'Communication' },
-  { key: 'value', label: 'Value for Money' },
+  { key: 'value', label: 'Value for money' },
 ];
 
 /**
@@ -47,9 +47,9 @@ export const CategoryRatingSection: React.FC<CategoryRatingSectionProps> = ({
     >
       {/* Goal-Gradient Copy Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Almost done — rate the details</Text>
+        <Text style={styles.title}>Almost done. Rate a few details.</Text>
         <Text style={styles.subtitle}>
-          Optional specifics help service professionals improve
+          Optional specifics help service workers improve
         </Text>
       </View>
 

@@ -11,15 +11,15 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import {
-  ChevronLeft,
-  ChevronRight,
-  Share2,
-  Star,
-  MapPin,
-  Building2,
-  MessageSquare,
-  BadgeCheck,
-} from 'lucide-react-native';
+  BuildingIcon,
+  ChatIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  LocationIcon,
+  ShareIcon,
+  StarIcon,
+  VerifiedIcon,
+} from '../../src/components/ui/Icon/icons';
 
 import { useWorkerProfile } from '../../src/hooks/useWorkerProfile';
 import { useWorkerReviews } from '../../src/hooks/useWorkerReviews';
@@ -133,7 +133,7 @@ export default function CompanyDetailScreen() {
         accessibilityRole="button"
         accessibilityLabel="Go back"
       >
-        <ChevronLeft size={24} color={colors.textPrimary} />
+        <ChevronLeftIcon size={24} color={colors.textPrimary} />
       </Pressable>
       {company ? (
         <View style={styles.topBarRight}>
@@ -143,7 +143,7 @@ export default function CompanyDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel="Message agency"
           >
-            <MessageSquare size={22} color={colors.textPrimary} />
+            <ChatIcon size={22} color={colors.textPrimary} />
           </Pressable>
           <Pressable
             onPress={handleShare}
@@ -151,7 +151,7 @@ export default function CompanyDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel="Share company profile"
           >
-            <Share2 size={22} color={colors.textPrimary} />
+            <ShareIcon size={22} color={colors.textPrimary} />
           </Pressable>
         </View>
       ) : null}
@@ -213,7 +213,7 @@ export default function CompanyDetailScreen() {
                 accessibilityIgnoresInvertColors
               />
             ) : (
-              <Building2 size={26} color={colors.textMuted} />
+              <BuildingIcon size={26} color={colors.textMuted} />
             )}
           </View>
           <View style={styles.identityText}>
@@ -222,7 +222,7 @@ export default function CompanyDetailScreen() {
             </Text>
             {isVerified ? (
               <View style={styles.verifiedRow}>
-                <BadgeCheck size={15} color={colors.primary} />
+                <VerifiedIcon size={15} color={colors.primary} />
                 <Text style={styles.verifiedText}>Verified agency</Text>
               </View>
             ) : null}
@@ -236,7 +236,7 @@ export default function CompanyDetailScreen() {
                       reviewTotal === 1 ? 'review' : 'reviews'
                     }`}
                   >
-                    <Star
+                    <StarIcon
                       size={13}
                       color={companyTokens.colors.ratingGold}
                       fill={companyTokens.colors.ratingGold}
@@ -249,7 +249,7 @@ export default function CompanyDetailScreen() {
                 ) : null}
                 {city ? (
                   <View style={[styles.fact, styles.cityFact]}>
-                    <MapPin size={13} color={colors.textMuted} />
+                    <LocationIcon size={13} color={colors.textMuted} />
                     <Text style={styles.factText} numberOfLines={1}>
                       {city}
                     </Text>
@@ -322,7 +322,7 @@ export default function CompanyDetailScreen() {
             accessibilityLabel={`Request a custom quote from ${displayName}`}
           >
             <Text style={styles.customQuoteTitle}>Need something else? Request a custom quote</Text>
-            <ChevronRight size={16} color={colors.primary} />
+            <ChevronRightIcon size={16} color={colors.primary} />
           </Pressable>
         </View>
 

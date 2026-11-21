@@ -35,7 +35,7 @@ export function useBookingRealtimeUpdates({
       queryClient.invalidateQueries({ queryKey: ['booking-details', bookingId] });
       if (onReassigned) {
         onReassigned({
-          newWorkerName: payload?.new_worker_name || payload?.newWorkerName || 'New Technician',
+          newWorkerName: payload?.new_worker_name || payload?.newWorkerName || 'New Worker',
           newWorkerPhone: payload?.new_worker_phone || payload?.newWorkerPhone || null,
           reason: payload?.reason || null,
         });

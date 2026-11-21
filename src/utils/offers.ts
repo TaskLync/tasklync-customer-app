@@ -4,6 +4,7 @@
  * Rule from the spec: the app NEVER computes prices. Everything here formats, classifies or
  * selects values the server already returned.
  */
+import { isFeeFree, platformFeeLabel, taxLabel } from './feeDisplay';
 import type {
   AppliedDiscountView,
   BookingDiscountFields,
@@ -218,7 +219,7 @@ export function isCodeInputValid(raw: string): boolean {
 
 /**
  * Identity of the booking a previewed code was priced for. Prices depend on every one of these
- * (urgency, duration, time of day, location), so a change voids the preview (8.3 step 7).
+ * (services, duration, time of day, location), so a change voids the preview (8.3 step 7).
  */
 export function quoteParamsHash(p: BookingQuoteParams): string {
   return [
@@ -229,7 +230,6 @@ export function quoteParamsHash(p: BookingQuoteParams): string {
     p.duration_hours,
     p.latitude,
     p.longitude,
-    p.is_urgent ? 1 : 0,
   ].join('|');
 }
 
@@ -261,6 +261,8 @@ export interface BreakdownRow {
   label: string;
   amount: number;
   kind: BreakdownRowKind;
+  /** Text shown instead of the formatted amount ("FREE" for a platform fee of 0). */
+  display?: string | undefined;
 }
 
 /**
@@ -277,12 +279,12 @@ export function buildBreakdownRows(input: BreakdownInput): BreakdownRow[] {
   if (input.funding === 'PLATFORM' && input.subtotalBeforeDiscount != null) {
     return [
       { key: 'subtotal', label: 'Subtotal', amount: toNumber(input.subtotalBeforeDiscount), kind: 'line' },
-      { key: 'platformFee', label: 'Platform fee', amount: fee, kind: 'line' },
+      { key: 'platformFee', label: 'Platform fee', amount: fee, kind: 'line', ...(isFeeFree(fee) ? { display: 'FREE' } : {}) },
       { key: 'discount', label: 'Discount', amount: -discount, kind: 'discount' },
     ];
   }
   return [
-    { key: 'platformFee', label: 'Platform fee', amount: fee, kind: 'line' },
+    { key: 'platformFee', label: 'Platform fee', amount: fee, kind: 'line', ...(isFeeFree(fee) ? { display: 'FREE' } : {}) },
     { key: 'saved', label: 'You saved', amount: discount, kind: 'saving' },
   ];
 }
@@ -422,6 +424,8 @@ export interface PriceSummaryRow {
   hint?: string | undefined;
   amount: number;
   kind: 'line' | 'discount';
+  /** Text shown instead of the formatted amount (e.g. "FREE" for a platform fee of 0). */
+  display?: string | undefined;
 }
 
 export interface PriceSummaryInput {
@@ -431,6 +435,12 @@ export interface PriceSummaryInput {
   baseAmount?: number | null | undefined;
   discount?: { name: string; valueLabel: string | null; amount: number } | null | undefined;
   platformFee: number;
+  /** Fee percentage the server recorded for this price (snapshot). Shown in the label only when above 0. */
+  platformFeePercent?: number | null | undefined;
+  /** Tax the server added (snapshot). The row is shown only when above 0. */
+  taxAmount?: number | null | undefined;
+  taxLabel?: string | null | undefined;
+  taxPercent?: number | null | undefined;
 }
 
 /**
@@ -442,11 +452,13 @@ export function buildPriceSummaryRows(input: PriceSummaryInput): PriceSummaryRow
   const original = toNumber(input.originalAmount);
   const base = input.baseAmount == null ? null : toNumber(input.baseAmount);
   const rows: PriceSummaryRow[] = [];
+  // 'Original price' only makes sense next to a discount; otherwise it is simply the service charge.
+  const firstLabel = input.discount && toNumber(input.discount.amount) > 0 ? 'Original price' : 'Service charges';
   if (base != null && base > 0 && original > base + 0.005) {
-    rows.push({ key: 'base', label: 'Original price', amount: base, kind: 'line' });
+    rows.push({ key: 'base', label: firstLabel, amount: base, kind: 'line' });
     rows.push({ key: 'surge', label: 'Surge / demand', amount: Math.round((original - base) * 100) / 100, kind: 'line' });
   } else {
-    rows.push({ key: 'original', label: 'Original price', amount: original, kind: 'line' });
+    rows.push({ key: 'original', label: firstLabel, amount: original, kind: 'line' });
   }
   const d = input.discount;
   if (d && toNumber(d.amount) > 0) {
@@ -458,17 +470,31 @@ export function buildPriceSummaryRows(input: PriceSummaryInput): PriceSummaryRow
       kind: 'discount',
     });
   }
-  rows.push({ key: 'platformFee', label: 'Platform fee', amount: toNumber(input.platformFee), kind: 'line' });
+  const fee = toNumber(input.platformFee);
+  rows.push({
+    key: 'platformFee',
+    label: platformFeeLabel(input.platformFeePercent),
+    amount: fee,
+    kind: 'line',
+    ...(isFeeFree(fee) ? { display: 'FREE' } : {}),
+  });
+  const tax = toNumber(input.taxAmount);
+  if (tax > 0) {
+    rows.push({ key: 'tax', label: taxLabel(input.taxLabel, input.taxPercent), amount: tax, kind: 'line' });
+  }
   return rows;
 }
 
-/** The discount line of a stored booking: item discount = subtotal_before - (total - fee), from stored values only. */
+/** The discount line of a stored booking: item discount = subtotal_before - (total - fee - tax), from stored values only. */
 export function bookingItemDiscount(b: {
   subtotal_before_discount?: number | null | undefined;
   estimated_total: number;
   platform_fee: number;
+  tax_amount?: number | null | undefined;
 }): number {
   if (b.subtotal_before_discount == null) return 0;
-  const v = toNumber(b.subtotal_before_discount) - (toNumber(b.estimated_total) - toNumber(b.platform_fee));
+  const v =
+    toNumber(b.subtotal_before_discount) -
+    (toNumber(b.estimated_total) - toNumber(b.platform_fee) - toNumber(b.tax_amount));
   return v > 0.005 ? Math.round(v * 100) / 100 : 0;
 }

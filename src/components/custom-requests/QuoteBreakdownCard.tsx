@@ -1,174 +1,109 @@
-import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Banknote, ShieldCheck } from 'lucide-react-native';
 import { Quote } from '../../types/customRequest.types';
-import { typography } from '../../design';
-import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { platformFeeLabel, platformFeeValue, taxAmountOf, taxLabel } from '../../utils/feeDisplay';
 
 interface QuoteBreakdownCardProps {
   quote: Quote;
 }
 
+const money = (currency: string, value: number) => `${currency} ${Math.round(value).toLocaleString()}`;
+
+/**
+ * Price section: the total to pay is the hero, the breakdown sits underneath.
+ * Every number is the backend's own quote value (no client-side pricing). The fee percentage is
+ * read off the backend's fee and subtotal so the label always matches what was actually charged.
+ */
 export function QuoteBreakdownCard({ quote }: QuoteBreakdownCardProps) {
-  const { colors, palette } = useAppTheme();
   const styles = useThemedStyles(createStyles);
-  const formattedWorkPrice = Number(quote.work_price || 0).toLocaleString();
-  const formattedInspectionFee = Number(quote.inspection_fee || 0).toLocaleString();
-  const formattedSubtotal = Number(quote.subtotal || 0).toLocaleString();
-  const formattedPlatformFee = Number(quote.customer_platform_fee || 0).toLocaleString();
-  const formattedTotal = Number(quote.total_price || 0).toLocaleString();
+  const currency = quote.currency || 'PKR';
+  const work = Number(quote.work_price || 0);
+  const inspection = Number(quote.inspection_fee || 0);
+  const subtotal = Number(quote.subtotal || 0);
+  const fee = Number(quote.customer_platform_fee || 0);
+  const total = Number(quote.total_price || 0);
+  const tax = taxAmountOf(quote);
+  // Prefer the percentage the server froze on the quote; older quotes fall back to fee / subtotal.
+  const feePercent =
+    quote.customer_fee_percent != null
+      ? Number(quote.customer_fee_percent)
+      : subtotal > 0 && fee > 0 ? Math.round((fee / subtotal) * 1000) / 10 : null;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.cardTitle}>Price Breakdown</Text>
+    <View>
+      <Text style={styles.totalLabel}>Total to pay</Text>
+      <Text style={styles.totalValue} accessibilityLabel={`Total to pay ${money(currency, total)}`}>
+        {money(currency, total)}
+      </Text>
 
-      {/* Labor / Work Price */}
-      <View style={styles.row}>
-        <Text style={styles.rowLabel}>Work & Labor Charges</Text>
-        <Text style={styles.rowValue}>PKR {formattedWorkPrice}</Text>
-      </View>
-
-      {/* Diagnostic / Inspection Fee */}
-      {Number(quote.inspection_fee) > 0 && (
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>Inspection & Diagnostic Fee</Text>
-          <Text style={styles.rowValue}>PKR {formattedInspectionFee}</Text>
-        </View>
-      )}
-
-      {/* Subtotal */}
-      <View style={styles.subtotalRow}>
-        <Text style={styles.subtotalLabel}>Subtotal</Text>
-        <Text style={styles.subtotalValue}>PKR {formattedSubtotal}</Text>
-      </View>
-
-      {/* Platform Fee */}
-      <View style={styles.row}>
-        <View style={styles.feeLabelWrap}>
-          <Text style={styles.rowLabel}>TaskLync Platform Fee (5%)</Text>
-          <ShieldCheck size={13} color={palette.green600} style={{ marginLeft: 4 }} />
-        </View>
-        <Text style={styles.rowValue}>PKR {formattedPlatformFee}</Text>
-      </View>
-
-      <View style={styles.divider} />
-
-      {/* Total Payable */}
-      <View style={styles.totalRow}>
-        <View>
-          <Text style={styles.totalLabel}>Total Customer Payable</Text>
-          <Text style={styles.totalSubtext}>Inclusive of all fees & taxes</Text>
-        </View>
-        <Text style={styles.totalValue}>PKR {formattedTotal}</Text>
-      </View>
-
-      {/* COD Payment Badge */}
-      <View style={styles.codBadge}>
-        <Banknote size={16} color={colors.textGreen} />
-        <Text style={styles.codBadgeText}>
-          Cash on Delivery (COD) — Pay directly to technician upon job completion
-        </Text>
+      <View style={styles.breakdown}>
+        <Row label="Work charges" value={money(currency, work)} styles={styles} />
+        {inspection > 0 ? (
+          <>
+            <Row label="Inspection fee" value={money(currency, inspection)} styles={styles} />
+            <Row label="Subtotal" value={money(currency, subtotal)} styles={styles} />
+          </>
+        ) : null}
+        <Row
+          label={platformFeeLabel(feePercent)}
+          value={platformFeeValue(fee, (n) => money(currency, n))}
+          styles={styles}
+        />
+        {tax > 0 ? (
+          <Row label={taxLabel(quote.tax_label, quote.tax_percent)} value={money(currency, tax)} styles={styles} />
+        ) : null}
       </View>
     </View>
   );
 }
 
-const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
-  container: {
-    backgroundColor: colors.bgCard,
-    paddingVertical: 16,
-    marginBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+function Row({ label, value, styles }: { label: string; value: string; styles: ReturnType<typeof createStyles> }) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={styles.rowValue}>{value}</Text>
+    </View>
+  );
+}
+
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
+  totalLabel: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 13.5,
+    color: colors.textSecondary,
   },
-  cardTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 15,
-    color: palette.gray900,
-    marginBottom: 12,
+  totalValue: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 32,
+    lineHeight: 40,
+    letterSpacing: -0.6,
+    color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
+    marginTop: 2,
+  },
+  breakdown: {
+    marginTop: 14,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 5,
-  },
-  feeLabelWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 6,
   },
   rowLabel: {
+    flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 13,
-    color: palette.gray600,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   rowValue: {
     fontFamily: 'Inter-Medium',
-    fontSize: 13,
-    color: palette.gray900,
-  },
-  subtotalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-    marginTop: 4,
-  },
-  subtotalLabel: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 13,
-    color: palette.gray800,
-  },
-  subtotalValue: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 13,
-    color: palette.gray900,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 10,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  totalLabel: {
-    fontFamily: 'Poppins-Bold',
     fontSize: 14,
-    color: palette.gray900,
-  },
-  totalSubtext: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 11,
-    color: palette.gray400,
-    marginTop: 1,
-  },
-  totalValue: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 18,
-    color: palette.green600,
-  },
-  codBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgHover,
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-    marginTop: 12,
-  },
-  codBadgeText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 11,
-    color: colors.textGreen,
-    marginLeft: 8,
-    flex: 1,
-    lineHeight: 15,
+    color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
 });

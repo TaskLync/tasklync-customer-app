@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { CreditCard, Banknote, Wallet, CheckCircle2 } from 'lucide-react-native';
+import { CashIcon, CheckCircleIcon, CreditCardIcon, WalletIcon } from '../ui/Icon/icons';
 import { InvoicePaymentMethodData } from '../../types/booking.types';
 import { fontFamily, fontSize, radius, spacing } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -44,12 +44,12 @@ export const PaymentMethodRow: React.FC<PaymentMethodRowProps> = ({
 
   const renderIcon = () => {
     if (paymentMethod.type === 'card') {
-      return <CreditCard size={20} color={colors.primaryDark} />;
+      return <CreditCardIcon size={20} color={colors.primaryDark} />;
     }
     if (paymentMethod.type === 'wallet') {
-      return <Wallet size={20} color={palette.infoDark} />;
+      return <WalletIcon size={20} color={palette.infoDark} />;
     }
-    return <Banknote size={20} color={colors.primaryDark} />;
+    return <CashIcon size={20} color={colors.primaryDark} />;
   };
 
   const getLabel = () => {
@@ -71,7 +71,7 @@ export const PaymentMethodRow: React.FC<PaymentMethodRowProps> = ({
       <View style={styles.infoCol}>
         <View style={styles.headlineRow}>
           <Text style={styles.methodLabel}>{getLabel()}</Text>
-          <CheckCircle2 size={15} color={colors.primary} />
+          <CheckCircleIcon size={15} color={colors.primary} />
         </View>
         <Text style={styles.dateText}>{formattedPaidTime}</Text>
       </View>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Clock, X } from 'lucide-react-native';
+import { ClockIcon, CloseIcon } from '../ui/Icon/icons';
 import { typography } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -42,7 +42,7 @@ export const RecentSearchesSection: React.FC<RecentSearchesSectionProps> = ({
           accessibilityRole="button"
           accessibilityLabel={`Search for ${term}`}
         >
-          <Clock size={16} strokeWidth={2} color={colors.textMuted} />
+          <ClockIcon size={16} strokeWidth={2} color={colors.textMuted} />
           <Text style={styles.term} numberOfLines={1} maxFontSizeMultiplier={1.3}>
             {term}
           </Text>
@@ -56,7 +56,7 @@ export const RecentSearchesSection: React.FC<RecentSearchesSectionProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`Remove ${term} from recent searches`}
           >
-            <X size={15} color={colors.textMuted} />
+            <CloseIcon size={15} color={colors.textMuted} />
           </Pressable>
         </Pressable>
       ))}

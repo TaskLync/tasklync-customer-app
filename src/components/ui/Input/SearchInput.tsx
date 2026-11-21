@@ -13,7 +13,7 @@ import Animated, {
   withTiming,
   interpolateColor,
 } from 'react-native-reanimated';
-import { Search, X } from 'lucide-react-native';
+import { CloseIcon, SearchIcon } from '../Icon/icons';
 import { typography } from '../../../design/typography';
 import { springConfig, timingConfig } from '../../../design/animations';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../../theme/useAppTheme';
@@ -40,7 +40,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onChangeText,
   onClear,
   onSubmitEditing,
-  placeholder = 'Search services, workers...',
+  placeholder = 'Search services or workers',
   autoFocus = true,
   editable = true,
   style,
@@ -106,7 +106,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       ]}
     >
       <Animated.View style={[styles.iconContainer]}>
-        <Search
+        <SearchIcon
           size={height >= 52 ? 20 : 18}
           color={isFocused ? (tone === 'neutral' ? colors.textPrimary : colors.primary) : colors.textMuted}
         />
@@ -138,7 +138,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         hitSlop={12}
         pointerEvents={value.length > 0 ? 'auto' : 'none'}
       >
-        <X size={12} color={colors.textMuted} />
+        <CloseIcon size={12} color={colors.textMuted} />
       </AnimatedPressable>
     </AnimatedView>
   );

@@ -40,7 +40,7 @@ const createSlides = ({ colors, palette }: AppTheme) => [
   {
     id: '3',
     title: 'Track Every Step, Live',
-    subtitle: 'Watch your worker travel to you in real-time. Chat, call, or reschedule — all in one place.',
+    subtitle: 'Watch your worker travel to you in real time. Chat, call or reschedule in one place.',
     image: require('../../assets/images/track-step.png'),
     color: palette.blue100,
   }
@@ -196,7 +196,7 @@ export default function WelcomeScreen() {
             size="lg" 
             fullWidth 
             onPress={handleGetStarted}
-            label="Get Started"
+            label="Get started"
             style={styles.buttonShadow}
           />
           <View style={styles.loginContainer}>

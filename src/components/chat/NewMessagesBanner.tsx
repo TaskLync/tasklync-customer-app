@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { ArrowDown } from 'lucide-react-native';
+import { ArrowDownIcon } from '../ui/Icon/icons';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface NewMessagesBannerProps {
@@ -67,7 +67,7 @@ export const NewMessagesBanner = React.memo(function NewMessagesBanner({
       accessibilityRole="button"
       accessibilityLabel={`Scroll down, ${label}`}
     >
-      <ArrowDown size={15} color={colors.pureWhite} strokeWidth={2.5} style={styles.icon} />
+      <ArrowDownIcon size={15} color={colors.pureWhite} strokeWidth={2.5} style={styles.icon} />
       <Text style={styles.text}>{label}</Text>
     </AnimatedPressable>
   );

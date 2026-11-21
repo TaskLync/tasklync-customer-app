@@ -64,7 +64,7 @@ export function useQuoteCheckout({ request, quote }: UseQuoteCheckoutProps) {
       ? {
           id: REQUEST_LOCATION_ID,
           user_id: request.user_id || '',
-          label: 'Request Location',
+          label: 'Request location',
           street: request.address_text,
           city: '',
           latitude: request.latitude,
@@ -205,20 +205,20 @@ export function useQuoteCheckout({ request, quote }: UseQuoteCheckoutProps) {
         err?.response?.data?.error?.message ||
         err?.response?.data?.message ||
         err?.message ||
-        'Unable to confirm booking. Please try again.';
+        "Couldn't confirm your booking. Please try again.";
 
       setValidationError(apiMsg);
 
       if (code === 'CONCURRENT_BOOKING_LOCK') {
         showAlert(
-          'Slot Reserved',
-          'This professional’s time slot was just booked by another customer. Please select another slot.'
+          'Time slot taken',
+          'Someone just booked this time. Please choose another slot.'
         );
       } else if (code === 'BOOKING_ALREADY_CREATED') {
-        showAlert('Already Confirmed', 'A booking has already been created from this quote.');
+        showAlert('Already booked', "You've already booked this quote. You'll find it in My Bookings.");
         router.replace('/(tabs)/bookings' as any);
       } else {
-        showAlert('Checkout Failed', apiMsg);
+        showAlert("Couldn't complete booking", apiMsg);
       }
     },
   });
@@ -227,27 +227,27 @@ export function useQuoteCheckout({ request, quote }: UseQuoteCheckoutProps) {
     setValidationError(null);
 
     if (!quote?.id) {
-      const msg = 'Quote reference is missing. Please reload the quote page.';
+      const msg = 'This quote is missing some details. Please reopen it and try again.';
       setValidationError(msg);
-      showAlert('Checkout Notice', msg);
+      showAlert('Missing details', msg);
       return;
     }
     if (!selectedDate) {
-      const msg = 'Please choose an appointment date from the calendar.';
+      const msg = 'Please pick a date from the calendar.';
       setValidationError(msg);
-      showAlert('Checkout Notice', msg);
+      showAlert('Missing details', msg);
       return;
     }
     if (!selectedSlot) {
-      const msg = 'Please choose an arrival time slot above.';
+      const msg = 'Please pick an arrival time.';
       setValidationError(msg);
-      showAlert('Checkout Notice', msg);
+      showAlert('Missing details', msg);
       return;
     }
     if (!selectedAddress) {
-      const msg = 'Please select or add a service delivery address.';
+      const msg = 'Please select or add the address for this job.';
       setValidationError(msg);
-      showAlert('Checkout Notice', msg);
+      showAlert('Missing details', msg);
       return;
     }
 

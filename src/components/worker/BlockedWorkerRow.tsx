@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { User } from 'lucide-react-native';
+import { UserIcon } from '../ui/Icon/icons';
 import { BlockedWorker } from '../../types/moderation.types';
 import { UnblockConfirmPopover } from './UnblockConfirmPopover';
+import { WorkerProfileLink } from './WorkerProfileLink';
+
+const AVATAR_SIZE = 40;
 import { fontFamily, fontSize, radius, spacing } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -49,7 +52,12 @@ export const BlockedWorkerRow: React.FC<BlockedWorkerRowProps> = ({
   return (
     <View style={styles.container}>
       {/* Left Desaturated Avatar */}
-      <View style={styles.avatarContainer}>
+      <WorkerProfileLink
+        workerId={worker.worker_id || worker.id}
+        workerName={worker.name}
+        size={AVATAR_SIZE}
+        style={styles.avatarContainer}
+      >
         {worker.avatar_url ? (
           <Image
             source={{ uri: worker.avatar_url }}
@@ -58,10 +66,10 @@ export const BlockedWorkerRow: React.FC<BlockedWorkerRowProps> = ({
           />
         ) : (
           <View style={styles.avatarFallback}>
-            <User size={20} color={palette.gray500} />
+            <UserIcon size={20} color={palette.gray500} />
           </View>
         )}
-      </View>
+      </WorkerProfileLink>
 
       {/* Middle Text Info */}
       <View style={styles.infoContainer}>
@@ -110,9 +118,9 @@ const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
     borderBottomColor: palette.gray100,
   },
   avatarContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     overflow: 'hidden',
     marginRight: spacing.md,
     backgroundColor: palette.gray200,

@@ -1,13 +1,12 @@
 import { BookingStatus } from '../types/booking.types';
 import type { AppTheme } from '../theme/useAppTheme';
-import { 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  PlayCircle, 
-  CheckCircle, 
-  AlertTriangle 
-} from 'lucide-react-native';
+import {
+  CheckCircleIcon,
+  ClockIcon,
+  CloseCircleIcon,
+  PlayCircleIcon,
+  WarningIcon,
+} from '../components/ui/Icon/icons';
 
 export interface BookingStatusConfig {
   color: string;
@@ -23,77 +22,77 @@ export const createBookingStatusMap = ({ colors, palette }: AppTheme): Record<Bo
     color: palette.amber500,
     bg: palette.amber50,
     text: palette.amber800,
-    icon: Clock,
+    icon: ClockIcon,
     label: 'Pending',
   },
   ACCEPTED: {
     color: palette.blue500,
     bg: palette.blue50,
     text: palette.blue800,
-    icon: CheckCircle2,
+    icon: CheckCircleIcon,
     label: 'Confirmed',
   },
   REJECTED: {
     color: palette.red500,
     bg: palette.red50,
     text: palette.red800,
-    icon: XCircle,
+    icon: CloseCircleIcon,
     label: 'Declined',
   },
   IN_PROGRESS: {
     color: colors.primary,
     bg: colors.primaryTint,
     text: colors.textGreenDark,
-    icon: PlayCircle,
-    label: 'In Progress',
+    icon: PlayCircleIcon,
+    label: 'In progress',
   },
   COMPLETED_BY_WORKER: {
     color: colors.primary,
     bg: colors.primaryTint,
     text: colors.textGreenDark,
-    icon: CheckCircle,
-    label: 'Awaiting Confirmation',
+    icon: CheckCircleIcon,
+    label: 'Waiting for confirmation',
   },
   COMPLETED: {
     color: colors.primaryDark,
     bg: colors.primaryTint,
     text: colors.textGreen,
-    icon: CheckCircle,
+    icon: CheckCircleIcon,
     label: 'Completed',
   },
   AUTO_COMPLETED: {
     color: colors.primaryDark,
     bg: colors.primaryTint,
     text: colors.textGreen,
-    icon: CheckCircle,
+    icon: CheckCircleIcon,
     label: 'Completed',
   },
   DISPUTED: {
     color: palette.red600,
     bg: palette.red50,
     text: palette.red800,
-    icon: AlertTriangle,
+    icon: WarningIcon,
     label: 'Disputed',
   },
   RESOLVED: {
     color: colors.primaryDark,
     bg: colors.primaryTint,
     text: colors.textGreen,
-    icon: CheckCircle,
+    icon: CheckCircleIcon,
     label: 'Resolved',
   },
   REFUNDED: {
     color: palette.gray500,
     bg: palette.gray100,
     text: palette.gray700,
-    icon: CheckCircle,
+    icon: CheckCircleIcon,
     label: 'Refunded',
   },
   CANCELLED: {
     color: palette.red500,
     bg: palette.red50,
     text: palette.red800,
-    icon: XCircle,
+    icon: CloseCircleIcon,
     label: 'Cancelled',
   },
 });

@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
-import { Search, X } from 'lucide-react-native';
+import { CloseIcon, SearchIcon } from '../ui/Icon/icons';
 import { typography } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -91,11 +91,11 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>((props, ref) =
           scale.value = withSpring(1, { damping: 16, stiffness: 320 });
         }}
         accessibilityRole="search"
-        accessibilityLabel={props.accessibilityLabel ?? 'Search for services or professionals'}
+        accessibilityLabel={props.accessibilityLabel ?? 'Search for services or workers'}
         accessibilityHint={props.accessibilityHint ?? 'Opens search'}
       >
         <Animated.View style={[styles.surface, surfaceStyle]}>
-          <Search size={SEARCH_BAR.iconSize} strokeWidth={2} color={iconColor} />
+          <SearchIcon size={SEARCH_BAR.iconSize} strokeWidth={2} color={iconColor} />
           <Text style={styles.placeholder} numberOfLines={1} maxFontSizeMultiplier={1.3}>
             {placeholder}
           </Text>
@@ -110,7 +110,7 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>((props, ref) =
   return (
     <Pressable onPress={() => inputRef.current?.focus()} accessible={false}>
       <Animated.View style={[styles.surface, surfaceStyle]}>
-        <Search size={SEARCH_BAR.iconSize} strokeWidth={2} color={active || hasText ? colors.textPrimary : colors.textSecondary} />
+        <SearchIcon size={SEARCH_BAR.iconSize} strokeWidth={2} color={active || hasText ? colors.textPrimary : colors.textSecondary} />
         <TextInput
           ref={inputRef}
           value={value}
@@ -129,7 +129,7 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>((props, ref) =
           cursorColor={colors.buttonPrimary}
           style={styles.input}
           maxFontSizeMultiplier={1.3}
-          accessibilityLabel={props.accessibilityLabel ?? 'Search services and professionals'}
+          accessibilityLabel={props.accessibilityLabel ?? 'Search services and workers'}
         />
         {hasText && (
           <Pressable
@@ -143,7 +143,7 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>((props, ref) =
             accessibilityLabel="Clear search"
           >
             <View style={styles.clearCircle}>
-              <X size={11} strokeWidth={2.6} color={colors.searchFieldBg} />
+              <CloseIcon size={11} strokeWidth={2.6} color={colors.searchFieldBg} />
             </View>
           </Pressable>
         )}

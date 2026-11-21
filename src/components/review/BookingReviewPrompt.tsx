@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Star, Clock, CheckCircle2 } from 'lucide-react-native';
+import { CheckCircleIcon, ClockIcon, StarIcon } from '../ui/Icon/icons';
 import { useRouter } from 'expo-router';
 import { useReviewEligibility } from '../../hooks/useReview';
 import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
@@ -25,13 +25,13 @@ export function BookingReviewPrompt({ bookingId, workerId }: BookingReviewPrompt
     return (
       <View style={styles.bannerEligible}>
         <View style={styles.iconCircleAmber}>
-          <Star size={20} color={colors.warningMedium} fill={colors.warning} />
+          <StarIcon size={20} color={colors.warningMedium} fill={colors.warning} />
         </View>
 
         <View style={styles.textWrap}>
           <Text style={styles.titleAmber}>How was your service?</Text>
           <Text style={styles.subtitleAmber}>
-            Rate your professional to help the community.
+            Rate your worker to help the community.
             {eligibility.formattedTimeLeft ? ` (${eligibility.formattedTimeLeft})` : ''}
           </Text>
         </View>
@@ -48,7 +48,7 @@ export function BookingReviewPrompt({ bookingId, workerId }: BookingReviewPrompt
           accessibilityRole="button"
           accessibilityLabel="Rate service now"
         >
-          <Text style={styles.rateBtnText}>Rate Now</Text>
+          <Text style={styles.rateBtnText}>Rate now</Text>
         </TouchableOpacity>
       </View>
     );
@@ -59,7 +59,7 @@ export function BookingReviewPrompt({ bookingId, workerId }: BookingReviewPrompt
     return (
       <View style={styles.bannerReviewed}>
         <View style={styles.iconCircleGreen}>
-          <CheckCircle2 size={20} color={colors.primary} />
+          <CheckCircleIcon size={20} color={colors.primary} />
         </View>
 
         <View style={styles.textWrap}>
@@ -91,7 +91,7 @@ export function BookingReviewPrompt({ bookingId, workerId }: BookingReviewPrompt
   if (eligibility.isExpired) {
     return (
       <View style={styles.bannerExpired}>
-        <Clock size={16} color={palette.gray400} />
+        <ClockIcon size={16} color={palette.gray400} />
         <Text style={styles.expiredText}>Review window for this booking has closed (14 days passed).</Text>
       </View>
     );

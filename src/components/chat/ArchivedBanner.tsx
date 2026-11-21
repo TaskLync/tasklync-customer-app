@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Lock } from 'lucide-react-native';
+import { LockIcon } from '../ui/Icon/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -49,7 +49,7 @@ export const ArchivedBanner = React.memo(function ArchivedBanner({
       ]}
     >
       <View style={styles.content}>
-        <Lock size={15} color={colors.textMuted} strokeWidth={2} style={styles.icon} />
+        <LockIcon size={15} color={colors.textMuted} strokeWidth={2} style={styles.icon} />
         <Text style={styles.text}>{getNotice()}</Text>
       </View>
     </View>

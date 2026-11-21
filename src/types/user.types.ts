@@ -21,11 +21,13 @@ export interface UserAddress extends AddressDetailFields {
   is_default: boolean;
 }
 
+/**
+ * Customer statistics from the server. A missing value means "not known" and must never be shown as a number.
+ * (No customer rating: customers are not rated on their profile.)
+ */
 export interface UserProfileStats {
-  bookings_count: number;
-  rating?: number | undefined;
-  completed_jobs?: number | undefined;
-  loyalty_points?: number | undefined;
+  /** Bookings this customer completed (users.total_bookings, maintained from booking.completed events). */
+  completed_bookings?: number | undefined;
 }
 
 /**

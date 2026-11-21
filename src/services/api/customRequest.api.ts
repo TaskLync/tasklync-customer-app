@@ -72,7 +72,7 @@ export const customRequestApi = {
         error?.message ||
         error?.response?.data?.error?.message ||
         error?.response?.data?.message;
-      throw new Error(apiMsg || 'Failed to submit custom service request.');
+      throw new Error(apiMsg || "Couldn't send your request. Please try again.");
     }
   },
 
@@ -125,7 +125,7 @@ export const customRequestApi = {
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message;
-      throw new Error(apiMsg || 'Failed to load custom requests.');
+      throw new Error(apiMsg || "Couldn't load your requests. Please try again.");
     }
   },
 
@@ -154,7 +154,7 @@ export const customRequestApi = {
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message;
-      throw new Error(apiMsg || 'Failed to load request details.');
+      throw new Error(apiMsg || "Couldn't load this request. Please try again.");
     }
   },
 
@@ -172,7 +172,7 @@ export const customRequestApi = {
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message;
-      throw new Error(apiMsg || 'Failed to cancel request.');
+      throw new Error(apiMsg || "Couldn't cancel this request. Please try again.");
     }
   },
 
@@ -202,7 +202,7 @@ export const customRequestApi = {
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message;
-      throw new Error(apiMsg || 'Failed to fetch quotes for this request.');
+      throw new Error(apiMsg || "Couldn't load quotes for this request. Please try again.");
     }
   },
 
@@ -224,7 +224,7 @@ export const customRequestApi = {
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message;
-      throw new Error(apiMsg || 'Failed to accept quote.');
+      throw new Error(apiMsg || "Couldn't accept this quote. Please try again.");
     }
   },
 
@@ -242,7 +242,7 @@ export const customRequestApi = {
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message;
-      throw new Error(apiMsg || 'Failed to decline quote.');
+      throw new Error(apiMsg || "Couldn't decline this quote. Please try again.");
     }
   },
 
@@ -259,7 +259,7 @@ export const customRequestApi = {
         error?.response?.data?.error?.message ||
         error?.response?.data?.message ||
         error?.message;
-      throw new Error(apiMsg || 'Failed to confirm booking from quote.');
+      throw new Error(apiMsg || "Couldn't confirm your booking. Please try again.");
     }
   },
 
@@ -377,7 +377,7 @@ export const customRequestApi = {
         throw new Error('Network error while uploading media. Please check your internet connection.');
       }
 
-      throw new Error(apiMsg || 'Failed to upload media attachment.');
+      throw new Error(apiMsg || "Couldn't upload this file. Please try again.");
     }
   },
 };

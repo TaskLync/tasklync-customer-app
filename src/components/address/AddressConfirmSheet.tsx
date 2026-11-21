@@ -20,13 +20,13 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import {
-  MapPin,
-  ChevronUp,
-  ChevronDown,
-  AlertTriangle,
-  Trash2,
-  Check,
-} from 'lucide-react-native';
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  DeleteIcon,
+  LocationIcon,
+  WarningIcon,
+} from '../ui/Icon/icons';
 import { AddressLabelChips } from './AddressLabelChips';
 import { AddressDetailsFields } from './AddressDetailsFields';
 import { Address, ReverseGeocodeResult } from '../../types/address.types';
@@ -373,8 +373,8 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
     if (!onDeleteAddress) return;
 
     showAlert(
-      'Delete Address',
-      'Are you sure you want to remove this saved address?',
+      'Delete address?',
+      'This saved address will be removed.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -428,7 +428,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
             {/* Address Header Preview */}
             <Pressable onPress={toggleExpand} style={styles.headerRow}>
               <View style={[styles.pinIconWrap]}>
-                <MapPin size={20} color={colors.primaryDark} strokeWidth={2.4} />
+                <LocationIcon size={20} color={colors.primaryDark} strokeWidth={2.4} />
               </View>
               <View style={styles.headerTextWrap}>
                 <Text style={[styles.headerSectionTitle]} maxFontSizeMultiplier={1.3}>
@@ -449,9 +449,9 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
               </View>
               <View style={styles.expandChevronWrap}>
                 {isExpanded ? (
-                  <ChevronDown size={20} color={palette.gray500} />
+                  <ChevronDownIcon size={20} color={palette.gray500} />
                 ) : (
-                  <ChevronUp size={20} color={palette.gray500} />
+                  <ChevronUpIcon size={20} color={palette.gray500} />
                 )}
               </View>
             </Pressable>
@@ -470,7 +470,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
             {/* Duplicate Address Soft Warning (Non-blocking) */}
             {Boolean(nearbyAddress) && (
               <View style={styles.duplicateWarning}>
-                <AlertTriangle size={16} color={palette.warningDark} strokeWidth={2.2} />
+                <WarningIcon size={16} color={palette.warningDark} strokeWidth={2.2} />
                 <Text style={styles.duplicateWarningText} maxFontSizeMultiplier={1.3}>
                   This looks similar to your saved &quot;{nearbyAddress?.label}&quot; address.
                 </Text>
@@ -487,17 +487,17 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
             {/* Approximate / area-only result: the pin and details must carry the precision */}
             {needsMoreDetail && (
               <View style={styles.duplicateWarning}>
-                <AlertTriangle size={16} color={palette.warningDark} strokeWidth={2.2} />
+                <WarningIcon size={16} color={palette.warningDark} strokeWidth={2.2} />
                 <Text style={styles.duplicateWarningText} maxFontSizeMultiplier={1.3}>
                   {reverseGeocodeResult?.approximate
                     ? 'This is an approximate area. Move the map so the pin sits on your door, then add your house and street.'
-                    : 'We could only find the area for this pin. Add your house, street and a landmark so the professional can find you.'}
+                    : 'We could only find the area for this pin. Add your house, street and a landmark so the worker can find you.'}
                 </Text>
               </View>
             )}
 
             <Text style={styles.pinGuidanceText} maxFontSizeMultiplier={1.3}>
-              Place the pin on the gate or door the professional should come to.
+              Place the pin on the gate or door the worker should come to.
             </Text>
 
             {/* Label Chips (Home / Office / Other) */}
@@ -532,7 +532,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Delete this address"
               >
-                <Trash2 size={15} color={palette.danger} strokeWidth={2.2} />
+                <DeleteIcon size={15} color={palette.danger} strokeWidth={2.2} />
                 <Text style={styles.deleteLinkText} maxFontSizeMultiplier={1.3}>
                   Delete this address
                 </Text>
@@ -544,7 +544,7 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
         {/* Out-of-service restriction banner */}
         {!isServiceable && Boolean(reverseGeocodeResult) && (
           <View style={styles.restrictionBanner}>
-            <AlertTriangle size={16} color={palette.danger} strokeWidth={2.2} />
+            <WarningIcon size={16} color={palette.danger} strokeWidth={2.2} />
             <Text style={styles.restrictionBannerText} maxFontSizeMultiplier={1.3}>
               {SERVICE_UNAVAILABLE_MESSAGE}
             </Text>
@@ -570,9 +570,9 @@ export const AddressConfirmSheet: React.FC<AddressConfirmSheetProps> = ({
               <ActivityIndicator size="small" color={palette.pureWhite} />
             ) : isSuccessFeedback ? (
               <View style={styles.successRow}>
-                <Check size={18} color={palette.pureWhite} strokeWidth={3} />
+                <CheckIcon size={18} color={palette.pureWhite} strokeWidth={3} />
                 <Text style={styles.saveButtonText} maxFontSizeMultiplier={1.3}>
-                  {isEditMode ? 'Updated!' : 'Saved!'}
+                  {isEditMode ? 'Updated' : 'Saved'}
                 </Text>
               </View>
             ) : (

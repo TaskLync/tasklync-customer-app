@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Banknote, Check } from 'lucide-react-native';
+import { CashIcon, CheckIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -29,7 +29,7 @@ export const PaymentMethodSelectCard: React.FC<PaymentMethodSelectCardProps> = (
       >
         {/* Left Icon */}
         <View style={styles.iconContainer}>
-          <Banknote size={22} color={colors.primaryDark} strokeWidth={2} />
+          <CashIcon size={22} color={colors.primaryDark} strokeWidth={2} />
         </View>
 
         {/* Center Details */}
@@ -40,7 +40,7 @@ export const PaymentMethodSelectCard: React.FC<PaymentMethodSelectCardProps> = (
 
         {/* Selected Checkmark Indicator */}
         <View style={styles.checkmarkBadge}>
-          <Check size={13} color={colors.pureWhite} strokeWidth={2.8} />
+          <CheckIcon size={13} color={colors.pureWhite} strokeWidth={2.8} />
         </View>
       </Pressable>
 

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { LogOut } from 'lucide-react-native';
+import { LogoutIcon } from '../ui/Icon/icons';
 import { fontFamily, fontSize, radius, spacing, shadows } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -35,7 +35,7 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <View style={styles.iconCircle}>
-            <LogOut size={24} color={colors.textDanger} />
+            <LogoutIcon size={24} color={colors.textDanger} />
           </View>
 
           <Text style={styles.title}>Log Out?</Text>
@@ -50,7 +50,7 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
               onPress={onCancel}
               disabled={isLoading}
             >
-              <Text style={styles.cancelBtnText}>Stay Signed In</Text>
+              <Text style={styles.cancelBtnText}>Stay signed in</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -62,7 +62,7 @@ export const LogoutConfirmDialog: React.FC<LogoutConfirmDialogProps> = ({
               {isLoading ? (
                 <ActivityIndicator size="small" color={palette.pureWhite} />
               ) : (
-                <Text style={styles.logoutBtnText}>Log Out</Text>
+                <Text style={styles.logoutBtnText}>Log out</Text>
               )}
             </TouchableOpacity>
           </View>

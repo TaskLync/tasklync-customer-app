@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { X, Smartphone, CreditCard, Check } from 'lucide-react-native';
+import { CheckIcon, CloseIcon, CreditCardIcon, SmartphoneIcon } from '../ui/Icon/icons';
 import { BottomSheet, BottomSheetScrollView } from '../layout/BottomSheet';
 import { AddPaymentMethodType, AddWalletDTO, AddCardDTO } from '../../types/payment.types';
 import { SecurePaymentNotice } from './SecurePaymentNotice';
@@ -130,7 +130,7 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
 
       handleClose();
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to add payment method. Please check details.');
+      setErrorMsg(err?.message || "Couldn't add this payment method. Check the details and try again.");
     }
   };
 
@@ -151,7 +151,7 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Close sheet"
           >
-            <X size={20} color={colors.textSecondary} />
+            <CloseIcon size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -179,7 +179,7 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
                   setSelectedType('jazzcash');
                 }}
               >
-                <Smartphone
+                <SmartphoneIcon
                   size={15}
                   color={selectedType === 'jazzcash' ? colors.primaryDark : colors.textMuted}
                 />
@@ -203,7 +203,7 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
                   setSelectedType('easypaisa');
                 }}
               >
-                <Smartphone
+                <SmartphoneIcon
                   size={15}
                   color={selectedType === 'easypaisa' ? colors.primaryDark : colors.textMuted}
                 />
@@ -227,7 +227,7 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
                   setSelectedType('card');
                 }}
               >
-                <CreditCard
+                <CreditCardIcon
                   size={15}
                   color={selectedType === 'card' ? colors.primaryDark : colors.textMuted}
                 />
@@ -356,7 +356,7 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
               }}
             >
               <View style={[styles.checkbox, isDefault && styles.checkboxActive]}>
-                {isDefault && <Check size={14} color={palette.pureWhite} strokeWidth={3} />}
+                {isDefault && <CheckIcon size={14} color={palette.pureWhite} strokeWidth={3} />}
               </View>
               <Text style={styles.checkboxLabel}>Set as default payment method</Text>
             </TouchableOpacity>
@@ -375,7 +375,7 @@ export const AddCardSheet: React.FC<AddCardSheetProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Online payment methods disabled"
             >
-              <Text style={styles.submitBtnText}>Online Registration Disabled</Text>
+              <Text style={styles.submitBtnText}>Online payments not available</Text>
             </TouchableOpacity>
           </BottomSheetScrollView>
       </View>

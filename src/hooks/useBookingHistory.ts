@@ -51,7 +51,7 @@ export function useBookingHistory(year: number | 'all' = 'all', category: string
         worker_id: b.worker_id,
         worker_name: (b.is_company || b.provider_type === 'COMPANY')
           ? (b.provider_name || b.worker_name || 'Verified Agency')
-          : (b.worker_name || 'Assigned Professional'),
+          : (b.worker_name || 'Assigned Worker'),
         category: b.category_name || b.category_id,
         service_title: b.description || 'Service Appointment',
         status: b.status as any,

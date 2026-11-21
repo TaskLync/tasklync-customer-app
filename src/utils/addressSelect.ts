@@ -52,6 +52,17 @@ export function isPlusCode(text: string | null | undefined): boolean {
   return !!text && PLUS_CODE_RE.test(text.trim());
 }
 
+/** A Plus Code alone is not an address. "7JCM+QX, Gulberg, Lahore" -> "Gulberg, Lahore"; "7JCM+QX" -> null. */
+export function readableAddress(value: string | null | undefined): string | null {
+  const t = typeof value === 'string' ? value.trim() : '';
+  if (!t) return null;
+  // A leading code, followed by a comma, a space or nothing ("7JCM+QX, …", "7JCM+QX …", "7JCM+QX").
+  const rest = t.replace(LEADING_PLUS_CODE_RE, '').trim();
+  return rest === t ? t : rest || null;
+}
+
+const LEADING_PLUS_CODE_RE = /^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]*(?=[\s,]|$)[\s,]*/i;
+
 function clean(v: unknown): string {
   if (typeof v !== 'string') return '';
   const t = v.trim();

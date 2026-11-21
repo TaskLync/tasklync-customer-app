@@ -101,7 +101,7 @@ export const useLocation = (options?: UseLocationOptions) => {
         return useLocationStore.getState().currentLocation;
       } catch (err: any) {
         console.warn('[useLocation] Failed to fetch position:', err);
-        setError(err?.message || 'Failed to detect location');
+        setError(err?.message || "Couldn't get your location");
         if (force) {
           return null;
         }

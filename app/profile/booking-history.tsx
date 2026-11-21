@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeftIcon } from '../../src/components/ui/Icon/icons';
 
 import { useBookingHistory } from '../../src/hooks/useBookingHistory';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
@@ -83,7 +83,7 @@ export default function BookingHistoryScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={colors.textPrimary} />
+          <ArrowLeftIcon size={22} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3}>
@@ -123,7 +123,7 @@ export default function BookingHistoryScreen() {
                   ? 'No past bookings matched your filter selection. Try resetting filters.'
                   : 'You have not booked any home services yet. Ready for your first task?'
               }
-              actionLabel="Book a Service"
+              actionLabel="Book a service"
               onAction={handleBookNewService}
             />
           </View>

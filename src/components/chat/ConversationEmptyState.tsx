@@ -1,7 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MessageCircle, Search, CheckCheck, type LucideIcon } from 'lucide-react-native';
+import {
+  type AppIconComponent,
+  ChatBubbleIcon,
+  CheckDoubleIcon,
+  SearchIcon,
+} from '../ui/Icon/icons';
 import { ConversationFilterTab } from '../../types/chat.types';
 import { fontFamily } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -14,7 +19,7 @@ interface ConversationEmptyStateProps {
 }
 
 interface Copy {
-  icon: LucideIcon;
+  icon: AppIconComponent;
   title: string;
   body: string;
   action: string;
@@ -35,7 +40,7 @@ export const ConversationEmptyState: React.FC<ConversationEmptyStateProps> = ({
 
   const copy: Copy = query
     ? {
-        icon: Search,
+        icon: SearchIcon,
         title: 'No matches',
         body: `Nothing matches “${query}”. Try a worker’s name or a service.`,
         action: 'Clear search',
@@ -43,24 +48,24 @@ export const ConversationEmptyState: React.FC<ConversationEmptyStateProps> = ({
       }
     : activeTab === 'unread'
     ? {
-        icon: CheckCheck,
+        icon: CheckDoubleIcon,
         title: 'You’re all caught up',
-        body: 'New messages from professionals will show up here.',
+        body: 'New messages from workers will show up here.',
         action: 'View all messages',
         onAction: onResetTab,
       }
     : activeTab === 'active'
     ? {
-        icon: MessageCircle,
+        icon: ChatBubbleIcon,
         title: 'No active conversations',
         body: 'Chats for bookings that are scheduled or in progress appear here.',
         action: 'Explore services',
         onAction: explore,
       }
     : {
-        icon: MessageCircle,
+        icon: ChatBubbleIcon,
         title: 'No conversations yet',
-        body: 'When you book a service, your conversations with professionals will appear here.',
+        body: 'When you book a service, your conversations with workers will appear here.',
         action: 'Explore services',
         onAction: explore,
       };

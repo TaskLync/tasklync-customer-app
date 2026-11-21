@@ -54,11 +54,11 @@ export function requestStatusBadge(status: string): { label: string; tone: Badge
     case CustomRequestStatus.SUBMITTED:
       return { label: 'Submitted', tone: 'amber' };
     case CustomRequestStatus.UNDER_REVIEW:
-      return { label: 'Under Review', tone: 'neutral' };
+      return { label: 'Under review', tone: 'neutral' };
     case CustomRequestStatus.CLARIFICATION_REQUESTED:
-      return { label: 'Chat Needed', tone: 'info' };
+      return { label: 'Chat needed', tone: 'info' };
     case CustomRequestStatus.QUOTE_SENT:
-      return { label: 'Quote Ready', tone: 'green' };
+      return { label: 'Quote ready', tone: 'green' };
     case CustomRequestStatus.ACCEPTED:
       return { label: 'Accepted', tone: 'green' };
     case CustomRequestStatus.CONVERTED:

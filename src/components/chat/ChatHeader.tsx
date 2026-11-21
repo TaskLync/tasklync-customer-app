@@ -1,8 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Phone } from 'lucide-react-native';
+import { ChevronLeftIcon, PhoneIcon } from '../ui/Icon/icons';
 import { WorkerAvatar } from '../worker/WorkerAvatar';
+import { WorkerProfileLink } from '../worker/WorkerProfileLink';
+
+const AVATAR_SIZE = 38;
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -13,6 +16,8 @@ interface ChatHeaderProps {
   isOnline?: boolean | undefined;
   workerPhone?: string | undefined;
   isCompany?: boolean | undefined;
+  /** Provider id; when present the avatar opens the provider's public profile. */
+  workerId?: string | null | undefined;
   onCallPress?: () => void;
 }
 
@@ -27,6 +32,7 @@ export const ChatHeader = React.memo(function ChatHeader({
   isOnline = false,
   workerPhone,
   isCompany = false,
+  workerId,
   onCallPress,
 }: ChatHeaderProps) {
   const { colors } = useAppTheme();
@@ -35,7 +41,7 @@ export const ChatHeader = React.memo(function ChatHeader({
   const insets = useSafeAreaInsets();
 
   const trimmedName = workerName ? workerName.trim() : '';
-  const displayName = trimmedName || (isCompany ? 'Agency Support' : 'Assigned Professional');
+  const displayName = trimmedName || (isCompany ? 'Agency Support' : 'Assigned Worker');
   const secondary = isCompany ? 'Support office' : categoryName?.trim() || '';
   const statusLabel = isOnline ? 'Online' : 'Offline';
 
@@ -54,20 +60,27 @@ export const ChatHeader = React.memo(function ChatHeader({
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <ChevronLeft size={26} color={colors.textPrimary} strokeWidth={2} />
+          <ChevronLeftIcon size={26} color={colors.textPrimary} strokeWidth={2} />
         </Pressable>
 
-        <View
-          style={styles.profileSection}
-          accessible
-          accessibilityLabel={`${displayName}${secondary ? `, ${secondary}` : ''}, ${statusLabel}`}
-        >
-          <View style={styles.avatarWrap}>
-            <WorkerAvatar uri={workerAvatarUrl} name={workerName} size={38} isCompany={isCompany} />
+        <View style={styles.profileSection}>
+          {/* Avatar opens the provider's profile (its own button, so it stays reachable by screen readers) */}
+          <WorkerProfileLink
+            workerId={workerId}
+            isCompany={isCompany}
+            workerName={trimmedName || null}
+            size={AVATAR_SIZE}
+            style={styles.avatarWrap}
+          >
+            <WorkerAvatar uri={workerAvatarUrl} name={workerName} size={AVATAR_SIZE} isCompany={isCompany} />
             <View style={[styles.presenceDot, isOnline ? styles.dotOnline : styles.dotOffline]} />
-          </View>
+          </WorkerProfileLink>
 
-          <View style={styles.textDetails}>
+          <View
+            style={styles.textDetails}
+            accessible
+            accessibilityLabel={`${displayName}${secondary ? `, ${secondary}` : ''}, ${statusLabel}`}
+          >
             <View style={styles.nameRow}>
               <Text style={styles.name} numberOfLines={1}>
                 {displayName}
@@ -93,7 +106,7 @@ export const ChatHeader = React.memo(function ChatHeader({
             accessibilityLabel="Call worker"
             accessibilityRole="button"
           >
-            <Phone size={19} color={colors.primaryDark} />
+            <PhoneIcon size={19} color={colors.primaryDark} />
           </Pressable>
         ) : null}
       </View>
@@ -129,8 +142,8 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     marginRight: 8,
   },
   avatarWrap: {
-    width: 38,
-    height: 38,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
   },
   presenceDot: {
     position: 'absolute',

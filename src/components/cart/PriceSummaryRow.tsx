@@ -6,14 +6,17 @@ import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 interface PriceSummaryRowProps {
   label: string;
   amount: number;
+  /** Text shown instead of the amount, e.g. "FREE". */
+  display?: string | undefined;
 }
 
 export const PriceSummaryRow: FC<PriceSummaryRowProps> = ({
   label,
   amount,
+  display,
 }) => {
   const styles = useThemedStyles(createStyles);
-  const formattedAmount = `Rs. ${amount.toLocaleString()}`;
+  const formattedAmount = display ?? `Rs. ${amount.toLocaleString()}`;
 
   return (
     <View style={styles.row}>

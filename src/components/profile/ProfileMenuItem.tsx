@@ -1,22 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import {
-  MapPin,
-  Bell,
-  Globe,
-  Headphones,
-  Star,
-  FileText,
-  Trash2,
-  ChevronRight,
-  LogOut,
-  ShieldAlert,
-  CreditCard,
-  Settings,
-  HelpCircle,
-  Clock,
-  UserX,
-} from 'lucide-react-native';
+  BellIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  CreditCardIcon,
+  DeleteIcon,
+  DocumentIcon,
+  GlobeIcon,
+  HelpCircleIcon,
+  LocationIcon,
+  LogoutIcon,
+  SettingsIcon,
+  ShieldAlertIcon,
+  StarIcon,
+  SupportIcon,
+  UserRemoveIcon,
+} from '../ui/Icon/icons';
 import { ProfileMenuItemConfig } from '../../types/user.types';
 import { fontFamily, radius } from '../../design';
 import type { AppTheme } from '../../theme/useAppTheme';
@@ -34,33 +34,33 @@ const renderIcon = (iconName: string, isDanger: boolean, colors: AppTheme['color
 
   switch (iconName) {
     case 'MapPin':
-      return <MapPin size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <LocationIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'Bell':
-      return <Bell size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <BellIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'Globe':
-      return <Globe size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <GlobeIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'Headphones':
-      return <Headphones size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <SupportIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'HelpCircle':
-      return <HelpCircle size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <HelpCircleIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'Star':
-      return <Star size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <StarIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'FileText':
-      return <FileText size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <DocumentIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'Trash2':
-      return <Trash2 size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <DeleteIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'LogOut':
-      return <LogOut size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <LogoutIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'CreditCard':
-      return <CreditCard size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <CreditCardIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'Settings':
-      return <Settings size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <SettingsIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'Clock':
-      return <Clock size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <ClockIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     case 'UserX':
-      return <UserX size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <UserRemoveIcon size={iconSize} color={iconColor} strokeWidth={2} />;
     default:
-      return <ShieldAlert size={iconSize} color={iconColor} strokeWidth={2} />;
+      return <ShieldAlertIcon size={iconSize} color={iconColor} strokeWidth={2} />;
   }
 };
 
@@ -107,7 +107,7 @@ export const ProfileMenuItem: React.FC<ProfileMenuItemProps> = ({
             <Text style={styles.badgeText}>{item.badge}</Text>
           </View>
         ) : (
-          <ChevronRight size={17} color={isDanger ? colors.textDanger : colors.textMuted} strokeWidth={2.2} />
+          <ChevronRightIcon size={17} color={isDanger ? colors.textDanger : colors.textMuted} strokeWidth={2.2} />
         )}
       </View>
     </TouchableOpacity>

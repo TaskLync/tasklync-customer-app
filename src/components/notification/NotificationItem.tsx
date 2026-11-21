@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { NotificationItem as NotificationItemType } from '../../types/notification.types';
 import { NotificationIcon } from './NotificationIcon';
 import { formatRelativeTime } from '../../utils/groupByDate';
-import { fontFamily, radius, shadows } from '../../design';
+import { fontFamily } from '../../design';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface NotificationItemProps {
@@ -11,164 +11,125 @@ export interface NotificationItemProps {
   onPress: (item: NotificationItemType) => void;
 }
 
+/** Row geometry, shared with the divider inset and the loading skeleton. */
+export const NOTIFICATION_ROW = {
+  paddingH: 20,
+  icon: 40,
+  gap: 12,
+} as const;
+
 /**
- * NotificationItem Component
- *
- * Minimalist, production-grade notification card:
- * - Neutral white card surface with subtle 1px border
- * - Top-aligned 38px category icon
- * - Natural wrapping titles (up to 2 lines) and readable descriptions (up to 3 lines)
- * - Muted relative timestamp aligned to the top-right
- * - Small 7px green unread indicator dot positioned beside the title (unread only)
- * - Understated visual distinction between read and unread states
+ * Notification row (list layout, no card):
+ *   [icon]  Title ............................ 2h
+ *           Description (up to 3 lines)
+ * Unread = small green dot at the left edge + semibold title. Read rows keep full contrast, only lighter weight.
  */
-export const NotificationItem: React.FC<NotificationItemProps> = React.memo(
-  function NotificationItem({ item, onPress }) {
-    const styles = useThemedStyles(createStyles);
-    const handlePress = useCallback(() => {
-      onPress(item);
-    }, [item, onPress]);
+export const NotificationItem: React.FC<NotificationItemProps> = React.memo(function NotificationItem({ item, onPress }) {
+  const styles = useThemedStyles(createStyles);
+  const handlePress = useCallback(() => onPress(item), [item, onPress]);
 
-    const isUnread = !item.is_read;
-    const timeDisplay = formatRelativeTime(item.created_at);
+  const isUnread = !item.is_read;
+  const time = formatRelativeTime(item.created_at);
 
-    return (
-      <Pressable
-        style={({ pressed }) => [
-          styles.container,
-          isUnread ? styles.containerUnread : styles.containerRead,
-          pressed && styles.containerPressed,
-        ]}
-        onPress={handlePress}
-        accessibilityRole="button"
-        accessibilityLabel={`${item.title}, ${item.body}, ${timeDisplay}, ${
-          isUnread ? 'unread' : 'read'
-        }`}
-        accessibilityState={{ selected: isUnread }}
-      >
-        {/* Category Icon */}
-        <NotificationIcon
-          category={item.category}
-          templateKey={item.template_key}
-          size={18}
-          containerSize={38}
-          style={styles.iconWrapper}
-        />
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={`${isUnread ? 'Unread. ' : ''}${item.title}. ${item.body}. ${time}`}
+    >
+      {isUnread ? <View style={styles.unreadDot} /> : null}
 
-        {/* Content Details */}
-        <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <View style={styles.titleRow}>
-              <Text
-                style={[
-                  styles.title,
-                  isUnread ? styles.titleUnread : styles.titleRead,
-                ]}
-                numberOfLines={2}
-              >
-                {item.title}
-              </Text>
-              {isUnread && <View style={styles.unreadDot} />}
-            </View>
-            <Text style={styles.timeText}>{timeDisplay}</Text>
-          </View>
+      <NotificationIcon category={item.category} templateKey={item.template_key} size={18} containerSize={NOTIFICATION_ROW.icon} />
 
+      <View style={styles.content}>
+        <View style={styles.titleRow}>
           <Text
-            style={[
-              styles.body,
-              isUnread ? styles.bodyUnread : styles.bodyRead,
-            ]}
-            numberOfLines={3}
+            style={[styles.title, isUnread ? styles.titleUnread : styles.titleRead]}
+            numberOfLines={2}
+            maxFontSizeMultiplier={1.3}
           >
-            {item.body}
+            {item.title}
+          </Text>
+          <Text style={styles.time} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+            {time}
           </Text>
         </View>
-      </Pressable>
-    );
-  }
-);
+        {item.body ? (
+          <Text style={styles.body} numberOfLines={3} maxFontSizeMultiplier={1.3}>
+            {item.body}
+          </Text>
+        ) : null}
+      </View>
 
-const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
-  container: {
-    minHeight: 68,
+      <View style={styles.divider} />
+    </Pressable>
+  );
+});
+
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
+  row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: radius.lg,
-    borderWidth: 1,
+    paddingHorizontal: NOTIFICATION_ROW.paddingH,
+    paddingVertical: 14,
+    backgroundColor: colors.bgCard,
   },
-  containerUnread: {
-    backgroundColor: palette.white,
-    borderColor: palette.gray200,
-    ...shadows.xs,
-  },
-  containerRead: {
-    backgroundColor: palette.white,
-    borderColor: palette.gray100,
-  },
-  containerPressed: {
-    backgroundColor: palette.gray50,
-    transform: [{ scale: 0.995 }],
-  },
-  iconWrapper: {
-    marginRight: 12,
-    marginTop: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  titleRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginRight: 8,
-  },
-  title: {
-    fontSize: 14,
-    lineHeight: 19,
-    flexShrink: 1,
-  },
-  titleUnread: {
-    fontFamily: fontFamily.jakarta.semiBold,
-    color: colors.textPrimary,
-  },
-  titleRead: {
-    fontFamily: fontFamily.jakarta.medium,
-    color: colors.textSecondary,
+  rowPressed: {
+    backgroundColor: colors.bgHover,
   },
   unreadDot: {
+    position: 'absolute',
+    left: 7,
+    top: 30,
     width: 7,
     height: 7,
     borderRadius: 3.5,
     backgroundColor: colors.primaryDark,
-    flexShrink: 0,
   },
-  timeText: {
+  content: {
+    flex: 1,
+    minWidth: 0,
+    marginLeft: NOTIFICATION_ROW.gap,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  title: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 20,
+    color: colors.textPrimary,
+  },
+  titleUnread: {
+    fontFamily: fontFamily.jakarta.semiBold,
+  },
+  titleRead: {
+    fontFamily: fontFamily.jakarta.medium,
+  },
+  time: {
     fontFamily: fontFamily.jakarta.regular,
-    fontSize: 11,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 20,
     color: colors.textMuted,
     flexShrink: 0,
-    marginTop: 1,
   },
   body: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  bodyUnread: {
     fontFamily: fontFamily.jakarta.regular,
+    fontSize: 13.5,
+    lineHeight: 19,
     color: colors.textSecondary,
+    marginTop: 3,
   },
-  bodyRead: {
-    fontFamily: fontFamily.jakarta.regular,
-    color: colors.textMuted,
+  // Hairline under the text column only (aligned with the title), Apple-style.
+  divider: {
+    position: 'absolute',
+    left: NOTIFICATION_ROW.paddingH + NOTIFICATION_ROW.icon + NOTIFICATION_ROW.gap,
+    right: 0,
+    bottom: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
   },
 });

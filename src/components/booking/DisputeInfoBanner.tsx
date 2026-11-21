@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { ShieldAlert } from 'lucide-react-native';
+import { ShieldAlertIcon } from '../ui/Icon/icons';
 import { fontFamily, fontSize, radius, spacing } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -19,14 +19,14 @@ export interface DisputeInfoBannerProps {
  */
 export const DisputeInfoBanner: React.FC<DisputeInfoBannerProps> = ({
   title = "We're here to help protect your booking",
-  subtitle = 'Disputes are reviewed by our Trust & Safety team within 24 hours. Your payment remains safely locked in escrow while we investigate.',
+  subtitle = 'Our support team reviews every report within 24 hours and will contact you.',
 }) => {
   const { palette } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.banner} accessibilityRole="alert">
       <View style={styles.iconCircle}>
-        <ShieldAlert size={20} color={palette.infoDark} />
+        <ShieldAlertIcon size={20} color={palette.infoDark} />
       </View>
 
       <View style={styles.textCol}>

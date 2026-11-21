@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useBookingCountdown } from '../../hooks/useBookingCountdown';
-import { Clock, AlertCircle } from 'lucide-react-native';
+import { AlertCircleIcon, ClockIcon } from '../ui/Icon/icons';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface BookingCountdownProps {
@@ -24,9 +24,9 @@ export function BookingCountdown({ expiresAt, status }: BookingCountdownProps) {
     >
       <View style={styles.iconWrap}>
         {isExpired ? (
-          <AlertCircle size={12} color={colors.dangerMedium} strokeWidth={2.4} />
+          <AlertCircleIcon size={12} color={colors.dangerMedium} strokeWidth={2.4} />
         ) : (
-          <Clock size={12} color={colors.warningMedium} strokeWidth={2.4} />
+          <ClockIcon size={12} color={colors.warningMedium} strokeWidth={2.4} />
         )}
       </View>
       <Text

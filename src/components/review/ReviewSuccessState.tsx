@@ -7,7 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { CheckCircle2 } from 'lucide-react-native';
+import { CheckCircleIcon } from '../ui/Icon/icons';
 import { fontFamily, fontSize, radius, spacing } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -79,7 +79,7 @@ export const ReviewSuccessState: React.FC<ReviewSuccessStateProps> = ({
       {/* Animated Checkmark Badge */}
       <Animated.View style={[styles.iconOuterCircle, animatedIconStyle]}>
         <View style={styles.iconInnerCircle}>
-          <CheckCircle2 size={48} color={colors.primaryDark} strokeWidth={2.4} />
+          <CheckCircleIcon size={48} color={colors.primaryDark} strokeWidth={2.4} />
         </View>
       </Animated.View>
 
@@ -87,7 +87,7 @@ export const ReviewSuccessState: React.FC<ReviewSuccessStateProps> = ({
       <Animated.View style={[styles.textBlock, animatedContentStyle]}>
         <Text style={styles.title}>Review submitted! 🎉</Text>
         <Text style={styles.subtitle}>
-          Thank you! Your feedback helps service professionals build their reputation and helps others book with confidence.
+          Thank you! Your feedback helps service workers build their reputation and helps others book with confidence.
         </Text>
       </Animated.View>
 

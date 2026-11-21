@@ -29,7 +29,7 @@ export interface ButtonProps {
   size?: ButtonSize;
   disabled?: boolean;
   loading?: boolean;
-  icon?: React.ElementType; // Accept LucideIcon component
+  icon?: React.ElementType; // Accept an AppIconComponent (ui/Icon/icons)
   iconPosition?: 'left' | 'right';
   iconStrokeWidth?: number;
   fullWidth?: boolean;

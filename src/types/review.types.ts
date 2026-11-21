@@ -36,19 +36,19 @@ export const REVIEW_TAGS: Record<ReviewTag, ReviewTagMeta> = {
   },
   good_value: {
     key: 'good_value',
-    label: 'Good Value',
+    label: 'Good value',
     iconName: 'Tag',
     description: 'Fair & transparent pricing',
   },
   clean: {
     key: 'clean',
-    label: 'Clean & Tidy',
+    label: 'Clean & tidy',
     iconName: 'Sparkles',
     description: 'Left work area spotless',
   },
   skilled: {
     key: 'skilled',
-    label: 'Highly Skilled',
+    label: 'Very skilled',
     iconName: 'Wrench',
     description: 'Expert problem solver',
   },
@@ -80,32 +80,32 @@ export interface ReportReasonMeta {
 export const REPORT_REASONS: Record<ReportReason, ReportReasonMeta> = {
   SPAM: {
     key: 'SPAM',
-    label: 'Spam or Advertising',
+    label: 'Spam or advertising',
     description: 'Promotional content, repeated text, or links',
   },
   OFFENSIVE_LANGUAGE: {
     key: 'OFFENSIVE_LANGUAGE',
-    label: 'Abusive or Offensive Language',
+    label: 'Rude or bad language',
     description: 'Hate speech, profanity, harassment, or threats',
   },
   FAKE_REVIEW: {
     key: 'FAKE_REVIEW',
-    label: 'Fake or Misleading Review',
+    label: 'Fake or wrong review',
     description: 'Review does not reflect actual service rendered',
   },
   UNRELATED_CONTENT: {
     key: 'UNRELATED_CONTENT',
-    label: 'Unrelated Content',
+    label: 'Not about this job',
     description: 'Content not pertinent to the service performed',
   },
   PERSONAL_INFO: {
     key: 'PERSONAL_INFO',
-    label: 'Private Information',
+    label: 'Private information',
     description: 'Contains phone numbers, addresses, or private details',
   },
   OTHER: {
     key: 'OTHER',
-    label: 'Other Problem',
+    label: 'Other problem',
     description: 'Other violation of community guidelines',
   },
 };

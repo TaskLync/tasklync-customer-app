@@ -6,6 +6,7 @@ import { phoneSchema, nameSchema } from '../utils/validation';
 import { useAuthStore, useUIStore } from '../store';
 import { useQuery } from '@tanstack/react-query';
 import { mapOtpVerificationError, mapOtpResendError } from '../utils/authError';
+import { OTP_CONFIG } from '../config/otp.config';
 
 export const useSendOtp = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -101,7 +102,7 @@ export const useVerifyOtp = () => {
         } else {
           router.replace('/(tabs)' as any);
         }
-      }, 800);
+      }, OTP_CONFIG.successNavigationDelayMs);
 
       return { success: true, user: response.user };
     } catch (err: any) {

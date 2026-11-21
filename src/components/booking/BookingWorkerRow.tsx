@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { Building2, ShieldCheck } from 'lucide-react-native';
+import { BuildingIcon, ShieldCheckIcon } from '../ui/Icon/icons';
 import { isGenericWorkerName } from '../../services/api/booking.api';
+import { WorkerProfileLink } from '../worker/WorkerProfileLink';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+
+const AVATAR_SIZE = 48;
 
 interface BookingWorkerRowProps {
   workerName?: string | null | undefined;
@@ -11,6 +14,8 @@ interface BookingWorkerRowProps {
   workerAvatarUrl?: string | null | undefined;
   isCompany?: boolean | undefined;
   assignedWorkerName?: string | null | undefined;
+  /** Provider id; when present the avatar opens the provider's public profile. */
+  workerId?: string | null | undefined;
 }
 
 export function BookingWorkerRow({
@@ -19,6 +24,7 @@ export function BookingWorkerRow({
   workerAvatarUrl,
   isCompany,
   assignedWorkerName,
+  workerId,
 }: BookingWorkerRowProps) {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
@@ -32,7 +38,7 @@ export function BookingWorkerRow({
     ? `Assigned ${categoryName.replace(/s$/i, '')}`
     : isCompany
     ? 'Verified Service Agency'
-    : 'Assigned Professional';
+    : 'Assigned Worker';
 
   const getInitials = (name?: string | null): string => {
     if (!name || isGenericWorkerName(name)) return isCompany ? 'A' : 'P';
@@ -47,7 +53,13 @@ export function BookingWorkerRow({
 
   return (
     <View style={styles.container}>
-      {/* Avatar / Logo with robust fallback */}
+      {/* Avatar / Logo with robust fallback; taps open the provider's profile, not the booking */}
+      <WorkerProfileLink
+        workerId={workerId}
+        isCompany={Boolean(isCompany)}
+        workerName={hasRealName ? workerName : null}
+        size={AVATAR_SIZE}
+      >
       {workerAvatarUrl && !imageError ? (
         <ExpoImage
           source={{ uri: workerAvatarUrl }}
@@ -60,12 +72,13 @@ export function BookingWorkerRow({
       ) : (
         <View style={[styles.avatarPlaceholder, isCompany && styles.agencyAvatarPlaceholder]}>
           {isCompany ? (
-            <Building2 size={20} color={colors.textInfo} strokeWidth={2.2} />
+            <BuildingIcon size={20} color={colors.textInfo} strokeWidth={2.2} />
           ) : (
             <Text style={styles.avatarText}>{avatarInitial}</Text>
           )}
         </View>
       )}
+      </WorkerProfileLink>
 
       {/* Responsive Flexible Text Container: Bounded flex-1 with minWidth-0 */}
       <View style={styles.textContainer}>
@@ -79,7 +92,7 @@ export function BookingWorkerRow({
           </Text>
           {isCompany && (
             <View style={styles.agencyBadge}>
-              <ShieldCheck size={10} color={colors.textGreen} strokeWidth={2.5} />
+              <ShieldCheckIcon size={10} color={colors.textGreen} strokeWidth={2.5} />
               <Text style={styles.agencyBadgeText}>Agency</Text>
             </View>
           )}
@@ -103,17 +116,17 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     width: '100%',
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     marginRight: 12,
     flexShrink: 0,
     backgroundColor: colors.bgSection,
   },
   avatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     backgroundColor: colors.bgHover,
     alignItems: 'center',
     justifyContent: 'center',

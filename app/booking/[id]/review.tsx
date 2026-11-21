@@ -2,7 +2,13 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Clock, AlertCircle, Edit3, Lock } from 'lucide-react-native';
+import {
+  AlertCircleIcon,
+  ArrowLeftIcon,
+  ClockIcon,
+  EditIcon,
+  LockIcon,
+} from '../../../src/components/ui/Icon/icons';
 
 import { useBookingDetails } from '../../../src/hooks/useBookingDetails';
 import { useReviewEligibility, useSubmitReview, useEditReview, useReviewMediaUpload } from '../../../src/hooks/useReview';
@@ -277,7 +283,7 @@ export default function ReviewScreen() {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={20} color={colors.textPrimary} />
+            <ArrowLeftIcon size={20} color={colors.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle}>Review Expired</Text>
           <View style={styles.headerPlaceholder} />
@@ -285,7 +291,7 @@ export default function ReviewScreen() {
 
         <View style={styles.centerMessageCard}>
           <View style={[styles.statusIconWrap, { backgroundColor: colors.bgHover }]}>
-            <Clock size={32} color={colors.textSecondary} />
+            <ClockIcon size={32} color={colors.textSecondary} />
           </View>
           <Text style={styles.messageTitle}>Review Window Expired</Text>
           <Text style={styles.messageSubtitle}>
@@ -312,7 +318,7 @@ export default function ReviewScreen() {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={20} color={colors.textPrimary} />
+            <ArrowLeftIcon size={20} color={colors.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle}>Your Review</Text>
           <View style={styles.headerPlaceholder} />
@@ -324,7 +330,7 @@ export default function ReviewScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.lockedBanner}>
-            <Lock size={15} color={colors.textSecondary} />
+            <LockIcon size={15} color={colors.textSecondary} />
             <Text style={styles.lockedBannerText}>
               Review locked. Reviews can only be edited within 48 hours of submission.
             </Text>
@@ -352,7 +358,7 @@ export default function ReviewScreen() {
 
             {existingReview.worker_reply ? (
               <View style={styles.workerReplyBox}>
-                <Text style={styles.workerReplyTitle}>Professional's Response</Text>
+                <Text style={styles.workerReplyTitle}>Worker's Response</Text>
                 <Text style={styles.workerReplyBody}>{existingReview.worker_reply}</Text>
               </View>
             ) : null}
@@ -372,7 +378,7 @@ export default function ReviewScreen() {
   );
   const workerName = isCompany
     ? (booking?.provider_name || booking?.worker_name || 'Verified Service Agency')
-    : (booking?.worker_name || 'Service Professional');
+    : (booking?.worker_name || 'Service Worker');
   const workerAvatar = isCompany
     ? (booking?.provider_avatar_url || booking?.worker_avatar_url || null)
     : (booking?.worker_avatar_url || null);
@@ -394,7 +400,7 @@ export default function ReviewScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={20} color={colors.textPrimary} />
+          <ArrowLeftIcon size={20} color={colors.textPrimary} />
         </Pressable>
 
         <Text style={styles.headerTitle}>
@@ -427,7 +433,7 @@ export default function ReviewScreen() {
             {/* Edit Mode Notice Banner */}
             {isEditMode && editHoursRemaining !== null && (
               <View style={styles.editWindowBanner}>
-                <Edit3 size={15} color={colors.textGreen} />
+                <EditIcon size={15} color={colors.textGreen} />
                 <Text style={styles.editWindowText}>
                   Editing Review · <Text style={styles.editWindowBold}>{editHoursRemaining} hours</Text> remaining to make changes.
                 </Text>
@@ -440,6 +446,8 @@ export default function ReviewScreen() {
               workerAvatar={workerAvatar}
               serviceName={serviceName}
               completedDate={completedDate}
+              workerId={booking?.worker_id}
+              isCompany={isCompany}
             />
 
             {/* 2. Primary Hero Rating Card */}
@@ -492,7 +500,7 @@ export default function ReviewScreen() {
             {/* Error Banner */}
             {errorMessage ? (
               <View style={styles.errorBanner}>
-                <AlertCircle size={16} color={colors.textDanger} style={{ marginRight: 6 }} />
+                <AlertCircleIcon size={16} color={colors.textDanger} style={{ marginRight: 6 }} />
                 <Text style={styles.errorText}>{errorMessage}</Text>
               </View>
             ) : null}

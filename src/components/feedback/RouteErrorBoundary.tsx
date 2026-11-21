@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Home } from 'lucide-react-native';
+import { HomeIcon } from '../ui/Icon/icons';
 import { ErrorState } from './ErrorState';
 import { fontFamily } from '../../design/typography';
 import { radius } from '../../design/radius';
@@ -49,7 +49,7 @@ export function RouteErrorBoundary({ error, retry }: RouteErrorBoundaryProps) {
             : 'An unexpected error occurred. You can retry loading this screen or go back to home.'
         }
         onRetry={retry}
-        retryButtonText="Try Again"
+        retryButtonText="Try again"
       />
 
       {/* Navigation action buttons */}
@@ -63,8 +63,8 @@ export function RouteErrorBoundary({ error, retry }: RouteErrorBoundaryProps) {
           accessibilityRole="button"
           accessibilityLabel="Go to Home"
         >
-          <Home size={16} color={colors.textPrimary} />
-          <Text style={styles.homeButtonText}>Go to Home</Text>
+          <HomeIcon size={16} color={colors.textPrimary} />
+          <Text style={styles.homeButtonText}>Go to home</Text>
         </Pressable>
       </View>
 

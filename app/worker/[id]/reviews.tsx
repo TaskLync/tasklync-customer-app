@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, RefreshControl, Pressable, ScrollView } from 'r
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
-import { ArrowLeft, Star } from 'lucide-react-native';
+import { ArrowLeftIcon, StarIcon } from '../../../src/components/ui/Icon/icons';
 
 import { useWorkerReviewSummary } from '../../../src/hooks/useReview';
 import { useWorkerReviews } from '../../../src/hooks/useWorkerReviews';
@@ -18,11 +18,11 @@ import { ThemedStatusBar } from '../../../src/theme/ThemedStatusBar';
 
 const RATING_FILTER_OPTIONS: Array<{ key: number | undefined; label: string }> = [
   { key: undefined, label: 'All' },
-  { key: 5, label: '5 Stars' },
-  { key: 4, label: '4 Stars' },
-  { key: 3, label: '3 Stars' },
-  { key: 2, label: '2 Stars' },
-  { key: 1, label: '1 Star' },
+  { key: 5, label: '5 stars' },
+  { key: 4, label: '4 stars' },
+  { key: 3, label: '3 stars' },
+  { key: 2, label: '2 stars' },
+  { key: 1, label: '1 star' },
 ];
 
 const ReviewSeparator = () => <View />;
@@ -122,7 +122,7 @@ export default function WorkerReviewsScreen() {
                 accessibilityState={{ selected: isSelected }}
               >
                 {opt.key !== undefined && (
-                  <Star
+                  <StarIcon
                     size={13}
                     color={isSelected ? colors.primaryDark : colors.starFilled}
                     fill={isSelected ? colors.primaryDark : colors.starFilled}
@@ -197,7 +197,7 @@ export default function WorkerReviewsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={colors.textPrimary} />
+          <ArrowLeftIcon size={22} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle} accessibilityRole="header">
           Reviews

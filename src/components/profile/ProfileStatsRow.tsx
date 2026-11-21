@@ -1,103 +1,146 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { UserProfileStats } from '../../types/user.types';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { ChevronRightIcon, RefreshIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
-import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
+import { Skeleton } from '../ui/Skeleton/Skeleton';
+import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface ProfileStatsRowProps {
-  stats?: UserProfileStats | undefined;
+  /** Real count from the server; undefined while loading or when it could not be loaded. */
+  completedBookings?: number | undefined;
+  isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
+  /** Opens booking history. */
+  onPress?: () => void;
 }
 
 /**
- * ProfileStatsRow Component
- *
- * Compact twin stat cards:
- * - Real user data
- * - Consistent 16px corner radius
- * - Subtle border and micro-shadow
+ * Completed bookings: one quiet, full-width row (number + label, "View history" on the right).
+ * Never shows a placeholder number: loading shows a skeleton of the same size, an error shows a retry.
  */
-export const ProfileStatsRow: React.FC<ProfileStatsRowProps> = ({ stats }) => {
+export const ProfileStatsRow: React.FC<ProfileStatsRowProps> = ({
+  completedBookings,
+  isLoading = false,
+  isError = false,
+  onRetry,
+  onPress,
+}) => {
+  const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
-  const bookingsCount = stats?.bookings_count ?? stats?.completed_jobs ?? 0;
-  const rating = stats?.rating ? stats.rating.toFixed(1) : '5.0';
+
+  const failed = isError && completedBookings === undefined;
+  const loading = !failed && completedBookings === undefined && (isLoading || !isError);
+  const handlePress = failed ? onRetry : onPress;
+
+  const a11yLabel = failed
+    ? "Couldn't load completed bookings. Tap to try again."
+    : loading
+      ? 'Loading completed bookings'
+      : `${completedBookings} completed ${completedBookings === 1 ? 'booking' : 'bookings'}. View booking history.`;
 
   return (
-    <View style={styles.container}>
-      {/* Stat 1: Completed Bookings */}
-      <View style={styles.statCard}>
-        <View style={styles.textCol}>
-          <Text style={styles.statValue}>{bookingsCount}</Text>
-          <Text style={styles.statLabel}>Jobs Completed</Text>
-        </View>
+    <Pressable
+      onPress={handlePress}
+      disabled={loading || !handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={a11yLabel}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+    >
+      <View style={styles.left}>
+        {failed ? (
+          <>
+            <Text style={styles.errorTitle}>Couldn't load</Text>
+            <Text style={styles.label}>Completed bookings</Text>
+          </>
+        ) : loading ? (
+          <>
+            {/* Same footprint as the number + label, so nothing shifts when the count arrives. */}
+            <Skeleton width={36} height={26} borderRadius={6} />
+            <Skeleton width={128} height={13} borderRadius={4} style={styles.labelSkeleton} />
+          </>
+        ) : (
+          <>
+            <Text style={styles.value} maxFontSizeMultiplier={1.3}>
+              {completedBookings}
+            </Text>
+            <Text style={styles.label} maxFontSizeMultiplier={1.3}>
+              Completed {completedBookings === 1 ? 'booking' : 'bookings'}
+            </Text>
+          </>
+        )}
       </View>
 
-      {/* Stat 2: Customer Rating */}
-      <View style={styles.statCard}>
-        <View style={styles.textCol}>
-          <View style={styles.ratingRow}>
-            <Text style={styles.statValue}>{rating}</Text>
-            <Text style={styles.ratingMax}>/5.0</Text>
-          </View>
-          <Text style={styles.statLabel}>User Rating</Text>
+      {failed ? (
+        <View style={styles.action}>
+          <RefreshIcon size={14} color={colors.textSecondary} strokeWidth={2} />
+          <Text style={styles.actionText}>Try again</Text>
         </View>
-      </View>
-    </View>
+      ) : onPress ? (
+        <View style={styles.action}>
+          <Text style={styles.actionText}>View history</Text>
+          <ChevronRightIcon size={16} color={colors.textMuted} strokeWidth={2} />
+        </View>
+      ) : null}
+    </Pressable>
   );
 };
 
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
-  container: {
+  card: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 76,
+    backgroundColor: colors.cardRaised,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     marginBottom: 20,
   },
-  statCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgSection,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+  cardPressed: {
     backgroundColor: colors.bgHover,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: colors.primaryBorderSubtle,
   },
-  iconCircleRating: {
-    backgroundColor: colors.warningLight,
-    borderColor: colors.warningBorder,
-  },
-  textCol: {
+  left: {
     flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
   },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 2,
-  },
-  statValue: {
+  value: {
     fontFamily: fontFamily.inter.bold,
-    fontSize: 18,
-    letterSpacing: -0.3,
+    fontSize: 24,
+    lineHeight: 28,
+    letterSpacing: -0.5,
+    color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+  label: {
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  labelSkeleton: {
+    marginTop: 6,
+  },
+  errorTitle: {
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 15,
+    lineHeight: 28,
     color: colors.textPrimary,
   },
-  ratingMax: {
-    fontFamily: fontFamily.jakarta.regular,
-    fontSize: 12,
-    color: colors.textMuted,
+  action: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: 12,
   },
-  statLabel: {
-    fontFamily: fontFamily.jakarta.regular,
-    fontSize: 12,
+  actionText: {
+    fontFamily: fontFamily.jakarta.medium,
+    fontSize: 13,
     color: colors.textSecondary,
-    marginTop: -1,
   },
 });

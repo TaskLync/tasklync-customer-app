@@ -1,214 +1,172 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Headphones } from 'lucide-react-native';
+import { ArrowLeftIcon } from '../../src/components/ui/Icon/icons';
 
-import {
-  FAQAccordion,
-  ContactOptionRow,
-  RateAppRow,
-} from '../../src/components/support';
-import { fontFamily, fontSize, radius, spacing, shadows } from '../../src/design';
+import { FAQAccordion, ContactOptionRow, RateAppRow } from '../../src/components/support';
+import { SUPPORT_CONFIG, formatSupportPhone } from '../../src/config/support.config';
+import { fontFamily } from '../../src/design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 
+/**
+ * Help & Support: a short intro, then three plain lists (FAQ, contact, feedback) on a white / charcoal page.
+ * Contact rows appear only for channels that are actually configured (see config/support.config.ts),
+ * and no response times or availability are promised.
+ */
 export default function SupportScreen() {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const handleBack = () => {
-    router.back();
-  };
+  const { whatsapp, email, phone } = SUPPORT_CONFIG;
+  const contactRows = [
+    whatsapp ? { key: 'whatsapp', channel: 'whatsapp' as const, title: 'WhatsApp', subtitle: 'Chat with our support team', value: whatsapp } : null,
+    email ? { key: 'email', channel: 'email' as const, title: 'Email', subtitle: email, value: email } : null,
+    phone ? { key: 'call', channel: 'call' as const, title: 'Call us', subtitle: formatSupportPhone(phone), value: phone } : null,
+  ].filter((r): r is NonNullable<typeof r> => r !== null);
+  // RateAppRow needs a real App Store id on iOS; without it the whole Feedback section is hidden.
+  const showRate = Platform.OS !== 'ios' || Boolean(SUPPORT_CONFIG.iosAppStoreId);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ThemedStatusBar />
 
-      {/* Screen Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={handleBack}
-          style={styles.backButton}
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3}>
+          <ArrowLeftIcon size={22} color={colors.textPrimary} strokeWidth={2} />
+        </Pressable>
+        <Text style={styles.headerTitle} maxFontSizeMultiplier={1.3} accessibilityRole="header">
           Help & Support
         </Text>
-
-        <View style={styles.headerRightSpacer} />
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 40 },
-        ]}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
-        {/* Trust & Assistance Banner */}
-        <View style={styles.heroBanner}>
-          <View style={styles.heroIconBox}>
-            <Headphones size={28} color={colors.primaryDark} />
-          </View>
-          <View style={styles.heroTextBox}>
-            <Text style={styles.heroTitle} maxFontSizeMultiplier={1.3}>
-              24/7 Dedicated Support
+        <View style={styles.intro}>
+          <Text style={styles.introTitle} maxFontSizeMultiplier={1.3}>
+            How can we help?
+          </Text>
+          <Text style={styles.introText} maxFontSizeMultiplier={1.3}>
+            Find answers or contact our support team.
+          </Text>
+        </View>
+
+        <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+          Common questions
+        </Text>
+        <FAQAccordion />
+
+        {contactRows.length > 0 ? (
+          <>
+            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+              Contact us
             </Text>
-            <Text style={styles.heroSubtitle} maxFontSizeMultiplier={1.3}>
-              Have questions about your booking, payment, or worker? Our team is always ready to assist you.
+            <View style={styles.list}>
+              {contactRows.map((row, i) => (
+                <View key={row.key}>
+                  {i > 0 && <View style={styles.rowDivider} />}
+                  <ContactOptionRow channel={row.channel} title={row.title} subtitle={row.subtitle} value={row.value} />
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
+
+        {showRate ? (
+          <>
+            <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
+              Feedback
             </Text>
-          </View>
-        </View>
-
-        {/* 1. Frequently Asked Questions Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-            FREQUENTLY ASKED QUESTIONS
-          </Text>
-          <FAQAccordion />
-        </View>
-
-        {/* 2. Direct Contact Channels */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-            GET IN TOUCH
-          </Text>
-          <View style={styles.cardContainer}>
-            <ContactOptionRow
-              channel="whatsapp"
-              title="WhatsApp Live Chat"
-              subtitle="Instant response within 2-5 minutes"
-              phoneNumber="+923001234567"
-            />
-            <View style={styles.divider} />
-            <ContactOptionRow
-              channel="email"
-              title="Email Support"
-              subtitle="support@tasklync.pk · 24hr turnaround"
-              emailAddress="support@tasklync.pk"
-            />
-            <View style={styles.divider} />
-            <ContactOptionRow
-              channel="call"
-              title="Customer Helpline"
-              subtitle="+92 300 1234567 (Toll-Free in Pakistan)"
-              phoneNumber="+923001234567"
-            />
-          </View>
-        </View>
-
-        {/* 3. Rate App & Feedback */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>
-            SHARE YOUR FEEDBACK
-          </Text>
-          <View style={styles.cardContainer}>
-            <RateAppRow />
-          </View>
-        </View>
+            <View style={styles.list}>
+              <RateAppRow />
+            </View>
+          </>
+        ) : null}
       </ScrollView>
     </View>
   );
 }
 
-const createStyles = ({ colors, palette }: AppTheme) => StyleSheet.create({
+const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bgApp,
+    backgroundColor: colors.bgCard,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.bgApp,
+    paddingHorizontal: 8,
+    height: 56,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.iceGray,
+  },
+  backButtonPressed: {
+    backgroundColor: colors.bgHover,
   },
   headerTitle: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: fontSize.h3,
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: fontFamily.jakarta.bold,
+    fontSize: 17,
+    letterSpacing: -0.2,
     color: colors.textPrimary,
   },
-  headerRightSpacer: {
-    width: 40,
+  headerSpacer: {
+    width: 44,
   },
-  scrollContent: {
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.base,
+  intro: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
-  heroBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgHover,
-    borderRadius: radius.xl,
-    padding: spacing.base,
-    borderWidth: 1,
-    borderColor: palette.green200,
-    marginBottom: spacing.lg,
-    ...shadows.xs,
+  introTitle: {
+    fontFamily: fontFamily.jakarta.bold,
+    fontSize: 22,
+    lineHeight: 28,
+    letterSpacing: -0.4,
+    color: colors.textPrimary,
   },
-  heroIconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.bgHover,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  heroTextBox: {
-    flex: 1,
-  },
-  heroTitle: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: 15,
-    color: palette.green900,
-    marginBottom: 2,
-  },
-  heroSubtitle: {
+  introText: {
     fontFamily: fontFamily.jakarta.regular,
-    fontSize: 12,
-    lineHeight: 17,
-    color: palette.gray600,
-  },
-  section: {
-    marginBottom: spacing.lg,
+    fontSize: 14.5,
+    lineHeight: 21,
+    color: colors.textSecondary,
+    marginTop: 4,
   },
   sectionTitle: {
-    fontFamily: fontFamily.poppins.semiBold,
-    fontSize: 13,
-    lineHeight: 18,
+    fontFamily: fontFamily.jakarta.semiBold,
+    fontSize: 14,
     color: colors.textSecondary,
-    letterSpacing: 0.8,
-    paddingHorizontal: spacing.xs,
-    marginBottom: spacing.xs + 2,
+    paddingHorizontal: 20,
+    marginTop: 28,
+    marginBottom: 8,
   },
-  cardContainer: {
-    backgroundColor: colors.bgCard,
-    overflow: 'hidden',
+  list: {
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderColor: colors.border,
   },
-  divider: {
-    height: 1,
-    backgroundColor: palette.gray100,
-    marginLeft: spacing.base,
+  // Inset to line up with the row text (20 padding + 24 icon + 14 gap).
+  rowDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginLeft: 58,
   },
 });

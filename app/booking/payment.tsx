@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -19,6 +20,14 @@ import {
 import { useThemedStyles, type AppTheme } from '../../src/theme/useAppTheme';
 import { ThemedStatusBar } from '../../src/theme/ThemedStatusBar';
 import { showAlert } from '../../src/components/feedback/AppAlert';
+import { useNavigationLock } from '../../src/hooks/useNavigationLock';
+import { bookingIdempotency } from '../../src/services/booking/bookingIdempotency';
+
+/**
+ * payment-service answers PAYMENT_ALREADY_EXISTS only when this booking's payment is already HELD / RELEASED,
+ * i.e. a previous tap went through and only its response was lost. That is success, not an error.
+ */
+const isAlreadyPaid = (code?: string) => code === 'PAYMENT_ALREADY_EXISTS';
 
 export default function PaymentScreen() {
   const styles = useThemedStyles(createStyles);
@@ -42,33 +51,68 @@ export default function PaymentScreen() {
   // Process payment hook
   const { initiateCodPayment, isLoading, error: paymentError } = usePayment();
 
+  // The booking already exists: there is no way back to the summary (and its Confirm button) from here.
+  // Header back is hidden, Android back / any back action is blocked, iOS swipe is off (app/_layout.tsx).
+  const { release } = useNavigationLock(() => {
+    showAlert(
+      'Your booking is already placed',
+      'This booking has been sent to your worker. Confirm Cash on Delivery to finish, or find it any time in My Bookings.',
+      [
+        { text: 'Stay here', style: 'cancel' },
+        { text: 'Go to My Bookings', onPress: leaveToBookings },
+      ]
+    );
+  });
+
+  /** Checkout is over: the next booking is a new logical booking (new idempotency key, empty cart). */
+  const finishCheckout = () => {
+    clearCart();
+    bookingIdempotency.clear();
+  };
+
+  const leaveToBookings = () => {
+    finishCheckout();
+    release();
+    router.replace('/(tabs)/bookings' as any);
+  };
+
+  const goToSuccess = (id: string) => {
+    finishCheckout();
+    release();
+    // replace: success must not be able to go "back" into this payment step either
+    router.replace({ pathname: '/booking/success', params: { bookingId: id } } as any);
+  };
+
+  // Never creates a booking: it only records the payment method for the EXISTING booking. The backend keeps one
+  // payment per booking (UNIQUE booking_id) and re-confirming COD is an upsert, so a retry is harmless.
+  const paying = useRef(false);
   const handlePay = async () => {
+    if (paying.current || isLoading) return;
     // If not a production UUID or testing without an existing backend record
     if (!bookingId || bookingId.startsWith('b-') || bookingId.startsWith('TL-')) {
-      clearCart();
-      router.push({
-        pathname: '/booking/success',
-        params: { bookingId: bookingId || 'TL-CONFIRMED' },
-      } as any);
+      goToSuccess(bookingId || 'TL-CONFIRMED');
       return;
     }
 
-    const { success, error } = await initiateCodPayment(
-      bookingId,
-      amountToPay > 0 ? amountToPay : undefined,
-      booking?.worker_id
-    );
+    paying.current = true;
+    let outcome: Awaited<ReturnType<typeof initiateCodPayment>>;
+    try {
+      outcome = await initiateCodPayment(
+        bookingId,
+        amountToPay > 0 ? amountToPay : undefined,
+        booking?.worker_id
+      );
+    } finally {
+      paying.current = false;
+    }
+    const { success, error, code } = outcome;
 
-    if (success) {
-      clearCart();
-      router.push({
-        pathname: '/booking/success',
-        params: { bookingId },
-      } as any);
+    if (success || isAlreadyPaid(code)) {
+      goToSuccess(bookingId);
     } else {
       showAlert(
-        'Booking Confirmation',
-        error || paymentError || 'Payment confirmation failed. Please check your connection and try again.'
+        "Couldn't confirm payment",
+        error || paymentError || 'Check your connection and try again.'
       );
     }
   };
@@ -77,8 +121,8 @@ export default function PaymentScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <ThemedStatusBar />
       <View style={styles.container}>
-        {/* Header: Back button + Title "Payment" */}
-        <PaymentHeader title="Payment" />
+        {/* Header: title only. No back control: the booking is already placed. */}
+        <PaymentHeader title="Payment" showBack={false} />
 
         {/* Scrollable Content */}
         <ScrollView

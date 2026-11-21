@@ -15,7 +15,16 @@ import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppT
 interface ServiceCategoryCardProps {
   category: Category;
   index?: number;
+  /** Allocated slot width; tile and label are centred inside it. Defaults to the original 76. */
+  width?: number | undefined;
+  /** Square tile size. Defaults to 68. */
+  tileSize?: number | undefined;
+  iconSize?: number | undefined;
+  tileRadius?: number | undefined;
 }
+
+/** Large system font sizes may grow the label this much before it shrinks to fit its slot. */
+const LABEL_MAX_FONT_SCALE = 1.3;
 
 interface CategoryStyleConfig {
   bg: string;
@@ -78,7 +87,13 @@ const createCategoryStyles = ({ colors, palette, isDark }: AppTheme) => ({ map: 
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export const ServiceCategoryCard: React.FC<ServiceCategoryCardProps> = ({ category }) => {
+export const ServiceCategoryCard: React.FC<ServiceCategoryCardProps> = ({
+  category,
+  width = 76,
+  tileSize = 68,
+  iconSize = 32,
+  tileRadius = 20,
+}) => {
   const { isDark } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
@@ -106,7 +121,7 @@ export const ServiceCategoryCard: React.FC<ServiceCategoryCardProps> = ({ catego
 
   return (
     <AnimatedPressable
-      style={[styles.container, animatedStyle]}
+      style={[styles.container, { width }, animatedStyle]}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={handlePress}
@@ -114,16 +129,28 @@ export const ServiceCategoryCard: React.FC<ServiceCategoryCardProps> = ({ catego
       accessibilityLabel={`${labelText} services`}
       accessibilityHint={`Tap to browse ${labelText} services and workers`}
     >
-      <View style={[styles.iconContainer, { backgroundColor: styleConfig.bg }]}>
+      <View
+        style={[
+          styles.iconContainer,
+          { width: tileSize, height: tileSize, borderRadius: tileRadius, backgroundColor: styleConfig.bg },
+        ]}
+      >
         <Image
           source={styleConfig.iconSource}
-          style={styles.icon}
+          style={{ width: iconSize, height: iconSize }}
           contentFit="contain"
           {...(isDark && styleConfig.monochrome ? { tintColor: '#FFFFFF' } : {})}
           priority="high"
         />
       </View>
-      <Text style={styles.label} numberOfLines={1}>
+      <Text
+        style={styles.label}
+        align="center"
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+        maxFontSizeMultiplier={LABEL_MAX_FONT_SCALE}
+      >
         {labelText}
       </Text>
     </AnimatedPressable>
@@ -133,21 +160,15 @@ export const ServiceCategoryCard: React.FC<ServiceCategoryCardProps> = ({ catego
 const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
   container: {
     alignItems: 'center',
-    width: 76,
+    paddingHorizontal: 2,
     backgroundColor: 'transparent',
   },
   iconContainer: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  icon: {
-    width: 32,
-    height: 32,
-  },
   label: {
+    alignSelf: 'stretch',
     fontFamily: fontFamily.jakarta.semiBold,
     fontSize: 14.5,
     color: colors.textPrimary,

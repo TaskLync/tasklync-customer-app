@@ -1,18 +1,21 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeftIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 export interface PaymentHeaderProps {
   title?: string;
   onBack?: () => void;
+  /** false when going back is not allowed (e.g. the booking already exists): no misleading control is shown. */
+  showBack?: boolean;
 }
 
 export const PaymentHeader: React.FC<PaymentHeaderProps> = ({
   title = 'Payment',
   onBack,
+  showBack = true,
 }) => {
   const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
@@ -28,18 +31,24 @@ export const PaymentHeader: React.FC<PaymentHeaderProps> = ({
 
   return (
     <View style={styles.header}>
-      <Pressable
-        onPress={handleBack}
-        style={({ pressed }) => [
-          styles.backButton,
-          pressed && styles.backButtonPressed,
-        ]}
-        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      >
-        <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
-      </Pressable>
+      {showBack ? (
+        <Pressable
+          onPress={handleBack}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.backButtonPressed,
+          ]}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          testID="payment-header-back"
+        >
+          <ArrowLeftIcon size={20} color={colors.textPrimary} strokeWidth={2.2} />
+        </Pressable>
+      ) : (
+        // Same footprint as the button so the title stays optically centred.
+        <View style={styles.rightPlaceholder} pointerEvents="none" />
+      )}
 
       <Text style={styles.title} numberOfLines={1}>
         {title}

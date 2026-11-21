@@ -7,7 +7,13 @@ import {
   Keyboard,
   ActivityIndicator,
 } from 'react-native';
-import { MapPin, History, Trash2, MapPinOff, AlertCircle } from 'lucide-react-native';
+import {
+  AlertCircleIcon,
+  DeleteIcon,
+  HistoryIcon,
+  LocationIcon,
+  LocationOffIcon,
+} from '../ui/Icon/icons';
 import { PlacePrediction } from '../../types/address.types';
 import { fontFamily, radius, fontSize, shadows } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -61,9 +67,9 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
 
       {!isLoading && isError && isQueryActive && (
         <View style={styles.errorContainer}>
-          <AlertCircle size={18} color={palette.danger} />
+          <AlertCircleIcon size={18} color={palette.danger} />
           <Text style={styles.stateText} maxFontSizeMultiplier={1.3}>
-            Unable to search places. Please check your connection.
+            Couldn't search places. Check your connection and try again.
           </Text>
         </View>
       )}
@@ -71,7 +77,7 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
       {!isLoading && !isError && isQueryActive && predictions.length === 0 && (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconWrap}>
-            <MapPinOff size={20} color={palette.gray400} strokeWidth={2} />
+            <LocationOffIcon size={20} color={palette.gray400} strokeWidth={2} />
           </View>
           <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.3}>
             No addresses found in Faisalabad
@@ -84,7 +90,7 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
       {isShowingRecents && (
         <View style={styles.recentsHeader}>
           <View style={styles.recentsTitleRow}>
-            <History size={14} color={palette.gray500} strokeWidth={2} />
+            <HistoryIcon size={14} color={palette.gray500} strokeWidth={2} />
             <Text style={styles.recentsTitle} maxFontSizeMultiplier={1.3}>
               Recent Searches
             </Text>
@@ -98,7 +104,7 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
               accessibilityRole="button"
               accessibilityLabel="Clear recent search history"
             >
-              <Trash2 size={13} color={palette.gray400} />
+              <DeleteIcon size={13} color={palette.gray400} />
               <Text style={styles.clearText} maxFontSizeMultiplier={1.3}>
                 Clear
               </Text>
@@ -131,9 +137,9 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
             >
               <View style={styles.iconCircle}>
                 {isShowingRecents ? (
-                  <History size={16} color={palette.gray500} />
+                  <HistoryIcon size={16} color={palette.gray500} />
                 ) : (
-                  <MapPin size={16} color={colors.primaryDark} />
+                  <LocationIcon size={16} color={colors.primaryDark} />
                 )}
               </View>
 
@@ -168,7 +174,7 @@ export const AddressSearchResultsList: React.FC<AddressSearchResultsListProps> =
       )}
       {!isShowingRecents && itemsToRender.length > 0 && itemsToRender.every((p) => p.approximate) && (
         <Text style={styles.attributionText} maxFontSizeMultiplier={1.2}>
-          Search is limited right now — results are approximate areas. Move the map to place the pin exactly.
+          Search is limited right now, so results show approximate areas. Move the map to place the pin exactly.
         </Text>
       )}
     </View>

@@ -1,11 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View,
-  Text,
   StyleSheet,
   Pressable,
   ActivityIndicator,
-  Modal,
   Platform,
   Linking,
 } from 'react-native';
@@ -16,12 +13,13 @@ import Animated, {
   withTiming,
   withSpring,
 } from 'react-native-reanimated';
-import { Crosshair, MapPinOff, X } from 'lucide-react-native';
+import { LocationOffIcon, MyLocationIcon } from '../ui/Icon/icons';
 import { fontFamily, radius, shadows, fontSize } from '../../design';
 import { FreshLocationResult, LocationError, VerifiedLocation } from '../../types/location.types';
 import { locationService } from '../../services/location/location.service';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 import { showAlert } from '../feedback/AppAlert';
+import { AppDialog } from '../feedback/AppDialog';
 
 export interface UseMyLocationButtonProps {
   onLocationFound: (coords: { lat: number; lng: number }) => void;
@@ -46,7 +44,7 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
   onError,
   onApproximateLocation,
 }) => {
-  const { colors, palette } = useAppTheme();
+  const { colors } = useAppTheme();
   const styles = useThemedStyles(createStyles);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const isMountedRef = useRef<boolean>(true);
@@ -150,9 +148,9 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
         setShowPermissionModal(true);
       } else if (locationError?.code === 'SERVICES_DISABLED') {
         showAlert(
-          'Location Services Off',
+          'Location is turned off',
           locationError.userMessage ||
-            'Please enable GPS in your device settings to detect your current location.',
+            'Turn on location in your device settings to use your current location.',
           [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Open Settings', onPress: openSystemSettings },
@@ -178,14 +176,14 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
         ]);
       } else if (locationError?.code === 'MOCK_DETECTED') {
         showAlert(
-          'Mock Location Detected',
-          'Mock/spoofed GPS coordinates were detected. Please disable GPS mocking in developer options.'
+          'Mock location detected',
+          'Turn off mock locations in developer options to use your real location.'
         );
       } else {
         showAlert(
-          'GPS Signal Weak',
+          'Weak GPS signal',
           locationError?.userMessage ||
-            'Unable to acquire a high-confidence GPS position. Please check your signal and try again.'
+            "Couldn't get an accurate location. Check your signal and try again."
         );
       }
     }
@@ -210,63 +208,24 @@ export const UseMyLocationButton: React.FC<UseMyLocationButtonProps> = ({
           {isFetching ? (
             <ActivityIndicator size="small" color={colors.primaryDark} />
           ) : (
-            <Crosshair size={22} color={colors.primaryDark} strokeWidth={2.4} />
+            <MyLocationIcon size={22} color={colors.primaryDark} strokeWidth={2.4} />
           )}
         </Pressable>
       </Animated.View>
 
       {/* Permission Denied Explainer Modal */}
-      <Modal
+      <AppDialog
         visible={showPermissionModal}
-        transparent
-        animationType="fade"
+        icon={<LocationOffIcon size={22} color={colors.textDanger} strokeWidth={2} />}
+        title="Location access needed"
+        message="Turn on precise location in Settings so we can place the pin at your door."
         onRequestClose={() => setShowPermissionModal(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <View style={styles.modalIconWrap}>
-                <MapPinOff size={24} color={palette.danger} strokeWidth={2.2} />
-              </View>
-              <Pressable
-                onPress={() => setShowPermissionModal(false)}
-                style={styles.closeBtn}
-                accessibilityLabel="Close"
-              >
-                <X size={20} color={palette.gray500} />
-              </Pressable>
-            </View>
-
-            <Text style={styles.modalTitle} maxFontSizeMultiplier={1.3}>
-              Location Access Needed
-            </Text>
-            <Text style={styles.modalDescription} maxFontSizeMultiplier={1.3}>
-              To automatically place the pin at your current doorstep, please enable high-accuracy location permissions in Settings.
-            </Text>
-
-            <View style={styles.modalActions}>
-              <Pressable
-                onPress={() => setShowPermissionModal(false)}
-                style={styles.cancelBtn}
-                accessibilityRole="button"
-              >
-                <Text style={styles.cancelBtnText} maxFontSizeMultiplier={1.3}>
-                  Cancel
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={openSystemSettings}
-                style={styles.settingsBtn}
-                accessibilityRole="button"
-              >
-                <Text style={styles.settingsBtnText} maxFontSizeMultiplier={1.3}>
-                  Open Settings
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        dismissOnBackdropPress
+        actions={[
+          { label: 'Not now', onPress: () => setShowPermissionModal(false), variant: 'secondary' },
+          { label: 'Open Settings', onPress: openSystemSettings, variant: 'primary' },
+        ]}
+      />
     </>
   );
 };

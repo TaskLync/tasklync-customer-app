@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeftIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -37,7 +37,7 @@ export const AddressHeader: React.FC<AddressHeaderProps> = ({
         accessibilityRole="button"
         accessibilityLabel="Go back to schedule"
       >
-        <ChevronLeft size={26} color={colors.textPrimary} strokeWidth={2.2} />
+        <ChevronLeftIcon size={26} color={colors.textPrimary} strokeWidth={2.2} />
       </Pressable>
 
       <View style={styles.titleContainer}>

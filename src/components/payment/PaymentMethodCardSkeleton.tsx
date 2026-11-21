@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Skeleton, SkeletonCircle, SkeletonGroup, SkeletonText, SKELETON } from '../ui/Skeleton/Skeleton';
+import { Skeleton, SkeletonCircle, SkeletonGroup, SkeletonText } from '../ui/Skeleton/Skeleton';
 import { radius } from '../../design/radius';
 import { spacing } from '../../design/spacing';
 import { useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
@@ -19,9 +19,13 @@ export const PaymentMethodCardSkeleton: React.FC<PaymentMethodCardSkeletonProps>
 }) => {
   const styles = useThemedStyles(createStyles);
   return (
-  <View style={[styles.card, variant === 'picker' && styles.picker]}>
+  <View style={[styles.card, variant === 'picker' ? styles.picker : styles.methodCard]}>
     <SkeletonGroup style={styles.row} accessibilityLabel="Loading payment method">
-      <Skeleton width={36} height={24} borderRadius={5} style={styles.icon} />
+      {variant === 'picker' ? (
+        <Skeleton width={36} height={24} borderRadius={5} style={styles.icon} />
+      ) : (
+        <Skeleton width={42} height={42} borderRadius={12} style={styles.icon} />
+      )}
       <View style={styles.text}>
         <SkeletonText fontSize={15} lineHeight={20} width="52%" />
         <SkeletonText
@@ -34,7 +38,7 @@ export const PaymentMethodCardSkeleton: React.FC<PaymentMethodCardSkeletonProps>
       {variant === 'picker' ? (
         <SkeletonCircle size={22} />
       ) : (
-        <Skeleton width={56} height={21} borderRadius={SKELETON.radius.pill} />
+        <Skeleton width={52} height={21} borderRadius={6} />
       )}
     </SkeletonGroup>
   </View>
@@ -51,6 +55,11 @@ const createStyles = ({ colors }: AppTheme) => StyleSheet.create({
     borderColor: colors.border,
     paddingHorizontal: spacing.base,
     marginBottom: spacing.sm + 2,
+  },
+  // Payment Methods screen card: matches PaymentMethodCard (72px, lifted surface, neutral chip).
+  methodCard: {
+    height: 72,
+    backgroundColor: colors.cardRaised,
   },
   picker: {
     height: 72,

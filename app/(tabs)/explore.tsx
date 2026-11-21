@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, ScrollView, Pressable, Keyboard } from 'react-n
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn, useSharedValue } from 'react-native-reanimated';
-import { X } from 'lucide-react-native';
+import { CloseIcon } from '../../src/components/ui/Icon/icons';
 import { SearchHeader } from '../../src/components/home/SearchHeader';
 import { BottomSheet, BottomSheetRef } from '../../src/components/layout/BottomSheet';
 import { FilterSheetContent } from '../../src/components/search/FilterSheetContent';
@@ -166,7 +166,7 @@ export default function ExploreScreen() {
             label={i.label}
             variant="tag"
             size="sm"
-            trailingIcon={X}
+            trailingIcon={CloseIcon}
             onTrailingPress={() => removeFilter(i.key)}
             style={styles.appliedChip}
           />
@@ -207,7 +207,7 @@ export default function ExploreScreen() {
 
       <View style={[styles.section, styles.listTitleRow]}>
         <Text style={styles.sectionTitle} accessibilityRole="header">
-          {hasLocation ? 'Professionals near you' : 'Popular professionals'}
+          {hasLocation ? 'Workers near you' : 'Popular workers'}
         </Text>
       </View>
     </Animated.View>
@@ -229,7 +229,7 @@ export default function ExploreScreen() {
             ? 'Updating results…'
             : filters.available === 'now'
             ? `${total}${isTotalPartial ? '+' : ''} available now`
-            : `${total} ${total === 1 ? 'professional' : 'professionals'}`}
+            : `${total} ${total === 1 ? 'worker' : 'workers'}`}
         </Text>
       )}
     </Animated.View>
@@ -240,7 +240,7 @@ export default function ExploreScreen() {
   const renderEmpty = () => {
     if (isLoading) {
       return (
-        <SkeletonGroup accessibilityLabel="Loading professionals">
+        <SkeletonGroup accessibilityLabel="Loading workers">
           {[1, 2, 3, 4, 5].map((i) => (
             <WorkerListRowSkeleton key={i} />
           ))}
@@ -251,7 +251,7 @@ export default function ExploreScreen() {
       return (
         <EmptyState
           type={isOffline ? 'no-internet' : 'server-error'}
-          title={isOffline ? 'You’re offline' : 'Couldn’t load professionals'}
+          title={isOffline ? 'You’re offline' : 'Couldn’t load workers'}
           description={isOffline ? 'Check your connection and try again.' : 'Something went wrong on our side. Please try again.'}
           onAction={() => void refetch()}
           actionLabel="Try again"
@@ -264,7 +264,7 @@ export default function ExploreScreen() {
       return (
         <EmptyState
           type="no-workers"
-          title="No professionals nearby yet"
+          title="No workers nearby yet"
           description="Search for a service or pick a category above."
           showAction={false}
           style={styles.emptyState}
@@ -276,10 +276,10 @@ export default function ExploreScreen() {
       <View style={styles.emptyState}>
         <EmptyState
           type="no-workers"
-          title={filtered ? 'No matching professionals found' : 'No results'}
+          title={filtered ? 'No matching workers found' : 'No results'}
           description={
             filtered
-              ? 'Try adjusting your filters to discover more professionals.'
+              ? 'Try adjusting your filters to discover more workers.'
               : 'Try a different word, like a service or a worker’s name.'
           }
           actionVariant="neutral"
@@ -346,7 +346,7 @@ export default function ExploreScreen() {
           ListEmptyComponent={renderEmpty()}
           ListFooterComponent={
             isLoadingMore ? (
-              <SkeletonGroup accessibilityLabel="Loading more professionals">
+              <SkeletonGroup accessibilityLabel="Loading more workers">
                 {[1, 2].map((i) => (
                   <WorkerListRowSkeleton key={i} />
                 ))}

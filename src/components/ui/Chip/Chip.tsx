@@ -16,7 +16,7 @@ import Animated, {
   interpolateColor,
   interpolate,
 } from 'react-native-reanimated';
-import { Check } from 'lucide-react-native';
+import { CheckIcon } from '../Icon/icons';
 import { typography } from '../../../design/typography';
 import { springConfig } from '../../../design/animations';
 import { useAppTheme } from '../../../theme/useAppTheme';
@@ -29,7 +29,7 @@ export interface ChipProps {
   label: string;
   selected?: boolean;
   onPress?: () => void;
-  icon?: any; // LucideIcon or ReactNode
+  icon?: any; // AppIconComponent (ui/Icon/icons) or ReactNode
   trailingIcon?: any;
   onTrailingPress?: () => void;
   size?: 'xs' | 'sm' | 'md';
@@ -208,7 +208,7 @@ export const Chip: React.FC<ChipProps> = ({
     >
       {variant === 'filter' && showCheckmark && (
         <AnimatedView style={[styles.checkmarkContainer, checkmarkAnimatedStyle]}>
-          <Check size={14} color={colors.pureWhite} />
+          <CheckIcon size={14} color={colors.pureWhite} />
         </AnimatedView>
       )}
 

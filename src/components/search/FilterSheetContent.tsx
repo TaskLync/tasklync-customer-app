@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { Star } from 'lucide-react-native';
+import { StarIcon } from '../ui/Icon/icons';
 import {
   AvailabilityFilter,
   DEFAULT_FILTERS,
@@ -283,7 +283,7 @@ export const FilterSheetContent: React.FC<FilterSheetContentProps> = ({
                   selected={selected}
                   onPress={() => update({ minRating: selected ? 0 : n })}
                   icon={
-                    <Star
+                    <StarIcon
                       size={13}
                       strokeWidth={2.2}
                       color={selected ? palette.green700 : palette.gray400}
@@ -355,7 +355,7 @@ export const FilterSheetContent: React.FC<FilterSheetContentProps> = ({
 
       {/* Fixed action: content scrolls behind it */}
       <View style={styles.footer}>
-        <Button label="Apply Filters" onPress={handleApply} variant="primary" size="lg" fullWidth />
+        <Button label="Apply filters" onPress={handleApply} variant="primary" size="lg" fullWidth />
       </View>
     </View>
   );

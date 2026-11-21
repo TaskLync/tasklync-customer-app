@@ -11,7 +11,7 @@ import {
   AppState,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { CheckCircle2, ChevronRight } from 'lucide-react-native';
+import { CheckCircleIcon, ChevronRightIcon } from '../../../src/components/ui/Icon/icons';
 
 import { useChat } from '../../../src/hooks/useChat';
 import { useTypingIndicator } from '../../../src/hooks/useTypingIndicator';
@@ -104,7 +104,7 @@ export default function RequestClarificationChatScreen() {
       request?.provider_name?.trim() ||
       request?.worker_name?.trim() ||
       worker?.name?.trim() ||
-      'Assigned Professional'
+      'Assigned Worker'
     );
   }, [params.workerName, request?.provider_name, request?.worker_name, worker?.name]);
 
@@ -139,10 +139,10 @@ export default function RequestClarificationChatScreen() {
     if (resolvedWorkerPhone) {
       const cleanPhone = resolvedWorkerPhone.replace(/[^\d+]/g, '');
       Linking.openURL(`tel:${cleanPhone}`).catch(() => {
-        showAlert('Unable to place call', 'Could not open phone dialer on this device.');
+        showAlert("Couldn't start the call", "This device can't open the phone dialer.");
       });
     } else {
-      showAlert('Phone Call', 'Professional contact number is available once a quote is confirmed.');
+      showAlert('Calling unavailable', "You can call the worker once you've booked their quote.");
     }
   }, [resolvedWorkerPhone]);
 
@@ -201,6 +201,7 @@ export default function RequestClarificationChatScreen() {
         categoryName={resolvedCategoryName}
         isOnline={effectiveWorkerOnline || isWorkerTyping}
         workerPhone={resolvedWorkerPhone}
+        workerId={request?.worker_id}
         onCallPress={handleCallPress}
       />
 
@@ -212,7 +213,7 @@ export default function RequestClarificationChatScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.quoteBannerLeft}>
-            <CheckCircle2 size={18} color={colors.textGreen} />
+            <CheckCircleIcon size={18} color={colors.textGreen} />
             <View style={{ marginLeft: 8 }}>
               <Text style={styles.quoteBannerTitle}>Formal Quote Ready</Text>
               <Text style={styles.quoteBannerSubtitle}>
@@ -221,8 +222,8 @@ export default function RequestClarificationChatScreen() {
             </View>
           </View>
           <View style={styles.quoteBannerAction}>
-            <Text style={styles.quoteBannerActionText}>Review Quote</Text>
-            <ChevronRight size={14} color={colors.textGreen} />
+            <Text style={styles.quoteBannerActionText}>Review quote</Text>
+            <ChevronRightIcon size={14} color={colors.textGreen} />
           </View>
         </TouchableOpacity>
       )}

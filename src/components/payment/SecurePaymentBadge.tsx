@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Lock, ShieldCheck } from 'lucide-react-native';
+import { LockIcon } from '../ui/Icon/icons';
 import { fontFamily } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -10,7 +10,7 @@ export const SecurePaymentBadge: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.badgeRow}>
-        <Lock size={12} color={colors.primaryDark} strokeWidth={2.4} />
+        <LockIcon size={12} color={colors.primaryDark} strokeWidth={2.4} />
         <Text style={styles.badgeText}>
           256-Bit Bank-Grade Encryption • Escrow Protected
         </Text>

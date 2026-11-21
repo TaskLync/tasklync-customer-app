@@ -6,7 +6,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { ShoppingBag, ArrowRight } from 'lucide-react-native';
+import { ArrowRightIcon, ShoppingBagIcon } from '../ui/Icon/icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cart.store';
@@ -92,7 +92,7 @@ export const FloatingCartBar: FC<FloatingCartBarProps> = ({
         {/* Left side: Item count pill & subtotal */}
         <View style={styles.leftInfo}>
           <View style={styles.countPill}>
-            <ShoppingBag size={14} color={colors.textOnGreen} />
+            <ShoppingBagIcon size={14} color={colors.textOnGreen} />
             <Text style={styles.countText}>{itemCount}</Text>
           </View>
 
@@ -110,7 +110,7 @@ export const FloatingCartBar: FC<FloatingCartBarProps> = ({
         <View style={styles.rightAction}>
           <Text style={styles.viewCartText}>View Cart</Text>
           <View style={styles.arrowCircle}>
-            <ArrowRight size={14} color={colors.primaryDark} />
+            <ArrowRightIcon size={14} color={colors.primaryDark} />
           </View>
         </View>
       </AnimatedPressable>

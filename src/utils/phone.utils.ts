@@ -131,7 +131,7 @@ export function parsePakistaniPhone(input: string | null | undefined): ParsedPak
  */
 export async function openPhoneDialer(phone: string | null | undefined): Promise<boolean> {
   if (!phone) {
-    showAlert('Phone Unavailable', 'No contact phone number is available.');
+    showAlert('No phone number', "There's no phone number for this contact.");
     return false;
   }
 
@@ -144,12 +144,12 @@ export async function openPhoneDialer(phone: string | null | undefined): Promise
       await Linking.openURL(url);
       return true;
     } else {
-      showAlert('Error', 'Unable to initiate phone call on this device.');
+      showAlert("Couldn't start the call", "This device can't make phone calls.");
       return false;
     }
   } catch (error) {
     console.warn('[openPhoneDialer] Error opening phone dialer:', error);
-    showAlert('Error', 'Could not open phone dialer.');
+    showAlert("Couldn't start the call", "Couldn't open the phone dialer.");
     return false;
   }
 }
@@ -162,7 +162,7 @@ export async function openWhatsAppChat(
   message?: string
 ): Promise<boolean> {
   if (!phone) {
-    showAlert('Phone Unavailable', 'No contact phone number is available.');
+    showAlert('No phone number', "There's no phone number for this contact.");
     return false;
   }
 
@@ -186,7 +186,7 @@ export async function openWhatsAppChat(
     }
   } catch (error) {
     console.warn('[openWhatsAppChat] Error opening WhatsApp:', error);
-    showAlert('WhatsApp Unavailable', 'Could not open WhatsApp on this device.');
+    showAlert("Couldn't open WhatsApp", 'Make sure WhatsApp is installed and try again.');
     return false;
   }
 }

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
-import { CheckCheck } from 'lucide-react-native';
+import { CheckDoubleIcon } from '../ui/Icon/icons';
 import { ConversationItem } from '../../types/chat.types';
+import { WorkerProfileLink } from '../worker/WorkerProfileLink';
 import { fontFamily } from '../../design/typography';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -105,7 +106,7 @@ export const ConversationRow = React.memo(function ConversationRow({ item, onPre
   const styles = useThemedStyles(createStyles);
   const [avatarFailed, setAvatarFailed] = useState(false);
 
-  const name = item.workerName?.trim() || 'Service Professional';
+  const name = item.workerName?.trim() || 'Service Worker';
   const timeLabel = formatConversationTimestamp(item.lastMessageAt);
   const isUnread = item.unreadCount > 0;
   const isOutgoing = item.lastMessageSenderType === 'user' || item.lastMessageSenderType === 'customer';
@@ -135,7 +136,13 @@ export const ConversationRow = React.memo(function ConversationRow({ item, onPre
       accessibilityLabel={a11y}
       accessibilityHint="Opens the conversation"
     >
-      <View style={styles.avatarWrap}>
+      {/* Avatar opens the worker's profile; the rest of the row opens the conversation */}
+      <WorkerProfileLink
+        workerId={item.workerId}
+        workerName={item.workerName}
+        size={CONVERSATION_ROW.avatar}
+        style={styles.avatarWrap}
+      >
         {showImage ? (
           <Image
             source={{ uri: item.workerAvatarUrl }}
@@ -151,7 +158,7 @@ export const ConversationRow = React.memo(function ConversationRow({ item, onPre
           </View>
         )}
         {item.isOnline && <View style={styles.onlineDot} pointerEvents="none" />}
-      </View>
+      </WorkerProfileLink>
 
       <View style={styles.body}>
         {/* Line 1 — who / when */}
@@ -170,7 +177,7 @@ export const ConversationRow = React.memo(function ConversationRow({ item, onPre
         <View style={[styles.line, styles.previewLine]}>
           <View style={styles.previewWrap}>
             {isOutgoing && !isTyping && !!preview && (
-              <CheckCheck size={15} strokeWidth={2} color={colors.neutralInkSecondary} style={styles.receipt} />
+              <CheckDoubleIcon size={15} strokeWidth={2} color={colors.neutralInkSecondary} style={styles.receipt} />
             )}
             <Text
               style={[styles.preview, isUnread && styles.previewUnread, isTyping && styles.typing]}

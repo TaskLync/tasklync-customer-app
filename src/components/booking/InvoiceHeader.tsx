@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { ShieldCheck } from 'lucide-react-native';
+import { ShieldCheckIcon } from '../ui/Icon/icons';
 import { fontFamily, fontSize, radius, spacing } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -60,7 +60,7 @@ export const InvoiceHeader: React.FC<InvoiceHeaderProps> = ({
             isRefunded && styles.statusBadgeRefunded,
           ]}
         >
-          <ShieldCheck
+          <ShieldCheckIcon
             size={14}
             color={isPaid ? colors.primaryDark : isRefunded ? palette.warningDark : colors.textSecondary}
           />

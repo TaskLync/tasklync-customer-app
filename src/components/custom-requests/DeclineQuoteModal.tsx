@@ -13,7 +13,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { X } from 'lucide-react-native';
+import { CloseIcon } from '../ui/Icon/icons';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
 interface DeclineQuoteModalProps {
@@ -76,7 +76,7 @@ export function DeclineQuoteModal({
             <View style={styles.headerRow}>
               <Text style={styles.title}>Decline Quote</Text>
               <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <X size={20} color={palette.gray400} />
+                <CloseIcon size={20} color={palette.gray400} />
               </TouchableOpacity>
             </View>
 
@@ -85,7 +85,7 @@ export function DeclineQuoteModal({
               keyboardShouldPersistTaps="handled"
             >
               <Text style={styles.subtitle}>
-                Please select a reason for declining. The professional will be notified and can optionally submit a revised quote.
+                Please select a reason for declining. The worker will be notified and can optionally submit a revised quote.
               </Text>
 
               <View style={styles.reasonsList}>
@@ -127,7 +127,7 @@ export function DeclineQuoteModal({
                 onPress={onClose}
                 disabled={isLoading}
               >
-                <Text style={styles.cancelButtonText}>Go Back</Text>
+                <Text style={styles.cancelButtonText}>Go back</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -138,7 +138,7 @@ export function DeclineQuoteModal({
                 {isLoading ? (
                   <ActivityIndicator size="small" color={colors.pureWhite} />
                 ) : (
-                  <Text style={styles.declineButtonText}>Confirm Decline</Text>
+                  <Text style={styles.declineButtonText}>Decline quote</Text>
                 )}
               </TouchableOpacity>
             </View>

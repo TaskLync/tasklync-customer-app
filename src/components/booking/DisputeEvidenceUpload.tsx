@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Camera, Image as ImageIcon, X } from 'lucide-react-native';
+import { CameraIcon, CloseIcon, ImageIcon } from '../ui/Icon/icons';
 import { BottomSheet } from '../layout/BottomSheet';
 import { EvidenceSlotState } from '../../types/booking.types';
 import { DisputeEvidenceSlot } from './DisputeEvidenceSlot';
@@ -87,7 +87,7 @@ export const DisputeEvidenceUpload: React.FC<DisputeEvidenceUploadProps> = ({
               onPress={() => setActiveSlotIndex(null)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <X size={20} color={colors.textSecondary} />
+              <CloseIcon size={20} color={colors.textSecondary} />
             </Pressable>
           </View>
 
@@ -97,7 +97,7 @@ export const DisputeEvidenceUpload: React.FC<DisputeEvidenceUploadProps> = ({
             onPress={() => handleSelectSource('camera')}
           >
             <View style={styles.optionIconCircle}>
-              <Camera size={20} color={colors.primaryDark} />
+              <CameraIcon size={20} color={colors.primaryDark} />
             </View>
             <View style={styles.optionTextCol}>
               <Text style={styles.optionTitle}>Take Photo</Text>

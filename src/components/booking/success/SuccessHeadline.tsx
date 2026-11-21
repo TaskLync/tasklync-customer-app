@@ -8,7 +8,7 @@ export interface SuccessHeadlineProps {
 }
 
 export const SuccessHeadline: React.FC<SuccessHeadlineProps> = ({
-  title = 'Booking Confirmed!',
+  title = 'Booking placed',
 }) => {
   const styles = useThemedStyles(createStyles);
   return (

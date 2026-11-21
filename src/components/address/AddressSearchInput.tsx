@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Text,
 } from 'react-native';
-import { Search, X, Edit3 } from 'lucide-react-native';
+import { CloseIcon, EditIcon, SearchIcon } from '../ui/Icon/icons';
 import { fontFamily, radius, fontSize, shadows } from '../../design';
 import { useAppTheme, useThemedStyles, type AppTheme } from '../../theme/useAppTheme';
 
@@ -47,7 +47,7 @@ export const AddressSearchInput: React.FC<AddressSearchInputProps> = ({
     <View style={styles.container}>
       {/* Search Input Bar */}
       <View style={styles.searchBar}>
-        <Search size={18} color={palette.gray500} strokeWidth={2.2} />
+        <SearchIcon size={18} color={palette.gray500} strokeWidth={2.2} />
 
         <TextInput
           ref={inputRef}
@@ -83,7 +83,7 @@ export const AddressSearchInput: React.FC<AddressSearchInputProps> = ({
             accessibilityLabel="Clear search text"
           >
             <View style={styles.clearCircle}>
-              <X size={13} color={palette.gray600} strokeWidth={2.5} />
+              <CloseIcon size={13} color={palette.gray600} strokeWidth={2.5} />
             </View>
           </Pressable>
         )}
@@ -97,7 +97,7 @@ export const AddressSearchInput: React.FC<AddressSearchInputProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Type address details manually without using the map"
         >
-          <Edit3 size={12} color={colors.primaryDark} strokeWidth={2.2} />
+          <EditIcon size={12} color={colors.primaryDark} strokeWidth={2.2} />
           <Text style={styles.manualEntryText} maxFontSizeMultiplier={1.3}>
             Type address manually
           </Text>
